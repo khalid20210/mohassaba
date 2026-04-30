@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+{% block title %}استيراد المنتجات من Excel{% endblock %}
+{% block page_title %}استيراد المنتجات من Excel{% endblock %}
+
+{% block head %}
+<style>
+.excel-wrap { display: grid; gap: 16px; }
+.excel-hero {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: #e2e8f0;
+  border-radius: 18px;
+  padding: 18px;
+  border: 1px solid rgba(148, 163, 184, .22);
+}
+.excel-hero h2 { margin: 0 0 6px; font-size: 1.2rem; }
+.excel-hero p { margin: 0; color: #cbd5e1; font-size: .9rem; }
+
+.excel-grid { display: grid; gap: 16px; grid-template-columns: 1fr 1fr; }
+@media (max-width: 1024px) { .excel-grid { grid-template-columns: 1fr; } }
+
+.drop-zone {
+  border: 2px dashed #94a3b8;
+  border-radius: 16px;
+  background: #f8fafc;
+  padding: 26px;
+  text-align: center;
+  transition: .2s ease;
+}
+.drop-zone.dragover {
+  border-color: #0891b2;
+  background: #ecfeff;
+  box-shadow: inset 0 0 0 1px rgba(8,145,178,.15);
+}
+.drop-zone .big { font-size: 2rem; margin-bottom: 8px; }
+.drop-zone h3 { margin: 0 0 6px; }
+.drop-zone p { margin: 0; color: #64748b; font-size: .88rem; }
+
+.excel-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.excel-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+@media (max-width: 768px) { .excel-kpis { grid-template-columns: 1fr; } }
+.excel-kpi {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+}
+.excel-kpi .label { color: #64748b; font-size: .8rem; }
+.excel-kpi .val { font-size: 1.35rem; font-weight: 800; margin-top: 2px; }
+
+.excel-progress {
+  height: 8px; border-radius: 999px;
+  background: #e2e8f0; overflow: hidden;
+}
+.excel-progress > div {
+  height: 100%; width: 0;
+  background: linear-gradient(90deg, #0ea5e9, #14b8a6);
+  transition: width .25s ease;
+}
+
+.excel-section {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+.excel-section .head {
+  padding: 12px 14px;
+  border-bottom: 1px solid #eef2f7;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.excel-section .body { padding: 12px 14px; }
+
+.excel-tags { display: flex; gap: 7px; flex-wrap: wrap; }
+.excel-tag {
+  background: #e0f2fe; color: #0c4a6e;
+  border: 1px solid #bae6fd;
+  padding: 3px 9px; border-radius: 999px; font-size: .76rem;
+}
+
+.table-mini { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.table-mini th, .table-mini td {
+  border-bottom: 1px solid #eef2f7;
+  padding: 8px 6px;
+  text-align: right;
+  vertical-align: top;
+}
+.table-mini th { color: #475569; background: #f8fafc; position: sticky; top: 0; }
+.table-scroll { max-height: 340px; overflow: auto; border: 1px solid #eef2f7; border-radius: 10px; }
+
+.error-badge {
+  background: #fee2e2; color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+  font-size: .75rem;
+  padding: 2px 8px;
+}
+.ok-badge {
+  background: #dcfce7; color: #166534;
+  border: 1px solid #bbf7d0;
+  border-radius: 999px;
+  font-size: .75rem;
+  padding: 2px 8px;
+}
+
+.status-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #334155;
+  font-size: .88rem;
+}
+
+.hidden { display: none !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="excel-wrap">
+  <div class="excel-hero">
+    <h2>📥 استيراد منتجاتك إلى جنان بيز</h2>
+    <p>ارفع ملف Excel أو CSV، سنحلله تلقائياً ونُظهر لك الصفوف الصالحة والأخطاء قبل الحفظ النهائي.</p>
+  </div>
+
+  <div class="excel-grid">
+    <div class="excel-section">
+      <div class="head">
+        <strong>الخطوة 1: رفع الملف</strong>
+        <a href="/purchases" class="btn btn-outline" style="padding:6px 10px">العودة للمشتريات</a>
+      </div>
+      <div class="body">
+        <div id="dropZone" class="drop-zone">
+          <div class="big">🧾</div>
+          <h3>اسحب الملف هنا</h3>
+          <p>الأنواع المدعومة: xlsx, xls, csv — حتى 5000 صف</p>
+          <div class="excel-actions" style="justify-content:center">
+            <button class="btn btn-primary" type="button" onclick="pickFile()">اختيار ملف</button>
+            <button class="btn btn-outline" type="button" onclick="previewFile()" id="previewBtn" disabled>معاينة البيانات</button>
+          </div>
+          <input id="excelFile" type="file" accept=".xlsx,.xls,.csv" class="hidden">
+        </div>
+
+        <div style="margin-top:12px" class="status-box" id="fileState">لم يتم اختيار ملف بعد.</div>
+
+        <div style="margin-top:10px" class="excel-progress">
+          <div id="progressBar"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="excel-section">
+      <div class="head">
+        <strong>ملخص المعالجة</strong>
+        <span id="summaryStamp" class="ok-badge hidden">جاهز</span>
+      </div>
+      <div class="body">
+        <div class="excel-kpis">
+          <div class="excel-kpi">
+            <div class="label">إجمالي الصفوف</div>
+            <div class="val" id="kpiTotal">0</div>
+          </div>
+          <div class="excel-kpi">
+            <div class="label">صفوف صالحة</div>
+            <div class="val" id="kpiValid" style="color:#16a34a">0</div>
+          </div>
+          <div class="excel-kpi">
+            <div class="label">صفوف فيها أخطاء</div>
+            <div class="val" id="kpiInvalid" style="color:#dc2626">0</div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px">
+          <div style="font-size:.85rem;color:#475569;margin-bottom:6px">الأعمدة التي تعرف عليها النظام</div>
+          <div class="excel-tags" id="detectedCols">
+            <span class="excel-tag">بانتظار المعاينة...</span>
+          </div>
+        </div>
+
+        <div class="excel-actions" style="margin-top:16px">
+          <button id="confirmBtn" class="btn btn-primary" disabled onclick="confirmImport()">اعتماد الاستيراد</button>
+          <button class="btn btn-outline" type="button" onclick="clearPreview()">مسح النتائج</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="excel-grid">
+    <div class="excel-section">
+      <div class="head">
+        <strong>الصفوف الصالحة</strong>
+        <span id="validCountBadge" class="ok-badge">0 صف</span>
+      </div>
+      <div class="body">
+        <div class="table-scroll">
+          <table class="table-mini" id="validTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>المنتج</th>
+                <th>الباركود</th>
+                <th>البيع</th>
+                <th>الشراء</th>
+                <th>الكمية</th>
+                <th>الحد الأدنى</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="7" style="text-align:center;color:#64748b">لا توجد بيانات بعد</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="excel-section">
+      <div class="head">
+        <strong>الأخطاء</strong>
+        <span id="invalidCountBadge" class="error-badge">0 صف</span>
+      </div>
+      <div class="body">
+        <div class="table-scroll">
+          <table class="table-mini" id="invalidTable">
+            <thead>
+              <tr>
+                <th>رقم الصف</th>
+                <th>البيانات</th>
+                <th>الأخطاء</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="3" style="text-align:center;color:#64748b">لم يتم فحص الملف بعد</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedFile = null;
+let previewRows = [];
+
+const fileInput   = document.getElementById('excelFile');
+const dropZone    = document.getElementById('dropZone');
+const fileState   = document.getElementById('fileState');
+const previewBtn  = document.getElementById('previewBtn');
+const confirmBtn  = document.getElementById('confirmBtn');
+const progressBar = document.getElementById('progressBar');
+
+function pickFile() { fileInput.click(); }
+
+fileInput.addEventListener('change', () => {
+  selectedFile = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+  updateFileState();
+});
+
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.classList.add('dragover');
+});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  if (!e.dataTransfer || !e.dataTransfer.files.length) return;
+  fileInput.files = e.dataTransfer.files;
+  selectedFile = e.dataTransfer.files[0];
+  updateFileState();
+});
+
+function updateFileState() {
+  if (!selectedFile) {
+    fileState.textContent = 'لم يتم اختيار ملف بعد.';
+    previewBtn.disabled = true;
+    return;
+  }
+  fileState.textContent = 'تم اختيار الملف: ' + selectedFile.name + ' (' + (selectedFile.size / 1024).toFixed(1) + ' KB)';
+  previewBtn.disabled = false;
+}
+
+function setProgress(pct) {
+  progressBar.style.width = Math.max(0, Math.min(100, pct)) + '%';
+}
+
+function setKpi(id, val) { document.getElementById(id).textContent = Number(val || 0).toLocaleString('ar-SA'); }
+
+function renderCols(cols) {
+  const holder = document.getElementById('detectedCols');
+  if (!cols || !cols.length) {
+    holder.innerHTML = '<span class="excel-tag">لا توجد أعمدة معروفة</span>';
+    return;
+  }
+  holder.innerHTML = cols.filter(c => c && c !== '?').map(c => '<span class="excel-tag">' + esc(c) + '</span>').join('');
+}
+
+function renderValid(rows) {
+  const tbody = document.querySelector('#validTable tbody');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#64748b">لا توجد صفوف صالحة</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r => '<tr>' +
+    '<td>' + r.row + '</td>' +
+    '<td>' + esc(r.name || '') + '</td>' +
+    '<td>' + esc(r.barcode || '') + '</td>' +
+    '<td>' + num(r.sale_price) + '</td>' +
+    '<td>' + num(r.purchase_price) + '</td>' +
+    '<td>' + num(r.initial_qty) + '</td>' +
+    '<td>' + num(r.min_stock) + '</td>' +
+  '</tr>').join('');
+}
+
+function renderInvalid(rows) {
+  const tbody = document.querySelector('#invalidTable tbody');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#64748b">لا توجد أخطاء</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r => {
+    const rowData = r.data || {};
+    const mini = Object.keys(rowData).slice(0, 3).map(k => esc(k) + ': ' + esc(String(rowData[k] || ''))).join(' | ');
+    const errs = Array.isArray(r.errors) ? r.errors.join('، ') : esc(String(r.errors || ''));
+    return '<tr>' +
+      '<td>' + esc(String(r.row || '')) + '</td>' +
+      '<td style="font-size:.8rem;color:#475569">' + mini + '</td>' +
+      '<td style="color:#b91c1c">' + esc(errs) + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+async function previewFile() {
+  if (!selectedFile) return;
+
+  const fd = new FormData();
+  fd.append('file', selectedFile);
+
+  previewBtn.disabled = true;
+  confirmBtn.disabled = true;
+  setProgress(18);
+  fileState.textContent = 'جارٍ تحليل الملف...';
+
+  try {
+    const res = await fetch('/api/excel-import/preview', { method: 'POST', body: fd });
+    const data = await res.json();
+
+    if (!data.success) throw new Error(data.error || 'فشل التحليل');
+
+    previewRows = data.valid_rows || [];
+
+    setKpi('kpiTotal', data.total_rows || 0);
+    setKpi('kpiValid', data.valid_count || 0);
+    setKpi('kpiInvalid', data.invalid_count || 0);
+    document.getElementById('validCountBadge').textContent = (data.valid_count || 0) + ' صف';
+    document.getElementById('invalidCountBadge').textContent = (data.invalid_count || 0) + ' صف';
+
+    renderCols(data.detected_cols || []);
+    renderValid(previewRows);
+    renderInvalid(data.invalid_rows || []);
+
+    if ((data.valid_count || 0) > 0) {
+      confirmBtn.disabled = false;
+      document.getElementById('summaryStamp').classList.remove('hidden');
+      fileState.textContent = 'تمت المعاينة بنجاح. يمكنك الآن اعتماد الاستيراد.';
+    } else {
+      fileState.textContent = 'المعاينة انتهت ولكن لا توجد صفوف صالحة للحفظ.';
+    }
+
+    setProgress(100);
+  } catch (err) {
+    fileState.textContent = 'خطأ: ' + err.message;
+    setProgress(0);
+  } finally {
+    previewBtn.disabled = false;
+  }
+}
+
+async function confirmImport() {
+  if (!previewRows.length) return;
+  if (!confirm('سيتم حفظ الصفوف الصالحة في قاعدة البيانات. هل تريد المتابعة؟')) return;
+
+  confirmBtn.disabled = true;
+  setProgress(35);
+  fileState.textContent = 'جارٍ حفظ الصفوف الصالحة...';
+
+  try {
+    const res = await fetch('/api/excel-import/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rows: previewRows })
+    });
+    const data = await res.json();
+
+    if (!data.success) throw new Error(data.error || 'تعذر حفظ البيانات');
+
+    setProgress(100);
+    fileState.textContent = data.message || 'تم الاستيراد بنجاح.';
+    alert(data.message || 'تم الاستيراد بنجاح');
+
+    clearPreview(false);
+  } catch (err) {
+    confirmBtn.disabled = false;
+    setProgress(0);
+    fileState.textContent = 'خطأ: ' + err.message;
+  }
+}
+
+function clearPreview(resetFile = true) {
+  previewRows = [];
+  setKpi('kpiTotal', 0);
+  setKpi('kpiValid', 0);
+  setKpi('kpiInvalid', 0);
+  renderCols([]);
+  renderValid([]);
+  renderInvalid([]);
+  document.getElementById('summaryStamp').classList.add('hidden');
+  document.getElementById('validCountBadge').textContent = '0 صف';
+  document.getElementById('invalidCountBadge').textContent = '0 صف';
+  setProgress(0);
+  confirmBtn.disabled = true;
+  if (resetFile) {
+    fileInput.value = '';
+    selectedFile = null;
+    updateFileState();
+  }
+}
+
+function num(v) {
+  const n = Number(v || 0);
+  if (!isFinite(n)) return '0.00';
+  return n.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+{% endblock %}

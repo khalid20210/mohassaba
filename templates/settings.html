@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}إعدادات المنشأة{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">⚙️ إعدادات المنشأة</h2>
+    <p class="page-subtitle">بيانات المنشأة تظهر في الفواتير ورمز ZATCA تلقائياً</p>
+  </div>
+</div>
+
+<form method="POST" action="{{ url_for('settings') }}" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+  <!-- ═══════════════ هوية المنشأة ═══════════════ -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-header">
+      <span class="card-title">🏢 هوية المنشأة</span>
+    </div>
+
+    <!-- اللوجو -->
+    <div style="display:flex;align-items:center;gap:24px;margin-bottom:20px;padding:0 20px;flex-wrap:wrap">
+      <div id="logoPreviewWrap" style="width:100px;height:100px;border-radius:12px;
+           border:2px dashed var(--border);display:flex;align-items:center;
+           justify-content:center;overflow:hidden;background:var(--bg);flex-shrink:0">
+        {% if biz.logo_path %}
+          <img id="logoPreview" src="{{ biz.logo_path }}" alt="logo"
+               style="width:100%;height:100%;object-fit:contain">
+        {% else %}
+          <div id="logoPreview" style="font-size:2.5rem;color:var(--text-muted)">🏪</div>
+        {% endif %}
+      </div>
+      <div style="flex:1">
+        <label class="form-label">شعار المنشأة (اختياري)</label>
+        <input type="file" name="logo" id="logoInput" class="form-control"
+               accept=".png,.jpg,.jpeg,.svg,.webp,.gif"
+               onchange="previewLogo(this)">
+        <p style="font-size:.75rem;color:var(--text-muted);margin-top:6px">
+          PNG, JPG, SVG — يظهر في ترويسة كل فاتورة
+        </p>
+      </div>
+    </div>
+
+    <div class="form-grid-2" style="padding:0 20px 20px">
+      <div class="form-group">
+        <label class="form-label">الاسم التجاري <span class="required">*</span></label>
+        <input type="text" name="business_name" class="form-control"
+               value="{{ biz.name or '' }}" required placeholder="اسم المنشأة كما هو في السجل">
+      </div>
+      <div class="form-group">
+        <label class="form-label">الرقم الضريبي (VAT)</label>
+        <input type="text" name="tax_number" class="form-control" dir="ltr"
+               value="{{ biz.tax_number or '' }}"
+               placeholder="300XXXXXXXXXX003 — 15 رقماً"
+               maxlength="20">
+        <p class="field-hint">يدخل تلقائياً في رمز ZATCA</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">رقم السجل التجاري</label>
+        <input type="text" name="cr_number" class="form-control" dir="ltr"
+               value="{{ biz.cr_number or '' }}" placeholder="10XXXXXXXX">
+      </div>
+      <div class="form-group">
+        <label class="form-label">العملة</label>
+        <select name="currency" class="form-control">
+          {% for code, label in [('SAR','ريال سعودي — SAR'),('AED','درهم إماراتي — AED'),('USD','دولار أمريكي — USD'),('KWD','دينار كويتي — KWD'),('BHD','دينار بحريني — BHD'),('QAR','ريال قطري — QAR'),('OMR','ريال عُماني — OMR')] %}
+          <option value="{{ code }}" {% if biz.currency == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ بيانات الاتصال ═══════════════ -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-header">
+      <span class="card-title">📞 بيانات الاتصال والعنوان</span>
+    </div>
+    <div class="form-grid-2" style="padding:0 20px 20px">
+      <div class="form-group">
+        <label class="form-label">رقم الجوال / الهاتف</label>
+        <input type="tel" name="phone" class="form-control" dir="ltr"
+               value="{{ biz.phone or '' }}" placeholder="+966XXXXXXXXX">
+      </div>
+      <div class="form-group">
+        <label class="form-label">البريد الإلكتروني</label>
+        <input type="email" name="email" class="form-control" dir="ltr"
+               value="{{ biz.email or '' }}" placeholder="info@example.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">المدينة</label>
+        <input type="text" name="city" class="form-control"
+               value="{{ biz.city or '' }}" placeholder="الرياض">
+      </div>
+      <div class="form-group">
+        <label class="form-label">العنوان التفصيلي</label>
+        <input type="text" name="address" class="form-control"
+               value="{{ biz.address or '' }}" placeholder="حي النزهة، شارع الملك فهد">
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ إعدادات الفواتير ═══════════════ -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-header">
+      <span class="card-title">🧾 إعدادات الفواتير</span>
+    </div>
+    <div class="form-grid-2" style="padding:0 20px 20px">
+      <div class="form-group">
+        <label class="form-label">بادئة رقم الفاتورة</label>
+        <input type="text" name="invoice_prefix" class="form-control" dir="ltr"
+               value="{{ inv_prefix }}" placeholder="INV" maxlength="10">
+        <p class="field-hint">مثال: INV → الفاتورة تكون INV-00001</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ معاينة رمز QR ═══════════════ -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-header">
+      <span class="card-title">🟢 معاينة رمز ZATCA</span>
+    </div>
+    <div style="padding:20px;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+      <div id="zatcaPreviewQr" style="width:120px;height:120px"></div>
+      <div style="flex:1">
+        <p style="font-size:.85rem;margin:0 0 8px">
+          يظهر هذا الرمز في أسفل كل فاتورة ويحتوي على:
+        </p>
+        <ul style="font-size:.82rem;color:var(--text-muted);padding-right:16px;margin:0">
+          <li>اسم المنشأة: <strong id="previewName">{{ biz.name or '—' }}</strong></li>
+          <li>الرقم الضريبي: <strong id="previewVat" dir="ltr">{{ biz.tax_number or '—' }}</strong></li>
+          <li>الإجمالي والضريبة (تلقائي من الفاتورة)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-success btn-lg">💾 حفظ الإعدادات</button>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">إلغاء</a>
+  </div>
+</form>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+function previewLogo(input) {
+  if (!input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wrap = document.getElementById('logoPreviewWrap');
+    wrap.innerHTML = `<img id="logoPreview" src="${e.target.result}"
+      style="width:100%;height:100%;object-fit:contain">`;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+// توليد QR معاينة
+(function() {
+  const name   = document.getElementById('previewName')?.textContent?.trim() || '';
+  const vat    = document.getElementById('previewVat')?.textContent?.trim()  || '';
+  if (!name || name === '—') return;
+
+  // TLV Base64 بسيط لأغراض المعاينة
+  function tlv(tag, val) {
+    const enc = new TextEncoder().encode(val);
+    return new Uint8Array([tag, enc.length, ...enc]);
+  }
+  const ts    = new Date().toISOString();
+  const parts = [tlv(1,name), tlv(2,vat||'300000000000003'), tlv(3,ts), tlv(4,'0.00'), tlv(5,'0.00')];
+  const total = parts.reduce((a,b) => a + b.length, 0);
+  const buf   = new Uint8Array(total);
+  let off = 0;
+  parts.forEach(p => { buf.set(p, off); off += p.length; });
+  const b64 = btoa(String.fromCharCode(...buf));
+
+  new QRCode(document.getElementById('zatcaPreviewQr'), {
+    text: b64, width: 120, height: 120,
+    colorDark: '#000', colorLight: '#fff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+})();
+</script>
+{% endblock %}

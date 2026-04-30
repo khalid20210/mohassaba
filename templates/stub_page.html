@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ page_name }}{% endblock %}
+{% block page_title %}{{ page_name|title }}{% endblock %}
+
+{% block content %}
+{% set icons = {
+  'inventory': '📦', 'pos': '🛒', 'invoices': '🧾', 'contacts': '👥',
+  'accounting': '📊', 'reports': '📈', 'settings': '⚙️', 'barcode': '📷',
+  'kitchen': '👨‍🍳', 'tables': '🍽️', 'recipes': '📋',
+  'projects': '🏗️', 'extracts': '📄', 'equipment': '🔧',
+  'fleet': '🚗', 'contracts': '📄', 'maintenance': '🔧',
+  'patients': '🏥', 'appointments': '📅', 'prescriptions': '💊',
+  'orders': '🛒', 'pricing': '💰', 'jobs': '📋',
+} %}
+
+{% set labels = {
+  'inventory': 'المخزون', 'pos': 'نقاط البيع', 'invoices': 'الفواتير',
+  'contacts': 'العملاء والموردون', 'accounting': 'المحاسبة',
+  'reports': 'التقارير', 'settings': 'الإعدادات', 'barcode': 'إدارة الباركود',
+  'kitchen': 'شاشة المطبخ', 'tables': 'إدارة الطاولات', 'recipes': 'الوصفات',
+  'projects': 'المشاريع', 'extracts': 'المستخلصات', 'equipment': 'المعدات',
+  'fleet': 'الأسطول', 'contracts': 'العقود', 'maintenance': 'الصيانة',
+  'patients': 'المرضى', 'appointments': 'المواعيد', 'prescriptions': 'الوصفات الطبية',
+  'orders': 'الطلبات', 'pricing': 'قوائم الأسعار', 'jobs': 'أوامر العمل',
+} %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      {{ icons.get(page_name, '📄') }} {{ labels.get(page_name, page_name) }}
+    </h1>
+    <p class="page-subtitle">هذه الشاشة قيد التطوير</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="empty-state" style="padding:80px 20px;">
+    <div class="empty-icon">{{ icons.get(page_name, '📄') }}</div>
+    <h3>{{ labels.get(page_name, page_name) }}</h3>
+    <p style="max-width:320px; margin:10px auto 24px;">
+      هذه الشاشة ستكون متاحة قريباً. يتم بناؤها الآن بما يناسب نشاط
+      <strong>
+        {% for k, v in industry_types if k == current_business.industry_type %}{{ v }}{% endfor %}
+      </strong>.
+    </p>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+      ← العودة للوحة التحكم
+    </a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,957 @@
+{% extends "base.html" %}
+{% block title %}تسجيل الدخول — جنان بيز{% endblock %}
+
+{% block head %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Manrope:wght@500;700;800&display=swap');
+
+:root {
+  --jb-bg: #eef5ff;
+  --jb-surface: rgba(255, 255, 255, .8);
+  --jb-surface-soft: rgba(246, 250, 255, .92);
+  --jb-border: rgba(148, 163, 184, .28);
+  --jb-text: #08111f;
+  --jb-muted: #52627a;
+  --jb-primary: #0a2f57;
+  --jb-primary-soft: #1d9bf0;
+  --jb-teal: #0c8a86;
+  --jb-gold: #ad7b18;
+  --jb-shadow: 0 24px 60px rgba(7, 15, 28, .14);
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  min-height: 100dvh;
+  background: #070f1c;
+  color: #e8f0ff;
+}
+
+.jb-auth-root {
+  height: 100dvh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1.3fr .7fr;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Cairo', 'Segoe UI', sans-serif;
+}
+
+.jb-auth-root::before { display: none; }
+.jb-auth-root::after  { display: none; }
+
+.jb-theater {
+  position: relative;
+  z-index: 1;
+  height: 100dvh;
+  box-sizing: border-box;
+  padding: 22px 28px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background:
+    radial-gradient(ellipse at 25% 15%, rgba(20, 90, 200, .10), transparent 48%),
+    radial-gradient(ellipse at 75% 88%, rgba(5, 18, 44, .45), transparent 44%),
+    linear-gradient(148deg, #071525 0%, #0b1c36 38%, #091525 72%, #07101e 100%);
+  border-left: 1px solid rgba(25, 65, 130, .14);
+}
+
+.jb-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  align-self: flex-start;
+  padding: 4px 0 2px;
+}
+
+.jb-brand-mark {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.jb-brand-mark img {
+  width: 100%; height: 100%; object-fit: contain;
+  mix-blend-mode: screen;
+  filter: brightness(1.2) contrast(1.05);
+}
+
+.jb-brand-text strong {
+  display: block;
+  color: #cde0ff;
+  font-size: 1.0rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.jb-brand-text span {
+  color: rgba(130, 170, 230, .45);
+  font-size: .68rem;
+  font-family: 'Manrope', sans-serif;
+}
+
+.jb-theater-top {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.jb-pill-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.jb-pill {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.09);
+  color: rgba(190, 215, 255, .82);
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: .72rem;
+}
+
+.jb-activity-counter {
+  color: rgba(140, 175, 230, .60);
+  font-size: .76rem;
+  font-family: 'Manrope', sans-serif;
+}
+
+.jb-stage {
+  margin-top: 6px;
+  background: rgba(255,255,255,.035);
+  border: 1px solid rgba(80, 140, 220, .12);
+  border-radius: 20px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 30px 60px rgba(3,8,20,.30);
+}
+
+.jb-stage::before {
+  content: "";
+  position: absolute;
+  top: -80px; left: -80px;
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(29,120,240,.08), transparent 70%);
+  pointer-events: none;
+}
+
+.jb-stage::after {
+  content: "";
+  position: absolute;
+  bottom: -80px; right: -80px;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(10,50,120,.20), transparent 68%);
+  pointer-events: none;
+}
+
+.jb-showcase {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.jb-hero {
+  display: grid;
+  grid-template-columns: 1.15fr .85fr;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.jb-hero-main {
+  border: 1px solid rgba(151, 204, 255, .18);
+  border-radius: 18px;
+  padding: 14px;
+  background: linear-gradient(135deg, rgba(250, 252, 255, .92), rgba(224, 238, 255, .72));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.45);
+}
+
+.jb-hero-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.jb-hero-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  border: 1px solid var(--jb-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.45rem;
+  background: rgba(255,255,255,.75);
+}
+
+.jb-hero-title {
+  margin: 0;
+  font-size: 1.26rem;
+  color: var(--jb-primary);
+  font-weight: 800;
+}
+
+.jb-hero-sub {
+  margin: 3px 0 0;
+  font-size: .8rem;
+  color: #5d7088;
+}
+
+.jb-mode-badge {
+  display: inline-flex;
+  margin-top: 7px;
+  background: rgba(255,255,255,.68);
+  border: 1px solid rgba(148, 163, 184, .24);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: .72rem;
+  color: #23364b;
+  font-family: 'Manrope', sans-serif;
+}
+
+.jb-features {
+  margin-top: 9px;
+  display: grid;
+  gap: 6px;
+}
+
+.jb-feature {
+  background: rgba(255,255,255,.66);
+  border: 1px solid rgba(255,255,255,.5);
+  border-radius: 12px;
+  padding: 8px 10px;
+  color: #223347;
+  font-size: .77rem;
+  box-shadow: 0 12px 24px rgba(10, 26, 46, .08);
+}
+
+.jb-feature strong {
+  display: block;
+  color: #0f172a;
+  font-size: .74rem;
+  margin-bottom: 1px;
+}
+
+.jb-metric-column {
+  display: grid;
+  gap: 8px;
+}
+
+.jb-metric-card {
+  border: 1px solid rgba(126, 191, 255, .14);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.08));
+  padding: 12px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 12px 28px rgba(3, 8, 18, .16);
+}
+
+.jb-metric-label {
+  color: rgba(222, 236, 255, .74);
+  font-size: .76rem;
+}
+
+.jb-metric-value {
+  margin-top: 4px;
+  font-size: 1.24rem;
+  font-weight: 800;
+  color: #f6fbff;
+  font-family: 'Manrope', sans-serif;
+  text-shadow: 0 0 24px rgba(29, 155, 240, .18);
+}
+
+.jb-metric-value.teal { color: #58d4df; }
+.jb-metric-value.gold { color: #f2c35c; }
+
+.jb-metric-chart {
+  margin-top: 5px;
+  height: 26px;
+}
+
+.jb-metric-chart svg { width: 100%; height: 100%; }
+
+.jb-activity-strip {
+  margin-top: 10px;
+  border: 1px solid rgba(144, 199, 255, .18);
+  background: linear-gradient(90deg, rgba(255,255,255,.14), rgba(20,78,140,.18), rgba(0,0,0,.22));
+  border-radius: 14px;
+  padding: 8px 10px;
+  backdrop-filter: blur(10px);
+}
+
+.jb-activity-strip-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.jb-activity-strip-head strong {
+  color: #f3f8ff;
+  font-size: .86rem;
+}
+
+.jb-activity-strip-head span {
+  color: rgba(214, 228, 248, .72);
+  font-size: .74rem;
+}
+
+.jb-upcoming {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.jb-upcoming-item {
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: #e8f1ff;
+  font-size: .69rem;
+}
+
+.jb-global-kpis {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.jb-global-kpi {
+  border-radius: 16px;
+  padding: 10px 8px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ألوان كل بطاقة */
+.jb-global-kpi.c-amber  { background: rgba(245,158,11,.10); border: 1px solid rgba(245,158,11,.25); box-shadow: 0 0 18px rgba(245,158,11,.08); }
+.jb-global-kpi.c-cyan   { background: rgba(6,182,212,.10);  border: 1px solid rgba(6,182,212,.25);  box-shadow: 0 0 18px rgba(6,182,212,.08); }
+.jb-global-kpi.c-blue   { background: rgba(59,130,246,.10); border: 1px solid rgba(59,130,246,.25); box-shadow: 0 0 18px rgba(59,130,246,.08); }
+.jb-global-kpi.c-emerald{ background: rgba(16,185,129,.10); border: 1px solid rgba(16,185,129,.25); box-shadow: 0 0 18px rgba(16,185,129,.08); }
+
+.jb-kpi-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.jb-global-kpi.c-amber  .jb-global-kpi-num { color: #fbbf24; }
+.jb-global-kpi.c-cyan   .jb-global-kpi-num { color: #22d3ee; }
+.jb-global-kpi.c-blue   .jb-global-kpi-num { color: #60a5fa; }
+.jb-global-kpi.c-emerald .jb-global-kpi-num { color: #34d399; }
+
+.jb-global-kpi-num {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.14rem;
+  font-weight: 800;
+  letter-spacing: -.5px;
+}
+
+.jb-global-kpi-text {
+  color: rgba(160, 200, 255, .46);
+  font-size: .62rem;
+  margin-top: 1px;
+}
+
+.jb-controls {
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.jb-progress {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.12);
+  overflow: hidden;
+}
+
+.jb-progress-bar {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #76c8ff, #1d9bf0, #07111f);
+  transition: width .35s ease;
+}
+
+.jb-nav {
+  display: flex;
+  gap: 8px;
+}
+
+.jb-nav button {
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.12);
+  color: #eff6ff;
+  border-radius: 10px;
+  padding: 7px 11px;
+  cursor: pointer;
+}
+
+.jb-nav button:hover {
+  background: rgba(255,255,255,.18);
+}
+
+.jb-form-panel {
+  z-index: 1;
+  /* سافير ليلي ممزوج بلازوردي خافت */
+  background:
+    radial-gradient(ellipse at 40% 0%,   rgba(26, 86, 200, .09), transparent 55%),
+    radial-gradient(ellipse at 80% 100%, rgba(10, 40, 100, .14),  transparent 50%),
+    linear-gradient(155deg, #0a1628 0%, #0d1f40 42%, #091422 75%, #0b1a32 100%);
+  border-right: 1px solid rgba(20, 60, 120, .22);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100dvh;
+  box-sizing: border-box;
+  padding: 18px 22px;
+  position: relative;
+  overflow: hidden;
+}
+
+.jb-form-panel::before {
+  content: "";
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(30, 110, 220, .06), transparent 70%);
+  pointer-events: none;
+}
+
+.jb-form-wrap {
+  max-width: 380px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* شعار فوق بيانات الدخول */
+.jb-form-header {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 26px;
+}
+
+.jb-form-logo-img {
+  width: 54px;
+  height: 54px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 13px;
+  background: transparent;
+}
+
+.jb-form-logo-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  mix-blend-mode: screen;
+  filter: brightness(1.25) saturate(1.1);
+}
+
+.jb-form-title-block strong {
+  display: block;
+  font-size: 1.28rem;
+  font-weight: 800;
+  color: #d6eaff;
+  line-height: 1.15;
+  letter-spacing: -.3px;
+}
+
+.jb-form-title-block span {
+  font-size: .69rem;
+  color: rgba(120, 165, 228, .48);
+  font-family: 'Manrope', sans-serif;
+}
+
+.jb-alert {
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: .78rem;
+  margin-bottom: 8px;
+  border: 1px solid;
+}
+
+.jb-alert.error   { background: rgba(220,38,38,.14);  border-color: rgba(220,38,38,.3);   color: #fca5a5; }
+.jb-alert.success { background: rgba(22,163,74,.14);   border-color: rgba(22,163,74,.3);    color: #86efac; }
+.jb-alert.warning { background: rgba(202,138,4,.14);  border-color: rgba(202,138,4,.3);    color: #fde68a; }
+
+.jb-field { margin-bottom: 10px; }
+
+.jb-label {
+  display: block;
+  color: rgba(190, 218, 255, .86);
+  margin-bottom: 5px;
+  font-size: .76rem;
+  font-weight: 700;
+}
+
+.jb-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(80, 140, 210, .22);
+  border-radius: 10px;
+  background: rgba(255,255,255,.07);
+  padding: 10px 12px;
+  font-size: .86rem;
+  color: #e4f0ff;
+  outline: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+.jb-input::placeholder { color: rgba(160, 195, 240, .40); }
+
+.jb-input:focus {
+  border-color: rgba(29, 155, 240, .55);
+  background: rgba(255,255,255,.10);
+  box-shadow: 0 0 0 3px rgba(29, 155, 240, .13);
+}
+
+.jb-pass-wrap { position: relative; }
+
+.jb-pass-toggle {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: rgba(155, 195, 245, .65);
+  cursor: pointer;
+}
+
+.jb-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 8px 0 10px;
+}
+
+.jb-remember {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: .76rem;
+  color: rgba(185, 215, 255, .70);
+}
+
+.jb-remember input[type="checkbox"] { accent-color: #0284c7; }
+
+.jb-forgot { font-size: .76rem; color: #62b8f6; text-decoration: none; }
+.jb-forgot:hover { text-decoration: underline; }
+
+.jb-btn {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #0d1b2d, #10365f 48%, #1d9bf0 100%);
+  color: #fff;
+  font-size: .88rem;
+  font-weight: 800;
+  padding: 10px;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.jb-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px rgba(14, 42, 78, .24);
+}
+
+.jb-divider {
+  margin: 9px 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.jb-divider::before,
+.jb-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(80, 140, 210, .18);
+}
+
+.jb-divider span { color: rgba(160, 195, 240, .52); font-size: .72rem; }
+
+.jb-reg-link {
+  text-align: center;
+  color: rgba(185, 215, 255, .66);
+  font-size: .78rem;
+}
+
+.jb-reg-link a { color: #62b8f6; text-decoration: none; font-weight: 700; }
+.jb-reg-link a:hover { text-decoration: underline; }
+
+.jb-pwa-btn {
+  width: 100%;
+  margin-top: 8px;
+  border: 1px solid rgba(80, 140, 210, .2);
+  border-radius: 10px;
+  background: rgba(255,255,255,.07);
+  color: #bdd6f8;
+  padding: 9px;
+  display: none;
+  cursor: pointer;
+}
+
+.jb-pwa-btn:hover { background: rgba(255,255,255,.12); }
+
+@media (max-width: 1100px) {
+  .jb-hero { grid-template-columns: 1fr; }
+  .jb-global-kpis { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 980px) {
+  html, body { overflow: hidden; }
+  .jb-auth-root { grid-template-columns: 1fr; }
+  .jb-theater { display: none; }
+  .jb-form-panel {
+    border-right: none;
+    border-left: none;
+    padding: 24px 16px;
+  }
+  .jb-form-wrap { max-width: 360px; }
+}
+</style>
+{% endblock %}
+
+{% block auth_content %}
+<div class="jb-auth-root">
+  <div class="jb-theater">
+    <div class="jb-brand">
+      <div class="jb-brand-mark">
+        <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Jinan Biz">
+      </div>
+      <div class="jb-brand-text">
+        <strong>جنان بيز</strong>
+        <span>Jinan Biz Enterprise ERP</span>
+      </div>
+    </div>
+
+    <div class="jb-theater-top">
+      <div class="jb-pill-row">
+        <span class="jb-pill">🔐 بنية آمنة</span>
+        <span class="jb-pill">🧾 OCR + Excel Import</span>
+        <span class="jb-pill">📊 KPIs حسب النشاط</span>
+      </div>
+      <div class="jb-activity-counter" id="activityCounter">1 / 73 نشاط</div>
+    </div>
+
+    <div class="jb-stage">
+      <div class="jb-showcase">
+        <div class="jb-hero">
+          <div class="jb-hero-main" id="heroMain">
+            <div class="jb-hero-head">
+              <div class="jb-hero-icon" id="heroIcon">🏪</div>
+              <div>
+                <h3 class="jb-hero-title" id="heroTitle">نشاط تجاري مدعوم بجنان بيز</h3>
+                <p class="jb-hero-sub" id="heroSub">تجربة تشغيل موحدة توضح قيمة النظام لكل نشاط.</p>
+              </div>
+            </div>
+            <span class="jb-mode-badge" id="heroMode">mode: standard</span>
+
+            <div class="jb-features" id="featureList">
+              <div class="jb-feature"><strong>تحميل المزايا</strong>جارٍ تجهيز عرض النشاط الحالي...</div>
+            </div>
+          </div>
+
+          <div class="jb-metric-column">
+            <div class="jb-metric-card">
+              <div class="jb-metric-label" id="metric1Label">المؤشر الأول</div>
+              <div class="jb-metric-value" id="metric1Value">0</div>
+              <div class="jb-metric-chart">
+                <svg viewBox="0 0 100 30" preserveAspectRatio="none">
+                  <polyline id="metric1Chart" points="0,24 14,22 28,18 42,16 56,13 70,10 84,9 100,7" fill="none" stroke="#0b3a63" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+
+            <div class="jb-metric-card">
+              <div class="jb-metric-label" id="metric2Label">المؤشر الثاني</div>
+              <div class="jb-metric-value teal" id="metric2Value">0</div>
+              <div class="jb-metric-chart">
+                <svg viewBox="0 0 100 30" preserveAspectRatio="none">
+                  <polyline id="metric2Chart" points="0,26 14,24 28,23 42,19 56,17 70,15 84,11 100,8" fill="none" stroke="#0f766e" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="jb-activity-strip">
+          <div class="jb-activity-strip-head">
+            <strong>أنشطة تتحول معها هوية النظام</strong>
+            <span id="stripHint">يتبدل العرض تلقائياً كل 6 ثوانٍ</span>
+          </div>
+          <div class="jb-upcoming" id="upcomingActivities">
+            <span class="jb-upcoming-item">جاري التحميل...</span>
+          </div>
+        </div>
+
+        <div class="jb-global-kpis">
+          <div class="jb-global-kpi c-amber">
+            <div class="jb-kpi-icon">🧾</div>
+            <div class="jb-global-kpi-num" id="cntInv">0</div>
+            <div class="jb-global-kpi-text">فاتورة معالجة</div>
+          </div>
+          <div class="jb-global-kpi c-cyan">
+            <div class="jb-kpi-icon">🤖</div>
+            <div class="jb-global-kpi-num" id="aiAccuracy">99.9%</div>
+            <div class="jb-global-kpi-text">دقة الذكاء</div>
+          </div>
+          <div class="jb-global-kpi c-blue">
+            <div class="jb-kpi-icon">📊</div>
+            <div class="jb-global-kpi-num" id="profilesCount">73</div>
+            <div class="jb-global-kpi-text">نشاط برمجي</div>
+          </div>
+          <div class="jb-global-kpi c-emerald">
+            <div class="jb-kpi-icon">🏢</div>
+            <div class="jb-global-kpi-num" id="businessesCount">0</div>
+            <div class="jb-global-kpi-text">منشأة نشطة</div>
+          </div>
+        </div>
+
+        <div class="jb-controls">
+          <div class="jb-progress"><div class="jb-progress-bar" id="showcaseProgress"></div></div>
+          <div class="jb-nav">
+            <button type="button" onclick="prevActivity()">السابق</button>
+            <button type="button" onclick="nextActivity()">التالي</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="jb-form-panel">
+    <div class="jb-form-wrap">
+
+      <!-- شعار مدمج بدون حواجز -->
+      <div class="jb-form-header">
+        <div class="jb-form-logo-img">
+          <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Jinan Biz">
+        </div>
+        <div class="jb-form-title-block">
+          <strong>جنان بيز</strong>
+          <span>Jinan Biz • Enterprise ERP</span>
+        </div>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+          <div class="jb-alert {{ cat }}">{{ msg }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('auth_login') }}" autocomplete="off">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        <div class="jb-field">
+          <label class="jb-label">اسم المستخدم</label>
+          <input type="text" name="username" class="jb-input" placeholder="أدخل اسم المستخدم" required autofocus value="{{ request.form.get('username', '') }}">
+        </div>
+
+        <div class="jb-field">
+          <label class="jb-label">كلمة المرور</label>
+          <div class="jb-pass-wrap">
+            <input type="password" id="jb-pass" name="password" class="jb-input" placeholder="أدخل كلمة المرور" required style="padding-left:42px">
+            <button type="button" class="jb-pass-toggle" onclick="togglePass()" title="إظهار/إخفاء">👁</button>
+          </div>
+        </div>
+
+        <div class="jb-meta">
+          <label class="jb-remember">
+            <input type="checkbox" name="remember">
+            <span>تذكرني</span>
+          </label>
+          <a href="{{ url_for('auth_forgot_password') }}" class="jb-forgot">نسيت كلمة المرور؟</a>
+        </div>
+
+        <button type="submit" class="jb-btn">تسجيل الدخول</button>
+      </form>
+
+      <div class="jb-divider"><span>أو</span></div>
+
+      <div class="jb-reg-link">
+        ليس لديك حساب؟
+        <a href="{{ url_for('auth_register') }}">أنشئ حسابك الآن</a>
+      </div>
+
+      <button class="jb-pwa-btn" id="pwaInstallBtn">📲 تثبيت جنان بيز على جهازك</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let showcaseItems = [];
+let showcaseIndex = 0;
+let showcaseTimer = null;
+const showcaseDelay = 6000;
+
+function togglePass() {
+  const inp = document.getElementById('jb-pass');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+function fmtNumber(value, suffix = '') {
+  const num = Number(value || 0);
+  const text = num.toLocaleString('ar-SA', { maximumFractionDigits: 1, minimumFractionDigits: Number.isInteger(num) ? 0 : 1 });
+  return text + (suffix || '');
+}
+
+function makeChartPoints(seed) {
+  const base = Math.max(6, Math.min(26, 26 - (seed % 11)));
+  return [0, 14, 28, 42, 56, 70, 84, 100].map((x, i) => {
+    const y = Math.max(6, Math.min(26, base - i * 2 + ((seed + i * 3) % 5)));
+    return x + ',' + y;
+  }).join(' ');
+}
+
+function applyActivity(index) {
+  if (!showcaseItems.length) return;
+
+  showcaseIndex = (index + showcaseItems.length) % showcaseItems.length;
+  const item = showcaseItems[showcaseIndex];
+  const accent = item.accent || {};
+  const metrics = item.metrics || [];
+  const featureList = document.getElementById('featureList');
+  const heroMain = document.getElementById('heroMain');
+
+  document.getElementById('activityCounter').textContent = (showcaseIndex + 1).toLocaleString('ar-SA') + ' / ' + showcaseItems.length.toLocaleString('ar-SA') + ' نشاط';
+  document.getElementById('heroIcon').textContent = item.icon || '🏪';
+  document.getElementById('heroTitle').textContent = item.headline || item.title || 'نشاط تجاري';
+  document.getElementById('heroSub').textContent = item.subheadline || '';
+  document.getElementById('heroMode').textContent = 'mode: ' + (item.pos_mode || 'standard');
+
+  heroMain.style.background = 'linear-gradient(135deg, ' + (accent.from || '#eff6ff') + ', rgba(255,255,255,.94))';
+  heroMain.style.borderColor = accent.border || '#dbeafe';
+  document.getElementById('heroTitle').style.color = accent.text || '#0b3a63';
+  document.getElementById('heroIcon').style.background = 'linear-gradient(135deg, ' + (accent.from || '#eff6ff') + ', ' + (accent.to || '#ecfeff') + ')';
+
+  featureList.innerHTML = (item.features || []).map((f, idx) => {
+    return '<div class="jb-feature"><strong>ميزة ' + (idx + 1).toLocaleString('ar-SA') + '</strong>' + f + '</div>';
+  }).join('');
+
+  const m1 = metrics[0] || { label: 'المؤشر الأول', value: 0, color: 'primary' };
+  const m2 = metrics[1] || { label: 'المؤشر الثاني', value: 0, color: 'teal' };
+  document.getElementById('metric1Label').textContent = m1.label;
+  document.getElementById('metric2Label').textContent = m2.label;
+
+  const metric1Value = document.getElementById('metric1Value');
+  const metric2Value = document.getElementById('metric2Value');
+  metric1Value.textContent = fmtNumber(m1.value, m1.suffix || '');
+  metric2Value.textContent = fmtNumber(m2.value, m2.suffix || '');
+  metric1Value.className = 'jb-metric-value ' + (m1.color === 'gold' ? 'gold' : m1.color === 'teal' ? 'teal' : '');
+  metric2Value.className = 'jb-metric-value ' + (m2.color === 'gold' ? 'gold' : m2.color === 'teal' ? 'teal' : '');
+
+  document.getElementById('metric1Chart').setAttribute('points', makeChartPoints(Number(m1.value || 0)));
+  document.getElementById('metric2Chart').setAttribute('points', makeChartPoints(Number(m2.value || 0) + 7));
+  document.getElementById('metric1Chart').setAttribute('stroke', accent.text || '#0b3a63');
+  document.getElementById('metric2Chart').setAttribute('stroke', m2.color === 'gold' ? '#a16207' : '#0f766e');
+
+  const upcoming = [];
+  for (let i = 1; i <= 5; i += 1) {
+    const nextItem = showcaseItems[(showcaseIndex + i) % showcaseItems.length];
+    upcoming.push('<span class="jb-upcoming-item">' + (nextItem.icon || '🏪') + ' ' + nextItem.title + '</span>');
+  }
+  document.getElementById('upcomingActivities').innerHTML = upcoming.join('');
+  document.getElementById('showcaseProgress').style.width = (((showcaseIndex + 1) / showcaseItems.length) * 100).toFixed(2) + '%';
+}
+
+function nextActivity() {
+  applyActivity(showcaseIndex + 1);
+  restartRotation();
+}
+
+function prevActivity() {
+  applyActivity(showcaseIndex - 1);
+  restartRotation();
+}
+
+function restartRotation() {
+  if (showcaseTimer) clearInterval(showcaseTimer);
+  showcaseTimer = setInterval(() => applyActivity(showcaseIndex + 1), showcaseDelay);
+}
+
+async function loadRealLandingMetrics() {
+  try {
+    const res = await fetch('/auth/landing-metrics');
+    const data = await res.json();
+    if (!data.success) return;
+
+    const g = data.global || {};
+    showcaseItems = Array.isArray(data.showcase) ? data.showcase : [];
+
+    document.getElementById('cntInv').textContent = '+' + fmtNumber(g.total_invoices || 0);
+    document.getElementById('aiAccuracy').textContent = fmtNumber(g.ai_accuracy || 99.9, '%');
+    document.getElementById('profilesCount').textContent = fmtNumber(g.profiles_count || showcaseItems.length || 73);
+    document.getElementById('businessesCount').textContent = fmtNumber(g.businesses_count || 0);
+
+    if (showcaseItems.length) {
+      applyActivity(0);
+      restartRotation();
+    }
+  } catch (err) {
+  }
+}
+
+window.addEventListener('load', () => {
+  loadRealLandingMetrics();
+});
+
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('pwaInstallBtn').style.display = 'block';
+});
+
+document.getElementById('pwaInstallBtn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const choice = await deferredPrompt.userChoice;
+  if (choice.outcome === 'accepted') {
+    document.getElementById('pwaInstallBtn').style.display = 'none';
+  }
+  deferredPrompt = null;
+});
+</script>
+{% endblock %}

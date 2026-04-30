@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+{% block title %}أوامر البيع — الجملة{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2 class="page-title">🛒 أوامر البيع — الجملة</h2>
+  <div class="page-header-actions">
+    <span class="badge-total">{{ total }} أمر</span>
+    <button class="btn btn-primary btn-sm" onclick="toggleForm()" id="toggleBtn">➕ أمر بيع جديد</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     نموذج إنشاء أمر البيع
+═══════════════════════════════════════════════════════ -->
+<div id="orderFormWrap" class="ord-form-wrap" style="display:none">
+  <div class="card">
+    <div class="card-header">
+      <h4>📋 أمر بيع جملة جديد</h4>
+      <button class="btn-icon-close" onclick="toggleForm()">✕</button>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="/orders" id="orderFormEl">
+
+        <!-- الصف الأول: عميل + تاريخ -->
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label class="form-label">العميل (من القائمة)</label>
+            <select name="customer_id" id="customerSelect" class="form-control" onchange="syncCustomerName()">
+              <option value="">— اختر عميلاً أو اكتب يدوياً —</option>
+              {% for c in customers %}
+              <option value="{{ c.id }}" data-name="{{ c.name | e }}">
+                {{ c.name }}{% if c.phone %} — {{ c.phone }}{% endif %}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">اسم العميل (يدوي)</label>
+            <input type="text" name="customer_name" id="customerNameInput" class="form-control"
+                   placeholder="أو اكتب اسماً جديداً">
+          </div>
+          <div class="form-group">
+            <label class="form-label">تاريخ الأمر <span class="required-star">*</span></label>
+            <input type="date" name="order_date" class="form-control" value="{{ now_date }}" required>
+          </div>
+        </div>
+
+        <!-- الصف الثاني: دفع + استحقاق + خصم + ضريبة -->
+        <div class="form-grid-4">
+          <div class="form-group">
+            <label class="form-label">طريقة الدفع</label>
+            <select name="payment_method" id="paymentSel" class="form-control" onchange="toggleDueDate()">
+              <option value="cash">💵 نقداً (صندوق)</option>
+              <option value="bank">🏦 تحويل بنكي</option>
+              <option value="credit">📋 آجل (ذمم مدينة)</option>
+            </select>
+          </div>
+          <div class="form-group" id="dueDateGroup" style="display:none">
+            <label class="form-label">تاريخ الاستحقاق</label>
+            <input type="date" name="due_date" id="dueDateInput" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">خصم عام %</label>
+            <input type="number" name="discount_pct" id="overallDiscPct" class="form-control"
+                   value="0" min="0" max="100" step="0.01" oninput="recalcTotals()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">ضريبة %</label>
+            <input type="number" name="tax_pct" id="taxPctInput" class="form-control"
+                   value="0" min="0" max="100" step="0.01" oninput="recalcTotals()">
+          </div>
+        </div>
+
+        <!-- بنود الأمر -->
+        <div class="pur-lines-header" style="margin-top:16px">
+          <span class="section-label">📦 بنود الأمر</span>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="addLine()">➕ إضافة صنف</button>
+        </div>
+
+        <div class="pur-lines-table-wrap">
+          <table class="ord-lines-table">
+            <thead>
+              <tr>
+                <th style="min-width:220px">المنتج</th>
+                <th style="width:90px">الكمية</th>
+                <th style="width:130px">سعر الوحدة</th>
+                <th style="width:85px">خصم %</th>
+                <th style="width:120px">صافي السطر</th>
+                <th style="width:40px"></th>
+              </tr>
+            </thead>
+            <tbody id="linesBody"></tbody>
+          </table>
+        </div>
+        <p id="linesEmpty" class="ord-lines-empty">أضف صنفاً واحداً على الأقل</p>
+
+        <!-- شريط الإجماليات -->
+        <div class="pur-totals-bar" style="margin-top:12px">
+          <div class="totals-row"><span>المجموع قبل الخصم:</span><strong id="tSubBefore">0.00</strong></div>
+          <div class="totals-row"><span>الخصم الإجمالي:</span><strong id="tDisc" class="text-danger">0.00-</strong></div>
+          <div class="totals-row"><span>صافي المبيعات:</span><strong id="tSubNet">0.00</strong></div>
+          <div class="totals-row"><span>الضريبة:</span><strong id="tTax">0.00</strong></div>
+          <div class="totals-row totals-grand"><span>الإجمالي الكلي:</span><strong id="tGrand">0.00</strong></div>
+        </div>
+
+        <!-- ملاحظات -->
+        <div class="form-group" style="margin-top:14px">
+          <label class="form-label">ملاحظات</label>
+          <textarea name="notes" class="form-control" rows="2"
+                    placeholder="شروط التسليم، تعليمات خاصة..."></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" id="saveBtn" class="btn-success" disabled>
+            ✅ اعتماد الأمر وتوليد القيد
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="toggleForm()">إلغاء</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     جدول الأوامر السابقة
+═══════════════════════════════════════════════════════ -->
+<div class="card" style="margin-top:24px">
+  <div class="card-header">
+    <h4>📄 الأوامر السابقة</h4>
+    <form class="search-bar-form" method="GET" action="/orders">
+      <input class="form-control form-control-sm" name="q" value="{{ q }}" placeholder="ابحث برقم الأمر أو العميل...">
+      <button class="btn btn-secondary btn-sm">🔍</button>
+    </form>
+  </div>
+
+  {% if invoices %}
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>رقم الأمر</th>
+          <th>التاريخ</th>
+          <th>العميل</th>
+          <th class="num-col">المجموع</th>
+          <th class="num-col">الخصم</th>
+          <th class="num-col">الإجمالي</th>
+          <th class="num-col">المدفوع</th>
+          <th>طريقة الدفع</th>
+          <th>الحالة</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inv in invoices %}
+        <tr>
+          <td><span class="ord-num-badge">{{ inv.invoice_number }}</span></td>
+          <td class="muted-cell">{{ inv.invoice_date }}</td>
+          <td>{{ inv.party_name or '—' }}</td>
+          <td class="num-col">{{ '%.2f' | format(inv.subtotal) }}</td>
+          <td class="num-col text-danger">{{ '%.2f' | format(inv.discount_amount or 0) }}</td>
+          <td class="num-col"><strong>{{ '%.2f' | format(inv.total) }}</strong></td>
+          <td class="num-col">{{ '%.2f' | format(inv.paid_amount or 0) }}</td>
+          <td class="muted-cell">
+            {% if inv.due_date %}<span title="استحقاق: {{ inv.due_date }}">آجل</span>{% else %}نقدي{% endif %}
+          </td>
+          <td>
+            <span class="status-badge
+              {% if inv.status == 'paid' %}status-paid
+              {% elif inv.status == 'partial' %}status-partial
+              {% elif inv.status == 'draft' %}status-draft
+              {% else %}status-cancelled{% endif %}">
+              {% if inv.status == 'paid' %}مدفوع
+              {% elif inv.status == 'partial' %}جزئي
+              {% elif inv.status == 'draft' %}مسودة
+              {% else %}ملغي{% endif %}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if total_pages > 1 %}
+  <div class="pagination">
+    {% if page > 1 %}
+    <a href="?page={{ page-1 }}&q={{ q }}" class="page-btn">→ السابق</a>
+    {% endif %}
+    <span class="page-info">صفحة {{ page }} من {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a href="?page={{ page+1 }}&q={{ q }}" class="page-btn">التالي ←</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">🛒</div>
+    <p>لا توجد أوامر بيع حتى الآن</p>
+    <button class="btn btn-primary btn-sm" onclick="toggleForm()">إنشاء أول أمر بيع</button>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* ─── بيانات المنتجات من السيرفر ─────────────────────────────── */
+const PRODUCTS = {{ products | tojson }};
+const CURRENCY = '{{ (current_business.currency if current_business else "ر.ي") | e }}';
+
+/* ─── مؤشر عدد الصفوف ─────────────────────────────────────────── */
+let lineCount = 0;
+
+/* ─── إظهار/إخفاء النموذج ──────────────────────────────────────── */
+function toggleForm() {
+  const wrap = document.getElementById('orderFormWrap');
+  const btn  = document.getElementById('toggleBtn');
+  const showing = wrap.style.display !== 'none';
+  wrap.style.display = showing ? 'none' : 'block';
+  btn.textContent = showing ? '➕ أمر بيع جديد' : '✕ إغلاق النموذج';
+  if (!showing && lineCount === 0) addLine();
+}
+
+/* ─── إظهار/إخفاء حقل الاستحقاق ────────────────────────────────── */
+function toggleDueDate() {
+  const v   = document.getElementById('paymentSel').value;
+  const grp = document.getElementById('dueDateGroup');
+  grp.style.display = v === 'credit' ? 'block' : 'none';
+}
+
+/* ─── مزامنة اسم العميل من القائمة ──────────────────────────────── */
+function syncCustomerName() {
+  const sel = document.getElementById('customerSelect');
+  const opt = sel.options[sel.selectedIndex];
+  if (opt && opt.dataset.name) {
+    document.getElementById('customerNameInput').value = opt.dataset.name;
+  }
+}
+
+/* ─── إضافة صف منتج ─────────────────────────────────────────────── */
+function addLine() {
+  lineCount++;
+  document.getElementById('linesEmpty').style.display = 'none';
+
+  const opts = PRODUCTS.map(p =>
+    `<option value="${p.id}" data-price="${p.sale_price}" data-stock="${p.stock_qty}"
+             data-name="${escHtml(p.name)}">${escHtml(p.name)}${p.barcode ? ' — ' + p.barcode : ''}</option>`
+  ).join('');
+
+  const row = document.createElement('tr');
+  row.id = `line-${lineCount}`;
+  row.innerHTML = `
+    <td>
+      <select name="product_id[]" class="form-control form-control-sm" onchange="onProductChange(${lineCount})" required>
+        <option value="">— اختر منتجاً —</option>
+        ${opts}
+      </select>
+    </td>
+    <td>
+      <input type="number" name="quantity[]" id="qty-${lineCount}" class="form-control form-control-sm"
+             value="1" min="0.001" step="0.001" oninput="recalcLine(${lineCount})" required>
+    </td>
+    <td>
+      <input type="number" name="unit_price[]" id="price-${lineCount}" class="form-control form-control-sm"
+             value="0" min="0" step="0.01" oninput="recalcLine(${lineCount})" required>
+    </td>
+    <td>
+      <input type="number" name="line_discount[]" id="disc-${lineCount}" class="form-control form-control-sm"
+             value="0" min="0" max="100" step="0.01" oninput="recalcLine(${lineCount})">
+    </td>
+    <td class="num-col">
+      <strong id="linetotal-${lineCount}">0.00</strong>
+    </td>
+    <td>
+      <button type="button" class="btn-icon-close" onclick="removeLine(${lineCount})">🗑</button>
+    </td>`;
+  document.getElementById('linesBody').appendChild(row);
+  updateSaveBtn();
+}
+
+function removeLine(id) {
+  const row = document.getElementById(`line-${id}`);
+  if (row) row.remove();
+  if (!document.getElementById('linesBody').querySelector('tr')) {
+    document.getElementById('linesEmpty').style.display = 'block';
+  }
+  recalcTotals();
+  updateSaveBtn();
+}
+
+function onProductChange(id) {
+  const sel   = document.querySelector(`#line-${id} select[name="product_id[]"]`);
+  const opt   = sel.options[sel.selectedIndex];
+  const price = parseFloat(opt?.dataset?.price || 0);
+  document.getElementById(`price-${id}`).value = price.toFixed(2);
+  recalcLine(id);
+}
+
+function recalcLine(id) {
+  const qty   = parseFloat(document.getElementById(`qty-${id}`)?.value   || 0);
+  const price = parseFloat(document.getElementById(`price-${id}`)?.value || 0);
+  const disc  = parseFloat(document.getElementById(`disc-${id}`)?.value  || 0);
+  const sub   = qty * price;
+  const net   = sub * (1 - disc / 100);
+  const el    = document.getElementById(`linetotal-${id}`);
+  if (el) el.textContent = net.toFixed(2);
+  recalcTotals();
+}
+
+function recalcTotals() {
+  let subBefore = 0;
+  document.querySelectorAll('#linesBody tr').forEach(row => {
+    const id = row.id.replace('line-', '');
+    const qty   = parseFloat(document.getElementById(`qty-${id}`)?.value   || 0);
+    const price = parseFloat(document.getElementById(`price-${id}`)?.value || 0);
+    const disc  = parseFloat(document.getElementById(`disc-${id}`)?.value  || 0);
+    subBefore += qty * price * (1 - disc / 100);
+  });
+
+  const overallDisc = parseFloat(document.getElementById('overallDiscPct')?.value || 0);
+  const taxPct      = parseFloat(document.getElementById('taxPctInput')?.value    || 0);
+
+  const discAmt  = subBefore * overallDisc / 100;
+  const subNet   = subBefore - discAmt;
+  const taxAmt   = subNet * taxPct / 100;
+  const grand    = subNet + taxAmt;
+
+  setText('tSubBefore', subBefore.toFixed(2));
+  setText('tDisc',      discAmt.toFixed(2) + '-');
+  setText('tSubNet',    subNet.toFixed(2));
+  setText('tTax',       taxAmt.toFixed(2));
+  setText('tGrand',     grand.toFixed(2));
+}
+
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function updateSaveBtn() {
+  const hasLines = document.getElementById('linesBody').querySelectorAll('tr').length > 0;
+  document.getElementById('saveBtn').disabled = !hasLines;
+}
+
+/* ─── HTML escaping ─────────────────────────────────────────────── */
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+{% endblock %}

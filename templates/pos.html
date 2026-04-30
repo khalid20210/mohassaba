@@ -1,0 +1,402 @@
+{% extends "base.html" %}
+{% block title %}نقاط البيع{% endblock %}
+
+{% block head %}
+<style>
+.pos-mode-banner {
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  border: 1px solid rgba(148,163,184,.3);
+  border-radius: 14px;
+  color: #e2e8f0;
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.pos-mode-banner .meta { color: #cbd5e1; font-size: .82rem; }
+.pos-mode-chip {
+  background: rgba(59,130,246,.2);
+  border: 1px solid rgba(147,197,253,.35);
+  color: #bfdbfe;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: .78rem;
+}
+.pos-mode-hints {
+  margin-bottom: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pos-mode-hints .hint {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: .78rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pos-mode-banner">
+  <div>
+    <strong>{{ ui_config.industry_icon }} {{ ui_config.industry_label }}</strong>
+    <div class="meta">تخصيص شاشة نقاط البيع حسب نشاطك التجاري في جنان بيز</div>
+  </div>
+  <span class="pos-mode-chip">mode: {{ ui_config.pos_mode }}</span>
+</div>
+
+<div class="pos-mode-hints">
+  <span class="hint">🔎 {{ ui_config.pos_search_hint }}</span>
+  {% if ui_config.show_tables %}<span class="hint">🍽️ وضع الطاولات مفعل</span>{% endif %}
+  {% if ui_config.show_expiry %}<span class="hint">⏳ متابعة الصلاحية مفعل</span>{% endif %}
+  {% if ui_config.show_serial %}<span class="hint">🔢 {{ ui_config.T_serial }}</span>{% endif %}
+  {% if ui_config.show_variant %}<span class="hint">🎨 {{ ui_config.T_variant }}</span>{% endif %}
+  {% if ui_config.show_qty_tiers %}<span class="hint">📦 تسعير الكميات مفعل</span>{% endif %}
+  {% if ui_config.show_work_order %}<span class="hint">🛠️ {{ ui_config.T_work_order }}</span>{% endif %}
+  {% if ui_config.show_project %}<span class="hint">🏗️ ربط المشروع</span>{% endif %}
+  {% if ui_config.show_date_range %}<span class="hint">📅 تاريخ بداية/نهاية</span>{% endif %}
+  {% if ui_config.show_patient_id %}<span class="hint">🩺 رقم ملف المريض</span>{% endif %}
+</div>
+
+<div class="pos-wrapper">
+
+  <!-- ═══════════════════════════════════════════════════════
+       لوحة البحث والمنتجات (يمين في RTL)
+  ═══════════════════════════════════════════════════════ -->
+  <div class="pos-products-panel">
+
+    <div class="pos-search-wrap">
+      <span class="pos-search-icon">🔍</span>
+      <input type="text" id="posSearch" class="pos-search-input"
+             placeholder="{{ ui_config.pos_search_hint }}"
+             autocomplete="off" autofocus>
+      <kbd class="pos-search-hint">Enter ↵</kbd>
+    </div>
+
+    <div id="searchResults" class="pos-results-grid">
+      <div class="pos-welcome">
+        <div style="font-size:3.5rem;margin-bottom:10px;">🛒</div>
+        <p>ابدأ بالبحث عن {{ ui_config.T_product }} أو امسح الباركود</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       لوحة الفاتورة والسلة (يسار في RTL)
+  ═══════════════════════════════════════════════════════ -->
+  <div class="pos-cart-panel">
+
+    <div class="pos-cart-header">
+      <h3>🧾 {{ ui_config.T_invoice }} الحالية</h3>
+      <button class="btn-clear-cart" onclick="clearCart()">🗑 مسح</button>
+    </div>
+
+    <div class="pos-cart-body">
+      <div id="cartEmpty" class="pos-cart-empty">
+        <div>🛒</div>
+        <p>السلة فارغة</p>
+      </div>
+      <table id="cartTable" class="pos-cart-table" style="display:none">
+        <thead>
+          <tr>
+            <th>{{ ui_config.T_product }}</th>
+            <th>{{ ui_config.labels.quantity if ui_config.labels is defined else 'الكمية' }}</th>
+            <th>{{ ui_config.labels.price if ui_config.labels is defined else 'السعر' }}</th>
+            <th>الضريبة</th>
+            <th>{{ ui_config.labels.total if ui_config.labels is defined else 'الإجمالي' }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="cartItems"></tbody>
+      </table>
+    </div>
+
+    <div class="pos-totals">
+      <div class="pos-total-row">
+        <span>قبل الضريبة</span>
+        <strong id="subtotalDisplay">0.00</strong>
+      </div>
+      <div class="pos-total-row">
+        <span>الضريبة</span>
+        <strong id="taxDisplay">0.00</strong>
+      </div>
+      <div class="pos-total-row pos-grand-total-row">
+        <span>الإجمالي</span>
+        <strong id="grandTotalDisplay">0.00</strong>
+      </div>
+    </div>
+
+    <div class="pos-footer">
+      <select id="paymentMethod" class="pos-pay-method">
+        <option value="cash">💵 نقداً</option>
+        <option value="bank">🏦 بطاقة / تحويل</option>
+      </select>
+      <button id="checkoutBtn" class="btn-checkout" onclick="checkout()" disabled>
+        ✅ {{ ui_config.T_new_sale }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     Modal: نجاح عملية البيع
+═══════════════════════════════════════════════ -->
+<div id="successModal" class="pos-modal-overlay" style="display:none">
+  <div class="pos-modal-box">
+    <div class="pos-modal-icon">✅</div>
+    <h2>تمت عملية البيع</h2>
+    <p id="receiptMsg" class="pos-receipt-msg"></p>
+    <div class="pos-receipt-total">
+      <span>الإجمالي: </span><strong id="receiptTotal"></strong>
+    </div>
+    <div class="pos-modal-actions">
+      <button onclick="newSale()" class="btn btn-primary">🛒 فاتورة جديدة</button>
+      <button onclick="window.print()" class="btn btn-secondary">🖨 طباعة</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* ─── Constants ────────────────────────────────────────────── */
+const CURRENCY = '{{ (current_business.currency if current_business else "ر.ي") | e }}';
+const UI_CONFIG = {{ ui_config | tojson }};
+
+/* ─── State ────────────────────────────────────────────────── */
+let cart = [];
+let searchTimer = null;
+
+/* ─── DOM refs ─────────────────────────────────────────────── */
+const searchInput   = document.getElementById('posSearch');
+const searchResults = document.getElementById('searchResults');
+const cartItems     = document.getElementById('cartItems');
+const cartEmpty     = document.getElementById('cartEmpty');
+const cartTable     = document.getElementById('cartTable');
+const checkoutBtn   = document.getElementById('checkoutBtn');
+const subtotalEl    = document.getElementById('subtotalDisplay');
+const taxEl         = document.getElementById('taxDisplay');
+const grandTotalEl  = document.getElementById('grandTotalDisplay');
+
+/* ═══════════════════════════════════════════════════════════
+   البحث
+═══════════════════════════════════════════════════════════ */
+searchInput.addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  const q = searchInput.value.trim();
+  if (!q) { showWelcome(); return; }
+  searchTimer = setTimeout(() => doSearch(q), 280);
+});
+
+searchInput.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  clearTimeout(searchTimer);
+  const q = searchInput.value.trim();
+  if (q) doSearch(q, true);
+});
+
+async function doSearch(q, autoAdd = false) {
+  try {
+    const res      = await fetch('/api/pos/search?q=' + encodeURIComponent(q));
+    const products = await res.json();
+
+    if (autoAdd && products.length === 1) {
+      addToCart(products[0]);
+      searchInput.value = '';
+      showWelcome();
+      return;
+    }
+    renderResults(products);
+  } catch (err) {
+    searchResults.innerHTML = '<div class="pos-no-results">خطأ في الاتصال بالخادم</div>';
+  }
+}
+
+function showWelcome() {
+  searchResults.innerHTML = `
+    <div class="pos-welcome">
+      <div style="font-size:3.5rem;margin-bottom:10px;">${UI_CONFIG.industry_icon || '🛒'}</div>
+      <p>ابدأ بالبحث عن ${(UI_CONFIG.T_product || 'منتج')} أو امسح الباركود</p>
+    </div>`;
+}
+
+function renderResults(products) {
+  if (!products.length) {
+    searchResults.innerHTML = '<div class="pos-no-results">لا توجد نتائج للبحث</div>';
+    return;
+  }
+  searchResults.innerHTML = products.map(p => {
+    const stock = parseFloat(p.stock_qty);
+    const sc    = stock <= 0 ? 'stock-zero' : stock < 5 ? 'stock-low' : 'stock-ok';
+    const data  = escAttr(JSON.stringify(p));
+    return `<div class="product-card" onclick='addToCart(${escHtml(JSON.stringify(p))})'>
+      <div class="product-card-name">${escHtml(p.name)}</div>
+      <div class="product-card-barcode">${p.barcode || '—'}</div>
+      <div class="product-card-footer">
+        <span class="product-card-price">${parseFloat(p.sale_price).toFixed(2)} ${CURRENCY}</span>
+        <span class="product-card-stock ${sc}">📦 ${stock}</span>
+      </div>
+      ${UI_CONFIG.show_expiry ? '<div style="font-size:.75rem;color:#64748b;margin-top:6px">⏳ صلاحية: حسب بيانات الصنف</div>' : ''}
+      ${UI_CONFIG.show_serial ? '<div style="font-size:.75rem;color:#64748b">🔢 ' + escHtml(UI_CONFIG.T_serial || 'رقم تسلسلي') + '</div>' : ''}
+      ${UI_CONFIG.show_variant ? '<div style="font-size:.75rem;color:#64748b">🎨 ' + escHtml(UI_CONFIG.T_variant || 'نوع / مقاس') + '</div>' : ''}
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   السلة
+═══════════════════════════════════════════════════════════ */
+function addToCart(product) {
+  const ex = cart.find(i => i.product_id === product.id);
+  if (ex) {
+    ex.quantity += 1;
+  } else {
+    cart.push({
+      product_id: product.id,
+      name:       product.name,
+      barcode:    product.barcode || '',
+      unit_price: parseFloat(product.sale_price) || 0,
+      quantity:   1,
+      tax_rate:   0,
+    });
+  }
+  renderCart();
+  searchInput.focus();
+}
+
+function removeFromCart(idx) {
+  cart.splice(idx, 1);
+  renderCart();
+}
+
+function updateQty(idx, val) {
+  const q = parseFloat(val);
+  if (!q || q <= 0) { removeFromCart(idx); return; }
+  cart[idx].quantity = q;
+  renderCart();
+}
+
+function clearCart() {
+  if (!cart.length) return;
+  if (!confirm('هل تريد مسح الفاتورة الحالية؟')) return;
+  cart = [];
+  renderCart();
+}
+
+function renderCart() {
+  if (!cart.length) {
+    cartEmpty.style.display = 'block';
+    cartTable.style.display = 'none';
+    checkoutBtn.disabled    = true;
+    setTotals(0, 0);
+    return;
+  }
+
+  cartEmpty.style.display = 'none';
+  cartTable.style.display = 'table';
+  checkoutBtn.disabled    = false;
+
+  let sub = 0, tax = 0;
+  cartItems.innerHTML = cart.map((item, i) => {
+    const lineSub = item.quantity * item.unit_price;
+    const lineTax = lineSub * item.tax_rate / 100;
+    const lineTot = lineSub + lineTax;
+    sub += lineSub;
+    tax += lineTax;
+    return `<tr>
+      <td class="td-name">${escHtml(item.name)}</td>
+      <td class="td-qty">
+        <input type="number" value="${item.quantity}" min="0.5" step="0.5"
+               class="qty-input" onchange="updateQty(${i}, this.value)">
+      </td>
+      <td class="td-num">${item.unit_price.toFixed(2)}</td>
+      <td class="td-num">${lineTax.toFixed(2)}</td>
+      <td class="td-num">${lineTot.toFixed(2)}</td>
+      <td><button class="btn-remove" onclick="removeFromCart(${i})">✕</button></td>
+    </tr>`;
+  }).join('');
+
+  setTotals(sub, tax);
+}
+
+function setTotals(sub, tax) {
+  subtotalEl.textContent   = sub.toFixed(2)          + ' ' + CURRENCY;
+  taxEl.textContent        = tax.toFixed(2)           + ' ' + CURRENCY;
+  grandTotalEl.textContent = (sub + tax).toFixed(2)   + ' ' + CURRENCY;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   إتمام الدفع
+═══════════════════════════════════════════════════════════ */
+async function checkout() {
+  if (!cart.length) return;
+
+  checkoutBtn.disabled    = true;
+  checkoutBtn.textContent = '⏳ جارٍ المعالجة...';
+
+  const payload = {
+    items: cart.map(i => ({
+      product_id: i.product_id,
+      quantity:   i.quantity,
+      unit_price: i.unit_price,
+      tax_rate:   i.tax_rate,
+    })),
+    payment_method: document.getElementById('paymentMethod').value,
+  };
+
+  try {
+    const res  = await fetch('/api/pos/checkout', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      document.getElementById('receiptMsg').textContent   = data.message;
+      document.getElementById('receiptTotal').textContent =
+        data.total.toFixed(2) + ' ' + CURRENCY;
+      document.getElementById('successModal').style.display = 'flex';
+    } else {
+      alert('خطأ: ' + (data.error || 'حدث خطأ غير متوقع'));
+      checkoutBtn.disabled    = false;
+      checkoutBtn.textContent = '✅ ' + (UI_CONFIG.T_new_sale || 'بيع جديد');
+    }
+  } catch (err) {
+    alert('خطأ في الاتصال: ' + err.message);
+    checkoutBtn.disabled    = false;
+    checkoutBtn.textContent = '✅ ' + (UI_CONFIG.T_new_sale || 'بيع جديد');
+  }
+}
+
+function newSale() {
+  cart = [];
+  renderCart();
+  showWelcome();
+  searchInput.value       = '';
+  searchInput.focus();
+  checkoutBtn.textContent = '✅ ' + (UI_CONFIG.T_new_sale || 'بيع جديد');
+  document.getElementById('successModal').style.display = 'none';
+}
+
+/* ─── Utilities ────────────────────────────────────────────── */
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function escAttr(s) { return escHtml(s); }
+
+/* ─── Init ─────────────────────────────────────────────────── */
+renderCart();
+checkoutBtn.textContent = '✅ ' + (UI_CONFIG.T_new_sale || 'بيع جديد');
+</script>
+{% endblock %}

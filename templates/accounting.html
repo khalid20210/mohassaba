@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}دفتر القيود اليومية{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">📊 دفتر القيود اليومية</h2>
+    <p class="page-subtitle">سجل كامل بجميع القيود المحاسبية المرحّلة آلياً ويدوياً</p>
+  </div>
+  <div class="page-header-actions">
+    <span class="badge-total">{{ total }} قيد</span>
+  </div>
+</div>
+
+<!-- شريط البحث -->
+<form method="get" class="search-bar-form">
+  <div class="search-bar-wrap">
+    <span class="search-bar-icon">🔍</span>
+    <input type="text" name="q" value="{{ q }}"
+           class="search-bar-input" placeholder="ابحث برقم القيد أو البيان...">
+    <button type="submit" class="btn btn-primary btn-sm">بحث</button>
+    {% if q %}<a href="{{ url_for('accounting') }}" class="btn btn-secondary btn-sm">× مسح</a>{% endif %}
+  </div>
+</form>
+
+{% if entries %}
+<div class="je-list">
+  {% for row in entries %}
+  {% set e = row.entry %}
+  {% set lines = row.lines %}
+  <div class="je-card">
+    <!-- رأس القيد -->
+    <div class="je-card-head">
+      <div class="je-meta">
+        <span class="je-number">{{ e.entry_number }}</span>
+        <span class="je-date">📅 {{ e.entry_date }}</span>
+        {% if e.reference_type == 'invoice' %}
+        <span class="je-ref badge-ref-invoice">🧾 فاتورة</span>
+        {% elif e.reference_type == 'payment' %}
+        <span class="je-ref badge-ref-payment">💳 دفعة</span>
+        {% else %}
+        <span class="je-ref">{{ e.reference_type or 'يدوي' }}</span>
+        {% endif %}
+        <span class="je-posted {% if e.is_posted %}posted{% else %}draft{% endif %}">
+          {% if e.is_posted %}✓ مرحّل{% else %}مسودة{% endif %}
+        </span>
+      </div>
+      <div class="je-desc">{{ e.description or '—' }}</div>
+      <div class="je-totals-summary">
+        <span>إجمالي مدين: <strong class="text-debit">{{ "%.2f"|format(e.total_debit) }}</strong></span>
+        <span>إجمالي دائن: <strong class="text-credit">{{ "%.2f"|format(e.total_credit) }}</strong></span>
+        {% if e.created_by_name %}
+        <span class="je-creator">👤 {{ e.created_by_name }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- تفاصيل الحسابات -->
+    {% if lines %}
+    <div class="je-lines-wrap">
+      <table class="je-lines-table">
+        <thead>
+          <tr>
+            <th>كود الحساب</th>
+            <th>اسم الحساب</th>
+            <th>البيان</th>
+            <th class="num-col">مدين</th>
+            <th class="num-col">دائن</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for l in lines %}
+          <tr class="{% if l.debit > 0 %}row-debit{% else %}row-credit{% endif %}">
+            <td class="code-cell">{{ l.code }}</td>
+            <td>{{ l.account_name }}</td>
+            <td class="muted-cell">{{ l.line_desc or '—' }}</td>
+            <td class="num-col {% if l.debit > 0 %}text-debit{% endif %}">
+              {% if l.debit > 0 %}{{ "%.2f"|format(l.debit) }}{% endif %}
+            </td>
+            <td class="num-col {% if l.credit > 0 %}text-credit{% endif %}">
+              {% if l.credit > 0 %}{{ "%.2f"|format(l.credit) }}{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<div class="pagination">
+  {% if page > 1 %}
+  <a href="{{ url_for('accounting', page=page-1, q=q) }}" class="page-btn">← السابق</a>
+  {% endif %}
+  <span class="page-info">صفحة {{ page }} من {{ total_pages }}</span>
+  {% if page < total_pages %}
+  <a href="{{ url_for('accounting', page=page+1, q=q) }}" class="page-btn">التالي →</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">📋</div>
+  <h3>لا توجد قيود محاسبية بعد</h3>
+  <p>ستظهر القيود هنا تلقائياً عند إتمام عمليات البيع والشراء من شاشة الكاشير.</p>
+  <a href="{{ url_for('pos') }}" class="btn btn-primary" style="margin-top:16px">
+    🛒 اذهب لنقاط البيع
+  </a>
+</div>
+{% endif %}
+{% endblock %}

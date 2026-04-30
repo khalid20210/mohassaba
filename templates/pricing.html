@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% block title %}قائمة أسعار الجملة{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2 class="page-title">💰 قائمة أسعار الجملة</h2>
+  <div class="page-header-actions">
+    <span class="badge-total">{{ total }} منتج</span>
+    <span class="badge-ai-soon">✏️ تعديل مباشر</span>
+  </div>
+</div>
+
+<!-- ─── شريط الفلترة ──────────────────────────────────────────── -->
+<div class="card pricing-filter-bar">
+  <form class="pricing-filter-form" method="GET" action="/pricing">
+    <div class="form-group" style="margin:0;min-width:200px">
+      <select name="cat" class="form-control form-control-sm" onchange="this.form.submit()">
+        <option value="">— جميع التصنيفات —</option>
+        {% for cat in categories %}
+        <option value="{{ cat.id }}" {% if selected_cat == cat.id|string %}selected{% endif %}>
+          {{ cat.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin:0;flex:1;min-width:200px">
+      <input class="form-control form-control-sm" name="q" value="{{ q }}"
+             placeholder="ابحث باسم المنتج أو الباركود...">
+    </div>
+    <button class="btn btn-secondary btn-sm">🔍 بحث</button>
+    {% if q or selected_cat %}
+    <a href="/pricing" class="btn btn-secondary btn-sm">✕ مسح</a>
+    {% endif %}
+  </form>
+  <div class="pricing-save-actions">
+    <button id="saveAllBtn" class="btn-success btn-sm" onclick="saveAll()" disabled>
+      💾 حفظ التعديلات (<span id="pendingCount">0</span>)
+    </button>
+  </div>
+</div>
+
+<!-- ─── جدول الأسعار ─────────────────────────────────────────── -->
+<div class="card" style="margin-top:14px">
+  {% if products %}
+  <div class="table-responsive">
+    <table class="data-table pricing-table">
+      <thead>
+        <tr>
+          <th>الباركود</th>
+          <th>اسم المنتج</th>
+          <th>التصنيف</th>
+          <th class="num-col">المخزون</th>
+          <th class="num-col">سعر الشراء</th>
+          <th class="num-col" style="min-width:160px">سعر البيع (قابل للتعديل)</th>
+          <th class="num-col">هامش الربح %</th>
+          <th style="width:80px"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in products %}
+        {% set margin = ((p.sale_price - p.purchase_price) / p.sale_price * 100) if p.sale_price > 0 else 0 %}
+        <tr id="row-{{ p.id }}" class="pricing-row">
+          <td class="code-cell">{{ p.barcode or '—' }}</td>
+          <td>{{ p.name }}</td>
+          <td class="muted-cell">{{ p.category_name or '—' }}</td>
+          <td class="num-col
+            {% if p.stock_qty <= 0 %}text-danger
+            {% elif p.stock_qty < 5 %}text-warning{% endif %}">
+            {{ p.stock_qty | round(2) }}
+          </td>
+          <td class="num-col muted-cell">{{ '%.2f' | format(p.purchase_price) }}</td>
+          <td class="num-col">
+            <input type="number" class="price-input form-control form-control-sm num-col"
+                   id="price-{{ p.id }}"
+                   value="{{ '%.2f' | format(p.sale_price) }}"
+                   min="0" step="0.01"
+                   data-original="{{ '%.2f' | format(p.sale_price) }}"
+                   data-purchase="{{ p.purchase_price }}"
+                   data-id="{{ p.id }}"
+                   oninput="onPriceInput(this)">
+          </td>
+          <td class="num-col" id="margin-{{ p.id }}">
+            <span class="margin-badge {% if margin >= 20 %}margin-good{% elif margin >= 10 %}margin-ok{% else %}margin-low{% endif %}">
+              {{ '%.1f' | format(margin) }}%
+            </span>
+          </td>
+          <td class="num-col">
+            <button class="btn btn-primary btn-sm save-row-btn"
+                    id="savebtn-{{ p.id }}"
+                    onclick="saveRow({{ p.id }})"
+                    style="display:none">
+              ✓ حفظ
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if total_pages > 1 %}
+  <div class="pagination">
+    {% if page > 1 %}
+    <a href="?page={{ page-1 }}&q={{ q }}&cat={{ selected_cat }}" class="page-btn">→ السابق</a>
+    {% endif %}
+    <span class="page-info">صفحة {{ page }} من {{ total_pages }} ({{ total }} منتج)</span>
+    {% if page < total_pages %}
+    <a href="?page={{ page+1 }}&q={{ q }}&cat={{ selected_cat }}" class="page-btn">التالي ←</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">💰</div>
+    <p>لا توجد منتجات{% if q or selected_cat %} تطابق البحث{% endif %}</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ─── Toast تأكيد الحفظ ────────────────────────────────────── -->
+<div id="priceToast" class="price-toast" style="display:none"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let pendingChanges = {};  // { product_id: new_price }
+
+/* عند تغيير سعر في حقل الإدخال */
+function onPriceInput(input) {
+  const id       = input.dataset.id;
+  const original = parseFloat(input.dataset.original);
+  const current  = parseFloat(input.value);
+
+  // تحديث هامش الربح لحظياً
+  const purchase = parseFloat(input.dataset.purchase || 0);
+  const margin   = current > 0 ? ((current - purchase) / current * 100) : 0;
+  updateMarginBadge(id, margin);
+
+  const changed = Math.abs(current - original) > 0.001;
+  document.getElementById(`savebtn-${id}`).style.display = changed ? 'inline-block' : 'none';
+
+  if (changed) {
+    pendingChanges[id] = current;
+  } else {
+    delete pendingChanges[id];
+  }
+  updatePendingCount();
+}
+
+function updateMarginBadge(id, margin) {
+  const cell = document.getElementById(`margin-${id}`);
+  if (!cell) return;
+  const cls  = margin >= 20 ? 'margin-good' : margin >= 10 ? 'margin-ok' : 'margin-low';
+  cell.innerHTML = `<span class="margin-badge ${cls}">${margin.toFixed(1)}%</span>`;
+}
+
+function updatePendingCount() {
+  const cnt = Object.keys(pendingChanges).length;
+  document.getElementById('pendingCount').textContent = cnt;
+  document.getElementById('saveAllBtn').disabled = cnt === 0;
+}
+
+/* حفظ صف واحد */
+async function saveRow(id) {
+  const input = document.getElementById(`price-${id}`);
+  const price = parseFloat(input.value);
+  await sendUpdate(id, price);
+}
+
+/* حفظ كل التعديلات */
+async function saveAll() {
+  const ids = Object.keys(pendingChanges);
+  for (const id of ids) {
+    await sendUpdate(parseInt(id), pendingChanges[id]);
+  }
+}
+
+async function sendUpdate(id, price) {
+  try {
+    const res  = await fetch('/api/pricing/update', {
+      method:  'POST',
+      headers: {'Content-Type': 'application/json'},
+      body:    JSON.stringify({ product_id: id, sale_price: price }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      // تحديث القيمة الأصلية المحفوظة
+      const input = document.getElementById(`price-${id}`);
+      if (input) input.dataset.original = price.toFixed(2);
+      document.getElementById(`savebtn-${id}`).style.display = 'none';
+      delete pendingChanges[id];
+      updatePendingCount();
+      showToast(`✓ تم حفظ سعر "${data.name}" — هامش الربح: ${data.margin}%`);
+    } else {
+      showToast(`✗ خطأ: ${data.error}`, true);
+    }
+  } catch (e) {
+    showToast('✗ خطأ في الاتصال بالخادم', true);
+  }
+}
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById('priceToast');
+  t.textContent = msg;
+  t.className   = 'price-toast' + (isError ? ' toast-error' : ' toast-success');
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 3500);
+}
+
+/* تحذير عند مغادرة الصفحة مع تعديلات غير محفوظة */
+window.addEventListener('beforeunload', e => {
+  if (Object.keys(pendingChanges).length > 0) {
+    e.preventDefault();
+    e.returnValue = 'لديك تعديلات على الأسعار غير محفوظة. هل تريد المغادرة؟';
+  }
+});
+</script>
+{% endblock %}

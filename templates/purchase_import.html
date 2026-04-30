@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+{% block title %}استيراد فاتورة شراء{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <h2 class="page-title">📥 استيراد فاتورة شراء</h2>
+  <div class="page-header-actions">
+    <a href="/purchases" class="btn btn-secondary btn-sm">← المشتريات</a>
+  </div>
+</div>
+
+<!-- ─── الشرح ───────────────────────────────────────────────── -->
+<div class="pi-info-banner">
+  <span style="font-size:1.3rem">💡</span>
+  <div>
+    <strong>كيف يعمل؟</strong>
+    ارفع صورة أو ملف PDF لفاتورة الشراء — سيحاول النظام قراءتها تلقائياً ومطابقة المنتجات.
+    راجع النتائج ثم اضغط "تأكيد وتحديث المخزون".
+  </div>
+</div>
+
+<!-- ─── منطقة الرفع ──────────────────────────────────────────── -->
+<div class="pi-upload-card" id="dropZone">
+  <div class="pi-upload-icon">📄</div>
+  <p class="pi-upload-title">اسحب ملف PDF أو صورة هنا</p>
+  <p class="pi-upload-hint">أو انقر للاختيار — PDF, PNG, JPG, JPEG, WEBP</p>
+  <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg,.webp"
+         style="display:none" onchange="handleFileSelect(this.files[0])">
+  <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+    🗂️ اختر ملفاً
+  </button>
+</div>
+
+<!-- ─── شريط التقدم ───────────────────────────────────────────── -->
+<div id="progressWrap" style="display:none" class="pi-progress-wrap">
+  <div class="pi-progress-bar" id="progressBar"></div>
+  <span id="progressLabel">جارٍ المعالجة...</span>
+</div>
+
+<!-- ─── نتائج المطابقة ─────────────────────────────────────────── -->
+<div id="resultsSection" style="display:none">
+
+  <!-- معلومات المورد -->
+  <div class="pi-supplier-row">
+    <label class="form-label">اسم المورد</label>
+    <input type="text" id="supplierName" class="form-control" placeholder="مورد غير محدد" style="max-width:300px">
+  </div>
+
+  <!-- رسالة المطابقة -->
+  <div id="matchMsg" class="pi-match-msg"></div>
+
+  <!-- جدول البنود -->
+  <div class="pi-lines-wrap">
+    <table class="pi-lines-table">
+      <thead>
+        <tr>
+          <th>المنتج</th>
+          <th class="num-col">الكمية</th>
+          <th class="num-col">سعر الشراء</th>
+          <th class="num-col">الإجمالي</th>
+          <th style="width:36px"></th>
+        </tr>
+      </thead>
+      <tbody id="linesBody"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="2" style="text-align:left;color:var(--text-muted);font-size:.82rem">يمكنك تعديل الكميات والأسعار قبل التأكيد</td>
+          <td class="num-col"><strong>الإجمالي</strong></td>
+          <td class="num-col" id="grandTotal" style="font-weight:800;color:var(--primary)">0.00</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- نص خام (مطوي) -->
+  <details class="pi-raw-details">
+    <summary>🔍 النص المستخرج من الملف</summary>
+    <pre id="rawText" class="pi-raw-text"></pre>
+  </details>
+
+  <!-- أزرار التأكيد -->
+  <div class="pi-confirm-bar">
+    <button class="btn btn-secondary" onclick="resetForm()">↺ ارفع ملفاً آخر</button>
+    <button class="btn-success" id="btnConfirm" onclick="confirmImport()">
+      ✅ تأكيد وتحديث المخزون
+    </button>
+  </div>
+
+</div>
+
+<!-- ─── نجاح الاستيراد ─────────────────────────────────────────── -->
+<div id="successSection" style="display:none" class="pi-success">
+  <div style="font-size:3rem">✅</div>
+  <h3 id="successTitle">تم تحديث المخزون</h3>
+  <p id="successMsg" class="muted-cell"></p>
+  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+    <button class="btn btn-primary" onclick="resetForm()">📥 استيراد فاتورة أخرى</button>
+    <a href="/purchases" class="btn btn-secondary">📋 عرض المشتريات</a>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let confirmedLines = [];
+
+/* ─── Drag & Drop ───────────────────────────────── */
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('pi-drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('pi-drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('pi-drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFileSelect(file);
+});
+
+/* ─── اختيار الملف ─────────────────────────────── */
+function handleFileSelect(file) {
+  if (!file) return;
+  uploadFile(file);
+}
+
+/* ─── رفع الملف ─────────────────────────────────── */
+async function uploadFile(file) {
+  setProgress(true, 'جارٍ رفع الملف...');
+  document.getElementById('resultsSection').style.display  = 'none';
+  document.getElementById('successSection').style.display  = 'none';
+
+  const fd = new FormData();
+  fd.append('file', file);
+
+  try {
+    const xhr = new XMLHttpRequest();
+    xhr.upload.onprogress = e => {
+      if (e.lengthComputable) {
+        const pct = Math.round(e.loaded / e.total * 60);
+        setProgressVal(pct, `رفع: ${pct}%`);
+      }
+    };
+
+    xhr.onload = () => {
+      setProgressVal(80, 'جارٍ تحليل النص...');
+      const data = JSON.parse(xhr.responseText);
+      if (data.success) {
+        setProgressVal(100, 'اكتمل ✓');
+        setTimeout(() => {
+          setProgress(false);
+          renderResults(data);
+        }, 600);
+      } else {
+        setProgress(false);
+        alert('⚠️ ' + data.error);
+      }
+    };
+    xhr.onerror = () => { setProgress(false); alert('⚠️ خطأ في الاتصال'); };
+
+    xhr.open('POST', '/api/purchase-import/upload');
+    xhr.send(fd);
+  } catch(e) {
+    setProgress(false);
+    alert('⚠️ ' + e.message);
+  }
+}
+
+/* ─── عرض النتائج ───────────────────────────────── */
+function renderResults(data) {
+  document.getElementById('resultsSection').style.display = 'block';
+  document.getElementById('rawText').textContent = data.raw_text || '(لم يستخرج نص)';
+
+  const msg = document.getElementById('matchMsg');
+  if (!data.lines || data.lines.length === 0) {
+    msg.innerHTML = `<div class="pi-match-warn">⚠️ لم تُطابَق أي منتجات تلقائياً — يمكنك إضافة البنود يدوياً أو مراجعة النص المستخرج</div>`;
+  } else {
+    msg.innerHTML = `<div class="pi-match-ok">✅ تم التعرف على ${data.lines.length} منتج تلقائياً — راجع الكميات والأسعار قبل التأكيد</div>`;
+  }
+
+  renderLines(data.lines || []);
+}
+
+function renderLines(lines) {
+  confirmedLines = lines.map((l, i) => ({ ...l, _idx: i }));
+  const tbody = document.getElementById('linesBody');
+  tbody.innerHTML = confirmedLines.map((l, i) => `
+    <tr id="pl-${i}">
+      <td><strong>${esc(l.name || '')}</strong></td>
+      <td class="num-col">
+        <input type="number" class="form-control form-control-sm num-input"
+               value="${parseFloat(l.qty||1).toFixed(2)}"
+               min="0.01" step="0.01"
+               oninput="updateLine(${i},'qty',this.value)">
+      </td>
+      <td class="num-col">
+        <input type="number" class="form-control form-control-sm num-input"
+               value="${parseFloat(l.price||0).toFixed(2)}"
+               min="0" step="0.01"
+               oninput="updateLine(${i},'price',this.value)">
+      </td>
+      <td class="num-col" id="lt-${i}">
+        ${(parseFloat(l.qty||1) * parseFloat(l.price||0)).toFixed(2)}
+      </td>
+      <td>
+        <button class="btn-icon-close" onclick="removeLine(${i})">🗑</button>
+      </td>
+    </tr>
+  `).join('');
+  calcTotal();
+}
+
+function updateLine(idx, field, val) {
+  confirmedLines[idx][field] = parseFloat(val) || 0;
+  const tot = confirmedLines[idx].qty * confirmedLines[idx].price;
+  const el  = document.getElementById(`lt-${idx}`);
+  if (el) el.textContent = tot.toFixed(2);
+  calcTotal();
+}
+
+function removeLine(idx) {
+  confirmedLines.splice(idx, 1);
+  renderLines(confirmedLines);
+}
+
+function calcTotal() {
+  const sum = confirmedLines.reduce((s, l) => s + (l.qty * l.price), 0);
+  document.getElementById('grandTotal').textContent = sum.toFixed(2);
+}
+
+/* ─── تأكيد الاستيراد ───────────────────────────── */
+async function confirmImport() {
+  const btn = document.getElementById('btnConfirm');
+  if (!confirmedLines.length) { alert('⚠️ أضف بنوداً أولاً'); return; }
+  btn.disabled    = true;
+  btn.textContent = '⏳ جارٍ الحفظ...';
+
+  const res = await fetch('/api/purchase-import/confirm', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({
+      supplier_name: document.getElementById('supplierName').value,
+      lines:         confirmedLines,
+    }),
+  });
+  const data = await res.json();
+
+  btn.disabled    = false;
+  btn.textContent = '✅ تأكيد وتحديث المخزون';
+
+  if (data.success) {
+    document.getElementById('resultsSection').style.display = 'none';
+    document.getElementById('successSection').style.display = 'block';
+    document.getElementById('successTitle').textContent = `فاتورة ${data.invoice_number}`;
+    document.getElementById('successMsg').textContent   = data.message;
+  } else {
+    alert('⚠️ ' + data.error);
+  }
+}
+
+/* ─── إعادة الضبط ──────────────────────────────── */
+function resetForm() {
+  document.getElementById('fileInput').value        = '';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('successSection').style.display = 'none';
+  confirmedLines = [];
+}
+
+/* ─── Progress ─────────────────────────────────── */
+function setProgress(show, label='') {
+  document.getElementById('progressWrap').style.display = show ? 'flex' : 'none';
+  if (show) setProgressVal(0, label);
+}
+function setProgressVal(pct, label) {
+  document.getElementById('progressBar').style.width  = pct + '%';
+  document.getElementById('progressLabel').textContent = label;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+{% endblock %}

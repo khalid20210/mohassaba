@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>فاتورة {{ inv.invoice_number }}</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <style>
+    /* ═══════════════════════════════════════════════════
+       متغيرات ومتغيرات مشتركة
+    ═══════════════════════════════════════════════════ */
+    :root {
+      --primary: #1d4ed8;
+      --border:  #e5e7eb;
+      --text:    #111827;
+      --muted:   #6b7280;
+      --bg-head: #f8fafc;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; color: var(--text);
+           background: #f1f5f9; direction: rtl; font-size: 13px; }
+
+    /* ═══ شريط الأدوات (يختفي عند الطباعة) ═══ */
+    .no-print {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: #1e293b; color: #fff;
+      padding: 10px 20px;
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .no-print h3 { margin: 0; font-size: .9rem; flex: 1; }
+    .no-print button {
+      padding: 6px 16px; border: none; border-radius: 6px;
+      cursor: pointer; font-size: .85rem; font-weight: 600;
+    }
+    .btn-print   { background: #10b981; color: #fff; }
+    .btn-thermal { background: #6366f1; color: #fff; }
+    .btn-back    { background: #475569; color: #fff; }
+
+    /* ═══ غلاف الورقة ═══ */
+    .invoice-wrapper {
+      margin: 60px auto 30px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 16px rgba(0,0,0,.12);
+    }
+
+    /* ═══════════════ A4 ═══════════════ */
+    .invoice-wrapper.a4 {
+      width: 210mm; min-height: 297mm;
+      padding: 14mm 16mm;
+    }
+
+    /* ══ ترويسة A4 ══ */
+    .inv-header-a4 {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      padding-bottom: 14px; margin-bottom: 14px;
+      border-bottom: 2px solid var(--primary);
+    }
+    .inv-logo { max-height: 70px; max-width: 140px; object-fit: contain; }
+    .inv-logo-placeholder {
+      font-size: 2.2rem; width: 70px; height: 70px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .biz-info h1 { font-size: 1.2rem; color: var(--primary); }
+    .biz-info p  { font-size: .78rem; color: var(--muted); margin-top:2px; }
+
+    .inv-meta-a4 {
+      text-align: left; direction: ltr; font-size: .82rem;
+    }
+    .inv-meta-a4 .inv-num {
+      font-size: 1.3rem; font-weight: 700; color: var(--primary);
+    }
+    .inv-meta-a4 .inv-label {
+      display: inline-block; background: var(--primary);
+      color: #fff; padding: 2px 10px; border-radius: 12px;
+      font-size: .7rem; margin-bottom: 6px;
+    }
+
+    /* ══ معلومات الفاتورة ══ */
+    .inv-parties {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+      margin-bottom: 18px;
+    }
+    .inv-party-box {
+      background: var(--bg-head); border-radius: 8px;
+      padding: 12px 14px; border: 1px solid var(--border);
+    }
+    .inv-party-box h4 { font-size: .72rem; color: var(--muted); margin-bottom: 6px; }
+    .inv-party-box .party-name { font-size: 1rem; font-weight: 700; }
+    .inv-party-box p { font-size: .8rem; color: var(--muted); margin-top: 3px; }
+
+    /* ══ جدول البنود ══ */
+    .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    .inv-table th {
+      background: var(--primary); color: #fff;
+      padding: 9px 12px; font-size: .8rem; text-align: right;
+    }
+    .inv-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: .82rem; }
+    .inv-table tr:last-child td { border-bottom: none; }
+    .inv-table .num { text-align: left; direction: ltr; }
+    .inv-table tfoot td {
+      padding: 8px 12px; font-weight: 600; background: var(--bg-head);
+    }
+    .inv-table .total-row td {
+      font-size: 1rem; font-weight: 700; color: var(--primary);
+      border-top: 2px solid var(--primary);
+    }
+
+    /* ══ QR + تذييل A4 ══ */
+    .inv-footer-a4 {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);
+    }
+    .inv-notes { font-size: .78rem; color: var(--muted); max-width: 55%; line-height: 1.5; }
+    .inv-qr-wrap { text-align: center; }
+    .inv-qr-wrap p { font-size: .68rem; color: var(--muted); margin-top: 4px; }
+
+    /* ══ طباعة A4 ══ */
+    @media print {
+      body { background: #fff !important; }
+      .no-print { display: none !important; }
+      .invoice-wrapper.a4 {
+        margin: 0; border-radius: 0; box-shadow: none;
+        width: 100%; min-height: auto;
+      }
+    }
+
+    /* ═══════════════ Thermal 80mm ═══════════════ */
+    .invoice-wrapper.thermal {
+      width: 80mm; padding: 6mm 5mm;
+      font-size: 11px; border-radius: 4px;
+    }
+    .th-center   { text-align: center; }
+    .th-divider  { border: none; border-top: 1px dashed #999; margin: 6px 0; }
+    .th-biz-name { font-size: 1rem; font-weight: 700; }
+    .th-inv-num  { font-size: .85rem; font-weight: 600; }
+    .th-table    { width: 100%; border-collapse: collapse; font-size: 10px; }
+    .th-table th { border-bottom: 1px solid #ccc; padding: 3px 2px; text-align: right; }
+    .th-table td { padding: 3px 2px; }
+    .th-table .r { text-align: left; direction: ltr; }
+    .th-total-row{ font-weight: 700; border-top: 1px solid #999; }
+    .th-footer   { text-align: center; font-size: 9px; color: #888; margin-top: 10px; }
+
+    @media print {
+      body { background: #fff !important; }
+      .no-print { display: none !important; }
+      .invoice-wrapper.thermal {
+        margin: 0; box-shadow: none; border-radius: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- شريط الأدوات -->
+<div class="no-print">
+  <h3>🧾 معاينة الفاتورة — {{ inv.invoice_number }}</h3>
+  <button class="btn-print"   onclick="window.print()">🖨️ طباعة</button>
+  <a href="{{ url_for('invoice_print', inv_id=inv.id, mode='a4') }}"
+     style="text-decoration:none">
+    <button class="btn-thermal" style="background:{% if mode=='a4' %}#6366f1{% else %}#475569{% endif %}">
+      📄 A4
+    </button>
+  </a>
+  <a href="{{ url_for('invoice_print', inv_id=inv.id, mode='thermal') }}"
+     style="text-decoration:none">
+    <button class="btn-thermal" style="background:{% if mode=='thermal' %}#6366f1{% else %}#475569{% endif %}">
+      🧾 Thermal 80mm
+    </button>
+  </a>
+  <button class="btn-back" onclick="history.back()">← رجوع</button>
+</div>
+
+
+{% if mode == 'thermal' %}
+<!-- ═════════════════════════════════════════════════
+     Thermal Receipt 80mm
+═════════════════════════════════════════════════ -->
+<div class="invoice-wrapper thermal">
+
+  <div class="th-center" style="margin-bottom:6px">
+    {% if biz.logo_path %}
+      <img src="{{ biz.logo_path }}" alt="logo"
+           style="max-height:50px;max-width:60mm;object-fit:contain;margin-bottom:4px">
+    {% endif %}
+    <div class="th-biz-name">{{ biz.name or 'المنشأة' }}</div>
+    {% if biz.tax_number %}<div style="font-size:9px">الرقم الضريبي: {{ biz.tax_number }}</div>{% endif %}
+    {% if biz.phone %}<div style="font-size:9px">{{ biz.phone }}</div>{% endif %}
+    {% if biz.address %}<div style="font-size:9px">{{ biz.address }}</div>{% endif %}
+  </div>
+
+  <hr class="th-divider">
+
+  <div class="th-center">
+    <div class="th-inv-num">{{ inv.invoice_number }}</div>
+    <div style="font-size:9px">{{ inv.invoice_date }}</div>
+    {% if inv.party_name %}
+    <div style="font-size:9px;margin-top:2px">العميل: {{ inv.party_name }}</div>
+    {% endif %}
+  </div>
+
+  <hr class="th-divider">
+
+  <table class="th-table">
+    <thead>
+      <tr>
+        <th>الصنف</th>
+        <th class="r">الكمية</th>
+        <th class="r">السعر</th>
+        <th class="r">الإجمالي</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for l in lines %}
+      <tr>
+        <td>{{ l.description }}</td>
+        <td class="r">{{ l.quantity|int if l.quantity == l.quantity|int else "%.2f"|format(l.quantity) }}</td>
+        <td class="r">{{ "%.2f"|format(l.unit_price) }}</td>
+        <td class="r">{{ "%.2f"|format(l.total) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="th-total-row">
+        <td colspan="3" style="text-align:right">المجموع قبل الضريبة</td>
+        <td class="r">{{ "%.2f"|format(inv.subtotal) }}</td>
+      </tr>
+      {% if inv.tax_amount and inv.tax_amount > 0 %}
+      <tr>
+        <td colspan="3" style="text-align:right">ضريبة القيمة المضافة 15%</td>
+        <td class="r">{{ "%.2f"|format(inv.tax_amount) }}</td>
+      </tr>
+      {% endif %}
+      {% if inv.discount_amount and inv.discount_amount > 0 %}
+      <tr>
+        <td colspan="3" style="text-align:right">الخصم</td>
+        <td class="r">-{{ "%.2f"|format(inv.discount_amount) }}</td>
+      </tr>
+      {% endif %}
+      <tr class="th-total-row" style="font-size:1.05em">
+        <td colspan="3" style="text-align:right">الإجمالي</td>
+        <td class="r">{{ "%.2f"|format(inv.total) }} {{ biz.currency or 'ر.س' }}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <hr class="th-divider">
+
+  <!-- QR Thermal -->
+  <div class="th-center">
+    <div id="thermalQr" style="display:inline-block;margin:6px 0"></div>
+    <div style="font-size:8px;color:#888">ZATCA QR Code</div>
+  </div>
+
+  <div class="th-footer">
+    شكراً لزيارتكم<br>
+    {{ biz.name or '' }}
+    {% if biz.phone %} — {{ biz.phone }}{% endif %}
+  </div>
+</div>
+
+{% else %}
+<!-- ═════════════════════════════════════════════════
+     A4 Invoice
+═════════════════════════════════════════════════ -->
+<div class="invoice-wrapper a4">
+
+  <!-- ── ترويسة A4 ─────────────────────────────── -->
+  <div class="inv-header-a4">
+    <div class="biz-info">
+      {% if biz.logo_path %}
+        <img src="{{ biz.logo_path }}" alt="شعار" class="inv-logo" style="margin-bottom:8px;display:block">
+      {% else %}
+        <div class="inv-logo-placeholder">🏪</div>
+      {% endif %}
+      <h1>{{ biz.name or 'المنشأة' }}</h1>
+      {% if biz.tax_number %}<p>الرقم الضريبي: {{ biz.tax_number }}</p>{% endif %}
+      {% if biz.cr_number  %}<p>السجل التجاري: {{ biz.cr_number }}</p>{% endif %}
+      {% if biz.address    %}<p>{{ biz.address }}{% if biz.city %} — {{ biz.city }}{% endif %}</p>{% endif %}
+      {% if biz.phone      %}<p>هاتف: {{ biz.phone }}</p>{% endif %}
+      {% if biz.email      %}<p>{{ biz.email }}</p>{% endif %}
+    </div>
+
+    <div class="inv-meta-a4">
+      <div class="inv-label">
+        {% if inv.invoice_type == 'purchase' %}فاتورة شراء
+        {% elif inv.invoice_type == 'table'  %}فاتورة مطعم
+        {% else %}فاتورة مبيعات{% endif %}
+      </div>
+      <div class="inv-num">{{ inv.invoice_number }}</div>
+      <div style="margin-top:6px;font-size:.82rem">
+        <div><strong>التاريخ:</strong> {{ inv.invoice_date or inv.created_at[:10] }}</div>
+        <div><strong>طريقة الدفع:</strong> نقد</div>
+        <div><strong>الحالة:</strong>
+          <span style="color:{% if inv.status=='paid' %}#10b981{% else %}#ef4444{% endif %}">
+            {% if inv.status == 'paid' %}مدفوعة{% elif inv.status == 'draft' %}مسودة{% else %}{{ inv.status }}{% endif %}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── الطرفان ─────────────────────────────────── -->
+  <div class="inv-parties">
+    <div class="inv-party-box">
+      <h4>من (البائع)</h4>
+      <div class="party-name">{{ biz.name or '—' }}</div>
+      {% if biz.tax_number %}<p>الرقم الضريبي: {{ biz.tax_number }}</p>{% endif %}
+      {% if biz.address    %}<p>{{ biz.address }}</p>{% endif %}
+    </div>
+    <div class="inv-party-box">
+      <h4>إلى (المشتري / العميل)</h4>
+      <div class="party-name">{{ inv.party_name or 'عميل نقدي' }}</div>
+
+    </div>
+  </div>
+
+  <!-- ── جدول البنود ────────────────────────────── -->
+  <table class="inv-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>الصنف / الوصف</th>
+        <th class="num">الكمية</th>
+        <th class="num">سعر الوحدة</th>
+        <th class="num">الضريبة</th>
+        <th class="num">الإجمالي</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for l in lines %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ l.description }}</td>
+        <td class="num">{{ l.quantity|int if l.quantity == l.quantity|int else "%.3f"|format(l.quantity) }}</td>
+        <td class="num">{{ "%.2f"|format(l.unit_price) }}</td>
+        <td class="num">{{ "%.2f"|format((l.total * 0.15) if inv.tax_amount else 0) }}</td>
+        <td class="num">{{ "%.2f"|format(l.total) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="5">المجموع قبل الضريبة</td>
+        <td class="num">{{ "%.2f"|format(inv.subtotal) }}</td>
+      </tr>
+      {% if inv.discount_amount and inv.discount_amount > 0 %}
+      <tr>
+        <td colspan="5">الخصم</td>
+        <td class="num" style="color:#ef4444">-{{ "%.2f"|format(inv.discount_amount) }}</td>
+      </tr>
+      {% endif %}
+      {% if inv.tax_amount and inv.tax_amount > 0 %}
+      <tr>
+        <td colspan="5">ضريبة القيمة المضافة (15%)</td>
+        <td class="num" style="color:#6366f1">{{ "%.2f"|format(inv.tax_amount) }}</td>
+      </tr>
+      {% endif %}
+      <tr class="total-row">
+        <td colspan="5">الإجمالي المستحق</td>
+        <td class="num">{{ "%.2f"|format(inv.total) }} {{ biz.currency or 'ر.س' }}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <!-- ── تذييل A4: ملاحظات + QR ──────────────── -->
+  <div class="inv-footer-a4">
+    <div class="inv-notes">
+      {% if inv.notes %}
+      <strong>ملاحظات:</strong><br>{{ inv.notes }}
+      {% endif %}
+      <br>
+      <div style="margin-top:8px;color:#9ca3af;font-size:.72rem">
+        تم إنشاء هذه الفاتورة إلكترونياً وهي صالحة بدون توقيع أو ختم.
+      </div>
+    </div>
+    <div class="inv-qr-wrap">
+      <div id="a4Qr"></div>
+      <p>QR Code ZATCA<br>{{ biz.tax_number or '' }}</p>
+    </div>
+  </div>
+
+</div>
+{% endif %}
+
+<script>
+  const QR_DATA = "{{ qr_b64 }}";
+
+  {% if mode == 'thermal' %}
+  if (QR_DATA && document.getElementById('thermalQr')) {
+    new QRCode(document.getElementById('thermalQr'), {
+      text: QR_DATA, width: 100, height: 100,
+      colorDark: '#000', colorLight: '#fff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  }
+  {% else %}
+  if (QR_DATA && document.getElementById('a4Qr')) {
+    new QRCode(document.getElementById('a4Qr'), {
+      text: QR_DATA, width: 130, height: 130,
+      colorDark: '#000', colorLight: '#fff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  }
+  {% endif %}
+</script>
+
+</body>
+</html>

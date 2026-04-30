@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+{% block title %}لوحة التحكم{% endblock %}
+{% block page_title %}لوحة التحكم{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+.industry-kpis-wrap { margin: 14px 0 18px; }
+.industry-head {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  border-radius: 14px;
+  color: #e2e8f0;
+  padding: 14px 16px;
+  border: 1px solid rgba(148,163,184,.3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.industry-head small { color: #cbd5e1; display: block; margin-top: 3px; }
+.industry-grid {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+@media (max-width: 900px) { .industry-grid { grid-template-columns: 1fr; } }
+.industry-kpi {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+}
+.industry-kpi .kpi-label { color: #64748b; font-size: .8rem; }
+.industry-kpi .kpi-value { font-size: 1.35rem; font-weight: 800; margin-top: 4px; color: #0f172a; }
+.industry-list {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+.industry-list .title {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 10px 12px;
+  font-weight: 700;
+  color: #1e293b;
+}
+.industry-list table { width: 100%; border-collapse: collapse; }
+.industry-list th, .industry-list td {
+  border-bottom: 1px solid #eef2f7;
+  padding: 8px 10px;
+  text-align: right;
+  font-size: .86rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ══ بطاقات الإحصائيات ══════════════════════════════════════ -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon blue">📦</div>
+    <div>
+      <div class="stat-value">{{ stats.products }}</div>
+      <div class="stat-label">إجمالي المنتجات</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green">👥</div>
+    <div>
+      <div class="stat-value">{{ stats.contacts }}</div>
+      <div class="stat-label">العملاء والموردون</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon orange">📋</div>
+    <div>
+      <div class="stat-value">{{ stats.journals }}</div>
+      <div class="stat-label">قيود اليومية</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon purple">🏦</div>
+    <div>
+      <div class="stat-value">{{ stats.accounts }}</div>
+      <div class="stat-label">الحسابات المحاسبية</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ KPIs ديناميكية حسب نشاط المنشأة ═══════════════════════════════════ -->
+{% if industry_kpis %}
+<div class="industry-kpis-wrap">
+  <div class="industry-head">
+    <div>
+      <strong>{{ industry_kpis.industry_icon }} مؤشرات {{ industry_kpis.industry_label }}</strong>
+      <small>تحليلات متخصصة حسب نوع النشاط التجاري في جنان بيز</small>
+    </div>
+    <span class="badge" style="background:#dbeafe;color:#1d4ed8">mode: {{ industry_kpis.pos_mode }}</span>
+  </div>
+
+  {% if industry_kpis.pos_mode == 'restaurant' %}
+    <div class="industry-grid">
+      <div class="industry-kpi"><div class="kpi-label">متوسط قيمة الطلب</div><div class="kpi-value">{{ '%.2f'|format(industry_kpis.avg_order_value or 0) }}</div></div>
+      <div class="industry-kpi"><div class="kpi-label">عدد الطلبات (30 يوم)</div><div class="kpi-value">{{ industry_kpis.orders_count or 0 }}</div></div>
+      <div class="industry-kpi"><div class="kpi-label">إيراد المطعم</div><div class="kpi-value">{{ '%.2f'|format(industry_kpis.total_restaurant_rev or 0) }}</div></div>
+    </div>
+  {% elif industry_kpis.pos_mode == 'pharmacy' %}
+    <div class="industry-grid">
+      <div class="industry-kpi"><div class="kpi-label">أدوية متداولة</div><div class="kpi-value">{{ industry_kpis.top_drugs|length }}</div></div>
+      <div class="industry-kpi"><div class="kpi-label">قرب انتهاء الصلاحية</div><div class="kpi-value">{{ industry_kpis.expiry_soon|length }}</div></div>
+      <div class="industry-kpi"><div class="kpi-label">تنبيه السلامة</div><div class="kpi-value">30 يوم</div></div>
+    </div>
+  {% elif industry_kpis.pos_mode == 'construction' %}
+    <div class="industry-grid">
+      <div class="industry-kpi"><div class="kpi-label">فواتير مفتوحة</div><div class="kpi-value">{{ industry_kpis.open_invoices|length }}</div></div>
+      <div class="industry-kpi"><div class="kpi-label">إجمالي دين مفتوح</div><div class="kpi-value">{{ '%.2f'|format(industry_kpis.total_open_debt or 0) }}</div></div>
+      <div class="industry-kpi"><div class="kpi-label">أكبر العملاء</div><div class="kpi-value">{{ industry_kpis.top_clients|length }}</div></div>
+    </div>
+  {% elif industry_kpis.pos_mode == 'wholesale' %}
+    <div class="industry-grid">
+      <div class="industry-kpi"><div class="kpi-label">أكبر الموزعين</div><div class="kpi-value">{{ industry_kpis.top_distributors|length }}</div></div>
+      <div class="industry-kpi"><div class="kpi-label">مشتريات معلقة</div><div class="kpi-value">{{ industry_kpis.pending_purchase_cnt or 0 }}</div></div>
+      <div class="industry-kpi"><div class="kpi-label">قيمة المشتريات المعلقة</div><div class="kpi-value">{{ '%.2f'|format(industry_kpis.pending_purchase_val or 0) }}</div></div>
+    </div>
+  {% elif industry_kpis.pos_mode in ('workshop', 'rental') %}
+    <div class="industry-grid">
+      <div class="industry-kpi"><div class="kpi-label">أوامر مفتوحة</div><div class="kpi-value">{{ industry_kpis.open_orders|length }}</div></div>
+      <div class="industry-kpi"><div class="kpi-label">الخدمات الأعلى</div><div class="kpi-value">{{ industry_kpis.top_services|length }}</div></div>
+      <div class="industry-kpi"><div class="kpi-label">سرعة التشغيل</div><div class="kpi-value">متابعة حية</div></div>
+    </div>
+  {% else %}
+    <div class="industry-grid">
+      <div class="industry-kpi"><div class="kpi-label">أفضل المنتجات</div><div class="kpi-value">{{ industry_kpis.top_products|length if industry_kpis.top_products is defined else 0 }}</div></div>
+      <div class="industry-kpi"><div class="kpi-label">عملاء جدد (30 يوم)</div><div class="kpi-value">{{ industry_kpis.new_customers or 0 }}</div></div>
+      <div class="industry-kpi"><div class="kpi-label">نمط التشغيل</div><div class="kpi-value">{{ industry_kpis.pos_mode }}</div></div>
+    </div>
+  {% endif %}
+
+  {% if industry_kpis.top_tables is defined and industry_kpis.top_tables %}
+  <div class="industry-list">
+    <div class="title">🏆 أعلى الطاولات إيراداً</div>
+    <table>
+      <thead><tr><th>الطاولة</th><th>الزيارات</th><th>الإيراد</th></tr></thead>
+      <tbody>{% for r in industry_kpis.top_tables %}<tr><td>{{ r.party_name or '—' }}</td><td>{{ r.visits }}</td><td>{{ '%.2f'|format(r.revenue or 0) }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+  {% endif %}
+  {% if industry_kpis.expiry_soon is defined and industry_kpis.expiry_soon %}
+  <div class="industry-list">
+    <div class="title">⏳ منتجات قرب الانتهاء</div>
+    <table>
+      <thead><tr><th>المنتج</th><th>الباركود</th><th>الكمية</th><th>تاريخ الانتهاء</th></tr></thead>
+      <tbody>{% for r in industry_kpis.expiry_soon %}<tr><td>{{ r.name }}</td><td>{{ r.barcode or '—' }}</td><td>{{ r.qty or 0 }}</td><td>{{ r.expiry_date }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- ══ رسوم بيانية ════════════════════════════════════════════ -->
+<div class="dash-charts-row">
+
+  <!-- منحنى المبيعات اليومية -->
+  <div class="card dash-chart-card dash-chart-wide">
+    <div class="card-header">
+      <span class="card-title">📅 المبيعات اليومية — آخر 7 أيام</span>
+      <a href="/analytics" class="btn btn-outline" style="padding:4px 12px;font-size:.75rem">عرض تفصيلي ←</a>
+    </div>
+    <div class="dash-chart-wrap">
+      <canvas id="chartDaily"></canvas>
+      <div id="chartDailyEmpty" class="dash-chart-empty" style="display:none">
+        <span>📭</span><p>لا توجد مبيعات بعد</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- مصروفات vs إيرادات -->
+  <div class="card dash-chart-card">
+    <div class="card-header">
+      <span class="card-title">⚖️ إيرادات vs مصروفات (30 يوم)</span>
+    </div>
+    <div class="dash-chart-wrap">
+      <canvas id="chartRevExp"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<div class="dash-charts-row">
+
+  <!-- أكثر المنتجات مبيعاً -->
+  <div class="card dash-chart-card">
+    <div class="card-header">
+      <span class="card-title">🏆 أكثر 5 منتجات مبيعاً (30 يوم)</span>
+    </div>
+    <div class="dash-chart-wrap">
+      <canvas id="chartTop5"></canvas>
+      <div id="chartTop5Empty" class="dash-chart-empty" style="display:none">
+        <span>📭</span><p>لا توجد بيانات بعد</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- آخر القيود + إجراءات سريعة حسب النشاط -->
+  <div class="card dash-chart-card dash-chart-wide">
+    <div class="card-header">
+      <span class="card-title">
+        {% set itype = current_business.industry_type %}
+        {% if itype == 'retail' %}🛒 إجراءات سريعة
+        {% elif itype == 'restaurant' %}🍽️ إجراءات سريعة
+        {% elif itype == 'wholesale' %}📦 إجراءات سريعة
+        {% else %}⚡ إجراءات سريعة{% endif %}
+      </span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;padding:4px 0">
+      {% if itype == 'retail' %}
+        <a href="/pos"       class="btn btn-primary">🛒 فتح شاشة البيع</a>
+        <a href="/purchases" class="btn btn-outline">🛍️ فواتير الشراء</a>
+        <a href="/inventory" class="btn btn-outline">📦 المخزون</a>
+      {% elif itype == 'restaurant' %}
+        <a href="/tables"    class="btn btn-primary">🍽️ الطاولات</a>
+        <a href="/kitchen"   class="btn btn-outline">👨‍🍳 المطبخ</a>
+        <a href="/purchases" class="btn btn-outline">🛍️ المشتريات</a>
+      {% elif itype == 'wholesale' %}
+        <a href="/orders"    class="btn btn-primary">📋 الطلبات</a>
+        <a href="/pricing"   class="btn btn-outline">💰 الأسعار</a>
+        <a href="/purchases" class="btn btn-outline">🛍️ المشتريات</a>
+      {% else %}
+        <a href="/accounting" class="btn btn-primary">📒 المحاسبة</a>
+        <a href="/purchases"  class="btn btn-outline">🛍️ المشتريات</a>
+        <a href="/contacts"   class="btn btn-outline">👥 العملاء</a>
+      {% endif %}
+      <a href="/purchase-import" class="btn-ocr" style="text-align:center;padding:10px">
+        📥 استيراد فاتورة بـ OCR
+      </a>
+      <a href="/excel-import" class="btn btn-outline">📊 استيراد المنتجات من Excel</a>
+      <a href="/analytics" class="btn btn-outline">📊 تحليل المبيعات التفصيلي</a>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ آخر القيود المحاسبية ══════════════════════════════════ -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">🕐 آخر القيود المحاسبية</span>
+    <a href="/accounting" class="btn btn-outline" style="padding:5px 14px;font-size:.78rem">عرض الكل</a>
+  </div>
+  {% if last_entries %}
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>رقم القيد</th>
+          <th>التاريخ</th>
+          <th>الوصف</th>
+          <th class="num-col">المبلغ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in last_entries %}
+        <tr>
+          <td><strong>{{ e.entry_number }}</strong></td>
+          <td>{{ e.entry_date }}</td>
+          <td>{{ e.description or '—' }}</td>
+          <td class="num-col">{{ '%.2f'|format(e.total_debit) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📋</div>
+    <h3>لا توجد قيود بعد</h3>
+    <p>ستظهر هنا آخر القيود المحاسبية عند إنشائها</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ═══ تنبيهات المخزون — للمدير والمحاسب فقط ══════════════════════════════ -->
+{% if stock_alerts %}
+<div class="card" style="border-right:4px solid #ef4444; margin-top:20px;">
+  <div class="card-header" style="background:#fef2f2;">
+    <span class="card-title" style="color:#dc2626;">⚠️ تنبيهات المخزون ({{ stock_alerts|length }})</span>
+    <span style="font-size:.75rem;color:#991b1b;">منتجات وصلت للحد الأدنى أو أقل</span>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>المنتج</th>
+          <th>SKU</th>
+          <th>المخزن</th>
+          <th class="num-col" style="color:#dc2626;">الكمية الحالية</th>
+          <th class="num-col">الحد الأدنى</th>
+          <th>الحالة</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in stock_alerts %}
+        <tr style="background:{% if a.total_qty <= 0 %}#fef2f2{% else %}#fffbeb{% endif %}">
+          <td><strong>{{ a.product_name }}</strong></td>
+          <td style="color:#64748b;font-size:.8rem;">{{ a.sku or '—' }}</td>
+          <td>{{ a.warehouse_name }}</td>
+          <td class="num-col" style="color:#dc2626;font-weight:700;">{{ a.total_qty }}</td>
+          <td class="num-col">{{ a.min_stock }}</td>
+          <td>
+            {% if a.total_qty <= 0 %}
+              <span class="badge" style="background:#fee2e2;color:#dc2626;">نفد المخزون</span>
+            {% else %}
+              <span class="badge" style="background:#fef9c3;color:#b45309;">مخزون منخفض</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const DAILY  = {{ chart_daily  | safe }};
+const TOP5   = {{ chart_top5   | safe }};
+const REVEXP = {{ chart_revexp | safe }};
+
+const PIE_COLORS = ['#6366f1','#8b5cf6','#06b6d4','#10b981','#f59e0b'];
+
+/* ── منحنى المبيعات اليومية ────────────────────────── */
+if (DAILY.labels.length) {
+  new Chart(document.getElementById('chartDaily'), {
+    type: 'line',
+    data: {
+      labels: DAILY.labels,
+      datasets: [{
+        label: 'الإيرادات',
+        data:  DAILY.values,
+        borderColor:     '#6366f1',
+        backgroundColor: 'rgba(99,102,241,.15)',
+        fill: true, tension: .4,
+        pointRadius: 5, pointHoverRadius: 7,
+        pointBackgroundColor: '#6366f1',
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+} else {
+  document.getElementById('chartDaily').style.display    = 'none';
+  document.getElementById('chartDailyEmpty').style.display = 'flex';
+}
+
+/* ── Pie: أكثر 5 منتجات ────────────────────────────── */
+if (TOP5.labels.length) {
+  new Chart(document.getElementById('chartTop5'), {
+    type: 'pie',
+    data: {
+      labels:   TOP5.labels,
+      datasets: [{ data: TOP5.values, backgroundColor: PIE_COLORS, borderWidth: 2 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }
+    }
+  });
+} else {
+  document.getElementById('chartTop5').style.display    = 'none';
+  document.getElementById('chartTop5Empty').style.display = 'flex';
+}
+
+/* ── Bar: إيرادات vs مصروفات ──────────────────────── */
+new Chart(document.getElementById('chartRevExp'), {
+  type: 'bar',
+  data: {
+    labels: ['آخر 30 يوماً'],
+    datasets: [
+      { label: 'الإيرادات',   data: [REVEXP.revenue],  backgroundColor: '#10b981', borderRadius: 6 },
+      { label: 'المصروفات',   data: [REVEXP.expenses], backgroundColor: '#ef4444', borderRadius: 6 },
+      { label: 'صافي الربح',  data: [Math.max(0, REVEXP.revenue - REVEXP.expenses)], backgroundColor: '#6366f1', borderRadius: 6 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+    scales: { y: { beginAtZero: true } }
+  }
+});
+</script>
+{% endblock %}

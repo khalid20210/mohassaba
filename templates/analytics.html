@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block title %}تحليل المبيعات{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<!-- ─── رأس الصفحة ──────────────────────────────────────────── -->
+<div class="page-header">
+  <h2 class="page-title">📊 تحليل المبيعات</h2>
+  <div class="page-header-actions">
+    <form method="get" style="display:flex;gap:8px;align-items:center">
+      <label style="font-size:.82rem;color:var(--text-muted)">الفترة:</label>
+      <select name="period" class="form-control form-control-sm" onchange="this.form.submit()">
+        <option value="7"   {% if period=='7'   %}selected{% endif %}>آخر 7 أيام</option>
+        <option value="30"  {% if period=='30'  %}selected{% endif %}>آخر 30 يوماً</option>
+        <option value="90"  {% if period=='90'  %}selected{% endif %}>آخر 90 يوماً</option>
+        <option value="365" {% if period=='365' %}selected{% endif %}>السنة الكاملة</option>
+      </select>
+    </form>
+  </div>
+</div>
+
+<!-- ─── بطاقات الإجماليات ──────────────────────────────────── -->
+<div class="an-cards">
+  <div class="an-card an-card-revenue">
+    <span class="an-icon">💰</span>
+    <div class="an-num">{{ '%.2f'|format(totals.revenue or 0) }}</div>
+    <div class="an-label">إجمالي الإيرادات</div>
+  </div>
+  <div class="an-card an-card-purchases">
+    <span class="an-icon">🛍️</span>
+    <div class="an-num">{{ '%.2f'|format(totals.purchases or 0) }}</div>
+    <div class="an-label">إجمالي المشتريات</div>
+  </div>
+  <div class="an-card an-card-profit">
+    <span class="an-icon">📈</span>
+    <div class="an-num">{{ '%.2f'|format((totals.revenue or 0) - (totals.purchases or 0)) }}</div>
+    <div class="an-label">الربح التقديري</div>
+  </div>
+  <div class="an-card an-card-invoices">
+    <span class="an-icon">🧾</span>
+    <div class="an-num">{{ totals.invoices_count or 0 }}</div>
+    <div class="an-label">عدد الفواتير</div>
+  </div>
+</div>
+
+<!-- ─── الرسوم البيانية ────────────────────────────────────── -->
+<div class="an-charts-row">
+
+  <!-- مبيعات يومية -->
+  <div class="an-chart-card an-chart-wide">
+    <h4 class="an-chart-title">📅 المبيعات اليومية</h4>
+    <div class="an-chart-wrap">
+      <canvas id="chartDaily"></canvas>
+    </div>
+  </div>
+
+  <!-- توزيع حسب الفئة -->
+  <div class="an-chart-card">
+    <h4 class="an-chart-title">🗂️ توزيع حسب الفئة</h4>
+    <div class="an-chart-wrap">
+      <canvas id="chartCat"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ─── أكثر المنتجات طلباً ────────────────────────────────── -->
+<div class="an-section">
+  <h4 class="an-section-title">🏆 أكثر المنتجات طلباً (الكمية)</h4>
+
+  {% if top_products %}
+  <div class="an-charts-row">
+    <div class="an-chart-card an-chart-wide">
+      <div class="an-chart-wrap" style="height:280px">
+        <canvas id="chartTop"></canvas>
+      </div>
+    </div>
+
+    <!-- جدول مصاحب -->
+    <div class="an-chart-card">
+      <table class="an-top-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>المنتج</th>
+            <th class="num-col">الكمية</th>
+            <th class="num-col">الإيراد</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in top_products %}
+          <tr>
+            <td><span class="an-rank {{ 'rank-gold' if loop.index == 1 else ('rank-silver' if loop.index == 2 else ('rank-bronze' if loop.index == 3 else '')) }}">{{ loop.index }}</span></td>
+            <td>{{ p.description }}</td>
+            <td class="num-col"><strong>{{ '%.0f'|format(p.total_qty) }}</strong></td>
+            <td class="num-col muted-cell">{{ '%.2f'|format(p.total_rev) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div style="font-size:2.5rem">📭</div>
+    <p>لا توجد بيانات مبيعات في هذه الفترة</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const DAILY = {{ chart_daily | safe }};
+const CAT   = {{ chart_cat   | safe }};
+const TOP   = {{ chart_top   | safe }};
+
+const COLORS = [
+  '#6366f1','#8b5cf6','#06b6d4','#10b981',
+  '#f59e0b','#ef4444','#ec4899','#14b8a6'
+];
+
+/* ── مبيعات يومية ─────────────────────────────────────── */
+if (DAILY.labels.length) {
+  new Chart(document.getElementById('chartDaily'), {
+    type: 'line',
+    data: {
+      labels: DAILY.labels,
+      datasets: [{
+        label: 'الإيرادات',
+        data:  DAILY.values,
+        borderColor:     '#6366f1',
+        backgroundColor: 'rgba(99,102,241,.12)',
+        fill: true,
+        tension: .4,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { maxRotation: 45 } },
+        y: { beginAtZero: true },
+      }
+    }
+  });
+} else {
+  document.getElementById('chartDaily').parentElement.innerHTML =
+    '<div class="an-chart-empty">لا توجد بيانات</div>';
+}
+
+/* ── توزيع الفئات ─────────────────────────────────────── */
+if (CAT.labels.length) {
+  new Chart(document.getElementById('chartCat'), {
+    type: 'doughnut',
+    data: {
+      labels:   CAT.labels,
+      datasets: [{ data: CAT.values, backgroundColor: COLORS, borderWidth: 2 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 } } }
+      }
+    }
+  });
+} else {
+  document.getElementById('chartCat').parentElement.innerHTML =
+    '<div class="an-chart-empty">لا توجد بيانات</div>';
+}
+
+/* ── أكثر المنتجات طلباً ─────────────────────────────── */
+if (TOP.labels.length) {
+  new Chart(document.getElementById('chartTop'), {
+    type: 'bar',
+    data: {
+      labels: TOP.labels,
+      datasets: [{
+        label: 'الكمية',
+        data:  TOP.values,
+        backgroundColor: COLORS,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true } }
+    }
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}شاشة المطبخ KDS{% endblock %}
+
+{% block content %}
+
+<!-- ─── رأس الشاشة ────────────────────────────────────────── -->
+<div class="page-header">
+  <h2 class="page-title">👨‍🍳 شاشة المطبخ</h2>
+  <div class="page-header-actions">
+    <span id="kdsCountdown" class="kds-countdown">تحديث تلقائي خلال: <strong id="kdsTimer">30</strong>ث</span>
+    <button class="btn btn-secondary btn-sm" onclick="location.reload()">🔄 تحديث الآن</button>
+    <a href="/tables" class="btn btn-primary btn-sm">🍽️ إدارة الطاولات</a>
+  </div>
+</div>
+
+{% if orders %}
+<!-- ─── شبكة الطلبات ──────────────────────────────────────── -->
+<div class="kds-grid">
+  {% for item in orders %}
+  {% set order = item.order %}
+  {% set lines = item.lines %}
+  <div class="kds-card {{ 'kds-partial' if order.status == 'partial' else 'kds-issued' }}"
+       id="kds-card-{{ order.id }}">
+
+    <!-- رأس الكارد -->
+    <div class="kds-card-head">
+      <div class="kds-table-name">{{ order.party_name }}</div>
+      <div class="kds-meta">
+        <span class="kds-inv-num">#{{ order.invoice_number }}</span>
+        <span class="kds-elapsed" data-time="{{ order.created_at }}" id="elapsed-{{ order.id }}">
+          —
+        </span>
+      </div>
+    </div>
+
+    <!-- حالة الطلب -->
+    <div class="kds-status-row">
+      {% if order.status == 'partial' %}
+      <span class="kds-badge kds-badge-cooking">🔥 قيد التحضير</span>
+      {% else %}
+      <span class="kds-badge kds-badge-ready">✅ جاهز للتقديم</span>
+      {% endif %}
+      <span class="kds-total">{{ '%.2f'|format(order.total) }}</span>
+    </div>
+
+    <!-- قائمة الأصناف -->
+    <ul class="kds-items">
+      {% for line in lines %}
+      <li class="kds-item">
+        <span class="kds-qty">× {{ line.quantity | int if line.quantity == line.quantity | int else '%.2f'|format(line.quantity) }}</span>
+        <span class="kds-item-name">{{ line.description }}</span>
+        <span class="kds-item-price muted-cell">{{ '%.2f'|format(line.unit_price) }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <!-- أزرار الإجراء -->
+    <div class="kds-actions">
+      {% if order.status == 'partial' %}
+      <button class="kds-btn-done" onclick="markDone({{ order.id }}, this)">
+        ✅ تم التحضير
+      </button>
+      {% else %}
+      <div class="kds-ready-note">في انتظار التقديم وإغلاق الطاولة</div>
+      {% endif %}
+    </div>
+
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<!-- ─── حالة فارغة ────────────────────────────────────────── -->
+<div class="kds-empty">
+  <div class="kds-empty-icon">👨‍🍳</div>
+  <h3>لا توجد طلبات في المطبخ</h3>
+  <p>ستظهر الطلبات هنا عند إرسالها من شاشة الطاولات</p>
+  <a href="/tables" class="btn btn-primary">🍽️ الذهاب إلى الطاولات</a>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* ─── حساب الوقت المنقضي ─────────────────────────────────── */
+function updateTimers() {
+  document.querySelectorAll('.kds-elapsed[data-time]').forEach(el => {
+    const created = new Date(el.dataset.time.replace(' ', 'T'));
+    const diff    = Math.floor((new Date() - created) / 1000);
+    const mins    = Math.floor(diff / 60);
+    const secs    = diff % 60;
+
+    if (mins < 1)  el.textContent = `${secs}ث`;
+    else if (mins < 60) el.textContent = `${mins}د ${secs}ث`;
+    else el.textContent = `${Math.floor(mins/60)}س ${mins % 60}د`;
+
+    // تلوين حسب المدة
+    el.className = 'kds-elapsed ' + (
+      mins >= 20 ? 'elapsed-late'
+      : mins >= 10 ? 'elapsed-warn'
+      : 'elapsed-ok'
+    );
+  });
+}
+
+updateTimers();
+setInterval(updateTimers, 5000);
+
+/* ─── عداد التحديث التلقائي ────────────────────────────── */
+let countdownVal = 30;
+const timerEl = document.getElementById('kdsTimer');
+const countdownInterval = setInterval(() => {
+  countdownVal--;
+  if (timerEl) timerEl.textContent = countdownVal;
+  if (countdownVal <= 0) {
+    clearInterval(countdownInterval);
+    location.reload();
+  }
+}, 1000);
+
+/* ─── زر "تم التحضير" ───────────────────────────────────── */
+async function markDone(invoiceId, btn) {
+  btn.disabled    = true;
+  btn.textContent = '⏳ جارٍ...';
+
+  try {
+    const res = await fetch('/api/kitchen/done', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ invoice_id: invoiceId }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      const card = document.getElementById(`kds-card-${invoiceId}`);
+      if (card) {
+        // تحديث الكارد لحظياً بدون reload
+        card.classList.remove('kds-partial');
+        card.classList.add('kds-issued');
+        const statusRow = card.querySelector('.kds-status-row .kds-badge');
+        if (statusRow) {
+          statusRow.className  = 'kds-badge kds-badge-ready';
+          statusRow.textContent = '✅ جاهز للتقديم';
+        }
+        const actionsDiv = card.querySelector('.kds-actions');
+        if (actionsDiv) {
+          actionsDiv.innerHTML = '<div class="kds-ready-note">في انتظار التقديم وإغلاق الطاولة</div>';
+        }
+      }
+    } else {
+      btn.disabled    = false;
+      btn.textContent = '✅ تم التحضير';
+      alert('⚠️ ' + data.error);
+    }
+  } catch (e) {
+    btn.disabled    = false;
+    btn.textContent = '✅ تم التحضير';
+    alert('⚠️ خطأ في الاتصال بالخادم');
+  }
+}
+</script>
+{% endblock %}

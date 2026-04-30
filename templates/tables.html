@@ -1,0 +1,411 @@
+{% extends "base.html" %}
+{% block title %}إدارة الطاولات{% endblock %}
+
+{% block content %}
+
+<!-- ─── رأس الصفحة ──────────────────────────────────────────── -->
+<div class="page-header">
+  <h2 class="page-title">🍽️ إدارة الطاولات</h2>
+  <div class="page-header-actions">
+    <a href="/kitchen" class="btn btn-secondary btn-sm">👨‍🍳 شاشة المطبخ</a>
+    <button class="btn btn-secondary btn-sm" onclick="location.reload()">🔄 تحديث</button>
+  </div>
+</div>
+
+<!-- ─── إحصائيات سريعة ─────────────────────────────────────── -->
+<div class="rest-stats">
+  <div class="rest-stat-card stat-free">
+    <span class="stat-num">{{ stats.free }}</span>
+    <span class="stat-label">✓ متاحة</span>
+  </div>
+  <div class="rest-stat-card stat-occupied">
+    <span class="stat-num">{{ stats.occupied }}</span>
+    <span class="stat-label">🍽️ مشغولة</span>
+  </div>
+  <div class="rest-stat-card stat-ready">
+    <span class="stat-num">{{ stats.ready }}</span>
+    <span class="stat-label">✅ جاهزة للدفع</span>
+  </div>
+  <div class="rest-stat-card stat-total">
+    <span class="stat-num">{{ table_count }}</span>
+    <span class="stat-label">إجمالي الطاولات</span>
+  </div>
+</div>
+
+<!-- ─── شبكة الطاولات ──────────────────────────────────────── -->
+<div class="tables-grid">
+  {% for table in tables %}
+  <div class="table-card {{ table.status }}"
+       onclick="handleTableClick('{{ table.name }}',
+         {{ table.order.id if table.order else 'null' }},
+         '{{ table.status }}',
+         {{ table.order.total if table.order else 0 }},
+         {{ table.order.items_count if table.order else 0 }})">
+
+    <div class="table-num">{{ table.number }}</div>
+    <div class="table-name">{{ table.name }}</div>
+
+    {% if table.status == 'free' %}
+      <div class="table-status-badge badge-free">متاحة</div>
+      <div class="table-action-hint">انقر للفتح</div>
+    {% elif table.status == 'occupied' %}
+      <div class="table-status-badge badge-occupied">
+        🍽️ {{ table.order.items_count }} صنف
+      </div>
+      <div class="table-total">{{ '%.2f'|format(table.order.total) }}</div>
+    {% elif table.status == 'ready' %}
+      <div class="table-status-badge badge-ready">✅ جاهزة للدفع</div>
+      <div class="table-total">{{ '%.2f'|format(table.order.total) }}</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     Modal: إدارة الطاولة
+══════════════════════════════════════════════════════════════ -->
+<div id="tableModal" class="tbl-modal-overlay" style="display:none" onclick="closeModalOutside(event)">
+  <div class="tbl-modal-box">
+
+    <!-- رأس المودال -->
+    <div class="tbl-modal-head">
+      <div class="tbl-modal-title-group">
+        <h3 id="modalTableTitle">—</h3>
+        <span id="modalStatusBadge" class="tbl-status-inline"></span>
+      </div>
+      <button class="btn-icon-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <!-- جسم المودال -->
+    <div class="tbl-modal-body">
+
+      <!-- بحث المنتجات (متاح في draft و partial) -->
+      <div id="addItemSection" style="display:none;position:relative">
+        <div class="tbl-search-bar">
+          <span style="font-size:1rem">🔍</span>
+          <input type="text" id="productSearch" class="form-control"
+                 placeholder="ابحث عن صنف للإضافة بالاسم أو الباركود..."
+                 oninput="searchProducts(this.value)" autocomplete="off">
+        </div>
+        <div id="productDropdown" class="tbl-product-dropdown" style="display:none"></div>
+      </div>
+
+      <!-- قائمة الأصناف المطلوبة -->
+      <div class="tbl-items-wrap">
+        <div class="tbl-items-empty" id="itemsEmpty">
+          <div style="font-size:2rem">🍽️</div>
+          <p>السلة فارغة — ابدأ بالبحث عن الأصناف</p>
+        </div>
+        <table class="tbl-items-table" id="itemsTable" style="display:none">
+          <thead>
+            <tr>
+              <th>الصنف</th>
+              <th class="num-col">الكمية</th>
+              <th class="num-col">السعر</th>
+              <th class="num-col">الإجمالي</th>
+              <th style="width:36px"></th>
+            </tr>
+          </thead>
+          <tbody id="itemsBody"></tbody>
+        </table>
+      </div>
+
+      <!-- شريط الإجمالي -->
+      <div class="tbl-total-bar">
+        <span>الإجمالي الكلي:</span>
+        <strong id="modalTotal">0.00</strong>
+        <span id="modalCurrency" class="muted-cell" style="font-size:.85rem"></span>
+      </div>
+
+    </div>
+
+    <!-- تذييل الأزرار -->
+    <div class="tbl-modal-foot">
+      <select id="payModalMethod" class="form-control form-control-sm" style="width:auto;min-width:140px">
+        <option value="cash">💵 نقداً</option>
+        <option value="bank">🏦 بطاقة/تحويل</option>
+      </select>
+
+      <div class="tbl-action-btns">
+        <button id="btnSendKitchen" class="btn btn-primary"
+                onclick="sendToKitchen()" style="display:none">
+          👨‍🍳 إرسال للمطبخ
+        </button>
+        <button id="btnCheckout" class="btn-success"
+                onclick="checkoutTable()" style="display:none">
+          ✅ دفع وإغلاق الطاولة
+        </button>
+        <button class="btn btn-secondary" onclick="closeModal()">إغلاق</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     Overlay: نجاح الدفع
+══════════════════════════════════════════════════════════════ -->
+<div id="checkoutSuccess" class="tbl-modal-overlay" style="display:none">
+  <div class="tbl-success-box">
+    <div class="tbl-success-icon">✅</div>
+    <h3>تم إغلاق الطاولة</h3>
+    <p id="successMsg" class="tbl-success-msg"></p>
+    <div class="tbl-success-total" id="successTotal"></div>
+    <button class="btn btn-primary" onclick="location.reload()">🔄 تحديث الصفحة</button>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* ─── بيانات السيرفر ─────────────────────────────────────── */
+const ALL_PRODUCTS = {{ products | tojson }};
+const CURRENCY     = '{{ (current_business.currency if current_business else "ر.ي") | e }}';
+
+/* ─── حالة النافذة ──────────────────────────────────────── */
+let currentInvoiceId = null;
+let currentTableName = '';
+let currentStatus    = '';
+
+/* ─── Listener مشترك للـ dropdown ─────────────────────── */
+document.getElementById('productDropdown').addEventListener('click', e => {
+  const item = e.target.closest('.tbl-product-item');
+  if (item) selectProduct(parseInt(item.dataset.id));
+});
+
+/* إغلاق الـ dropdown عند النقر خارجه */
+document.addEventListener('click', e => {
+  if (!e.target.closest('#addItemSection')) {
+    document.getElementById('productDropdown').style.display = 'none';
+  }
+});
+
+/* ════════════════════════════════════════════════════════
+   فتح مودال الطاولة
+════════════════════════════════════════════════════════ */
+async function handleTableClick(tableName, invoiceId, status, total, itemsCount) {
+  currentTableName  = tableName;
+  currentStatus     = status;
+  currentInvoiceId  = invoiceId;
+
+  document.getElementById('modalTableTitle').textContent = tableName;
+  document.getElementById('modalCurrency').textContent   = CURRENCY;
+  document.getElementById('tableModal').style.display    = 'flex';
+  renderModalActions('opening');
+
+  if (status === 'free') {
+    const res = await apiPost('/api/tables/open', { table_name: tableName });
+    if (res.success) {
+      currentInvoiceId = res.invoice_id;
+      currentStatus    = 'draft';
+      await refreshLines();
+    } else {
+      showError(res.error);
+      closeModal();
+    }
+  } else {
+    await refreshLines();
+  }
+}
+
+function closeModal() {
+  document.getElementById('tableModal').style.display = 'none';
+  document.getElementById('productDropdown').style.display = 'none';
+  document.getElementById('productSearch').value = '';
+}
+
+function closeModalOutside(e) {
+  if (e.target === document.getElementById('tableModal')) closeModal();
+}
+
+/* ════════════════════════════════════════════════════════
+   تحميل بنود الطلب
+════════════════════════════════════════════════════════ */
+async function refreshLines() {
+  const res = await apiFetch(`/api/tables/order-lines/${currentInvoiceId}`);
+  if (!res.success) { showError(res.error); return; }
+
+  currentStatus = res.invoice.status;
+  renderModalActions(currentStatus);
+  renderLines(res.lines, parseFloat(res.invoice.total || 0));
+}
+
+/* ─── عرض حالة أزرار المودال ──────────────────────────── */
+function renderModalActions(status) {
+  const badge      = document.getElementById('modalStatusBadge');
+  const addSection = document.getElementById('addItemSection');
+  const btnK       = document.getElementById('btnSendKitchen');
+  const btnC       = document.getElementById('btnCheckout');
+
+  const stateMap = {
+    opening:  { label: 'جارٍ الفتح...',  cls: 'tbl-badge-draft',   add: false, kitchen: false, checkout: false },
+    draft:    { label: '📝 قيد الطلب',   cls: 'tbl-badge-draft',   add: true,  kitchen: true,  checkout: true  },
+    partial:  { label: '👨‍🍳 في المطبخ', cls: 'tbl-badge-partial', add: true,  kitchen: false, checkout: true  },
+    issued:   { label: '✅ جاهز للتقديم',cls: 'tbl-badge-issued',  add: false, kitchen: false, checkout: true  },
+  };
+  const s = stateMap[status] || stateMap['draft'];
+
+  badge.textContent = s.label;
+  badge.className   = `tbl-status-inline ${s.cls}`;
+  addSection.style.display = s.add      ? 'block'        : 'none';
+  btnK.style.display       = s.kitchen  ? 'inline-flex'  : 'none';
+  btnC.style.display       = s.checkout ? 'inline-flex'  : 'none';
+}
+
+/* ─── عرض جدول الأصناف ─────────────────────────────── */
+function renderLines(lines, total) {
+  const emptyEl = document.getElementById('itemsEmpty');
+  const tableEl = document.getElementById('itemsTable');
+  const tbody   = document.getElementById('itemsBody');
+  const totEl   = document.getElementById('modalTotal');
+
+  if (!lines || lines.length === 0) {
+    emptyEl.style.display = 'flex';
+    tableEl.style.display = 'none';
+    totEl.textContent = '0.00';
+    return;
+  }
+
+  emptyEl.style.display = 'none';
+  tableEl.style.display = 'table';
+
+  tbody.innerHTML = lines.map(l => {
+    const canDel = (currentStatus === 'draft');
+    const delBtn = canDel
+      ? `<button class="btn-icon-close" onclick="removeItem(${l.id})">🗑</button>`
+      : '';
+    return `<tr id="tbl-line-${l.id}">
+      <td>${esc(l.description)}</td>
+      <td class="num-col">${parseFloat(l.quantity).toFixed(2)}</td>
+      <td class="num-col muted-cell">${parseFloat(l.unit_price).toFixed(2)}</td>
+      <td class="num-col"><strong>${parseFloat(l.total).toFixed(2)}</strong></td>
+      <td>${delBtn}</td>
+    </tr>`;
+  }).join('');
+
+  totEl.textContent = total.toFixed(2);
+}
+
+/* ════════════════════════════════════════════════════════
+   بحث المنتجات
+════════════════════════════════════════════════════════ */
+function searchProducts(q) {
+  const dropdown = document.getElementById('productDropdown');
+  if (!q.trim()) { dropdown.style.display = 'none'; return; }
+
+  const matches = ALL_PRODUCTS.filter(p =>
+    p.name.includes(q) || (p.barcode && p.barcode.includes(q))
+  ).slice(0, 15);
+
+  if (!matches.length) {
+    dropdown.innerHTML = '<div class="tbl-product-empty">لا توجد نتائج</div>';
+    dropdown.style.display = 'block';
+    return;
+  }
+
+  dropdown.style.display = 'block';
+  dropdown.innerHTML = matches.map(p =>
+    `<div class="tbl-product-item" data-id="${p.id}">
+       <span class="prod-name">${esc(p.name)}</span>
+       <span class="prod-price">${parseFloat(p.sale_price).toFixed(2)} ${esc(CURRENCY)}</span>
+     </div>`
+  ).join('');
+}
+
+async function selectProduct(productId) {
+  document.getElementById('productDropdown').style.display = 'none';
+  document.getElementById('productSearch').value = '';
+
+  const res = await apiPost('/api/tables/add-item', {
+    invoice_id: currentInvoiceId,
+    product_id: productId,
+    quantity:   1,
+  });
+
+  if (res.success) await refreshLines();
+  else showError(res.error);
+}
+
+/* ════════════════════════════════════════════════════════
+   حذف صنف
+════════════════════════════════════════════════════════ */
+async function removeItem(lineId) {
+  const res = await apiPost('/api/tables/remove-item', {
+    invoice_id: currentInvoiceId,
+    line_id:    lineId,
+  });
+  if (res.success) await refreshLines();
+  else showError(res.error);
+}
+
+/* ════════════════════════════════════════════════════════
+   إرسال للمطبخ
+════════════════════════════════════════════════════════ */
+async function sendToKitchen() {
+  const res = await apiPost('/api/tables/send-kitchen', { invoice_id: currentInvoiceId });
+  if (res.success) {
+    currentStatus = 'partial';
+    renderModalActions('partial');
+    showToastMsg('👨‍🍳 ' + res.message);
+  } else {
+    showError(res.error);
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   دفع الحساب وإغلاق الطاولة
+════════════════════════════════════════════════════════ */
+async function checkoutTable() {
+  const method = document.getElementById('payModalMethod').value;
+  if (!confirm(`تأكيد إغلاق ${currentTableName} واستلام المبلغ؟`)) return;
+
+  const res = await apiPost('/api/tables/checkout', {
+    invoice_id:     currentInvoiceId,
+    payment_method: method,
+  });
+
+  if (res.success) {
+    closeModal();
+    document.getElementById('successMsg').textContent   = res.message;
+    document.getElementById('successTotal').textContent =
+      `${parseFloat(res.total).toFixed(2)} ${CURRENCY}`;
+    document.getElementById('checkoutSuccess').style.display = 'flex';
+  } else {
+    showError(res.error);
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   مساعدات HTTP
+════════════════════════════════════════════════════════ */
+async function apiPost(url, body) {
+  const res = await fetch(url, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(body),
+  });
+  return res.json();
+}
+
+async function apiFetch(url) {
+  const res = await fetch(url);
+  return res.json();
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showError(msg) { alert('⚠️ ' + (msg || 'حدث خطأ')); }
+
+function showToastMsg(msg) {
+  const t = document.createElement('div');
+  t.className   = 'price-toast toast-success';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+</script>
+{% endblock %}

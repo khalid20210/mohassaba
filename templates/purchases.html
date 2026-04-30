@@ -1,0 +1,650 @@
+{% extends "base.html" %}
+{% block title %}المشتريات{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">🛍️ فواتير المشتريات</h2>
+    <p class="page-subtitle">رفع وإدارة فواتير الموردين مع توليد القيود المحاسبية آلياً</p>
+  </div>
+  <button class="btn btn-primary" onclick="toggleForm()">➕ فاتورة شراء جديدة</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     نموذج إدخال فاتورة الشراء
+═══════════════════════════════════════════════ -->
+<div id="purchaseForm" class="pur-form-wrap" style="display:none">
+  <div class="card">
+    <div class="card-header">
+      <h4>📄 إدخال فاتورة شراء جديدة</h4>
+      <button class="btn-icon-close" onclick="toggleForm()">✕</button>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('purchases') }}">
+
+      <!-- معلومات الفاتورة الأساسية -->
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">اسم المورد / الجهة الموردة</label>
+          <input type="text" name="supplier_name" class="form-control"
+                 placeholder="مثال: شركة النجوم للتوزيع">
+        </div>
+        <div class="form-group">
+          <label class="form-label required">تاريخ الفاتورة *</label>
+          <input type="date" name="invoice_date" class="form-control"
+                 value="{{ now_date }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">طريقة الدفع</label>
+          <select name="payment_method" class="form-control">
+            <option value="cash">💵 نقداً (الصندوق)</option>
+            <option value="bank">🏦 تحويل بنكي</option>
+            <option value="credit">📋 بالآجل (ذمم دائنة)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">نسبة الضريبة %</label>
+          <input type="number" name="tax_pct" class="form-control"
+                 value="0" min="0" max="100" step="0.5"
+                 oninput="recalcTotals()">
+        </div>
+      </div>
+
+      <!-- رفع صورة / PDF الفاتورة + OCR -->
+      <div class="form-group pur-upload-zone" id="uploadZone">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <label class="form-label" style="margin:0">📎 رفع صورة أو PDF للفاتورة</label>
+          <button type="button" id="btnOCR" class="btn-ocr" onclick="runOCR()" style="display:none">
+            🤖 قراءة بـ OCR
+          </button>
+        </div>
+
+        <!-- منطقة الإسقاط -->
+        <div class="upload-drop-area" onclick="document.getElementById('fileInput').click()"
+             ondragover="event.preventDefault()" ondrop="handleDrop(event)">
+          <input type="file" name="invoice_file" id="fileInput"
+                 accept=".pdf,.jpg,.jpeg,.png,.webp"
+                 style="display:none" onchange="onFileChosen(this)">
+          <div id="uploadPlaceholder">
+            <span style="font-size:2rem">📤</span>
+            <p>اسحب الملف هنا أو <strong>اضغط للاختيار</strong></p>
+            <p class="upload-hint">PDF، JPG، PNG — حجم أقصى 10MB</p>
+          </div>
+          <div id="uploadFileName" style="display:none" class="upload-file-name"></div>
+        </div>
+
+      </div>
+
+      <!-- Spinner Overlay -->
+      <div id="ocrSpinner" class="ocr-spinner-overlay" style="display:none">
+        <div class="ocr-spinner-box">
+          <div class="ocr-spinner"></div>
+          <p>🤖 جارٍ قراءة الفاتورة بالذكاء الاصطناعي...<br>
+          <small class="ocr-spinner-hint">قد يستغرق 5-15 ثانية</small></p>
+        </div>
+      </div>
+
+      <!-- جدول البنود -->
+      <div class="form-group">
+        <div class="pur-lines-header">
+          <label class="form-label">بنود الفاتورة</label>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="addLine()">
+            ➕ إضافة منتج
+          </button>
+        </div>
+
+        <div class="pur-lines-table-wrap">
+          <table class="pur-lines-table" id="linesTable">
+            <thead>
+              <tr>
+                <th>المنتج</th>
+                <th>الكمية</th>
+                <th>تكلفة الوحدة</th>
+                <th>الإجمالي</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="linesBody">
+              <!-- تبدأ بسطر واحد -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- الإجماليات -->
+      <div class="pur-totals-bar">
+        <div class="pur-total-item">
+          <span>المجموع قبل الضريبة</span>
+          <strong id="purSubtotal">0.00</strong>
+        </div>
+        <div class="pur-total-item">
+          <span>الضريبة</span>
+          <strong id="purTax">0.00</strong>
+        </div>
+        <div class="pur-total-item pur-grand">
+          <span>الإجمالي الكلي</span>
+          <strong id="purGrand">0.00</strong>
+        </div>
+      </div>
+
+      <!-- ملاحظات -->
+      <div class="form-group">
+        <label class="form-label">ملاحظات</label>
+        <textarea name="notes" class="form-control" rows="2"
+                  placeholder="أي تفاصيل إضافية..."></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-success">
+          💾 حفظ الفاتورة وتوليد القيد
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="toggleForm()">إلغاء</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     جدول فواتير الشراء السابقة
+═══════════════════════════════════════════════ -->
+{% if invoices %}
+<div class="card" style="margin-top:24px">
+  <div class="card-header">
+    <h4>📋 سجل المشتريات</h4>
+    <span class="badge-total">{{ total }} فاتورة</span>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>رقم الفاتورة</th>
+          <th>التاريخ</th>
+          <th>المورد</th>
+          <th class="num-col">المجموع</th>
+          <th class="num-col">الضريبة</th>
+          <th class="num-col">الإجمالي</th>
+          <th>الحالة</th>
+          <th>الملاحظات</th>
+          <th>QR</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inv in invoices %}
+        <tr>
+          <td><strong>{{ inv.invoice_number }}</strong></td>
+          <td>{{ inv.invoice_date }}</td>
+          <td>{{ inv.party_name or '—' }}</td>
+          <td class="num-col">{{ "%.2f"|format(inv.subtotal) }}</td>
+          <td class="num-col">{{ "%.2f"|format(inv.tax_amount) }}</td>
+          <td class="num-col"><strong>{{ "%.2f"|format(inv.total) }}</strong></td>
+          <td>
+            <span class="status-badge status-{{ inv.status }}">
+              {% if inv.status == 'paid' %}✓ مدفوعة
+              {% elif inv.status == 'partial' %}جزئي
+              {% else %}{{ inv.status }}{% endif %}
+            </span>
+          </td>
+          <td class="muted-cell">{{ inv.notes or '—' }}</td>
+          <td>
+            <button class="btn btn-sm btn-outline" style="padding:3px 8px;font-size:.75rem"
+              onclick="showZatcaQr({{ inv.id }}, '{{ inv.invoice_number }}')">
+              🟢 QR
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if total_pages > 1 %}
+  <div class="pagination" style="padding:14px 20px">
+    {% if page > 1 %}<a href="{{ url_for('purchases', page=page-1) }}" class="page-btn">← السابق</a>{% endif %}
+    <span class="page-info">{{ page }} / {{ total_pages }}</span>
+    {% if page < total_pages %}<a href="{{ url_for('purchases', page=page+1) }}" class="page-btn">التالي →</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% else %}
+<div class="empty-state" style="margin-top:24px">
+  <div class="empty-icon">🛍️</div>
+  <h3>لا توجد فواتير شراء بعد</h3>
+  <p>اضغط "فاتورة شراء جديدة" لإضافة أول فاتورة.</p>
+</div>
+{% endif %}
+
+<!-- قالب سطر المنتج (مخفي — يُستنسخ بـ JS) -->
+<template id="lineTpl">
+  <tr class="line-row">
+    <td>
+      <select name="product_id[]" class="form-control form-control-sm" required
+              onchange="updateLinePrice(this)">
+        <option value="">اختر منتجاً...</option>
+        {% for p in products %}
+        <option value="{{ p.id }}" data-cost="{{ p.purchase_price }}">
+          {{ p.name }}{% if p.barcode %} ({{ p.barcode }}){% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </td>
+    <td>
+      <input type="number" name="quantity[]" class="form-control form-control-sm"
+             value="1" min="0.01" step="0.01" oninput="recalcTotals()">
+    </td>
+    <td>
+      <input type="number" name="unit_cost[]" class="form-control form-control-sm"
+             value="0" min="0" step="0.01" oninput="recalcTotals()">
+    </td>
+    <td class="line-total num-col">0.00</td>
+    <td>
+      <button type="button" class="btn-remove" onclick="removeLine(this)">✕</button>
+    </td>
+  </tr>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const nowDate = '{{ now_date }}';
+
+function toggleForm() {
+  const f = document.getElementById('purchaseForm');
+  const visible = f.style.display !== 'none';
+  f.style.display = visible ? 'none' : 'block';
+  if (!visible) {
+    // أضف سطراً أول تلقائياً
+    const body = document.getElementById('linesBody');
+    if (!body.children.length) addLine();
+    f.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function addLine() {
+  const tpl  = document.getElementById('lineTpl');
+  const clone = tpl.content.cloneNode(true);
+  document.getElementById('linesBody').appendChild(clone);
+}
+
+function removeLine(btn) {
+  const row = btn.closest('tr');
+  row.remove();
+  recalcTotals();
+}
+
+function updateLinePrice(sel) {
+  const opt     = sel.selectedOptions[0];
+  const cost    = parseFloat(opt?.dataset?.cost || 0);
+  const row     = sel.closest('tr');
+  const costInp = row.querySelector('input[name="unit_cost[]"]');
+  if (costInp && cost > 0) costInp.value = cost.toFixed(2);
+  recalcTotals();
+}
+
+function recalcTotals() {
+  const taxPct = parseFloat(document.querySelector('input[name="tax_pct"]')?.value || 0);
+  let sub = 0;
+  document.querySelectorAll('.line-row').forEach(row => {
+    const qty  = parseFloat(row.querySelector('input[name="quantity[]"]')?.value || 0);
+    const cost = parseFloat(row.querySelector('input[name="unit_cost[]"]')?.value || 0);
+    const lt   = qty * cost;
+    sub += lt;
+    const cell = row.querySelector('.line-total');
+    if (cell) cell.textContent = lt.toFixed(2);
+  });
+  const tax   = sub * taxPct / 100;
+  const grand = sub + tax;
+  document.getElementById('purSubtotal').textContent = sub.toFixed(2);
+  document.getElementById('purTax').textContent      = tax.toFixed(2);
+  document.getElementById('purGrand').textContent    = grand.toFixed(2);
+}
+
+function onFileChosen(input) {
+  const ph   = document.getElementById('uploadPlaceholder');
+  const fn   = document.getElementById('uploadFileName');
+  const btnO = document.getElementById('btnOCR');
+  const name = input.files[0]?.name || '';
+  if (name) {
+    ph.style.display  = 'none';
+    fn.style.display  = 'flex';
+    fn.textContent    = '📎 ' + name;
+    btnO.style.display = 'inline-flex';
+  } else {
+    ph.style.display  = 'block';
+    fn.style.display  = 'none';
+    btnO.style.display = 'none';
+  }
+}
+
+/* ─── تشغيل OCR ──────────────────────────────────────── */
+let ocrData = null;
+
+async function runOCR() {
+  const input = document.getElementById('fileInput');
+  if (!input.files[0]) return;
+
+  // إظهار الـ spinner
+  document.getElementById('ocrSpinner').style.display  = 'flex';
+  document.getElementById('ocrResultBox').style.display = 'none';
+
+  const fd = new FormData();
+  fd.append('file', input.files[0]);
+
+  try {
+    const res  = await fetch('/api/purchase-import/upload', { method: 'POST', body: fd });
+    const data = await res.json();
+    ocrData = data;
+
+    document.getElementById('ocrSpinner').style.display = 'none';
+
+    if (!data.success) {
+      alert('⚠️ ' + (data.error || 'فشل OCR'));
+      return;
+    }
+
+    // ─ استخراج البيانات من النص الخام ─
+    const raw = data.raw_text || '';
+    fillOcrFields(raw, data.lines || []);
+    document.getElementById('ocrResultBox').style.display = 'block';
+    document.getElementById('ocrRawText').textContent     = raw || '(لم يُستخرج نص)';
+
+  } catch(e) {
+    document.getElementById('ocrSpinner').style.display = 'none';
+    alert('⚠️ خطأ في الاتصال: ' + e.message);
+  }
+}
+
+function fillOcrFields(raw, lines) {
+  // ─ استخراج التاريخ ─
+  const dateM = raw.match(/(\d{4}[-.\/ ]\d{1,2}[-.\/ ]\d{1,2})|(\d{1,2}[-.\/ ]\d{1,2}[-.\/ ]\d{2,4})/);
+  if (dateM) document.getElementById('ocrDate').value = dateM[0];
+
+  // ─ استخراج الإجمالي ─
+  const totalM = raw.match(/(?:إجمالي|total|grand|amount)[^\d]*(\d[\d,. ]*)/i);
+  if (totalM) document.getElementById('ocrTotal').value = totalM[1].replace(/[, ]/g,'');
+
+  // ─ استخراج الضريبة ─
+  const taxM = raw.match(/(?:ضريبة|tax|vat)[^\d]*(\d[\d,. ]*)/i);
+  if (taxM) document.getElementById('ocrTax').value = taxM[1].replace(/[, ]/g,'');
+
+  // ─ استخراج المورد ─
+  const lines2 = raw.split('\n').map(l => l.trim()).filter(l => l.length > 3 && !/^\d/.test(l));
+  if (lines2.length) document.getElementById('ocrSupplier').value = lines2[0].slice(0, 60);
+
+  // ─ عرض البنود المكتشفة ─
+  const linesBody = document.getElementById('ocrLinesBody');
+  const linesSection = document.getElementById('ocrLinesSection');
+  if (lines && lines.length) {
+    linesBody.innerHTML = '';
+    lines.forEach(l => {
+      const tr = document.createElement('tr');
+      const qty   = parseFloat(l.qty   || 1);
+      const price = parseFloat(l.price || 0);
+      tr.innerHTML = `
+        <td>${l.name || '—'}</td>
+        <td>${qty.toFixed(2)}</td>
+        <td>${price.toFixed(2)}</td>
+        <td><strong>${(qty*price).toFixed(2)}</strong></td>
+      `;
+      linesBody.appendChild(tr);
+    });
+    linesSection.style.display = 'block';
+  } else {
+    linesSection.style.display = 'none';
+  }
+}
+
+/* ─── فتح/إغلاق مودال OCR ────────────────────────────────── */
+function openOcrModal() {
+  document.getElementById('ocrModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeOcrModal() {
+  document.getElementById('ocrModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function applyOcrToForm() {
+  const sup   = document.getElementById('ocrSupplier').value.trim();
+  const date  = document.getElementById('ocrDate').value.trim();
+  const total = parseFloat(document.getElementById('ocrTotal').value) || 0;
+  const tax   = parseFloat(document.getElementById('ocrTax').value)   || 0;
+
+  if (sup)  document.querySelector('input[name="supplier_name"]').value = sup;
+  if (date) {
+    const d = new Date(date);
+    if (!isNaN(d)) document.querySelector('input[name="invoice_date"]').value =
+      d.toISOString().slice(0, 10);
+  }
+  if (total > 0 && tax > 0) {
+    const pct = Math.round(tax / (total - tax) * 100);
+    document.querySelector('input[name="tax_pct"]').value = pct;
+  }
+  if (ocrData && ocrData.lines && ocrData.lines.length) {
+    document.getElementById('linesBody').innerHTML = '';
+    ocrData.lines.forEach(line => {
+      addLine();
+      const rows = document.querySelectorAll('#linesBody .line-row');
+      const last = rows[rows.length - 1];
+      const sel  = last.querySelector('select[name="product_id[]"]');
+      if (sel) {
+        Array.from(sel.options).forEach(opt => {
+          if (parseInt(opt.value) === line.product_id) opt.selected = true;
+        });
+      }
+      last.querySelector('input[name="quantity[]"]').value  = parseFloat(line.qty  || 1).toFixed(2);
+      last.querySelector('input[name="unit_cost[]"]').value = parseFloat(line.price|| 0).toFixed(2);
+    });
+    recalcTotals();
+  } else {
+    recalcTotals();
+  }
+}
+
+function applyOcrAndSave() {
+  applyOcrToForm();
+  closeOcrModal();
+  // تأكيد ثم إرسال النموذج تلقائياً
+  const form = document.querySelector('#purchaseForm form');
+  if (form) {
+    // تأكد من وجود سطر واحد على الأقل
+    const rows = document.querySelectorAll('#linesBody .line-row');
+    if (!rows.length) addLine();
+    // تأخير بسيط لضمان تطبيق القيم
+    setTimeout(() => form.submit(), 120);
+  }
+}
+
+// التحديث: runOCR يفتح المودال بعد الانتهاء
+async function runOCR() {
+  const input = document.getElementById('fileInput');
+  if (!input.files[0]) return;
+
+  document.getElementById('ocrSpinner').style.display = 'flex';
+
+  const fd = new FormData();
+  fd.append('file', input.files[0]);
+
+  try {
+    const res  = await fetch('/api/purchase-import/upload', { method: 'POST', body: fd });
+    const data = await res.json();
+    ocrData = data;
+
+    document.getElementById('ocrSpinner').style.display = 'none';
+
+    if (!data.success) {
+      alert('⚠️ ' + (data.error || 'فشل OCR'));
+      return;
+    }
+
+    const raw = data.raw_text || '';
+    // ملء حقول المودال
+    fillOcrFields(raw, data.lines || []);
+    document.getElementById('ocrRawText').textContent = raw || '(لم يُستخرج نص)';
+    // فتح مودال المراجعة
+    openOcrModal();
+
+  } catch(e) {
+    document.getElementById('ocrSpinner').style.display = 'none';
+    alert('⚠️ خطأ في الاتصال: ' + e.message);
+  }
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  const input = document.getElementById('fileInput');
+  const dt    = e.dataTransfer;
+  if (dt.files.length) {
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(dt.files[0]);
+    input.files = dataTransfer.files;
+    showFileName(input);
+  }
+}
+
+/* ─── ZATCA QR ───────────────────────────────────────────── */
+let zatcaQrInstance = null;
+
+async function showZatcaQr(invId, invNum) {
+  document.getElementById('zatcaSubtitle').textContent = 'فاتورة رقم: ' + invNum;
+  const container = document.getElementById('zatcaQrContainer');
+  const infoBox   = document.getElementById('zatcaInfo');
+  container.innerHTML = '<p style="color:var(--text-muted)">⏳ جارٍ التحميل...</p>';
+  infoBox.innerHTML   = '';
+  document.getElementById('zatcaModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+
+  try {
+    const res  = await fetch(`/api/invoice/${invId}/zatca-qr`);
+    const data = await res.json();
+    if (!data.success) { container.innerHTML = '<p style="color:red">⚠️ ' + data.error + '</p>'; return; }
+
+    container.innerHTML = '';
+    new QRCode(container, {
+      text:   data.qr_data,
+      width:  200, height: 200,
+      colorDark: '#000000', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+
+    infoBox.innerHTML = `
+      <div class="zatca-row"><span>البائع</span><strong>${data.seller}</strong></div>
+      <div class="zatca-row"><span>الرقم الضريبي</span><strong dir="ltr">${data.vat_number || '—'}</strong></div>
+      <div class="zatca-row"><span>التاريخ</span><strong>${data.timestamp}</strong></div>
+      <div class="zatca-row"><span>الإجمالي</span><strong>${parseFloat(data.total||0).toFixed(2)} ر.س</strong></div>
+      <div class="zatca-row"><span>الضريبة</span><strong>${parseFloat(data.vat||0).toFixed(2)} ر.س</strong></div>
+    `;
+  } catch(err) {
+    container.innerHTML = '<p style="color:red">⚠️ ' + err.message + '</p>';
+  }
+}
+
+function closeZatcaModal() {
+  document.getElementById('zatcaModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function printZatcaQr() {
+  const content = document.getElementById('zatcaQrContainer').innerHTML;
+  const w = window.open('', '_blank', 'width=400,height=400');
+  w.document.write(`<html><body style="text-align:center;padding:30px">
+    <h3>رمز ZATCA</h3>${content}
+    <script>setTimeout(()=>window.print(),300)<\/script>
+  </body></html>`);
+  w.document.close();
+}
+</script>
+
+<!-- QRCode.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+<!-- ═══════════════════════════════════════════════
+     مودال التحقق من OCR — صمام الأمان
+═══════════════════════════════════════════════ -->
+<div id="ocrModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeOcrModal()">
+  <div class="modal-box ocr-modal-box">
+    <div class="modal-header">
+      <div>
+        <h3>🤖 مراجعة البيانات المستخرجة</h3>
+        <p class="modal-subtitle">راجع وعدّل إن لزم — ثم اضغط "حفظ في المحاسبة والمخزون"</p>
+      </div>
+      <button class="btn-icon-close" onclick="closeOcrModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="ocr-verify-banner">
+        <span style="font-size:1.2rem">⚠️</span>
+        <span>الذكاء الاصطناعي قد يُخطئ أحياناً — تأكد من صحة الأرقام قبل الحفظ</span>
+      </div>
+
+      <div class="ocr-modal-grid">
+        <div class="form-group">
+          <label class="form-label">🏢 اسم المورد</label>
+          <input type="text" id="ocrSupplier" class="form-control" placeholder="لم يُستخرج — أدخل يدوياً">
+        </div>
+        <div class="form-group">
+          <label class="form-label">📅 تاريخ الفاتورة</label>
+          <input type="text" id="ocrDate" class="form-control" placeholder="YYYY-MM-DD">
+        </div>
+        <div class="form-group">
+          <label class="form-label">💰 الإجمالي شامل الضريبة</label>
+          <input type="number" id="ocrTotal" class="form-control" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">🧾 قيمة الضريبة (VAT)</label>
+          <input type="number" id="ocrTax" class="form-control" placeholder="0.00" step="0.01" min="0">
+        </div>
+      </div>
+
+      <div id="ocrLinesSection" style="display:none;margin-top:12px">
+        <div class="form-label" style="margin-bottom:8px;font-weight:700;">📦 البنود المُكتشفة تلقائياً</div>
+        <div class="table-responsive">
+          <table class="data-table" style="margin:0">
+            <thead><tr><th>المنتج</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead>
+            <tbody id="ocrLinesBody"></tbody>
+          </table>
+        </div>
+        <p class="ocr-lines-hint">ستُضاف هذه البنود للفاتورة تلقائياً</p>
+      </div>
+
+      <details style="margin-top:12px">
+        <summary class="ocr-raw-toggle">🔍 النص الخام المستخرج</summary>
+        <pre id="ocrRawText" class="ocr-raw-pre"></pre>
+      </details>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" onclick="closeOcrModal()">إلغاء</button>
+      <button type="button" class="btn btn-outline" onclick="applyOcrToForm(); closeOcrModal()">تطبيق فقط</button>
+      <button type="button" class="btn btn-success" onclick="applyOcrAndSave()">💾 حفظ في المحاسبة والمخزون</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     مودال ZATCA QR Code
+═══════════════════════════════════════════════ -->
+<div id="zatcaModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeZatcaModal()">
+  <div class="modal-box" style="max-width:440px;text-align:center">
+    <div class="modal-header" style="justify-content:space-between">
+      <div style="text-align:right">
+        <h3>🟢 رمز ZATCA (المرحلة الأولى)</h3>
+        <p class="modal-subtitle" id="zatcaSubtitle"></p>
+      </div>
+      <button class="btn-icon-close" onclick="closeZatcaModal()">✕</button>
+    </div>
+    <div class="modal-body" style="padding-top:8px">
+      <div id="zatcaQrContainer" style="display:flex;justify-content:center;margin:16px 0"></div>
+      <div id="zatcaInfo" class="zatca-info-box"></div>
+      <p style="font-size:.72rem;color:var(--text-muted);margin-top:10px">
+        متوافق مع متطلبات هيئة الزكاة والضريبة والجمارك — TLV Base64
+      </p>
+    </div>
+    <div class="modal-footer" style="justify-content:center;gap:10px">
+      <button type="button" class="btn btn-secondary" onclick="closeZatcaModal()">إغلاق</button>
+      <button type="button" class="btn btn-outline" onclick="printZatcaQr()">🖨️ طباعة</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
