@@ -1,0 +1,43 @@
+# ─── Python ────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# ─── Virtual Environment ───────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ─── Flask / App ───────────────────────────────────────
+instance/
+.secret_key
+*.log
+uploads/*
+!uploads/.gitkeep
+!uploads/excel/
+
+# ─── OS / IDE ──────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+.idea/
+.vscode/
+*.egg-info/
+
+# ─── Distribution / Build ──────────────────────────────
+dist/
+build/
+*.egg
+
+# ─── Jupyter ───────────────────────────────────────────
+.ipynb_checkpoints
+
+# ─── Temporary / Backup ────────────────────────────────
+*.bak
+*.tmp
+~$*
