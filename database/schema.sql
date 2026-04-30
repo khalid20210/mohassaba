@@ -303,6 +303,11 @@ CREATE TABLE IF NOT EXISTS contacts (
 -- ============================================================
 CREATE INDEX IF NOT EXISTS idx_products_barcode       ON products(barcode);
 CREATE INDEX IF NOT EXISTS idx_products_business      ON products(business_id);
+CREATE INDEX IF NOT EXISTS idx_products_biz_active    ON products(business_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_products_biz_pos       ON products(business_id, is_active, is_pos);
+CREATE INDEX IF NOT EXISTS idx_products_biz_barcode   ON products(business_id, barcode);
+CREATE INDEX IF NOT EXISTS idx_products_biz_name      ON products(business_id, name COLLATE NOCASE);
+CREATE INDEX IF NOT EXISTS idx_products_category      ON products(business_id, category_name);
 CREATE INDEX IF NOT EXISTS idx_stock_product          ON stock(product_id);
 CREATE INDEX IF NOT EXISTS idx_journal_entries_date   ON journal_entries(entry_date);
 CREATE INDEX IF NOT EXISTS idx_journal_entries_ref    ON journal_entries(reference_type, reference_id);

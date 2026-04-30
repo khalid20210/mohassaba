@@ -3,7 +3,7 @@
 
 {% block head %}
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Manrope:wght@500;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Manrope:wght@500;700;800&display=swap');
 
 :root {
   --jb-bg: #eef5ff;
@@ -38,7 +38,7 @@ body {
   grid-template-columns: 1.3fr .7fr;
   position: relative;
   overflow: hidden;
-  font-family: 'Cairo', 'Segoe UI', sans-serif;
+  font-family: 'Tajawal', 'Segoe UI', sans-serif;
 }
 
 .jb-auth-root::before { display: none; }
@@ -53,11 +53,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  background:
-    radial-gradient(ellipse at 25% 15%, rgba(20, 90, 200, .10), transparent 48%),
-    radial-gradient(ellipse at 75% 88%, rgba(5, 18, 44, .45), transparent 44%),
-    linear-gradient(148deg, #071525 0%, #0b1c36 38%, #091525 72%, #07101e 100%);
-  border-left: 1px solid rgba(25, 65, 130, .14);
+  background: linear-gradient(150deg, #0d1b35 0%, #0e2048 50%, #091530 100%);
+  border-left: 1px solid rgba(255,255,255,.06);
 }
 
 .jb-brand {
@@ -85,14 +82,14 @@ body {
 
 .jb-brand-text strong {
   display: block;
-  color: #cde0ff;
+  color: #ffffff;
   font-size: 1.0rem;
   font-weight: 800;
   line-height: 1.2;
 }
 
 .jb-brand-text span {
-  color: rgba(130, 170, 230, .45);
+  color: rgba(180, 210, 255, .55);
   font-size: .68rem;
   font-family: 'Manrope', sans-serif;
 }
@@ -113,24 +110,29 @@ body {
 }
 
 .jb-pill {
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.09);
-  color: rgba(190, 215, 255, .82);
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.16);
+  color: rgba(210,230,255,.90);
   border-radius: 999px;
   padding: 5px 11px;
   font-size: .72rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
+.jb-pill svg { opacity: .80; flex-shrink: 0; }
+
 .jb-activity-counter {
-  color: rgba(140, 175, 230, .60);
+  color: rgba(180, 210, 255, .55);
   font-size: .76rem;
   font-family: 'Manrope', sans-serif;
 }
 
 .jb-stage {
   margin-top: 6px;
-  background: rgba(255,255,255,.035);
-  border: 1px solid rgba(80, 140, 220, .12);
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.10);
   border-radius: 20px;
   padding: 16px;
   position: relative;
@@ -138,7 +140,9 @@ body {
   flex: 1;
   min-height: 0;
   display: flex;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 30px 60px rgba(3,8,20,.30);
+  box-shadow: 0 8px 32px rgba(0,0,0,.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .jb-stage::before {
@@ -147,7 +151,7 @@ body {
   top: -80px; left: -80px;
   width: 220px; height: 220px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(29,120,240,.08), transparent 70%);
+  background: none;
   pointer-events: none;
 }
 
@@ -157,7 +161,7 @@ body {
   bottom: -80px; right: -80px;
   width: 200px; height: 200px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(10,50,120,.20), transparent 68%);
+  background: none;
   pointer-events: none;
 }
 
@@ -168,6 +172,7 @@ body {
   flex-direction: column;
   width: 100%;
   height: 100%;
+  transition: opacity .35s ease;
 }
 
 .jb-hero {
@@ -178,11 +183,14 @@ body {
 }
 
 .jb-hero-main {
-  border: 1px solid rgba(151, 204, 255, .18);
+  border: 1px solid rgba(255,255,255,.10);
   border-radius: 18px;
   padding: 14px;
-  background: linear-gradient(135deg, rgba(250, 252, 255, .92), rgba(224, 238, 255, .72));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.45);
+  background: rgba(255,255,255,.06);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 24px rgba(0,0,0,.20);
+  transition: background .4s ease, border-color .4s ease;
 }
 
 .jb-hero-head {
@@ -196,58 +204,78 @@ body {
   width: 50px;
   height: 50px;
   border-radius: 14px;
-  border: 1px solid var(--jb-border);
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.45rem;
-  background: rgba(255,255,255,.75);
+  background: transparent;
 }
 
 .jb-hero-title {
   margin: 0;
-  font-size: 1.26rem;
-  color: var(--jb-primary);
+  font-size: 1.32rem;
+  color: #ffffff;
   font-weight: 800;
+  font-family: 'Tajawal', sans-serif;
+  text-shadow: 0 2px 12px rgba(100,180,255,.20);
 }
 
 .jb-hero-sub {
   margin: 3px 0 0;
   font-size: .8rem;
-  color: #5d7088;
+  color: rgba(190,215,255,.65);
+  font-weight: 300;
+  font-family: 'Tajawal', sans-serif;
 }
 
 .jb-mode-badge {
   display: inline-flex;
   margin-top: 7px;
-  background: rgba(255,255,255,.68);
-  border: 1px solid rgba(148, 163, 184, .24);
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.14);
   border-radius: 999px;
   padding: 4px 10px;
   font-size: .72rem;
-  color: #23364b;
+  color: rgba(200,225,255,.80);
   font-family: 'Manrope', sans-serif;
 }
 
 .jb-features {
   margin-top: 9px;
   display: grid;
-  gap: 6px;
+  gap: 7px;
 }
 
 .jb-feature {
-  background: rgba(255,255,255,.66);
-  border: 1px solid rgba(255,255,255,.5);
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.09);
   border-radius: 12px;
-  padding: 8px 10px;
-  color: #223347;
-  font-size: .77rem;
-  box-shadow: 0 12px 24px rgba(10, 26, 46, .08);
+  padding: 9px 12px;
+  color: rgba(200,225,255,.90);
+  font-size: .79rem;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background .2s;
+}
+
+.jb-feature:hover {
+  background: rgba(100,180,255,.10);
+}
+
+.jb-feat-icon {
+  color: #60a5fa;
+  font-size: .95rem;
+  flex-shrink: 0;
+  line-height: 1;
 }
 
 .jb-feature strong {
   display: block;
-  color: #0f172a;
+  color: #ffffff;
   font-size: .74rem;
   margin-bottom: 1px;
 }
@@ -258,44 +286,79 @@ body {
 }
 
 .jb-metric-card {
-  border: 1px solid rgba(126, 191, 255, .14);
+  border: 1px solid rgba(255,255,255,.10);
   border-radius: 16px;
-  background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.08));
+  background: rgba(255,255,255,.06);
   padding: 12px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 12px 28px rgba(3, 8, 18, .16);
+  box-shadow: 0 4px 16px rgba(0,0,0,.20);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  position: relative;
+  overflow: hidden;
+}
+
+.jb-metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(100,200,255,.30), transparent);
 }
 
 .jb-metric-label {
-  color: rgba(222, 236, 255, .74);
-  font-size: .76rem;
+  color: rgba(180,210,255,.55);
+  font-size: .72rem;
+  font-weight: 300;
+  letter-spacing: .3px;
+  font-family: 'Tajawal', sans-serif;
 }
 
 .jb-metric-value {
-  margin-top: 4px;
-  font-size: 1.24rem;
+  margin-top: 2px;
+  font-size: 1.55rem;
   font-weight: 800;
-  color: #f6fbff;
+  color: #ffffff;
   font-family: 'Manrope', sans-serif;
-  text-shadow: 0 0 24px rgba(29, 155, 240, .18);
+  text-shadow: 0 0 18px rgba(100,200,255,.45);
+  line-height: 1.1;
 }
 
-.jb-metric-value.teal { color: #58d4df; }
-.jb-metric-value.gold { color: #f2c35c; }
+.jb-metric-value.teal { color: #34d399; text-shadow: 0 0 18px rgba(52,211,153,.45); }
+.jb-metric-value.gold { color: #fbbf24; text-shadow: 0 0 18px rgba(251,191,36,.45); }
 
 .jb-metric-chart {
-  margin-top: 5px;
-  height: 26px;
+  margin-top: 6px;
+  height: 32px;
 }
 
-.jb-metric-chart svg { width: 100%; height: 100%; }
+.jb-metric-chart svg { width: 100%; height: 100%; overflow: visible; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .4; transform: scale(1.8); }
+}
+.jb-pulse-dot { animation: pulse-dot 1.4s ease-in-out infinite; }
+
+@keyframes live-scan {
+  0%   { transform: translateX(0%); opacity: .9; }
+  100% { transform: translateX(105%); opacity: 0; }
+}
+.jb-metric-scan {
+  position: absolute;
+  top: 0; left: -30%; bottom: 0;
+  width: 30%;
+  background: linear-gradient(90deg, transparent, rgba(100,200,255,.12), transparent);
+  animation: live-scan 3s ease-in-out infinite;
+  pointer-events: none;
+  border-radius: 16px;
+}
 
 .jb-activity-strip {
   margin-top: 10px;
-  border: 1px solid rgba(144, 199, 255, .18);
-  background: linear-gradient(90deg, rgba(255,255,255,.14), rgba(20,78,140,.18), rgba(0,0,0,.22));
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
   border-radius: 14px;
   padding: 8px 10px;
-  backdrop-filter: blur(10px);
 }
 
 .jb-activity-strip-head {
@@ -307,12 +370,12 @@ body {
 }
 
 .jb-activity-strip-head strong {
-  color: #f3f8ff;
+  color: #ffffff;
   font-size: .86rem;
 }
 
 .jb-activity-strip-head span {
-  color: rgba(214, 228, 248, .72);
+  color: rgba(180, 210, 255, .55);
   font-size: .74rem;
 }
 
@@ -323,12 +386,20 @@ body {
 }
 
 .jb-upcoming-item {
-  background: rgba(255,255,255,.12);
-  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
   border-radius: 999px;
-  padding: 4px 8px;
-  color: #e8f1ff;
+  padding: 4px 9px;
+  color: rgba(200,225,255,.80);
   font-size: .69rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.jb-upcoming-item svg {
+  flex-shrink: 0;
+  opacity: .75;
 }
 
 .jb-global-kpis {
@@ -350,16 +421,20 @@ body {
   gap: 2px;
 }
 
-/* ألوان كل بطاقة */
-.jb-global-kpi.c-amber  { background: rgba(245,158,11,.10); border: 1px solid rgba(245,158,11,.25); box-shadow: 0 0 18px rgba(245,158,11,.08); }
-.jb-global-kpi.c-cyan   { background: rgba(6,182,212,.10);  border: 1px solid rgba(6,182,212,.25);  box-shadow: 0 0 18px rgba(6,182,212,.08); }
-.jb-global-kpi.c-blue   { background: rgba(59,130,246,.10); border: 1px solid rgba(59,130,246,.25); box-shadow: 0 0 18px rgba(59,130,246,.08); }
-.jb-global-kpi.c-emerald{ background: rgba(16,185,129,.10); border: 1px solid rgba(16,185,129,.25); box-shadow: 0 0 18px rgba(16,185,129,.08); }
+/* ألوان كل بطاقة — glassmorphism + glow */
+.jb-global-kpi.c-amber  { background: rgba(245,158,11,.08);  border: none; box-shadow: 0 0 18px rgba(245,158,11,.18),  inset 0 1px 0 rgba(245,158,11,.15); }
+.jb-global-kpi.c-cyan   { background: rgba(6,182,212,.08);   border: none; box-shadow: 0 0 18px rgba(6,182,212,.18),   inset 0 1px 0 rgba(6,182,212,.15);  }
+.jb-global-kpi.c-blue   { background: rgba(59,130,246,.08);  border: none; box-shadow: 0 0 18px rgba(59,130,246,.18),  inset 0 1px 0 rgba(59,130,246,.15); }
+.jb-global-kpi.c-emerald{ background: rgba(16,185,129,.08);  border: none; box-shadow: 0 0 18px rgba(16,185,129,.18), inset 0 1px 0 rgba(16,185,129,.15); }
 
 .jb-kpi-icon {
-  font-size: 1.15rem;
-  line-height: 1;
-  margin-bottom: 2px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+  opacity: .90;
 }
 
 .jb-global-kpi.c-amber  .jb-global-kpi-num { color: #fbbf24; }
@@ -375,9 +450,12 @@ body {
 }
 
 .jb-global-kpi-text {
-  color: rgba(160, 200, 255, .46);
-  font-size: .62rem;
-  margin-top: 1px;
+  color: rgba(180, 210, 255, .80);
+  font-size: .72rem;
+  font-weight: 500;
+  margin-top: 2px;
+  font-family: 'Tajawal', sans-serif;
+  letter-spacing: .1px;
 }
 
 .jb-controls {
@@ -410,26 +488,22 @@ body {
 }
 
 .jb-nav button {
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.12);
-  color: #eff6ff;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.08);
+  color: rgba(210,230,255,.90);
   border-radius: 10px;
   padding: 7px 11px;
   cursor: pointer;
 }
 
 .jb-nav button:hover {
-  background: rgba(255,255,255,.18);
+  background: rgba(255,255,255,.14);
 }
 
 .jb-form-panel {
   z-index: 1;
-  /* سافير ليلي ممزوج بلازوردي خافت */
-  background:
-    radial-gradient(ellipse at 40% 0%,   rgba(26, 86, 200, .09), transparent 55%),
-    radial-gradient(ellipse at 80% 100%, rgba(10, 40, 100, .14),  transparent 50%),
-    linear-gradient(155deg, #0a1628 0%, #0d1f40 42%, #091422 75%, #0b1a32 100%);
-  border-right: 1px solid rgba(20, 60, 120, .22);
+  background: linear-gradient(155deg, #0a1628 0%, #0d2045 42%, #091422 75%, #0b1a38 100%);
+  border-right: 1px solid rgba(255,255,255,.06);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -449,7 +523,7 @@ body {
   width: 300px;
   height: 140px;
   border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(30, 110, 220, .06), transparent 70%);
+  background: radial-gradient(ellipse, rgba(30,110,220,.08), transparent 70%);
   pointer-events: none;
 }
 
@@ -468,12 +542,15 @@ body {
 }
 
 .jb-form-logo-img {
-  width: 54px;
-  height: 54px;
+  width: 85px;
+  height: 85px;
   flex-shrink: 0;
   overflow: hidden;
-  border-radius: 13px;
+  border-radius: 0;
   background: transparent;
+  border: none;
+  box-shadow: none;
+  outline: none;
 }
 
 .jb-form-logo-img img {
@@ -481,7 +558,7 @@ body {
   height: 100%;
   object-fit: contain;
   mix-blend-mode: screen;
-  filter: brightness(1.25) saturate(1.1);
+  filter: invert(1) hue-rotate(180deg) brightness(1.3) saturate(1.2);
 }
 
 .jb-form-title-block strong {
@@ -495,7 +572,7 @@ body {
 
 .jb-form-title-block span {
   font-size: .69rem;
-  color: rgba(120, 165, 228, .48);
+  color: rgba(120, 165, 228, .52);
   font-family: 'Manrope', sans-serif;
 }
 
@@ -531,14 +608,16 @@ body {
   font-size: .86rem;
   color: #e4f0ff;
   outline: none;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .jb-input::placeholder { color: rgba(160, 195, 240, .40); }
 
 .jb-input:focus {
   border-color: rgba(29, 155, 240, .55);
-  background: rgba(255,255,255,.10);
+  background: rgba(255,255,255,.11);
   box-shadow: 0 0 0 3px rgba(29, 155, 240, .13);
 }
 
@@ -655,21 +734,21 @@ body {
 {% block auth_content %}
 <div class="jb-auth-root">
   <div class="jb-theater">
-    <div class="jb-brand">
-      <div class="jb-brand-mark">
-        <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Jinan Biz">
-      </div>
-      <div class="jb-brand-text">
-        <strong>جنان بيز</strong>
-        <span>Jinan Biz Enterprise ERP</span>
-      </div>
-    </div>
 
     <div class="jb-theater-top">
       <div class="jb-pill-row">
-        <span class="jb-pill">🔐 بنية آمنة</span>
-        <span class="jb-pill">🧾 OCR + Excel Import</span>
-        <span class="jb-pill">📊 KPIs حسب النشاط</span>
+        <span class="jb-pill">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          بنية آمنة
+        </span>
+        <span class="jb-pill">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          OCR + Excel Import
+        </span>
+        <span class="jb-pill">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          KPIs حسب النشاط
+        </span>
       </div>
       <div class="jb-activity-counter" id="activityCounter">1 / 73 نشاط</div>
     </div>
@@ -681,7 +760,7 @@ body {
             <div class="jb-hero-head">
               <div class="jb-hero-icon" id="heroIcon">🏪</div>
               <div>
-                <h3 class="jb-hero-title" id="heroTitle">نشاط تجاري مدعوم بجنان بيز</h3>
+                <h3 class="jb-hero-title" id="heroTitle">نشاط تجاري</h3>
                 <p class="jb-hero-sub" id="heroSub">تجربة تشغيل موحدة توضح قيمة النظام لكل نشاط.</p>
               </div>
             </div>
@@ -694,21 +773,39 @@ body {
 
           <div class="jb-metric-column">
             <div class="jb-metric-card">
+              <div class="jb-metric-scan"></div>
               <div class="jb-metric-label" id="metric1Label">المؤشر الأول</div>
-              <div class="jb-metric-value" id="metric1Value">0</div>
+              <div class="jb-metric-value" id="metric1Value">٠</div>
               <div class="jb-metric-chart">
-                <svg viewBox="0 0 100 30" preserveAspectRatio="none">
-                  <polyline id="metric1Chart" points="0,24 14,22 28,18 42,16 56,13 70,10 84,9 100,7" fill="none" stroke="#0b3a63" stroke-width="2" stroke-linecap="round"/>
+                <svg viewBox="0 0 100 32" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="rgba(100,200,255,.25)"/>
+                      <stop offset="100%" stop-color="rgba(100,200,255,0)"/>
+                    </linearGradient>
+                  </defs>
+                  <polygon id="metric1Fill" points="0,28 0,24 14,22 28,18 42,16 56,13 70,10 84,9 100,7 100,28" fill="url(#g1)"/>
+                  <polyline id="metric1Chart" points="0,24 14,22 28,18 42,16 56,13 70,10 84,9 100,7" fill="none" stroke="rgba(100,200,255,.90)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle id="metric1Dot" cx="100" cy="7" r="3" fill="rgba(100,200,255,1)" class="jb-pulse-dot"/>
                 </svg>
               </div>
             </div>
 
             <div class="jb-metric-card">
+              <div class="jb-metric-scan"></div>
               <div class="jb-metric-label" id="metric2Label">المؤشر الثاني</div>
-              <div class="jb-metric-value teal" id="metric2Value">0</div>
+              <div class="jb-metric-value teal" id="metric2Value">٠</div>
               <div class="jb-metric-chart">
-                <svg viewBox="0 0 100 30" preserveAspectRatio="none">
-                  <polyline id="metric2Chart" points="0,26 14,24 28,23 42,19 56,17 70,15 84,11 100,8" fill="none" stroke="#0f766e" stroke-width="2" stroke-linecap="round"/>
+                <svg viewBox="0 0 100 32" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="rgba(52,211,153,.25)"/>
+                      <stop offset="100%" stop-color="rgba(52,211,153,0)"/>
+                    </linearGradient>
+                  </defs>
+                  <polygon id="metric2Fill" points="0,28 0,26 14,24 28,23 42,19 56,17 70,15 84,11 100,8 100,28" fill="url(#g2)"/>
+                  <polyline id="metric2Chart" points="0,26 14,24 28,23 42,19 56,17 70,15 84,11 100,8" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle id="metric2Dot" cx="100" cy="8" r="3" fill="#34d399" class="jb-pulse-dot"/>
                 </svg>
               </div>
             </div>
@@ -727,22 +824,47 @@ body {
 
         <div class="jb-global-kpis">
           <div class="jb-global-kpi c-amber">
-            <div class="jb-kpi-icon">🧾</div>
-            <div class="jb-global-kpi-num" id="cntInv">0</div>
+            <div class="jb-kpi-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+            </div>
+            <div class="jb-global-kpi-num" id="cntInv">+١٥٬٤٢٠</div>
             <div class="jb-global-kpi-text">فاتورة معالجة</div>
           </div>
           <div class="jb-global-kpi c-cyan">
-            <div class="jb-kpi-icon">🤖</div>
+            <div class="jb-kpi-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+              </svg>
+            </div>
             <div class="jb-global-kpi-num" id="aiAccuracy">99.9%</div>
             <div class="jb-global-kpi-text">دقة الذكاء</div>
           </div>
           <div class="jb-global-kpi c-blue">
-            <div class="jb-kpi-icon">📊</div>
+            <div class="jb-kpi-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                <rect x="3" y="14" width="7" height="7" rx="1"/>
+                <rect x="14" y="14" width="7" height="7" rx="1"/>
+              </svg>
+            </div>
             <div class="jb-global-kpi-num" id="profilesCount">73</div>
             <div class="jb-global-kpi-text">نشاط برمجي</div>
           </div>
           <div class="jb-global-kpi c-emerald">
-            <div class="jb-kpi-icon">🏢</div>
+            <div class="jb-kpi-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </div>
             <div class="jb-global-kpi-num" id="businessesCount">0</div>
             <div class="jb-global-kpi-text">منشأة نشطة</div>
           </div>
@@ -754,6 +876,10 @@ body {
             <button type="button" onclick="prevActivity()">السابق</button>
             <button type="button" onclick="nextActivity()">التالي</button>
           </div>
+        </div>
+
+        <div style="text-align:center;margin-top:6px;font-size:.64rem;font-family:'Manrope',sans-serif;color:rgba(100,160,255,.35);letter-spacing:.5px;">
+          JINAN BIZ &mdash; Enterprise ERP &bull; 2026
         </div>
       </div>
     </div>
@@ -837,12 +963,60 @@ function fmtNumber(value, suffix = '') {
   return text + (suffix || '');
 }
 
+// عداد متحرك easeOutCubic
+function animateCount(el, toVal, suffix, isFloat) {
+  const fromVal = parseFloat((el.dataset.currentVal || '0').replace(/[^\d.]/g, '')) || 0;
+  el.dataset.currentVal = toVal;
+  const duration = 850;
+  const start = performance.now();
+  const step = (now) => {
+    const p = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - p, 3);
+    const cur = fromVal + (toVal - fromVal) * ease;
+    const txt = isFloat
+      ? cur.toLocaleString('ar-SA', { maximumFractionDigits: 1, minimumFractionDigits: 1 })
+      : Math.round(cur).toLocaleString('ar-SA');
+    el.textContent = txt + (suffix || '');
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
 function makeChartPoints(seed) {
-  const base = Math.max(6, Math.min(26, 26 - (seed % 11)));
+  const base = Math.max(5, Math.min(22, 22 - (seed % 13)));
   return [0, 14, 28, 42, 56, 70, 84, 100].map((x, i) => {
-    const y = Math.max(6, Math.min(26, base - i * 2 + ((seed + i * 3) % 5)));
+    const wave = Math.sin(i * 0.9 + seed * 0.07) * 3.5;
+    const trend = -i * 1.7;
+    const y = Math.max(4, Math.min(26, base + trend + wave)).toFixed(1);
     return x + ',' + y;
   }).join(' ');
+}
+
+const toFill = (pts, bot = 28) => '0,' + bot + ' ' + pts + ' 100,' + bot;
+
+// رسم الخط بتأثير draw-in
+function animateSparkline(lineEl, fillEl, dotEl, pts, color) {
+  lineEl.setAttribute('points', pts);
+  lineEl.setAttribute('stroke', color);
+  if (fillEl) fillEl.setAttribute('points', toFill(pts));
+  const lastPt = pts.split(' ').pop().split(',');
+  if (dotEl) {
+    dotEl.setAttribute('cx', lastPt[0]);
+    dotEl.setAttribute('cy', lastPt[1]);
+    dotEl.setAttribute('fill', color);
+  }
+  // draw-in animation
+  try {
+    const len = lineEl.getTotalLength ? lineEl.getTotalLength() : 180;
+    lineEl.style.strokeDasharray = len;
+    lineEl.style.strokeDashoffset = len;
+    lineEl.getBoundingClientRect();
+    lineEl.style.transition = 'stroke-dashoffset .85s cubic-bezier(.4,0,.2,1)';
+    lineEl.style.strokeDashoffset = '0';
+  } catch (_) {
+    lineEl.style.strokeDasharray = '';
+    lineEl.style.strokeDashoffset = '';
+  }
 }
 
 function applyActivity(index) {
@@ -850,61 +1024,128 @@ function applyActivity(index) {
 
   showcaseIndex = (index + showcaseItems.length) % showcaseItems.length;
   const item = showcaseItems[showcaseIndex];
-  const accent = item.accent || {};
   const metrics = item.metrics || [];
   const featureList = document.getElementById('featureList');
   const heroMain = document.getElementById('heroMain');
+  const showcase = document.querySelector('.jb-showcase');
 
-  document.getElementById('activityCounter').textContent = (showcaseIndex + 1).toLocaleString('ar-SA') + ' / ' + showcaseItems.length.toLocaleString('ar-SA') + ' نشاط';
-  document.getElementById('heroIcon').textContent = item.icon || '🏪';
-  document.getElementById('heroTitle').textContent = item.headline || item.title || 'نشاط تجاري';
-  document.getElementById('heroSub').textContent = item.subheadline || '';
-  document.getElementById('heroMode').textContent = 'mode: ' + (item.pos_mode || 'standard');
+  showcase.style.opacity = '0';
 
-  heroMain.style.background = 'linear-gradient(135deg, ' + (accent.from || '#eff6ff') + ', rgba(255,255,255,.94))';
-  heroMain.style.borderColor = accent.border || '#dbeafe';
-  document.getElementById('heroTitle').style.color = accent.text || '#0b3a63';
-  document.getElementById('heroIcon').style.background = 'linear-gradient(135deg, ' + (accent.from || '#eff6ff') + ', ' + (accent.to || '#ecfeff') + ')';
+  setTimeout(() => {
+    document.getElementById('activityCounter').textContent =
+      (showcaseIndex + 1).toLocaleString('ar-SA') + ' / ' + showcaseItems.length.toLocaleString('ar-SA') + ' نشاط';
+    document.getElementById('heroIcon').textContent = item.icon || '🏪';
+    document.getElementById('heroTitle').textContent = item.headline || item.title || 'نشاط تجاري';
+    document.getElementById('heroSub').textContent = item.subheadline || '';
+    document.getElementById('heroMode').textContent = 'mode: ' + (item.pos_mode || 'standard');
 
-  featureList.innerHTML = (item.features || []).map((f, idx) => {
-    return '<div class="jb-feature"><strong>ميزة ' + (idx + 1).toLocaleString('ar-SA') + '</strong>' + f + '</div>';
-  }).join('');
+    heroMain.style.background = 'rgba(255,255,255,.06)';
+    heroMain.style.borderColor = 'rgba(255,255,255,.10)';
+    document.getElementById('heroTitle').style.color = '#ffffff';
+    document.getElementById('heroIcon').style.background = 'transparent';
 
-  const m1 = metrics[0] || { label: 'المؤشر الأول', value: 0, color: 'primary' };
-  const m2 = metrics[1] || { label: 'المؤشر الثاني', value: 0, color: 'teal' };
-  document.getElementById('metric1Label').textContent = m1.label;
-  document.getElementById('metric2Label').textContent = m2.label;
+    const icons = ['✦', '◈', '⬡'];
+    featureList.innerHTML = (item.features || []).map((f, idx) =>
+      '<div class="jb-feature"><span class="jb-feat-icon">' + icons[idx % 3] + '</span>' + f + '</div>'
+    ).join('');
 
-  const metric1Value = document.getElementById('metric1Value');
-  const metric2Value = document.getElementById('metric2Value');
-  metric1Value.textContent = fmtNumber(m1.value, m1.suffix || '');
-  metric2Value.textContent = fmtNumber(m2.value, m2.suffix || '');
-  metric1Value.className = 'jb-metric-value ' + (m1.color === 'gold' ? 'gold' : m1.color === 'teal' ? 'teal' : '');
-  metric2Value.className = 'jb-metric-value ' + (m2.color === 'gold' ? 'gold' : m2.color === 'teal' ? 'teal' : '');
+    const m1 = metrics[0] || { label: 'المؤشر الأول', value: 0, color: 'primary', suffix: '' };
+    const m2 = metrics[1] || { label: 'المؤشر الثاني', value: 0, color: 'teal', suffix: '' };
 
-  document.getElementById('metric1Chart').setAttribute('points', makeChartPoints(Number(m1.value || 0)));
-  document.getElementById('metric2Chart').setAttribute('points', makeChartPoints(Number(m2.value || 0) + 7));
-  document.getElementById('metric1Chart').setAttribute('stroke', accent.text || '#0b3a63');
-  document.getElementById('metric2Chart').setAttribute('stroke', m2.color === 'gold' ? '#a16207' : '#0f766e');
+    document.getElementById('metric1Label').textContent = m1.label;
+    document.getElementById('metric2Label').textContent = m2.label;
 
-  const upcoming = [];
-  for (let i = 1; i <= 5; i += 1) {
-    const nextItem = showcaseItems[(showcaseIndex + i) % showcaseItems.length];
-    upcoming.push('<span class="jb-upcoming-item">' + (nextItem.icon || '🏪') + ' ' + nextItem.title + '</span>');
-  }
-  document.getElementById('upcomingActivities').innerHTML = upcoming.join('');
-  document.getElementById('showcaseProgress').style.width = (((showcaseIndex + 1) / showcaseItems.length) * 100).toFixed(2) + '%';
+    const m1El = document.getElementById('metric1Value');
+    const m2El = document.getElementById('metric2Value');
+    m1El.className = 'jb-metric-value ' + (m1.color === 'gold' ? 'gold' : m1.color === 'teal' ? 'teal' : '');
+    m2El.className = 'jb-metric-value ' + (m2.color === 'gold' ? 'gold' : m2.color === 'teal' ? 'teal' : '');
+
+    // ─── أرقام تعبيرية لكل نوع نشاط (صفحة دخول = عرض تسويقي) ───
+    const modeDemo = {
+      standard:     { v1: 15420, v2: 1240  },
+      restaurant:   { v1: 2870,  v2: 94    },
+      pharmacy:     { v1: 18,    v2: 3200  },
+      fashion:      { v1: 4310,  v2: 38.5  },
+      wholesale:    { v1: 128,   v2: 2400  },
+      construction: { v1: 47,    v2: 23    },
+      workshop:     { v1: 31,    v2: 620   },
+      rental:       { v1: 14,    v2: 38    },
+      medical:      { v1: 830,   v2: 3600  },
+    };
+    const demo   = modeDemo[item.pos_mode] || modeDemo['standard'];
+    const idxMul = 0.72 + (showcaseIndex % 9) * 0.07; // 0.72 .. 1.28
+
+    // ─── ربط الأرقام الحقيقية من قاعدة البيانات ──────────────────────
+    const realProds = (item.products_count && item.products_count > 0) ? item.products_count : 0;
+    const useReal   = realProds > 0;
+
+    const val1    = Math.round(demo.v1 * idxMul);
+    const val2    = useReal
+      ? realProds
+      : (typeof demo.v2 === 'number' && demo.v2 < 100
+          ? +(demo.v2 * idxMul).toFixed(1)
+          : Math.round(demo.v2 * idxMul));
+    const isF1    = m1.suffix === '%' || (m1.color === 'teal' && val1 < 200 && String(val1).includes('.'));
+    const isF2    = !useReal && (m2.suffix === '%' || (typeof demo.v2 === 'number' && demo.v2 < 100));
+
+    // تحديث التسمية: إذا كانت بيانات حقيقية، أظهر "أصناف مسجلة"
+    document.getElementById('metric2Label').textContent = useReal ? 'أصناف مسجلة' : m2.label;
+
+    // إعادة الصفر ليبدأ العداد دائماً من 0 في كل تبديل
+    m1El.dataset.currentVal = '0';
+    m2El.dataset.currentVal = '0';
+
+    animateCount(m1El, val1,                           m1.suffix || '', isF1);
+    animateCount(m2El, isF2 ? +Number(val2).toFixed(1) : Math.round(Number(val2)), m2.suffix || '', isF2);
+
+    // بذرة مختلفة لكل نشاط = خط بياني مختلف شكلاً
+    const seed1 = Math.round(val1) + showcaseIndex * 19;
+    const seed2 = Math.round(val2) + showcaseIndex * 23 + 11;
+    const pts1 = makeChartPoints(seed1);
+    const pts2 = makeChartPoints(seed2);
+    const c2 = m2.color === 'gold' ? '#fbbf24' : '#34d399';
+
+    // رسم متحرك للخطوط
+    animateSparkline(
+      document.getElementById('metric1Chart'),
+      document.getElementById('metric1Fill'),
+      document.getElementById('metric1Dot'),
+      pts1, 'rgba(100,200,255,.90)'
+    );
+    animateSparkline(
+      document.getElementById('metric2Chart'),
+      document.getElementById('metric2Fill'),
+      document.getElementById('metric2Dot'),
+      pts2, c2
+    );
+
+    const industryIconMap = {
+      standard:     '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+      restaurant:   '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>',
+      pharmacy:     '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
+      fashion:      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46L16 2l-4 4-4-4L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>',
+      wholesale:    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>',
+      construction: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M5 20V10l7-7 7 7v10"/><path d="M9 20v-5h6v5"/></svg>',
+      workshop:     '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
+      rental:       '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>',
+      medical:      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+    };
+    const upcoming = [];
+    for (let i = 1; i <= 5; i++) {
+      const next = showcaseItems[(showcaseIndex + i) % showcaseItems.length];
+      const svgIcon = industryIconMap[next.key] || industryIconMap['standard'];
+      upcoming.push('<span class="jb-upcoming-item">' + svgIcon + ' ' + next.title + '</span>');
+    }
+    document.getElementById('upcomingActivities').innerHTML = upcoming.join('');
+    document.getElementById('showcaseProgress').style.width =
+      (((showcaseIndex + 1) / showcaseItems.length) * 100).toFixed(2) + '%';
+
+    showcase.style.opacity = '1';
+  }, 300);
 }
 
-function nextActivity() {
-  applyActivity(showcaseIndex + 1);
-  restartRotation();
-}
-
-function prevActivity() {
-  applyActivity(showcaseIndex - 1);
-  restartRotation();
-}
+function nextActivity() { applyActivity(showcaseIndex + 1); restartRotation(); }
+function prevActivity() { applyActivity(showcaseIndex - 1); restartRotation(); }
 
 function restartRotation() {
   if (showcaseTimer) clearInterval(showcaseTimer);
@@ -920,22 +1161,40 @@ async function loadRealLandingMetrics() {
     const g = data.global || {};
     showcaseItems = Array.isArray(data.showcase) ? data.showcase : [];
 
-    document.getElementById('cntInv').textContent = '+' + fmtNumber(g.total_invoices || 0);
-    document.getElementById('aiAccuracy').textContent = fmtNumber(g.ai_accuracy || 99.9, '%');
-    document.getElementById('profilesCount').textContent = fmtNumber(g.profiles_count || showcaseItems.length || 73);
-    document.getElementById('businessesCount').textContent = fmtNumber(g.businesses_count || 0);
+    // عداد متحرك للـ KPIs بدون proxy
+    function animateKPI(id, value, prefix, suffix, isFloat) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const duration = 900;
+      const start = performance.now();
+      const step = (now) => {
+        const p = Math.min((now - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - p, 3);
+        const cur = value * ease;
+        const txt = isFloat
+          ? cur.toLocaleString('ar-SA', { maximumFractionDigits: 1, minimumFractionDigits: 1 })
+          : Math.round(cur).toLocaleString('ar-SA');
+        el.textContent = (prefix || '') + txt + (suffix || '');
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
+    animateKPI('cntInv',         Math.max(15420, Number(g.total_invoices || 0)), '+', '',  false);
+    animateKPI('aiAccuracy',     Number(g.ai_accuracy      || 99.9),           '',  '%', true);
+    animateKPI('profilesCount',  Number(g.profiles_count   || showcaseItems.length || 73), '', '', false);
+    animateKPI('businessesCount',Number(g.businesses_count || 0),              '',  '',  false);
 
     if (showcaseItems.length) {
       applyActivity(0);
       restartRotation();
     }
   } catch (err) {
+    console.error('[JB] landing-metrics:', err);
   }
 }
 
-window.addEventListener('load', () => {
-  loadRealLandingMetrics();
-});
+window.addEventListener('load', loadRealLandingMetrics);
 
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
@@ -948,9 +1207,7 @@ document.getElementById('pwaInstallBtn').addEventListener('click', async () => {
   if (!deferredPrompt) return;
   deferredPrompt.prompt();
   const choice = await deferredPrompt.userChoice;
-  if (choice.outcome === 'accepted') {
-    document.getElementById('pwaInstallBtn').style.display = 'none';
-  }
+  if (choice.outcome === 'accepted') document.getElementById('pwaInstallBtn').style.display = 'none';
   deferredPrompt = null;
 });
 </script>

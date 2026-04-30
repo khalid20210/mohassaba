@@ -54,7 +54,7 @@ def api_purchase_import_upload():
 
     products = [
         dict(r) for r in db.execute(
-            "SELECT id, name, purchase_price FROM products WHERE business_id=? AND is_active=1",
+            "SELECT id, name, purchase_price FROM products WHERE business_id=? AND is_active=1 ORDER BY name LIMIT 2000",
             (biz_id,)
         ).fetchall()
     ]

@@ -47,7 +47,30 @@ def auth_landing_metrics():
     total_invoices = int(_scalar("SELECT COUNT(*) FROM invoices", default=0))
     paid_invoices = int(_scalar("SELECT COUNT(*) FROM invoices WHERE status='paid'", default=0))
     total_products = int(_scalar("SELECT COUNT(*) FROM products WHERE is_active=1", default=0))
-    total_businesses = int(_scalar("SELECT COUNT(*) FROM businesses WHERE is_active=1", default=0))
+
+    # ─── إحصائيات المنتجات حسب نوع الصناعة ─────────────────────────────────
+    industry_stats: dict = {}
+    try:
+        rows = db.execute("""
+            SELECT b.industry_type,
+                   COUNT(p.id)          AS prod_cnt,
+                   COUNT(DISTINCT b.id) AS biz_cnt
+            FROM businesses b
+            JOIN products p ON p.business_id = b.id AND p.is_active = 1
+            WHERE b.is_active = 1
+            GROUP BY b.industry_type
+        """).fetchall()
+        for r in rows:
+            industry_stats[r[0]] = {"prods": r[1], "bizs": r[2]}
+    except Exception:
+        pass
+
+    # عدد المنشآت الفعلية (التي تحتوي على منتجات — تستثني المنشآت الفارغة)
+    total_businesses = int(_scalar("""
+        SELECT COUNT(DISTINCT b.id) FROM businesses b
+        JOIN products p ON p.business_id = b.id AND p.is_active = 1
+        WHERE b.is_active = 1
+    """, default=0))
     total_users = int(_scalar("SELECT COUNT(*) FROM users WHERE is_active=1", default=0))
     total_contacts = int(_scalar("SELECT COUNT(*) FROM contacts", default=0))
     new_customers_30 = int(_scalar(
@@ -205,18 +228,30 @@ def auth_landing_metrics():
             continue
         seen_keys.add(industry_key)
 
-        terms = get_terms(industry_key)
+        terms    = get_terms(industry_key)
         pos_mode = terms.get("pos_mode", "standard")
+        real_st  = industry_stats.get(industry_key, {})
+        real_prods = int(real_st.get("prods", 0))
+        real_bizs  = int(real_st.get("bizs",  0))
+
+        # بناء الـ subheadline مع عدد الأصناف الحقيقية إذا وُجدت
+        if real_prods > 0:
+            sub = f"{real_prods:,} صنف مسجل • {terms.get('invoice', 'فاتورة')} + {terms.get('customer', 'عميل')} في تجربة واحدة."
+        else:
+            sub = f"{terms.get('product', 'منتج')} + {terms.get('invoice', 'فاتورة')} + {terms.get('customer', 'عميل')} ضمن تجربة تشغيل واحدة واضحة."
+
         showcase.append({
-            "key": industry_key,
-            "title": terms.get("industry_label", industry_label or "نشاط تجاري"),
-            "icon": terms.get("industry_icon", "🏪"),
-            "pos_mode": pos_mode,
-            "headline": f"{terms.get('industry_label', industry_label or 'نشاط تجاري')} مدعوم بجنان بيز",
-            "subheadline": f"{terms.get('product', 'منتج')} + {terms.get('invoice', 'فاتورة')} + {terms.get('customer', 'عميل')} ضمن تجربة تشغيل واحدة واضحة.",
-            "features": feature_map.get(pos_mode, feature_map["standard"]),
-            "metrics": metric_map.get(pos_mode, metric_map["standard"]),
-            "accent": accent_map.get(pos_mode, accent_map["standard"]),
+            "key":            industry_key,
+            "title":          terms.get("industry_label", industry_label or "نشاط تجاري"),
+            "icon":           terms.get("industry_icon", "🏪"),
+            "pos_mode":       pos_mode,
+            "headline":       terms.get("industry_label", industry_label or "نشاط تجاري"),
+            "subheadline":    sub,
+            "features":       feature_map.get(pos_mode, feature_map["standard"]),
+            "metrics":        metric_map.get(pos_mode, metric_map["standard"]),
+            "accent":         accent_map.get(pos_mode, accent_map["standard"]),
+            "products_count": real_prods,
+            "biz_count":      real_bizs,
         })
 
     return jsonify({
