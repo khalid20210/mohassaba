@@ -29,8 +29,9 @@ def create_app():
     from .blueprints.supply.routes     import bp as supply_bp
     from .blueprints.pos.routes        import bp as pos_bp
     from .blueprints.restaurant.routes import bp as restaurant_bp
+    from .blueprints.workforce.routes  import bp as workforce_bp
 
-    for bp in (auth_bp, core_bp, accounting_bp, supply_bp, pos_bp, restaurant_bp):
+    for bp in (auth_bp, core_bp, accounting_bp, supply_bp, pos_bp, restaurant_bp, workforce_bp):
         app.register_blueprint(bp)
 
     # ── Middleware ─────────────────────────────────────────────────────────────
@@ -165,6 +166,19 @@ def _register_endpoint_aliases(app):
         "kitchen":          "restaurant.kitchen",
         "api_kitchen_done": "restaurant.api_kitchen_done",
         "api_me":           "restaurant.api_me",
+        # workforce
+        "workforce_portal":              "workforce.workforce_portal",
+        "agent_mobile_portal":           "workforce.agent_mobile_portal",
+        "api_v1_health":                 "workforce.api_v1_health",
+        "api_v1_openapi":                "workforce.api_v1_openapi",
+        "api_v1_employees_list":         "workforce.api_v1_employees_list",
+        "api_v1_employees_create":       "workforce.api_v1_employees_create",
+        "api_v1_shift_close_blind":      "workforce.api_v1_shift_close_blind",
+        "api_v1_agents_list":            "workforce.api_v1_agents_list",
+        "api_v1_agents_create":          "workforce.api_v1_agents_create",
+        "api_v1_agent_assign_invoice":   "workforce.api_v1_agent_assign_invoice",
+        "api_v1_agent_commissions_summary":"workforce.api_v1_agent_commissions_summary",
+        "api_v1_agent_whatsapp_campaign": "workforce.api_v1_agent_whatsapp_campaign",
     }
 
     for alias, real in aliases.items():

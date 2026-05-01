@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}بوابة المندوب{% endblock %}
+{% block page_title %}بوابة المندوب الذكية{% endblock %}
+
+{% block head %}
+<style>
+.ag-wrap{max-width:620px;margin:0 auto}
+.ag-card{background:#0f172a;border:1px solid rgba(148,163,184,.25);border-radius:16px;padding:16px;margin-bottom:12px}
+.ag-name{margin:0;color:#e2e8f0;font-size:1.1rem;font-weight:800}
+.ag-meta{margin:4px 0 0;color:#93c5fd;font-size:.82rem}
+.ag-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.ag-kpi{background:#0b1220;border:1px solid rgba(148,163,184,.2);border-radius:10px;padding:10px;text-align:center}
+.ag-kpi b{display:block;color:#f8fafc;font-size:1rem}
+.ag-kpi span{font-size:.72rem;color:#94a3b8}
+.ag-in{width:100%;background:#0b1220;color:#e2e8f0;border:1px solid rgba(148,163,184,.25);border-radius:10px;padding:10px;font-family:inherit}
+.ag-btn{margin-top:8px;width:100%;border:none;border-radius:10px;padding:11px 12px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;font-weight:800;font-family:inherit;cursor:pointer}
+@media (max-width:560px){.ag-kpis{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ag-wrap">
+  <section class="ag-card">
+    <h3 class="ag-name">{{ agent.full_name }}</h3>
+    <p class="ag-meta">عمولة افتراضية: {{ '%.2f'|format(agent.commission_rate or 0) }}% • WhatsApp: {{ agent.whatsapp_number or '-' }}</p>
+    <div class="ag-kpis" id="kpis">
+      <div class="ag-kpi"><b>0</b><span>فواتير</span></div>
+      <div class="ag-kpi"><b>0.00</b><span>عمولات معلّقة</span></div>
+      <div class="ag-kpi"><b>0.00</b><span>عمولات مدفوعة</span></div>
+    </div>
+  </section>
+
+  <section class="ag-card">
+    <h4 style="margin:0 0 8px;color:#dbeafe">التسويق عبر واتساب</h4>
+    <textarea id="waMessage" class="ag-in" rows="4" placeholder="اكتب رسالة الحملة للعملاء..."></textarea>
+    <button class="ag-btn" onclick="generateWhatsAppLinks()">توليد روابط الحملة</button>
+    <div id="waResult" style="margin-top:8px;color:#cbd5e1;font-size:.83rem"></div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const AGENT_ID = {{ agent.id }};
+
+function money(n){ return Number(n||0).toLocaleString('ar-SA',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+async function refreshSummary(){
+  const r = await fetch(`/api/v1/agents/${AGENT_ID}/commissions/summary?days=30`);
+  const data = await r.json();
+  if(!data.success) return;
+  const s = data.summary || {};
+  document.getElementById('kpis').innerHTML = `
+    <div class="ag-kpi"><b>${s.invoices_count||0}</b><span>فواتير</span></div>
+    <div class="ag-kpi"><b>${money(s.commissions_pending)}</b><span>عمولات معلّقة</span></div>
+    <div class="ag-kpi"><b>${money(s.commissions_paid)}</b><span>عمولات مدفوعة</span></div>
+  `;
+}
+
+async function generateWhatsAppLinks(){
+  const msg = document.getElementById('waMessage').value;
+  const r = await fetch(`/api/v1/agents/${AGENT_ID}/whatsapp-campaign`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({message:msg})
+  });
+  const data = await r.json();
+  const box = document.getElementById('waResult');
+  if(!data.success){ box.textContent = data.error || 'فشل التوليد'; return; }
+  const links = (data.links || []).slice(0, 10).map(x=>`<a href="${x.whatsapp_url}" target="_blank" style="color:#93c5fd">${x.contact_name}</a>`).join(' • ');
+  box.innerHTML = `تم توليد ${data.count} رابط. ${links}`;
+}
+
+refreshSummary();
+setInterval(refreshSummary, 12000);
+</script>
+{% endblock %}
