@@ -34,6 +34,13 @@ def auth_landing_metrics():
     """مؤشرات حقيقية لصفحة الدخول (بدون بيانات حساسة)."""
     db = get_db()
 
+    def _column_exists(table: str, column: str) -> bool:
+        try:
+            rows = db.execute(f"PRAGMA table_info({table})").fetchall()
+            return any(r[1] == column for r in rows)
+        except Exception:
+            return False
+
     def _scalar(sql: str, params=(), default=0):
         try:
             row = db.execute(sql, params).fetchone()
@@ -74,7 +81,7 @@ def auth_landing_metrics():
     total_users = int(_scalar("SELECT COUNT(*) FROM users WHERE is_active=1", default=0))
     total_contacts = int(_scalar("SELECT COUNT(*) FROM contacts", default=0))
     new_customers_30 = int(_scalar(
-        "SELECT COUNT(*) FROM contacts WHERE type='customer' AND DATE(created_at) >= DATE('now','-30 days')",
+        "SELECT COUNT(*) FROM contacts WHERE contact_type='customer' AND DATE(created_at) >= DATE('now','-30 days')",
         default=0,
     ))
     table_orders_30 = int(_scalar(
@@ -89,10 +96,12 @@ def auth_landing_metrics():
         "SELECT COUNT(*) FROM invoices WHERE status IN ('draft','pending')",
         default=0,
     ))
-    expiring_products = int(_scalar(
-        "SELECT COUNT(*) FROM products WHERE is_active=1 AND expiry_date IS NOT NULL AND DATE(expiry_date) BETWEEN DATE('now') AND DATE('now','+30 days')",
-        default=0,
-    ))
+    expiring_products = 0
+    if _column_exists("products", "expiry_date"):
+        expiring_products = int(_scalar(
+            "SELECT COUNT(*) FROM products WHERE is_active=1 AND expiry_date IS NOT NULL AND DATE(expiry_date) BETWEEN DATE('now') AND DATE('now','+30 days')",
+            default=0,
+        ))
 
     ocr_processed = int(_scalar("SELECT COUNT(*) FROM invoices WHERE invoice_type='purchase'", default=0))
     fashion_top_qty = int(_scalar("""

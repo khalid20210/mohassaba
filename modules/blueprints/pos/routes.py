@@ -256,7 +256,7 @@ def api_pos_search():
 
     products = db.execute(
         f"""SELECT p.id, p.name, p.barcode, p.sale_price, p.category_name,
-                   p.tax_rate, COALESCE(s.quantity, 0) AS stock_qty
+                   0 AS tax_rate, COALESCE(s.quantity, 0) AS stock_qty
             FROM products p {stock_join}
             {where}
             ORDER BY p.name LIMIT 100""",

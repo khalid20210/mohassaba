@@ -629,6 +629,7 @@ def api_tables_checkout():
     grand_total = float(inv["total"])
     if grand_total <= 0:
         return jsonify({"success": False, "error": "إجمالي الطلب صفر"}), 400
+    tax_total = float(inv["tax_amount"] or 0)
 
     cash_code    = "1102" if payment_method == "bank" else "1101"
     cash_acc_id  = get_account_id(db, biz_id, cash_code)

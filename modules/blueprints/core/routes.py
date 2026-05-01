@@ -27,6 +27,15 @@ bp = Blueprint("core", __name__)
 LOGO_FOLDER.mkdir(exist_ok=True)
 
 
+def _column_exists(db, table: str, column: str) -> bool:
+    """تحقق خفيف من وجود عمود قبل استخدامه في الاستعلامات الديناميكية."""
+    try:
+        rows = db.execute(f"PRAGMA table_info({table})").fetchall()
+        return any(r[1] == column for r in rows)
+    except Exception:
+        return False
+
+
 # ─── Dynamic KPIs مخصصة حسب القطاع ──────────────────────────────────────────
 def _get_industry_kpis(db, biz_id: int, industry_type: str, since30: str) -> dict:
     """
@@ -77,16 +86,18 @@ def _get_industry_kpis(db, biz_id: int, industry_type: str, since30: str) -> dic
             WHERE i.business_id=? AND i.status='paid' AND DATE(i.created_at) >= ?
             GROUP BY il.description ORDER BY qty DESC LIMIT 10
         """, (biz_id, since30)).fetchall()
-        expiry_soon = db.execute("""
-            SELECT name, barcode, expiry_date,
-                   COALESCE((SELECT SUM(s.quantity) FROM stock s WHERE s.product_id=p.id), 0) AS qty
-            FROM products p
-            WHERE business_id=? AND is_active=1
-              AND expiry_date IS NOT NULL
-              AND DATE(expiry_date) <= DATE('now', '+30 days')
-              AND DATE(expiry_date) >= DATE('now')
-            ORDER BY expiry_date ASC LIMIT 10
-        """, (biz_id,)).fetchall()
+        expiry_soon = []
+        if _column_exists(db, "products", "expiry_date"):
+            expiry_soon = db.execute("""
+                SELECT name, barcode, expiry_date,
+                       COALESCE((SELECT SUM(s.quantity) FROM stock s WHERE s.product_id=p.id), 0) AS qty
+                FROM products p
+                WHERE business_id=? AND is_active=1
+                  AND expiry_date IS NOT NULL
+                  AND DATE(expiry_date) <= DATE('now', '+30 days')
+                  AND DATE(expiry_date) >= DATE('now')
+                ORDER BY expiry_date ASC LIMIT 10
+            """, (biz_id,)).fetchall()
         kpis["top_drugs"]    = [dict(r) for r in top_drugs]
         kpis["expiry_soon"]  = [dict(r) for r in expiry_soon]
 
@@ -165,7 +176,7 @@ def _get_industry_kpis(db, biz_id: int, industry_type: str, since30: str) -> dic
         """, (biz_id, since30)).fetchall()
         new_customers = db.execute("""
             SELECT COUNT(*) AS cnt FROM contacts
-            WHERE business_id=? AND type='customer'
+                        WHERE business_id=? AND contact_type='customer'
               AND DATE(created_at) >= ?
         """, (biz_id, since30)).fetchone()
         kpis["top_products"]   = [dict(r) for r in top_products]
@@ -219,7 +230,7 @@ def dashboard():
 
     last_entries = db.execute("""
         SELECT je.entry_number, je.entry_date, je.description,
-               COALESCE(SUM(CASE WHEN jel.debit_amount>0 THEN jel.debit_amount ELSE 0 END),0) AS total_debit
+               COALESCE(SUM(CASE WHEN jel.debit>0 THEN jel.debit ELSE 0 END),0) AS total_debit
         FROM journal_entries je
         LEFT JOIN journal_entry_lines jel ON jel.entry_id = je.id
         WHERE je.business_id=?
@@ -309,7 +320,7 @@ def analytics():
         SELECT p.category_name, SUM(il.total) AS total_rev
         FROM invoice_lines il
         JOIN invoices i ON i.id = il.invoice_id
-        JOIN products p ON p.name = il.description AND p.business_id = i.business_id
+                JOIN products p ON p.id = il.product_id AND p.business_id = i.business_id
         WHERE i.business_id=? AND i.invoice_type IN ('sale','table')
           AND i.status='paid' AND DATE(i.created_at) >= ?
         GROUP BY p.category_name ORDER BY total_rev DESC LIMIT 8
