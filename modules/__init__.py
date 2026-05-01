@@ -30,9 +30,20 @@ def create_app():
     from .blueprints.pos.routes        import bp as pos_bp
     from .blueprints.restaurant.routes import bp as restaurant_bp
     from .blueprints.workforce.routes  import bp as workforce_bp
+    from .blueprints.owner.routes      import bp as owner_bp
 
-    for bp in (auth_bp, core_bp, accounting_bp, supply_bp, pos_bp, restaurant_bp, workforce_bp):
+    for bp in (auth_bp, core_bp, accounting_bp, supply_bp, pos_bp, restaurant_bp, workforce_bp, owner_bp):
         app.register_blueprint(bp)
+
+    # ── Jinja2 Custom Filters ─────────────────────────────────────────────────
+    import json as _json
+    def _from_json(value, default=None):
+        try:
+            return _json.loads(value)
+        except Exception:
+            return default if default is not None else []
+    app.jinja_env.filters["from_json"] = _from_json
+    app.jinja_env.globals["enumerate"] = enumerate
 
     # ── Middleware ─────────────────────────────────────────────────────────────
     from .middleware import load_user, inject_globals, add_security_headers
@@ -179,6 +190,12 @@ def _register_endpoint_aliases(app):
         "api_v1_agent_assign_invoice":   "workforce.api_v1_agent_assign_invoice",
         "api_v1_agent_commissions_summary":"workforce.api_v1_agent_commissions_summary",
         "api_v1_agent_whatsapp_campaign": "workforce.api_v1_agent_whatsapp_campaign",
+        # owner (قمرة القيادة)
+        "owner_dashboard":       "owner.owner_dashboard",
+        "owner_audit_logs":      "owner.audit_logs",
+        "owner_blind_closures":  "owner.blind_closures",
+        "owner_hr_panel":        "owner.hr_panel",
+        "owner_api_keys":        "owner.api_keys_page",
     }
 
     for alias, real in aliases.items():

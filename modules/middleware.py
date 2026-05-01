@@ -61,6 +61,51 @@ def require_perm(perm_key: str):
     return decorator
 
 
+def owner_required(f):
+    """ديكوراتور: يسمح فقط للمالك (permissions.all = true)"""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect(url_for("auth.auth_login"))
+        if not session.get("business_id"):
+            return redirect(url_for("core.onboarding"))
+        try:
+            perms = json.loads(g.user["permissions"] or "{}") if g.user else {}
+        except Exception:
+            perms = {}
+        if not perms.get("all"):
+            flash("هذه الصفحة مخصصة للمالك فقط", "error")
+            return redirect(url_for("core.dashboard"))
+        return f(*args, **kwargs)
+    return decorated
+
+
+def write_audit_log(db, business_id: int, action: str,
+                    entity_type: str = None, entity_id: int = None,
+                    old_value: str = None, new_value: str = None):
+    """تسجيل حدث في جدول audit_logs"""
+    try:
+        user_id    = session.get("user_id")
+        actor_name = ""
+        actor_role = ""
+        if g.user:
+            actor_name = g.user["full_name"] or g.user.get("username", "")
+            actor_role = g.user.get("role_name", "")
+        ip_address = request.remote_addr or ""
+        user_agent = (request.user_agent.string or "")[:255]
+        db.execute(
+            """INSERT INTO audit_logs
+                   (business_id, user_id, actor_name, actor_role, action,
+                    entity_type, entity_id, old_value, new_value, ip_address, user_agent)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (business_id, user_id, actor_name, actor_role, action,
+             entity_type, entity_id, old_value, new_value, ip_address, user_agent)
+        )
+        db.commit()
+    except Exception:
+        pass  # لا نوقف العملية بسبب فشل الـ audit log
+
+
 # ─── Hooks: before_request و after_request ────────────────────────────────────
 
 def load_user():

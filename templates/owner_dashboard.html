@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+{% block title %}قمرة القيادة — السيادة المطلقة{% endblock %}
+{% block page_title %}👑 قمرة القيادة{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ══ Layout ══════════════════════════════════════════════════════════════ */
+.ow-wrap{max-width:1400px;margin:0 auto;padding:0 4px}
+.ow-kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-bottom:20px}
+.ow-grid-2{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-bottom:20px}
+.ow-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:1100px){.ow-grid-2,.ow-grid-3{grid-template-columns:1fr}}
+
+/* ══ Cards ══════════════════════════════════════════════════════════════ */
+.ow-card{background:#0f172a;border:1px solid rgba(148,163,184,.2);border-radius:16px;padding:18px;box-shadow:0 12px 36px rgba(2,6,23,.4)}
+.ow-card-title{margin:0 0 14px;font-size:.95rem;font-weight:800;color:#dbeafe;display:flex;align-items:center;gap:8px}
+
+/* ══ KPI Cards ══════════════════════════════════════════════════════════ */
+.kpi{background:linear-gradient(145deg,#0f172a,#0b1220);border:1px solid rgba(148,163,184,.18);border-radius:14px;padding:14px 16px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;inset:0;background:var(--kpi-color,rgba(37,99,235,.06));pointer-events:none}
+.kpi-icon{font-size:1.6rem;margin-bottom:6px;display:block}
+.kpi-val{font-size:1.35rem;font-weight:900;color:#f8fafc;margin:0;line-height:1.1}
+.kpi-lbl{font-size:.72rem;color:#94a3b8;margin-top:3px}
+.kpi-green{--kpi-color:rgba(34,197,94,.07)} .kpi-green .kpi-val{color:#4ade80}
+.kpi-blue{--kpi-color:rgba(59,130,246,.07)} .kpi-blue .kpi-val{color:#60a5fa}
+.kpi-gold{--kpi-color:rgba(245,158,11,.07)} .kpi-gold .kpi-val{color:#fbbf24}
+.kpi-red{--kpi-color:rgba(239,68,68,.07)} .kpi-red .kpi-val{color:#f87171}
+.kpi-purple{--kpi-color:rgba(168,85,247,.07)} .kpi-purple .kpi-val{color:#c084fc}
+
+/* ══ Mode Toggle ═══════════════════════════════════════════════════════ */
+.mode-strip{display:flex;align-items:center;gap:12px;background:#0b1220;border:1px solid rgba(148,163,184,.2);border-radius:50px;padding:6px 12px;margin-bottom:20px;width:fit-content}
+.mode-btn{border:none;border-radius:50px;padding:7px 22px;font-weight:800;font-family:inherit;cursor:pointer;transition:all .2s;font-size:.85rem}
+.mode-basic{background:{% if display_mode=='basic' %}linear-gradient(135deg,#f59e0b,#d97706);color:#111{% else %}transparent;color:#94a3b8{% endif %}}
+.mode-pro  {background:{% if display_mode=='pro'   %}linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff{% else %}transparent;color:#94a3b8{% endif %}}
+.mode-badge{font-size:.7rem;color:#94a3b8;margin-right:4px}
+
+/* ══ Audit Log List ═════════════════════════════════════════════════════ */
+.alog-item{padding:9px 0;border-bottom:1px solid rgba(148,163,184,.12);display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+.alog-item:last-child{border:none}
+.alog-badge{background:rgba(37,99,235,.15);color:#93c5fd;border-radius:6px;padding:3px 8px;font-size:.7rem;font-weight:700;white-space:nowrap}
+.alog-actor{color:#e2e8f0;font-size:.82rem;font-weight:600}
+.alog-time{color:#64748b;font-size:.7rem;white-space:nowrap}
+
+/* ══ Agent Sales Table ══════════════════════════════════════════════════ */
+.agent-row{display:grid;grid-template-columns:30px 1fr auto auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(148,163,184,.1)}
+.agent-row:last-child{border:none}
+.agent-rank{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:900;background:rgba(37,99,235,.2);color:#93c5fd}
+.agent-rank.gold{background:rgba(245,158,11,.2);color:#fbbf24}
+.agent-rank.silver{background:rgba(156,163,175,.15);color:#d1d5db}
+.agent-name{color:#e2e8f0;font-size:.82rem;font-weight:700}
+.agent-code{color:#64748b;font-size:.7rem}
+.agent-comm{color:#4ade80;font-size:.85rem;font-weight:800}
+.agent-inv{color:#94a3b8;font-size:.72rem}
+
+/* ══ Control Panel ══════════════════════════════════════════════════════ */
+.ctrl-toggle-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(148,163,184,.1)}
+.ctrl-toggle-row:last-of-type{border:none}
+.ctrl-label{color:#cbd5e1;font-size:.83rem}
+.ctrl-desc{color:#64748b;font-size:.7rem;margin-top:2px}
+.toggle-switch{position:relative;display:inline-block;width:42px;height:22px}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:#334155;border-radius:22px;transition:.3s;cursor:pointer}
+.toggle-slider::before{content:'';position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;bottom:3px;right:3px;transition:.3s}
+input:checked+.toggle-slider{background:#2563eb}
+input:checked+.toggle-slider::before{transform:translateX(-20px)}
+
+/* ══ API Keys ═══════════════════════════════════════════════════════════ */
+.key-chip{display:inline-block;background:#0b1220;border:1px solid rgba(148,163,184,.25);border-radius:8px;padding:4px 10px;font-family:monospace;font-size:.8rem;color:#a5b4fc;letter-spacing:.05em}
+.scope-badge{display:inline-block;background:rgba(37,99,235,.15);color:#93c5fd;border-radius:6px;padding:2px 7px;font-size:.65rem;font-weight:700;margin:1px}
+
+/* ══ Flash messages override ════════════════════════════════════════════ */
+.flash-key-reveal{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.4);border-radius:10px;padding:12px 16px;margin-bottom:16px;color:#fbbf24;font-family:monospace;word-break:break-all;font-size:.82rem}
+
+/* ══ Charts ═════════════════════════════════════════════════════════════ */
+.chart-wrap{position:relative;height:220px}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ow-wrap">
+
+  {# ── Flash Messages ─────────────────────────────────────────────────── #}
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}
+      {% if cat == 'key_reveal' %}
+        <div class="flash-key-reveal">🔑 {{ msg }}</div>
+      {% else %}
+        <div class="alert alert-{{ 'danger' if cat=='error' else cat }}" style="margin-bottom:14px">{{ msg }}</div>
+      {% endif %}
+    {% endfor %}
+  {% endwith %}
+
+  {# ── وضع العرض Toggle ───────────────────────────────────────────────── #}
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+    <div class="mode-strip">
+      <span class="mode-badge">وضع العرض:</span>
+      <form method="POST" action="{{ url_for('owner.toggle_display_mode') }}" style="display:inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="mode" value="basic">
+        <button class="mode-btn mode-basic" type="submit">بسيط</button>
+      </form>
+      <form method="POST" action="{{ url_for('owner.toggle_display_mode') }}" style="display:inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="mode" value="pro">
+        <button class="mode-btn mode-pro" type="submit">احترافي</button>
+      </form>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a href="{{ url_for('owner.audit_logs') }}" style="background:rgba(37,99,235,.15);color:#93c5fd;border:1px solid rgba(37,99,235,.3);border-radius:10px;padding:7px 16px;font-size:.8rem;font-weight:700;text-decoration:none">📋 سجل النشاط</a>
+      <a href="{{ url_for('owner.blind_closures') }}" style="background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:7px 16px;font-size:.8rem;font-weight:700;text-decoration:none">👁 الإقفال الأعمى</a>
+      <a href="{{ url_for('owner.hr_panel') }}" style="background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:7px 16px;font-size:.8rem;font-weight:700;text-decoration:none">🧑‍💼 HR</a>
+      <a href="{{ url_for('owner.api_keys_page') }}" style="background:rgba(168,85,247,.12);color:#c084fc;border:1px solid rgba(168,85,247,.3);border-radius:10px;padding:7px 16px;font-size:.8rem;font-weight:700;text-decoration:none">🔑 API Keys</a>
+    </div>
+  </div>
+
+  {# ── KPI Cards ──────────────────────────────────────────────────────── #}
+  <div class="ow-kpi-grid">
+    <div class="kpi kpi-green">
+      <span class="kpi-icon">💰</span>
+      <p class="kpi-val">{{ "{:,.0f}".format(kpis.net_profit) }}</p>
+      <p class="kpi-lbl">صافي الربح الشهري (ر.س)</p>
+    </div>
+    <div class="kpi kpi-blue">
+      <span class="kpi-icon">📈</span>
+      <p class="kpi-val">{{ "{:,.0f}".format(kpis.sales_today) }}</p>
+      <p class="kpi-lbl">مبيعات اليوم (ر.س)</p>
+    </div>
+    <div class="kpi kpi-gold">
+      <span class="kpi-icon">📊</span>
+      <p class="kpi-val">{{ "{:,.0f}".format(kpis.sales_month) }}</p>
+      <p class="kpi-lbl">إجمالي المبيعات الشهرية</p>
+    </div>
+    <div class="kpi kpi-red">
+      <span class="kpi-icon">🛒</span>
+      <p class="kpi-val">{{ "{:,.0f}".format(kpis.cost_month) }}</p>
+      <p class="kpi-lbl">إجمالي المشتريات الشهرية</p>
+    </div>
+    <div class="kpi kpi-blue">
+      <span class="kpi-icon">🧑‍💼</span>
+      <p class="kpi-val">{{ kpis.emp_count }}</p>
+      <p class="kpi-lbl">الموظفون النشطون</p>
+    </div>
+    <div class="kpi kpi-purple">
+      <span class="kpi-icon">🤝</span>
+      <p class="kpi-val">{{ kpis.agent_count }}</p>
+      <p class="kpi-lbl">المناديب النشطون</p>
+    </div>
+    <div class="kpi {% if kpis.pending_deductions > 0 %}kpi-red{% else %}kpi-green{% endif %}">
+      <span class="kpi-icon">⚠️</span>
+      <p class="kpi-val">{{ kpis.pending_deductions }}</p>
+      <p class="kpi-lbl">إقفالات بعجز قيد الاعتماد</p>
+    </div>
+    <div class="kpi kpi-gold">
+      <span class="kpi-icon">💼</span>
+      <p class="kpi-val">{{ "{:,.0f}".format(kpis.payroll_total - kpis.deductions_total) }}</p>
+      <p class="kpi-lbl">صافي الرواتب المستحقة</p>
+    </div>
+  </div>
+
+  {# ── Row 1: رسم المبيعات + المناديب ────────────────────────────────── #}
+  <div class="ow-grid-2">
+
+    <div class="ow-card">
+      <h3 class="ow-card-title">📉 منحنى المبيعات اليومية (30 يوم)</h3>
+      <div class="chart-wrap">
+        <canvas id="chartSales"></canvas>
+      </div>
+    </div>
+
+    <div class="ow-card">
+      <h3 class="ow-card-title">🤝 أداء المناديب — العمولات</h3>
+      {% if agent_sales %}
+        {% for i, ag in agent_sales | enumerate %}
+        <div class="agent-row">
+          <div class="agent-rank {% if i==0 %}gold{% elif i==1 %}silver{% endif %}">{{ i+1 }}</div>
+          <div>
+            <div class="agent-name">{{ ag.full_name }}</div>
+            <div class="agent-code">{{ ag.agent_code }}</div>
+          </div>
+          <div class="agent-inv">{{ ag.invoice_count }} فاتورة</div>
+          <div class="agent-comm">{{ "{:,.2f}".format(ag.total_commission) }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color:#64748b;font-size:.82rem;margin-top:20px;text-align:center">لا يوجد مناديب أو مبيعات مرتبطة بعد</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Row 2: الرواتب + الرقابة + آخر النشاط ─────────────────────────── #}
+  <div class="ow-grid-3">
+
+    {# رسم الرواتب vs الخصومات #}
+    <div class="ow-card">
+      <h3 class="ow-card-title">💼 الرواتب والخصومات (6 أشهر)</h3>
+      <div class="chart-wrap">
+        <canvas id="chartPayroll"></canvas>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:.75rem">
+        <span style="color:#94a3b8">إجمالي الرواتب: <b style="color:#60a5fa">{{ "{:,.0f}".format(kpis.payroll_total) }}</b></span>
+        <span style="color:#94a3b8">خصومات الشهر: <b style="color:#f87171">{{ "{:,.0f}".format(kpis.deductions_total) }}</b></span>
+      </div>
+    </div>
+
+    {# لوحة الرقابة #}
+    <div class="ow-card">
+      <h3 class="ow-card-title">🎛 لوحة الرقابة</h3>
+      <form method="POST" action="{{ url_for('owner.update_control_panel') }}" id="ctrlForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="ctrl-toggle-row">
+          <div>
+            <div class="ctrl-label">إخفاء وحدة الموظفين</div>
+            <div class="ctrl-desc">عن المستخدمين غير المالك</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" name="hide_workforce" onchange="document.getElementById('ctrlForm').submit()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="ctrl-toggle-row">
+          <div>
+            <div class="ctrl-label">إخفاء بوابة المندوب</div>
+            <div class="ctrl-desc">يمنع الوصول للمناديب نهائياً</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" name="hide_agent_portal" onchange="document.getElementById('ctrlForm').submit()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="ctrl-toggle-row">
+          <div>
+            <div class="ctrl-label">خصم العجز آلياً</div>
+            <div class="ctrl-desc">يُنشئ خصم رواتب عند اعتماد كل إقفال</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" name="auto_deduct_deficit" checked onchange="document.getElementById('ctrlForm').submit()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </form>
+
+      {% if kpis.pending_deductions > 0 %}
+      <a href="{{ url_for('owner.blind_closures') }}"
+         style="display:block;margin-top:14px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#111;border-radius:10px;padding:9px;text-align:center;font-weight:800;font-size:.83rem;text-decoration:none">
+        ⚠️ اعتماد {{ kpis.pending_deductions }} إقفال قيد الانتظار
+      </a>
+      {% endif %}
+    </div>
+
+    {# آخر النشاط #}
+    <div class="ow-card">
+      <h3 class="ow-card-title">🕵️ آخر النشاطات</h3>
+      {% if recent_logs %}
+        {% for log in recent_logs %}
+        <div class="alog-item">
+          <span class="alog-badge">{{ log.action | replace('_',' ') }}</span>
+          <div>
+            <div class="alog-actor">{{ log.actor_name or 'النظام' }}</div>
+            <div style="color:#64748b;font-size:.7rem">{{ log.actor_role or '' }}</div>
+          </div>
+          <span class="alog-time">{{ log.created_at[:16] if log.created_at else '' }}</span>
+        </div>
+        {% endfor %}
+        <a href="{{ url_for('owner.audit_logs') }}" style="display:block;margin-top:10px;text-align:center;color:#60a5fa;font-size:.78rem;text-decoration:none;font-weight:700">عرض السجل الكامل ←</a>
+      {% else %}
+        <p style="color:#64748b;font-size:.82rem;text-align:center;margin-top:20px">لا توجد نشاطات مسجلة بعد</p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>{# .ow-wrap #}
+
+<script>
+// ── بيانات من Flask ────────────────────────────────────────────────────────
+const DAILY  = {{ daily_sales | tojson }};
+const AGENTS = {{ agent_sales | tojson }};
+
+// ── ألوان مشتركة ─────────────────────────────────────────────────────────
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.font.family = 'inherit';
+
+// ── رسم المبيعات اليومية ──────────────────────────────────────────────────
+(function(){
+  const ctx = document.getElementById('chartSales');
+  if(!ctx || !DAILY.length) return;
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: DAILY.map(d => d.day),
+      datasets: [{
+        label: 'المبيعات اليومية',
+        data: DAILY.map(d => d.total),
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59,130,246,.12)',
+        borderWidth: 2.5,
+        pointRadius: 3,
+        pointBackgroundColor: '#3b82f6',
+        tension: 0.4,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: 'rgba(148,163,184,.1)' }, ticks: { maxTicksLimit: 8, font:{size:10} } },
+        y: { grid: { color: 'rgba(148,163,184,.1)' }, ticks: { font:{size:10} } }
+      }
+    }
+  });
+})();
+
+// ── رسم رواتب الموظفين ────────────────────────────────────────────────────
+(function(){
+  const ctx = document.getElementById('chartPayroll');
+  if(!ctx) return;
+  // استدعاء API للبيانات
+  fetch('{{ url_for("owner.chart_data") }}')
+    .then(r => r.json())
+    .then(data => {
+      const pd = data.payroll_deductions;
+      if(!pd || !pd.length) return;
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: pd.map(r => r.month),
+          datasets: [{
+            label: 'خصومات الرواتب',
+            data: pd.map(r => r.deductions),
+            backgroundColor: 'rgba(239,68,68,.6)',
+            borderColor: '#ef4444',
+            borderWidth: 1,
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: 'rgba(148,163,184,.1)' }, ticks: { font:{size:10} } },
+            y: { grid: { color: 'rgba(148,163,184,.1)' }, ticks: { font:{size:10} } }
+          }
+        }
+      });
+    }).catch(()=>{});
+})();
+</script>
+{% endblock %}

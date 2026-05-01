@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}إدارة الموارد البشرية{% endblock %}
+{% block page_title %}🧑‍💼 إدارة الموارد البشرية والمناديب{% endblock %}
+
+{% block head %}
+<style>
+.hr-wrap{max-width:1200px;margin:0 auto}
+.hr-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.hr-grid{grid-template-columns:1fr}}
+.hr-card{background:#0f172a;border:1px solid rgba(148,163,184,.2);border-radius:14px;padding:16px}
+.hr-title{margin:0 0 14px;color:#dbeafe;font-size:.95rem;font-weight:800}
+.hr-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(148,163,184,.1);gap:10px}
+.hr-row:last-child{border:none}
+.hr-name{color:#e2e8f0;font-weight:700;font-size:.85rem}
+.hr-meta{color:#94a3b8;font-size:.72rem;margin-top:2px}
+.hr-salary{color:#60a5fa;font-weight:800;font-size:.88rem}
+.hr-ded{color:#f87171;font-size:.72rem}
+.hr-commission{color:#4ade80;font-weight:800;font-size:.88rem}
+.hr-edit-inline{display:flex;gap:6px;align-items:center}
+.hr-in-num{background:#0b1220;color:#e2e8f0;border:1px solid rgba(148,163,184,.25);border-radius:8px;padding:5px 9px;font-size:.8rem;width:110px;font-family:inherit}
+.hr-save-btn{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:8px;padding:5px 11px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:inherit}
+.hr-save-btn:hover{opacity:.9}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hr-wrap">
+  <a href="{{ url_for('owner.owner_dashboard') }}" style="color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px">← العودة لقمرة القيادة</a>
+
+  <div class="hr-grid">
+
+    {# ── الموظفون ──────────────────────────────────────────────────────── #}
+    <div class="hr-card">
+      <h3 class="hr-title">👤 الموظفون — تعديل الرواتب</h3>
+      {% if employees %}
+        {% for e in employees %}
+        <div class="hr-row">
+          <div>
+            <div class="hr-name">{{ e.full_name }}</div>
+            <div class="hr-meta">{{ e.job_title or '—' }} | #{{ e.employee_number or e.id }}</div>
+            {% if e.month_deductions > 0 %}
+              <div class="hr-ded">خصومات الشهر: {{ "{:,.2f}".format(e.month_deductions) }} ر.س</div>
+            {% endif %}
+          </div>
+          <div class="hr-edit-inline">
+            <input type="number" class="hr-in-num" id="salary-{{ e.id }}"
+                   value="{{ e.base_salary or 0 }}" min="0" step="0.01">
+            <button class="hr-save-btn" onclick="saveSalary({{ e.id }})">حفظ</button>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color:#64748b;font-size:.82rem;text-align:center;margin:20px 0">لا يوجد موظفون نشطون</p>
+      {% endif %}
+    </div>
+
+    {# ── المناديب ──────────────────────────────────────────────────────── #}
+    <div class="hr-card">
+      <h3 class="hr-title">🤝 المناديب — تعديل العمولات</h3>
+      {% if agents %}
+        {% for a in agents %}
+        <div class="hr-row">
+          <div>
+            <div class="hr-name">{{ a.full_name }}</div>
+            <div class="hr-meta">{{ a.agent_code or '—' }} | نسبة: {{ a.commission_rate or 0 }}%</div>
+            {% if a.pending_commission > 0 %}
+              <div style="color:#4ade80;font-size:.72rem">عمولة قيد الصرف: {{ "{:,.2f}".format(a.pending_commission) }}</div>
+            {% endif %}
+          </div>
+          <div class="hr-edit-inline">
+            <input type="number" class="hr-in-num" id="comm-{{ a.id }}"
+                   value="{{ a.commission_rate or 0 }}" min="0" max="100" step="0.5">
+            <button class="hr-save-btn" onclick="saveCommission({{ a.id }})">حفظ</button>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color:#64748b;font-size:.82rem;text-align:center;margin:20px 0">لا يوجد مناديب نشطون</p>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<script>
+const CSRF = '{{ csrf_token() }}';
+
+function saveSalary(empId){
+  const val = document.getElementById('salary-'+empId).value;
+  const fd = new FormData();
+  fd.append('base_salary', val);
+  fd.append('csrf_token', CSRF);
+  fetch(`/owner/hr/employee/${empId}/salary`, { method:'POST', body: fd })
+    .then(r => r.json())
+    .then(d => {
+      if(d.success){
+        const btn = event.target;
+        btn.textContent = '✓';
+        btn.style.background = 'rgba(34,197,94,.3)';
+        setTimeout(()=>{ btn.textContent='حفظ'; btn.style.background=''; }, 2000);
+      } else alert(d.error || 'خطأ');
+    }).catch(()=> alert('خطأ في الاتصال'));
+}
+
+function saveCommission(agentId){
+  const val = document.getElementById('comm-'+agentId).value;
+  const fd = new FormData();
+  fd.append('commission_rate', val);
+  fd.append('csrf_token', CSRF);
+  fetch(`/owner/hr/agent/${agentId}/commission`, { method:'POST', body: fd })
+    .then(r => r.json())
+    .then(d => {
+      if(d.success){
+        const btn = event.target;
+        btn.textContent = '✓';
+        btn.style.background = 'rgba(34,197,94,.3)';
+        setTimeout(()=>{ btn.textContent='حفظ'; btn.style.background=''; }, 2000);
+      } else alert(d.error || 'خطأ');
+    }).catch(()=> alert('خطأ في الاتصال'));
+}
+</script>
+{% endblock %}
