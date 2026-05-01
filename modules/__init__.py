@@ -31,8 +31,16 @@ def create_app():
     from .blueprints.restaurant.routes import bp as restaurant_bp
     from .blueprints.workforce.routes  import bp as workforce_bp
     from .blueprints.owner.routes      import bp as owner_bp
+    from .blueprints.inventory.routes  import bp as inventory_bp
+    from .blueprints.contacts.routes   import bp as contacts_bp
+    from .blueprints.barcode.routes    import bp as barcode_bp
+    from .blueprints.medical.routes    import bp as medical_bp
+    from .blueprints.construction.routes import bp as construction_bp
+    from .blueprints.rental.routes     import bp as rental_bp
+    from .blueprints.wholesale.routes  import bp as wholesale_bp
+    from .blueprints.services.routes   import bp as services_bp
 
-    for bp in (auth_bp, core_bp, accounting_bp, supply_bp, pos_bp, restaurant_bp, workforce_bp, owner_bp):
+    for bp in (auth_bp, core_bp, accounting_bp, supply_bp, pos_bp, restaurant_bp, workforce_bp, owner_bp, inventory_bp, contacts_bp, barcode_bp, medical_bp, construction_bp, rental_bp, wholesale_bp, services_bp):
         app.register_blueprint(bp)
 
     # ── Jinja2 Custom Filters ─────────────────────────────────────────────────
