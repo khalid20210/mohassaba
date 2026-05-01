@@ -1,4 +1,4 @@
-"""
+﻿"""
 modules/blueprints/contacts/routes.py — إدارة العملاء والموردين
 Contacts Management: Customers, Suppliers, Customer Transactions
 """
@@ -35,7 +35,7 @@ def require_perm(*perms):
 
 def log_activity(module, action, entity_id=None, changes=None):
     """تسجيل النشاط"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     if not g.user or not g.business:
         return
@@ -64,7 +64,7 @@ def log_activity(module, action, entity_id=None, changes=None):
 @require_perm("contacts")
 def dashboard():
     """لوحة تحكم جهات الاتصال"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -121,7 +121,7 @@ def dashboard():
 @require_perm("contacts")
 def list_customers():
     """قائمة العملاء"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -167,7 +167,7 @@ def list_customers():
 @require_perm("contacts")
 def view_customer(customer_id):
     """عرض تفاصيل العميل"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -209,7 +209,7 @@ def view_customer(customer_id):
 @require_perm("contacts")
 def add_customer():
     """إضافة عميل جديد"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     if request.method == "POST":
         db = get_db()
@@ -252,7 +252,7 @@ def add_customer():
 @require_perm("contacts")
 def edit_customer(customer_id):
     """تعديل بيانات العميل"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -294,7 +294,7 @@ def edit_customer(customer_id):
 @require_perm("contacts")
 def list_suppliers():
     """قائمة الموردين"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -333,7 +333,7 @@ def list_suppliers():
 @require_perm("contacts")
 def add_supplier():
     """إضافة مورد جديد"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     if request.method == "POST":
         db = get_db()
@@ -379,7 +379,7 @@ def add_supplier():
 @require_perm("contacts")
 def customer_transactions(customer_id):
     """معاملات العميل المفصلة"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -420,7 +420,7 @@ def customer_transactions(customer_id):
 @require_perm("contacts")
 def add_transaction():
     """تسجيل معاملة يدوية"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -482,7 +482,7 @@ def add_transaction():
 @bp.route("/api/search")
 def api_search():
     """API: البحث عن جهات الاتصال"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -509,7 +509,7 @@ def api_search():
 @bp.route("/api/balance/<int:customer_id>")
 def api_balance(customer_id):
     """API: الحصول على رصيد العميل"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]

@@ -1,4 +1,4 @@
-"""
+﻿"""
 modules/blueprints/inventory/routes.py — إدارة المخزون الشاملة
 Inventory Management System: Products, Stock Tracking, Alerts, Barcode Integration
 """
@@ -38,7 +38,7 @@ def require_perm(*perms):
 
 def log_activity(module, action, entity_id=None, changes=None):
     """تسجيل النشاط في activity_log"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     if not g.user or not g.business:
         return
@@ -67,7 +67,7 @@ def log_activity(module, action, entity_id=None, changes=None):
 @require_perm("warehouse")
 def dashboard():
     """لوحة تحكم المخزون — ملخص شامل"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -138,7 +138,7 @@ def dashboard():
 @require_perm("warehouse")
 def list_products():
     """قائمة جميع الأصناف مع فلاتر"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -189,7 +189,7 @@ def list_products():
 @require_perm("warehouse")
 def view_product(product_id):
     """عرض تفاصيل الصنف"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -230,7 +230,7 @@ def view_product(product_id):
 @require_perm("warehouse")
 def add_product():
     """إضافة صنف جديد"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     if request.method == "POST":
         db = get_db()
@@ -269,7 +269,7 @@ def add_product():
 @require_perm("warehouse")
 def edit_product(product_id):
     """تعديل بيانات الصنف"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -306,7 +306,7 @@ def edit_product(product_id):
 @require_perm("warehouse")
 def list_movements():
     """سجل حركات المخزون"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -339,7 +339,7 @@ def list_movements():
 @require_perm("warehouse")
 def add_movement():
     """تسجيل حركة مخزون يدوية"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -401,7 +401,7 @@ def add_movement():
 @require_perm("warehouse")
 def view_alerts():
     """عرض جميع التنبيهات"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -428,7 +428,7 @@ def view_alerts():
 @require_perm("warehouse")
 def resolve_alert(alert_id):
     """تصنيف التنبيه كمحلول"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -452,7 +452,7 @@ def resolve_alert(alert_id):
 @require_perm("warehouse")
 def stock_count():
     """صفحة الجرد الدوري (عد المخزون الفعلي)"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -473,7 +473,7 @@ def stock_count():
 @require_perm("warehouse")
 def submit_stock_count():
     """حفظ نتائج الجرد"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -530,7 +530,7 @@ def submit_stock_count():
 @require_perm("warehouse")
 def reports():
     """تقارير المخزون"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -571,7 +571,7 @@ def reports():
 @bp.route("/api/stock/<int:product_id>")
 def api_stock(product_id):
     """API: الحصول على الكمية المتاحة"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]

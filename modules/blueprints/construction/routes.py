@@ -1,4 +1,4 @@
-"""
+﻿"""
 modules/blueprints/construction/routes.py — قطاع المقاولات
 Construction Sector: Projects, Extracts, Equipment
 """
@@ -32,7 +32,7 @@ def require_perm(*perms):
 @require_perm("sales")
 def list_projects():
     """قائمة المشاريع"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -55,7 +55,7 @@ def list_projects():
 @require_perm("sales")
 def create_project():
     """إنشاء مشروع جديد"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -88,7 +88,7 @@ def create_project():
 @require_perm("sales")
 def view_project(project_id):
     """عرض تفاصيل المشروع"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -124,7 +124,7 @@ def view_project(project_id):
 @require_perm("sales")
 def create_extract(project_id):
     """إنشاء مستخلص جديد"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -165,7 +165,7 @@ def create_extract(project_id):
 @require_perm("accounting")
 def approve_extract(extract_id):
     """الموافقة على المستخلص وإنشاء فاتورة"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -193,7 +193,7 @@ def approve_extract(extract_id):
 @require_perm("sales")
 def list_equipment():
     """قائمة المعدات"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -216,7 +216,7 @@ def list_equipment():
 @require_perm("sales")
 def add_equipment():
     """إضافة معدة جديدة"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     

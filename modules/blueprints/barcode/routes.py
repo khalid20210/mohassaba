@@ -1,4 +1,4 @@
-"""
+﻿"""
 modules/blueprints/barcode/routes.py — إدارة الباركود
 Barcode Management: Generation, Printing, Scanning
 """
@@ -42,7 +42,7 @@ def require_perm(*perms):
 @require_perm("warehouse")
 def dashboard():
     """لوحة تحكم الباركود"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -68,7 +68,7 @@ def dashboard():
 @require_perm("warehouse")
 def list_barcodes():
     """قائمة الباركودات"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -105,7 +105,7 @@ def list_barcodes():
 @require_perm("warehouse")
 def generate_barcode():
     """إنشاء باركود جديد"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -148,7 +148,7 @@ def generate_barcode():
 @require_perm("warehouse")
 def print_barcodes():
     """طباعة الباركودات"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -174,7 +174,7 @@ def print_barcodes():
 @require_perm("warehouse")
 def scan():
     """صفحة المسح"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     if request.method == "POST":
         db = get_db()
@@ -227,7 +227,7 @@ def scan():
 @bp.route("/api/barcode/<barcode_value>")
 def api_get_barcode(barcode_value):
     """API: الحصول على معلومات الباركود"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]
@@ -247,7 +247,7 @@ def api_get_barcode(barcode_value):
 @bp.route("/api/scan", methods=["POST"])
 def api_scan():
     """API: تسجيل مسح (من الأجهزة المحمولة أو الكاشيرات)"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     
     db = get_db()
     business_id = g.business["id"]

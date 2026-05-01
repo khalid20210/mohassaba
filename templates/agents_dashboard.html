@@ -1,0 +1,566 @@
+{% extends "base.html" %}
+{% block title %}لوحة إدارة المناديب{% endblock %}
+{% block page_title %}إدارة المناديب{% endblock %}
+
+{% block head %}
+<style>
+/* ═══════════════════════════ AGENTS DASHBOARD ═══════════════════════════ */
+.ag-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:16px}
+.ag-agent-card{background:#0f172a;border:1px solid rgba(148,163,184,.18);border-radius:14px;padding:16px;transition:border-color .2s;cursor:pointer}
+.ag-agent-card:hover{border-color:#3b82f6}
+.ag-agent-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ag-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;flex-shrink:0}
+.ag-name{font-weight:800;color:#e2e8f0;font-size:.93rem}
+.ag-code{font-size:.72rem;color:#93c5fd;margin-top:2px}
+.ag-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ag-kpi{background:#0b1220;border:1px solid rgba(148,163,184,.12);border-radius:8px;padding:8px 4px;text-align:center}
+.ag-kpi b{display:block;color:#f8fafc;font-size:.85rem}
+.ag-kpi span{font-size:.66rem;color:#94a3b8}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-left:4px}
+.dot-active{background:#22c55e;box-shadow:0 0 6px #22c55e}
+.dot-inactive{background:#4b5563}
+
+/* ═══════════════ MAP ═══════════════ */
+#agents-map{width:100%;height:320px;border-radius:14px;background:#0b1220;border:1px solid rgba(148,163,184,.18);overflow:hidden;position:relative;margin-bottom:14px}
+.map-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#475569;gap:8px}
+.map-placeholder span{font-size:3rem}
+.map-placeholder p{font-size:.82rem}
+.map-pins{position:absolute;inset:0}
+
+/* ═══════════════ TABS ═══════════════ */
+.dash-tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.dash-tab{padding:7px 16px;border-radius:20px;border:1px solid rgba(148,163,184,.2);background:transparent;color:#94a3b8;font-family:inherit;font-size:.82rem;cursor:pointer;transition:all .2s}
+.dash-tab.active{background:#1e3a5f;border-color:#3b82f6;color:#93c5fd;font-weight:700}
+
+/* ═══════════════ TABLE ═══════════════ */
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{background:#0b1220;color:#94a3b8;font-size:.75rem;padding:8px 12px;text-align:right;border-bottom:1px solid rgba(148,163,184,.15)}
+.data-table td{padding:9px 12px;border-bottom:1px solid rgba(148,163,184,.08);font-size:.83rem;color:#e2e8f0}
+.data-table tr:hover td{background:rgba(59,130,246,.04)}
+.tbl-wrap{overflow-x:auto;border-radius:12px;border:1px solid rgba(148,163,184,.15)}
+
+/* ═══════════════ MODAL ═══════════════ */
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:400;align-items:center;justify-content:center}
+.modal-backdrop.show{display:flex}
+.modal-card{background:#0f172a;border:1px solid rgba(148,163,184,.2);border-radius:18px;padding:24px;width:min(500px,90vw);max-height:85vh;overflow-y:auto}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.modal-close{background:transparent;border:none;color:#94a3b8;font-size:1.2rem;cursor:pointer}
+
+/* ═══════════════ PERFORMANCE ═══════════════ */
+.perf-bar-row{display:grid;grid-template-columns:140px 1fr 60px;gap:10px;align-items:center;margin-bottom:10px}
+.perf-bar-bg{background:#0b1220;border-radius:6px;height:12px;overflow:hidden}
+.perf-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#3b82f6,#06b6d4);transition:width .6s ease}
+.perf-bar-fill.gold{background:linear-gradient(90deg,#f59e0b,#d97706)}
+.perf-pct{font-size:.78rem;font-weight:700;color:#e2e8f0;text-align:left}
+
+/* ═══════════════ COLLECTION ═══════════════ */
+.col-badge-pending{background:rgba(245,158,11,.15);color:#fbbf24;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700}
+.col-badge-done{background:rgba(34,197,94,.15);color:#4ade80;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700}
+
+/* ═══════════════ FORMS ═══════════════ */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.inp-dash{width:100%;background:#0b1220;color:#e2e8f0;border:1px solid rgba(148,163,184,.2);border-radius:10px;padding:9px 12px;font-family:inherit;font-size:.86rem;outline:none;margin-bottom:10px}
+.inp-dash:focus{border-color:#3b82f6}
+.inp-dash::placeholder{color:#4b5563}
+.btn-dash{border:none;border-radius:10px;padding:9px 18px;font-family:inherit;font-size:.85rem;font-weight:700;cursor:pointer}
+.btn-blue{background:#1d4ed8;color:#fff}
+.btn-green-d{background:#15803d;color:#fff}
+.btn-red-d{background:#b91c1c;color:#fff}
+.btn-gray{background:#1e293b;color:#94a3b8}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+  <div>
+    <span id="agentCount" style="font-size:.82rem;color:#94a3b8">جارٍ التحميل...</span>
+  </div>
+  <div style="display:flex;gap:8px">
+    <select id="monthFilter" class="inp-dash" style="width:140px;margin:0" onchange="loadAll()">
+      <option value="">هذا الشهر</option>
+    </select>
+    <button class="btn-dash btn-blue" onclick="openNewAgentModal()">+ مندوب جديد</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="dash-tabs">
+  <button class="dash-tab active" onclick="showTab('overview',this)">🏠 نظرة عامة</button>
+  <button class="dash-tab" onclick="showTab('map',this)">🗺️ خريطة المواقع</button>
+  <button class="dash-tab" onclick="showTab('attendance',this)">🕐 الحضور</button>
+  <button class="dash-tab" onclick="showTab('performance',this)">📊 الأداء</button>
+  <button class="dash-tab" onclick="showTab('collections',this)">💵 التحصيلات</button>
+  <button class="dash-tab" onclick="showTab('drafts',this)">📝 الطلبات</button>
+</div>
+
+<!-- TAB: نظرة عامة -->
+<div id="tab-overview" class="tab-pane">
+  <div class="ag-grid" id="agentsGrid">
+    <div style="color:#94a3b8;font-size:.82rem;padding:20px">جارٍ التحميل...</div>
+  </div>
+</div>
+
+<!-- TAB: خريطة -->
+<div id="tab-map" class="tab-pane" style="display:none">
+  <div id="agents-map">
+    <div class="map-placeholder">
+      <span>🗺️</span>
+      <p>جارٍ تحميل مواقع المناديب...</p>
+      <div id="mapPinsList" style="margin-top:10px;width:100%;padding:0 20px"></div>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table class="data-table">
+      <thead><tr><th>المندوب</th><th>آخر موقع</th><th>البطارية</th><th>الوقت</th></tr></thead>
+      <tbody id="mapTableBody"><tr><td colspan="4" style="text-align:center;color:#94a3b8">جارٍ التحميل...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TAB: الحضور -->
+<div id="tab-attendance" class="tab-pane" style="display:none">
+  <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center">
+    <input type="date" id="attDateFilter" class="inp-dash" style="width:160px;margin:0"
+      value="{{ now_date }}" onchange="loadAttendance()">
+    <span id="attSummary" style="font-size:.82rem;color:#94a3b8"></span>
+  </div>
+  <div class="tbl-wrap">
+    <table class="data-table">
+      <thead><tr><th>المندوب</th><th>الحضور</th><th>الانصراف</th><th>ساعات</th><th>الحالة</th></tr></thead>
+      <tbody id="attBody"><tr><td colspan="5" style="text-align:center;color:#94a3b8">اختر تاريخاً</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TAB: الأداء -->
+<div id="tab-performance" class="tab-pane" style="display:none">
+  <div id="performanceWrap" style="color:#94a3b8;font-size:.82rem;padding:20px">جارٍ التحميل...</div>
+</div>
+
+<!-- TAB: التحصيلات -->
+<div id="tab-collections" class="tab-pane" style="display:none">
+  <div class="tbl-wrap">
+    <table class="data-table">
+      <thead><tr><th>المندوب</th><th>العميل</th><th>المبلغ</th><th>الطريقة</th><th>التاريخ</th><th>الحالة</th><th></th></tr></thead>
+      <tbody id="collectBody"><tr><td colspan="7" style="text-align:center;color:#94a3b8">جارٍ التحميل...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TAB: الطلبات المسودة -->
+<div id="tab-drafts" class="tab-pane" style="display:none">
+  <div class="tbl-wrap">
+    <table class="data-table">
+      <thead><tr><th>المندوب</th><th>العميل</th><th>القيمة</th><th>الملاحظات</th><th>التاريخ</th><th></th></tr></thead>
+      <tbody id="draftsBody"><tr><td colspan="6" style="text-align:center;color:#94a3b8">جارٍ التحميل...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════ MODAL: مندوب جديد ═══════ -->
+<div class="modal-backdrop" id="newAgentModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span style="font-size:1rem;font-weight:800;color:#dbeafe">➕ إضافة مندوب جديد</span>
+      <button class="modal-close" onclick="closeModal('newAgentModal')">✕</button>
+    </div>
+    <div class="form-row">
+      <input class="inp-dash" id="naName" placeholder="الاسم الكامل *">
+      <input class="inp-dash" id="naPhone" placeholder="رقم الجوال" type="tel">
+    </div>
+    <div class="form-row">
+      <input class="inp-dash" id="naWhatsApp" placeholder="واتساب">
+      <input class="inp-dash" id="naRegion" placeholder="المنطقة">
+    </div>
+    <div class="form-row">
+      <input class="inp-dash" id="naCommission" placeholder="نسبة العمولة %" type="number" step="0.1">
+      <input class="inp-dash" id="naTarget" placeholder="الهدف الشهري (ر.س)" type="number">
+    </div>
+    <textarea class="inp-dash" id="naNotes" rows="2" placeholder="ملاحظات"></textarea>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn-dash btn-gray" onclick="closeModal('newAgentModal')">إلغاء</button>
+      <button class="btn-dash btn-green-d" onclick="saveNewAgent()">✅ حفظ المندوب</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ MODAL: تفاصيل مندوب ═══════ -->
+<div class="modal-backdrop" id="agentDetailModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span id="adTitle" style="font-size:1rem;font-weight:800;color:#dbeafe">بيانات المندوب</span>
+      <button class="modal-close" onclick="closeModal('agentDetailModal')">✕</button>
+    </div>
+    <div id="adBody"></div>
+  </div>
+</div>
+
+<!-- ═══════ MODAL: تحديد هدف ═══════ -->
+<div class="modal-backdrop" id="targetModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span style="font-size:1rem;font-weight:800;color:#dbeafe">🎯 تحديد هدف</span>
+      <button class="modal-close" onclick="closeModal('targetModal')">✕</button>
+    </div>
+    <input type="hidden" id="tmAgentId">
+    <input class="inp-dash" id="tmMonth" type="month">
+    <input class="inp-dash" id="tmTarget" placeholder="مبلغ الهدف الشهري (ر.س)" type="number">
+    <input class="inp-dash" id="tmBonus" placeholder="مكافأة عند تجاوز الهدف (ر.س)" type="number">
+    <input class="inp-dash" id="tmThreshold" placeholder="نسبة تجاوز الهدف لتفعيل المكافأة (%)" type="number">
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn-dash btn-gray" onclick="closeModal('targetModal')">إلغاء</button>
+      <button class="btn-dash btn-blue" onclick="saveTarget()">✅ حفظ الهدف</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let agents = [];
+let currentTab = 'overview';
+
+function money(n){ return Number(n||0).toLocaleString('ar-SA',{minimumFractionDigits:2,maximumFractionDigits:2}) }
+function esc(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+function toast(msg){ /* relies on base template toast if available */ console.log(msg); alert(msg); }
+
+/* ─── TABS ─── */
+function showTab(name, btn){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.style.display='none');
+  document.getElementById('tab-'+name).style.display='block';
+  document.querySelectorAll('.dash-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  currentTab = name;
+  if(name==='overview') loadAgentsGrid();
+  if(name==='map') loadMap();
+  if(name==='attendance') loadAttendance();
+  if(name==='performance') loadPerformance();
+  if(name==='collections') loadCollections();
+  if(name==='drafts') loadDrafts();
+}
+
+/* ─── INIT ─── */
+function initMonthFilter(){
+  const sel = document.getElementById('monthFilter');
+  const now = new Date();
+  for(let i=0; i<12; i++){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const val = d.toISOString().slice(0,7);
+    const lbl = d.toLocaleDateString('ar-SA',{year:'numeric',month:'long'});
+    sel.innerHTML += `<option value="${val}">${lbl}</option>`;
+  }
+}
+
+async function api(method, url, body){
+  const opts={method,headers:{'Content-Type':'application/json'}};
+  if(body) opts.body=JSON.stringify(body);
+  const r=await fetch(url,opts); return r.json();
+}
+
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+async function loadAll(){
+  await loadAgentsGrid();
+}
+
+/* ─── AGENTS GRID ─── */
+async function loadAgentsGrid(){
+  const month = document.getElementById('monthFilter').value || new Date().toISOString().slice(0,7);
+  const r = await api('GET', '/api/v1/agents/performance?month='+month);
+  if(!r.success) return;
+  agents = r.agents;
+  document.getElementById('agentCount').textContent = agents.length + ' مندوب';
+
+  const grid = document.getElementById('agentsGrid');
+  if(!agents.length){ grid.innerHTML='<div style="color:#94a3b8;font-size:.82rem;padding:20px">لا توجد مناديب بعد</div>'; return; }
+
+  grid.innerHTML = agents.map(a=>`
+    <div class="ag-agent-card" onclick="openAgentDetail(${a.id})">
+      <div class="ag-agent-head">
+        <div class="ag-avatar">${(a.full_name||'?')[0]}</div>
+        <div style="flex:1;min-width:0">
+          <div class="ag-name">
+            <span class="status-dot ${a.is_active?'dot-active':'dot-inactive'}"></span>
+            ${esc(a.full_name)}
+          </div>
+          <div class="ag-code">AGT-${String(a.id).padStart(3,'0')} • ${a.commission_rate||0}% عمولة</div>
+        </div>
+        <div style="display:flex;gap:4px">
+          <button onclick="event.stopPropagation();openTargetModal(${a.id})" title="تحديد هدف"
+            style="background:rgba(59,130,246,.15);border:none;border-radius:8px;padding:4px 8px;color:#60a5fa;cursor:pointer;font-size:.8rem">🎯</button>
+          <a href="/agents/mobile/${a.id}" target="_blank" onclick="event.stopPropagation()"
+            style="background:rgba(34,197,94,.15);border-radius:8px;padding:4px 8px;color:#4ade80;text-decoration:none;font-size:.8rem">📱</a>
+        </div>
+      </div>
+      <div class="ag-kpis">
+        <div class="ag-kpi"><b>${money(a.sales_total)}</b><span>مبيعات ر.س</span></div>
+        <div class="ag-kpi"><b>${a.invoices_count||0}</b><span>فواتير</span></div>
+        <div class="ag-kpi"><b>${a.visits_count||0}</b><span>زيارات</span></div>
+      </div>
+      ${a.target_amount>0?`
+      <div style="margin-top:10px">
+        <div style="display:flex;justify-content:space-between;font-size:.72rem;color:#94a3b8;margin-bottom:4px">
+          <span>الهدف الشهري</span><span>${a.achievement_pct}%</span>
+        </div>
+        <div style="background:#0b1220;border-radius:6px;height:8px;overflow:hidden">
+          <div style="height:100%;border-radius:6px;width:${Math.min(a.achievement_pct,100)}%;background:${a.achievement_pct>=100?'linear-gradient(90deg,#22c55e,#16a34a)':'linear-gradient(90deg,#3b82f6,#06b6d4)'}"></div>
+        </div>
+      </div>`:''}
+    </div>
+  `).join('');
+}
+
+/* ─── MAP ─── */
+async function loadMap(){
+  const r = await api('GET', '/api/v1/agents/all-locations');
+  const tbody = document.getElementById('mapTableBody');
+  if(!r.success||!r.agents.length){
+    tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:#94a3b8">لا توجد بيانات موقع حالياً</td></tr>';
+    document.getElementById('mapPinsList').innerHTML='<p style="color:#94a3b8;font-size:.82rem;text-align:center">لا يوجد مناديب على الخريطة حالياً</p>';
+    return;
+  }
+  tbody.innerHTML = r.agents.map(a=>`
+    <tr>
+      <td style="font-weight:700">${esc(a.full_name)}</td>
+      <td style="color:#94a3b8;font-size:.78rem">${a.latitude?.toFixed(4)||'--'}, ${a.longitude?.toFixed(4)||'--'}</td>
+      <td>${a.battery!=null?`<span style="color:${a.battery>20?'#4ade80':'#f87171'}">${a.battery}%</span>`:'--'}</td>
+      <td style="color:#94a3b8;font-size:.78rem">${(a.recorded_at||'').slice(11,16)}</td>
+    </tr>
+  `).join('');
+
+  // Google Maps iframe إن توفر
+  document.getElementById('mapPinsList').innerHTML = r.agents.map(a=>
+    `<div style="padding:6px 0;border-bottom:1px solid rgba(148,163,184,.1)">
+      <a href="https://maps.google.com?q=${a.latitude},${a.longitude}" target="_blank"
+        style="color:#60a5fa;text-decoration:none;font-size:.82rem">
+        📍 ${esc(a.full_name)} — اضغط لفتح الخريطة
+      </a>
+     </div>`
+  ).join('');
+}
+
+/* ─── ATTENDANCE ─── */
+async function loadAttendance(){
+  const date = document.getElementById('attDateFilter').value;
+  if(!date) return;
+  const r = await api('GET', '/api/v1/agents');
+  if(!r.success) return;
+  const allAgents = r.agents;
+
+  // جلب حضور كل مندوب لهذا اليوم
+  const attPromises = allAgents.map(a=>
+    api('GET',`/api/v1/agents/${a.id}/attendance`).then(ar=>{
+      const rec = (ar.records||[]).find(x=>x.work_date===date);
+      return {agent:a, rec};
+    })
+  );
+  const results = await Promise.all(attPromises);
+
+  let present=0, absent=0;
+  document.getElementById('attBody').innerHTML = results.map(({agent,rec})=>{
+    if(rec&&rec.checkin_at) present++; else absent++;
+    const status = rec?.checkout_at ? '<span style="color:#4ade80">✅ مكتمل</span>'
+      : rec?.checkin_at ? '<span style="color:#fbbf24">⏳ لا يزال في العمل</span>'
+      : '<span style="color:#f87171">❌ غائب</span>';
+    return `<tr>
+      <td style="font-weight:700">${esc(agent.full_name)}</td>
+      <td>${rec?.checkin_at?.slice(11,16)||'--'}</td>
+      <td>${rec?.checkout_at?.slice(11,16)||'--'}</td>
+      <td>${rec?.total_hours||'--'}</td>
+      <td>${status}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('attSummary').textContent = `حاضر: ${present} • غائب: ${absent}`;
+}
+
+/* ─── PERFORMANCE ─── */
+async function loadPerformance(){
+  const month = document.getElementById('monthFilter').value || new Date().toISOString().slice(0,7);
+  const r = await api('GET', '/api/v1/agents/performance?month='+month);
+  if(!r.success) return;
+  const wrap = document.getElementById('performanceWrap');
+  if(!r.agents.length){ wrap.innerHTML='<p style="color:#94a3b8">لا توجد بيانات</p>'; return; }
+  const max = Math.max(...r.agents.map(a=>a.sales_total||0), 1);
+  wrap.innerHTML = r.agents.map((a,i)=>`
+    <div class="perf-bar-row">
+      <div style="font-size:.82rem;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+        ${i===0?'🥇':i===1?'🥈':i===2?'🥉':'  '} ${esc(a.full_name)}
+      </div>
+      <div class="perf-bar-bg">
+        <div class="perf-bar-fill ${i===0?'gold':''}" style="width:${Math.round((a.sales_total||0)/max*100)}%"></div>
+      </div>
+      <div class="perf-pct">${money(a.sales_total)}</div>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:12px;margin-right:150px;font-size:.72rem;color:#94a3b8">
+      <span>فواتير: ${a.invoices_count||0}</span>
+      <span>زيارات: ${a.visits_count||0}</span>
+      <span>عمولة: ${money(a.commissions_total)} ر.س</span>
+      ${a.target_amount>0?`<span style="color:${a.achievement_pct>=100?'#4ade80':'#fbbf24'}">هدف: ${a.achievement_pct}%</span>`:''}
+    </div>
+  `).join('');
+}
+
+/* ─── COLLECTIONS ─── */
+async function loadCollections(){
+  const r = await api('GET', '/api/v1/agents/collections');
+  if(!r.success) return;
+  const tbody = document.getElementById('collectBody');
+  if(!r.collections.length){ tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:#94a3b8">لا توجد تحصيلات</td></tr>'; return; }
+  tbody.innerHTML = r.collections.map(c=>`
+    <tr>
+      <td style="font-weight:700">${esc(c.agent_name)}</td>
+      <td>${esc(c.contact_name||'--')}</td>
+      <td style="color:#4ade80;font-weight:700">${money(c.amount)} ر.س</td>
+      <td>${esc(c.payment_method||'--')}</td>
+      <td style="color:#94a3b8;font-size:.78rem">${(c.collected_at||'').slice(0,16)}</td>
+      <td>${c.confirmed?'<span class="col-badge-done">✅ مؤكد</span>':'<span class="col-badge-pending">⏳ معلق</span>'}</td>
+      <td>${!c.confirmed?`<button class="btn-dash btn-green-d" style="padding:5px 10px;font-size:.75rem" onclick="confirmCollection(${c.id},this)">تأكيد</button>`:'--'}</td>
+    </tr>
+  `).join('');
+}
+
+async function confirmCollection(id, btn){
+  btn.disabled=true; btn.textContent='...';
+  const r = await api('POST', `/api/v1/agents/collections/${id}/confirm`);
+  if(r.success){ alert('✅ تم تأكيد التحصيل'); loadCollections(); }
+  else { alert('❌ '+r.error); btn.disabled=false; btn.textContent='تأكيد'; }
+}
+
+/* ─── DRAFTS ─── */
+async function loadDrafts(){
+  const r = await api('GET', '/api/v1/agents');
+  if(!r.success) return;
+  const rows = [];
+  for(const a of r.agents){
+    const dr = await api('GET', `/api/v1/agents/${a.id}/draft-orders`);
+    if(dr.success) dr.orders.forEach(o=> rows.push({...o, agent_name:a.full_name, agent_id:a.id}));
+  }
+  const tbody = document.getElementById('draftsBody');
+  if(!rows.length){ tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#94a3b8">لا توجد طلبات معلقة</td></tr>'; return; }
+  tbody.innerHTML = rows.map(o=>`
+    <tr>
+      <td style="font-weight:700">${esc(o.agent_name)}</td>
+      <td>${esc(o.client_name||'--')}</td>
+      <td style="color:#4ade80;font-weight:700">${money(o.total)} ر.س</td>
+      <td style="color:#94a3b8;font-size:.78rem">${esc(o.notes||'--')}</td>
+      <td style="color:#94a3b8;font-size:.78rem">${(o.created_at||'').slice(0,16)}</td>
+      <td style="display:flex;gap:4px">
+        <button class="btn-dash btn-green-d" style="padding:5px 10px;font-size:.75rem" onclick="approveDraft(${o.id},this)">موافقة</button>
+        <button class="btn-dash btn-red-d" style="padding:5px 10px;font-size:.75rem" onclick="rejectDraft(${o.id},this)">رفض</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function approveDraft(id, btn){
+  btn.disabled=true;
+  const r = await api('POST', `/api/v1/agents/draft-orders/${id}/approve`);
+  if(r.success){ alert('✅ تمت الموافقة'); loadDrafts(); }
+  else { alert('❌ '+r.error); btn.disabled=false; }
+}
+async function rejectDraft(id, btn){
+  if(!confirm('تأكيد الرفض؟')) return;
+  btn.disabled=true;
+  const r = await api('POST', `/api/v1/agents/draft-orders/${id}/reject`);
+  if(r.success){ loadDrafts(); }
+  else { alert('❌ '+(r.error||'خطأ')); btn.disabled=false; }
+}
+
+/* ─── NEW AGENT ─── */
+function openNewAgentModal(){ openModal('newAgentModal'); }
+
+async function saveNewAgent(){
+  const name = document.getElementById('naName').value.trim();
+  if(!name){ alert('الاسم مطلوب'); return; }
+  const payload = {
+    full_name: name,
+    phone: document.getElementById('naPhone').value.trim()||null,
+    whatsapp_number: document.getElementById('naWhatsApp').value.trim()||null,
+    region: document.getElementById('naRegion').value.trim()||null,
+    commission_rate: parseFloat(document.getElementById('naCommission').value)||0,
+    notes: document.getElementById('naNotes').value.trim()||null,
+  };
+  const r = await api('POST', '/api/v1/agents', payload);
+  if(r.success){
+    closeModal('newAgentModal');
+    // تعيين هدف إن وجد
+    const targetAmount = parseFloat(document.getElementById('naTarget').value)||0;
+    if(targetAmount > 0){
+      const ra = await api('GET','/api/v1/agents');
+      if(ra.success && ra.agents.length){
+        const newAgent = ra.agents[0]; // آخر مندوب مضاف
+        const month = new Date().toISOString().slice(0,7);
+        await api('POST', `/api/v1/agents/${newAgent.id}/targets`, {month, target_amount:targetAmount});
+      }
+    }
+    alert('✅ تم إضافة المندوب');
+    loadAgentsGrid();
+  } else alert('❌ '+(r.error||'خطأ'));
+}
+
+/* ─── AGENT DETAIL ─── */
+async function openAgentDetail(agentId){
+  const agent = agents.find(a=>a.id===agentId);
+  if(!agent) return;
+  document.getElementById('adTitle').textContent = agent.full_name;
+  document.getElementById('adBody').innerHTML = '<div style="color:#94a3b8;font-size:.82rem;padding:20px">جارٍ التحميل...</div>';
+  openModal('agentDetailModal');
+
+  const [tgt, comm] = await Promise.all([
+    api('GET', `/api/v1/agents/${agentId}/targets`),
+    api('GET', `/api/v1/agents/${agentId}/commissions/summary`),
+  ]);
+
+  document.getElementById('adBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div style="background:#0b1220;border-radius:10px;padding:12px">
+        <div style="font-size:.72rem;color:#94a3b8;margin-bottom:4px">العمولة</div>
+        <div style="font-size:.9rem;font-weight:800;color:#4ade80">${money(comm.summary?.commissions_pending||0)} ر.س معلقة</div>
+        <div style="font-size:.72rem;color:#94a3b8;margin-top:4px">${money(comm.summary?.commissions_paid||0)} مدفوعة</div>
+      </div>
+      <div style="background:#0b1220;border-radius:10px;padding:12px">
+        <div style="font-size:.72rem;color:#94a3b8;margin-bottom:4px">الهدف الشهري</div>
+        <div style="font-size:.9rem;font-weight:800;color:#fbbf24">${tgt.achievement_pct||0}%</div>
+        <div style="font-size:.72rem;color:#94a3b8;margin-top:4px">${money(tgt.achieved_amount||0)} / ${money(tgt.target_amount||0)}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a href="/agents/mobile/${agentId}" target="_blank" style="background:#1d4ed8;color:#fff;padding:8px 14px;border-radius:10px;text-decoration:none;font-size:.82rem;font-weight:700">📱 فتح بوابة المندوب</a>
+      <button class="btn-dash btn-blue" style="padding:8px 14px;font-size:.82rem" onclick="openTargetModal(${agentId});closeModal('agentDetailModal')">🎯 تحديد هدف</button>
+      <button class="btn-dash btn-red-d" style="padding:8px 14px;font-size:.82rem" onclick="toggleAgent(${agentId})">🚫 تعطيل</button>
+    </div>
+  `;
+}
+
+async function toggleAgent(agentId){
+  if(!confirm('تأكيد التعطيل؟')) return;
+  const r = await api('POST', `/api/v1/agents/${agentId}/toggle`);
+  if(r.success){ closeModal('agentDetailModal'); loadAgentsGrid(); }
+  else alert('❌ '+r.error);
+}
+
+/* ─── TARGET MODAL ─── */
+function openTargetModal(agentId){
+  document.getElementById('tmAgentId').value = agentId;
+  document.getElementById('tmMonth').value = new Date().toISOString().slice(0,7);
+  openModal('targetModal');
+}
+async function saveTarget(){
+  const agentId = document.getElementById('tmAgentId').value;
+  const month = document.getElementById('tmMonth').value;
+  const target = parseFloat(document.getElementById('tmTarget').value)||0;
+  const bonus = parseFloat(document.getElementById('tmBonus').value)||0;
+  const threshold = parseFloat(document.getElementById('tmThreshold').value)||0;
+  if(!target){ alert('أدخل مبلغ الهدف'); return; }
+  const r = await api('POST', `/api/v1/agents/${agentId}/targets`, {month,target_amount:target,bonus_amount:bonus,bonus_threshold:threshold});
+  if(r.success){ closeModal('targetModal'); alert('✅ تم حفظ الهدف'); loadPerformance(); }
+  else alert('❌ '+r.error);
+}
+
+/* ─── INIT ─── */
+initMonthFilter();
+loadAll();
+</script>
+{% endblock %}

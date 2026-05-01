@@ -1,4 +1,4 @@
-"""
+﻿"""
 modules/blueprints/services/routes.py — قطاع الخدمات
 Services: Jobs, Contracts
 """
@@ -32,7 +32,7 @@ def require_perm(*perms):
 @require_perm("sales")
 def list_jobs():
     """قائمة أوامر العمل"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -55,7 +55,7 @@ def list_jobs():
 @require_perm("sales")
 def create_job():
     """إنشاء أمر عمل"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -88,7 +88,7 @@ def create_job():
 @require_perm("sales")
 def view_job(job_id):
     """عرض تفاصيل أمر العمل"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -127,7 +127,7 @@ def view_job(job_id):
 @require_perm("sales")
 def list_contracts():
     """قائمة العقود"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -150,7 +150,7 @@ def list_contracts():
 @require_perm("sales")
 def create_contract():
     """إنشاء عقد"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     

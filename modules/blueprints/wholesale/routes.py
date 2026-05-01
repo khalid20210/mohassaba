@@ -1,4 +1,4 @@
-"""
+﻿"""
 modules/blueprints/wholesale/routes.py — قطاع الجملة
 Wholesale: Orders, Pricing Lists
 """
@@ -33,7 +33,7 @@ def require_perm(*perms):
 @require_perm("sales")
 def list_orders():
     """قائمة الطلبات"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -56,7 +56,7 @@ def list_orders():
 @require_perm("sales")
 def create_order():
     """إنشاء طلب جديد"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -96,7 +96,7 @@ def create_order():
 @require_perm("purchases")
 def list_pricing():
     """قوائم الأسعار"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -113,7 +113,7 @@ def list_pricing():
 @require_perm("purchases")
 def create_pricing_list():
     """إنشاء قائمة أسعار"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -142,7 +142,7 @@ def create_pricing_list():
 @bp.route("/api/orders/<int:order_id>")
 def api_get_order(order_id):
     """API: الحصول على تفاصيل الطلب"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     

@@ -1,4 +1,4 @@
-"""
+﻿"""
 modules/blueprints/rental/routes.py — قطاع تأجير السيارات
 Car Rental: Fleet, Contracts, Maintenance
 """
@@ -32,7 +32,7 @@ def require_perm(*perms):
 @require_perm("sales")
 def list_fleet():
     """قائمة السيارات"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -55,7 +55,7 @@ def list_fleet():
 @require_perm("sales")
 def add_vehicle():
     """إضافة سيارة جديدة"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -91,7 +91,7 @@ def add_vehicle():
 @require_perm("sales")
 def list_contracts():
     """قائمة عقود الإيجار"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -112,7 +112,7 @@ def list_contracts():
 @require_perm("sales")
 def create_contract():
     """إنشاء عقد إيجار"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -151,7 +151,7 @@ def create_contract():
 @require_perm("sales")
 def list_maintenance():
     """سجل الصيانة"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -171,7 +171,7 @@ def list_maintenance():
 @require_perm("sales")
 def add_maintenance():
     """تسجيل صيانة"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     

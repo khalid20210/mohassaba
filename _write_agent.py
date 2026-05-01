@@ -1,4 +1,6 @@
-<!DOCTYPE html>
+import pathlib
+
+content = r"""<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -650,4 +652,7 @@ async function submitCollection(){
 })();
 </script>
 </body>
-</html>
+</html>"""
+
+pathlib.Path('templates/agent_mobile.html').write_text(content, encoding='utf-8')
+print('Written:', len(content), 'chars')

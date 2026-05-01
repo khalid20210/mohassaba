@@ -1,4 +1,4 @@
-"""
+﻿"""
 modules/blueprints/medical/routes.py — خدمات القطاع الطبي
 Medical Sector: Patients, Appointments, Prescriptions, Visits
 """
@@ -33,7 +33,7 @@ def require_perm(*perms):
 @require_perm("sales")
 def list_patients():
     """قائمة المرضى"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -68,7 +68,7 @@ def list_patients():
 @require_perm("sales")
 def add_patient():
     """إضافة مريض جديد"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -100,7 +100,7 @@ def add_patient():
 @require_perm("sales")
 def list_appointments():
     """قائمة المواعيد"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -131,7 +131,7 @@ def list_appointments():
 @require_perm("sales")
 def manage_appointment(appointment_id):
     """إدارة موعد - التشخيص والعلاج والوصفات"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -179,7 +179,7 @@ def manage_appointment(appointment_id):
 @require_perm("sales")
 def patient_prescriptions(patient_id):
     """وصفات المريض"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
@@ -195,7 +195,7 @@ def patient_prescriptions(patient_id):
 @bp.route("/api/patient/<int:patient_id>")
 def api_get_patient(patient_id):
     """API: الحصول على بيانات المريض"""
-    from ..middleware import get_db
+    from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
     
