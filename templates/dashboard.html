@@ -342,26 +342,26 @@
   <div class="db-kpi-grid">
     <article class="db-kpi-card">
       <div class="db-kpi-head"><span>صافي الربح اليومي</span><span class="db-kpi-icon">💠</span></div>
-      <div class="db-kpi-value" data-count="{{ stats.journals or 0 }}">0</div>
-      <div class="db-kpi-note">أهم بطاقة للإدارة: الحالة الحقيقية للربحية الآن.</div>
+      <div class="db-kpi-value" data-count="{{ dashboard_metrics.net_profit_today or 0 }}" data-suffix=" ر.س">0</div>
+      <div class="db-kpi-note">محسوب من إيراد اليوم الفعلي مطروحًا منه تكلفة البضاعة المباعة.</div>
     </article>
 
     <article class="db-kpi-card">
-      <div class="db-kpi-head"><span>إجمالي المنتجات النشطة</span><span class="db-kpi-icon">📦</span></div>
-      <div class="db-kpi-value" data-count="{{ stats.products or 0 }}">0</div>
-      <div class="db-kpi-note">جاهزة لربط مؤشرات المخزون والطلب الأعلى لاحقاً.</div>
+      <div class="db-kpi-head"><span>مبيعات اليوم</span><span class="db-kpi-icon">🛒</span></div>
+      <div class="db-kpi-value" data-count="{{ dashboard_metrics.sales_today or 0 }}" data-suffix=" ر.س">0</div>
+      <div class="db-kpi-note">إجمالي الفواتير المسددة اليوم على نفس المنشأة الحالية.</div>
     </article>
 
     <article class="db-kpi-card">
-      <div class="db-kpi-head"><span>العملاء والموردون</span><span class="db-kpi-icon">👥</span></div>
-      <div class="db-kpi-value" data-count="{{ stats.contacts or 0 }}">0</div>
-      <div class="db-kpi-note">مؤشر النشاط التجاري والعلاقات التشغيلية.</div>
+      <div class="db-kpi-head"><span>مشتريات آخر 30 يومًا</span><span class="db-kpi-icon">📦</span></div>
+      <div class="db-kpi-value" data-count="{{ dashboard_metrics.purchases_30d or 0 }}" data-suffix=" ر.س">0</div>
+      <div class="db-kpi-note">قيمة التوريد المضافة للمخزون خلال الدورة التشغيلية الأخيرة.</div>
     </article>
 
     <article class="db-kpi-card">
-      <div class="db-kpi-head"><span>الحسابات المحاسبية</span><span class="db-kpi-icon">📒</span></div>
-      <div class="db-kpi-value" data-count="{{ stats.accounts or 0 }}">0</div>
-      <div class="db-kpi-note">جاهزة لتوسيع تقارير الأستاذ والميزان.</div>
+      <div class="db-kpi-head"><span>فواتير آخر 30 يومًا</span><span class="db-kpi-icon">📒</span></div>
+      <div class="db-kpi-value" data-count="{{ dashboard_metrics.invoices_30d or 0 }}">0</div>
+      <div class="db-kpi-note">مؤشر سرعة الحركة التشغيلية وعدد المستندات المتولدة فعليًا.</div>
     </article>
   </div>
 </section>
@@ -414,13 +414,14 @@
 
   document.querySelectorAll('.db-kpi-value').forEach((el) => {
     const finalVal = Number(el.dataset.count || 0);
+    const suffix = el.dataset.suffix || '';
     const duration = 700;
     const start = performance.now();
 
     function tick(now) {
       const progress = Math.min((now - start) / duration, 1);
       const current = Math.floor(finalVal * progress);
-      el.textContent = current.toLocaleString('ar');
+      el.textContent = `${current.toLocaleString('ar')}${suffix}`;
       if (progress < 1) requestAnimationFrame(tick);
     }
 

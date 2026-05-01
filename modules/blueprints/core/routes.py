@@ -201,6 +201,7 @@ def dashboard():
         "accounts": db.execute("SELECT COUNT(*) FROM accounts  WHERE business_id=?", (biz_id,)).fetchone()[0],
     }
 
+    today   = datetime.now().strftime("%Y-%m-%d")
     since7  = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
     since30 = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
 
@@ -221,12 +222,38 @@ def dashboard():
         GROUP BY il.description ORDER BY qty DESC LIMIT 5
     """, (biz_id, since30)).fetchall()
 
+    dashboard_totals = db.execute("""
+        SELECT
+          COALESCE(SUM(CASE WHEN invoice_type IN ('sale','table') AND status='paid' AND DATE(invoice_date)=? THEN total ELSE 0 END),0) AS sales_today,
+          COALESCE(SUM(CASE WHEN invoice_type='purchase' AND status IN ('paid','partial') AND DATE(invoice_date) >= ? THEN total ELSE 0 END),0) AS purchases_30d,
+          COUNT(CASE WHEN DATE(invoice_date) >= ? THEN 1 END) AS invoices_30d
+        FROM invoices
+        WHERE business_id=?
+    """, (today, since30, since30, biz_id)).fetchone()
+
+    profit_today = db.execute("""
+        SELECT
+          COALESCE(SUM(CASE WHEN a.code='4101' THEN jel.credit ELSE 0 END),0) AS revenue_today,
+          COALESCE(SUM(CASE WHEN a.code='5101' THEN jel.debit ELSE 0 END),0) AS cogs_today
+        FROM journal_entry_lines jel
+        JOIN journal_entries je ON je.id = jel.entry_id
+        JOIN accounts a ON a.id = jel.account_id
+        WHERE a.business_id=? AND DATE(je.entry_date)=?
+    """, (biz_id, today)).fetchone()
+
     rev_exp = db.execute("""
         SELECT
           COALESCE(SUM(CASE WHEN invoice_type IN ('sale','table') AND status='paid' THEN total ELSE 0 END),0) AS revenue,
           COALESCE(SUM(CASE WHEN invoice_type='purchase'          AND status='paid' THEN total ELSE 0 END),0) AS expenses
         FROM invoices WHERE business_id=? AND DATE(created_at) >= ?
     """, (biz_id, since30)).fetchone()
+
+    dashboard_metrics = {
+        "net_profit_today": int(round(float((profit_today["revenue_today"] if profit_today else 0) - (profit_today["cogs_today"] if profit_today else 0)))),
+        "sales_today": int(round(float(dashboard_totals["sales_today"] if dashboard_totals else 0))),
+        "purchases_30d": int(round(float(dashboard_totals["purchases_30d"] if dashboard_totals else 0))),
+        "invoices_30d": int(dashboard_totals["invoices_30d"] if dashboard_totals else 0),
+    }
 
     last_entries = db.execute("""
         SELECT je.entry_number, je.entry_date, je.description,
@@ -268,6 +295,7 @@ def dashboard():
     return render_template(
         "dashboard.html",
         stats=stats,
+        dashboard_metrics=dashboard_metrics,
         last_entries=[dict(r) for r in last_entries],
         chart_daily=chart_daily,
         chart_top5=chart_top5,
