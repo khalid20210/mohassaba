@@ -7,8 +7,35 @@ import secrets
 from datetime import timedelta
 from pathlib import Path
 
-BASE_DIR = Path(__file__).parent.parent
-DB_PATH  = BASE_DIR / "database" / "accounting.db"
+# ── تحميل .env تلقائياً إذا توفر python-dotenv ──────────────────────────────
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).parent.parent / ".env", override=False)
+except ImportError:
+    pass  # python-dotenv اختياري — يعمل بدونه أيضاً
+
+BASE_DIR    = Path(__file__).parent.parent
+FLASK_ENV   = os.environ.get("FLASK_ENV", "development").lower()
+IS_PROD     = FLASK_ENV == "production"
+
+# ─── قاعدة البيانات: منفصلة حسب البيئة ────────────────────────────────────────
+_db_from_env = os.environ.get("DB_PATH")
+if _db_from_env:
+    DB_PATH = Path(_db_from_env)
+elif IS_PROD:
+    DB_PATH = BASE_DIR / "database" / "accounting_prod.db"
+else:
+    DB_PATH = BASE_DIR / "database" / "accounting_dev.db"
+
+# إذا لم يكن ملف Dev موجوداً لكن الـ prod موجود، انسخه للـ dev (أول مرة فقط)
+_prod_db = BASE_DIR / "database" / "accounting_prod.db"
+_legacy  = BASE_DIR / "database" / "accounting.db"
+if not IS_PROD and not DB_PATH.exists():
+    import shutil
+    if _legacy.exists():
+        shutil.copy2(_legacy, DB_PATH)
+    elif _prod_db.exists():
+        shutil.copy2(_prod_db, DB_PATH)
 
 # ─── تحميل SECRET_KEY ─────────────────────────────────────────────────────────
 def _load_secret_key() -> str:
@@ -23,15 +50,22 @@ def _load_secret_key() -> str:
     return key
 
 
-# ─── إعدادات Flask ────────────────────────────────────────────────────────────
-FLASK_CONFIG = {
+# ─── إعدادات Flask (تتغير حسب البيئة) ───────────────────────────────────────
+FLASK_CONFIG: dict = {
     "MAX_CONTENT_LENGTH":         10 * 1024 * 1024,
     "PERMANENT_SESSION_LIFETIME": timedelta(hours=8),
     "SESSION_COOKIE_HTTPONLY":    True,
     "SESSION_COOKIE_SAMESITE":    "Lax",
+    "DEBUG":                      not IS_PROD,
+    "TESTING":                    False,
+    "ENV":                        FLASK_ENV,
 }
+if IS_PROD:
+    # في الإنتاج: فعّل SECURE فقط مع HTTPS
+    _secure = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true"
+    FLASK_CONFIG["SESSION_COOKIE_SECURE"] = _secure
 
-# ─── Rate limiting ────────────────────────────────────────────────────────────
+
 MAX_LOGIN_ATTEMPTS = 10
 LOGIN_WINDOW_SECONDS = 300
 

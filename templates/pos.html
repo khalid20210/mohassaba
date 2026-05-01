@@ -1,402 +1,599 @@
 {% extends "base.html" %}
-{% block title %}نقاط البيع{% endblock %}
+{% block title %}كاشير — نقاط البيع{% endblock %}
 
 {% block head %}
 <style>
-.pos-mode-banner {
-  margin-bottom: 12px;
-  background: linear-gradient(135deg, #0f172a, #1e293b);
-  border: 1px solid rgba(148,163,184,.3);
-  border-radius: 14px;
-  color: #e2e8f0;
-  padding: 12px 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+/* ══════════════════════════════════════════════════════════════════
+   POS WORKSTATION v2 — Dark Flat Functional Theme
+   ══════════════════════════════════════════════════════════════════ */
+.main-content { background:#0d1117 !important; padding:10px !important; }
+.pos-app {
+  --p-bg:#0d1117; --p-card:#161b22; --p-card2:#1c2333; --p-border:#30363d;
+  --p-text:#e6edf3; --p-muted:#8b949e; --p-blue:#3b82f6; --p-green:#10b981;
+  --p-red:#ef4444; --p-amber:#f59e0b; --p-purple:#8b5cf6; --p-r:10px;
+  display:flex; gap:10px; height:calc(100vh - 90px); min-height:560px;
+  color:var(--p-text); font-family:inherit;
 }
-.pos-mode-banner .meta { color: #cbd5e1; font-size: .82rem; }
-.pos-mode-chip {
-  background: rgba(59,130,246,.2);
-  border: 1px solid rgba(147,197,253,.35);
-  color: #bfdbfe;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: .78rem;
+/* Products Panel */
+.pos-prods { flex:1.7; display:flex; flex-direction:column; gap:8px; overflow:hidden; min-width:0; }
+/* Search */
+.pos-searchbar {
+  display:flex; align-items:center; gap:10px;
+  background:var(--p-card); border:1.5px solid var(--p-border);
+  border-radius:var(--p-r); padding:0 16px; height:50px; flex-shrink:0; transition:border-color .15s;
 }
-.pos-mode-hints {
-  margin-bottom: 12px;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+.pos-searchbar:focus-within { border-color:var(--p-blue); box-shadow:0 0 0 3px rgba(59,130,246,.12); }
+.pos-searchbar-icon { color:var(--p-muted); font-size:1.1rem; flex-shrink:0; }
+.pos-searchbar input {
+  flex:1; border:none; outline:none; background:transparent;
+  color:var(--p-text); font-size:1rem; font-family:inherit; direction:rtl;
 }
-.pos-mode-hints .hint {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  color: #334155;
-  border-radius: 999px;
-  padding: 5px 10px;
-  font-size: .78rem;
+.pos-searchbar input::placeholder { color:var(--p-muted); }
+.pos-scan-hint {
+  font-size:.72rem; background:rgba(59,130,246,.12); color:var(--p-blue);
+  border:1px solid rgba(59,130,246,.25); border-radius:6px; padding:3px 9px;
+  white-space:nowrap; flex-shrink:0;
 }
+/* Category tabs */
+.pos-cattabs { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; flex-shrink:0; padding-bottom:2px; }
+.pos-cattabs::-webkit-scrollbar { display:none; }
+.pos-cattab {
+  flex-shrink:0; background:var(--p-card); border:1.5px solid var(--p-border);
+  color:var(--p-muted); border-radius:999px; padding:5px 15px;
+  font-size:.78rem; cursor:pointer; font-family:inherit; white-space:nowrap; transition:all .12s;
+}
+.pos-cattab:hover { border-color:var(--p-blue); color:var(--p-text); }
+.pos-cattab.active { background:var(--p-blue); border-color:var(--p-blue); color:#fff; font-weight:700; }
+/* Product grid */
+.pos-grid {
+  flex:1; overflow-y:auto;
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(145px,1fr));
+  gap:8px; align-content:start;
+  scrollbar-width:thin; scrollbar-color:var(--p-border) transparent;
+}
+.pos-grid::-webkit-scrollbar { width:4px; }
+.pos-grid::-webkit-scrollbar-thumb { background:var(--p-border); border-radius:2px; }
+.pos-state { grid-column:1/-1; text-align:center; padding:70px 20px; color:var(--p-muted); }
+.pos-state .icon { font-size:3rem; margin-bottom:10px; }
+.pos-spinner {
+  width:30px; height:30px; border:3px solid var(--p-border);
+  border-top-color:var(--p-blue); border-radius:50%;
+  animation:_spin .65s linear infinite; margin:0 auto 10px;
+}
+@keyframes _spin { to { transform:rotate(360deg); } }
+/* Product card */
+.pcard {
+  background:var(--p-card); border:1.5px solid var(--p-border); border-radius:var(--p-r);
+  padding:11px; cursor:pointer; display:flex; flex-direction:column; gap:5px;
+  transition:border-color .12s,box-shadow .12s,transform .08s;
+  user-select:none; -webkit-tap-highlight-color:transparent;
+}
+.pcard:hover { border-color:var(--p-blue); box-shadow:0 0 0 2px rgba(59,130,246,.18); transform:translateY(-1px); }
+.pcard:active { transform:scale(.95); }
+.pcard.oos { opacity:.5; }
+.pcard-cat { font-size:.68rem; color:var(--p-muted); }
+.pcard-name { font-weight:600; font-size:.83rem; line-height:1.35; color:var(--p-text); word-break:break-word; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.pcard-bc { font-size:.67rem; color:var(--p-muted); font-family:monospace; }
+.pcard-foot { display:flex; justify-content:space-between; align-items:flex-end; margin-top:auto; gap:4px; }
+.pcard-price { font-weight:700; font-size:.9rem; color:var(--p-blue); }
+.pcard-stock { font-size:.68rem; border-radius:4px; padding:1px 6px; font-weight:700; }
+.sk { background:rgba(16,185,129,.15); color:#34d399; }
+.sl { background:rgba(245,158,11,.15); color:#fbbf24; }
+.sz { background:rgba(239,68,68,.12); color:#f87171; }
+/* Cart Panel */
+.pos-cart {
+  flex:0 0 350px; background:var(--p-card); border:1px solid var(--p-border);
+  border-radius:var(--p-r); display:flex; flex-direction:column; overflow:hidden;
+}
+.pos-cart-head {
+  background:var(--p-card2); border-bottom:1px solid var(--p-border);
+  padding:11px 14px; display:flex; align-items:center; gap:8px; flex-shrink:0;
+}
+.pos-inv-lbl { font-size:.72rem; color:var(--p-muted); }
+.pos-inv-num { font-size:.82rem; font-weight:700; color:var(--p-blue); letter-spacing:.04em; }
+.pos-held-btn {
+  margin-inline-start:auto; background:rgba(245,158,11,.12); color:var(--p-amber);
+  border:1px solid rgba(245,158,11,.28); border-radius:999px;
+  font-size:.72rem; padding:3px 10px; cursor:pointer; font-family:inherit; font-weight:600;
+}
+.pos-held-btn:hover { background:rgba(245,158,11,.22); }
+.pos-cart-body { flex:1; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--p-border) transparent; }
+.pos-cart-body::-webkit-scrollbar { width:3px; }
+.pos-cart-body::-webkit-scrollbar-thumb { background:var(--p-border); }
+.pos-cart-empty { padding:50px 20px; text-align:center; color:var(--p-muted); font-size:2rem; }
+.pos-cart-empty p { font-size:.83rem; margin-top:8px; color:var(--p-muted); }
+.cart-item { display:flex; align-items:center; gap:6px; padding:8px 12px; border-bottom:1px solid var(--p-border); }
+.ci-info { flex:1; min-width:0; }
+.ci-name { font-size:.81rem; font-weight:600; color:var(--p-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ci-price { font-size:.73rem; color:var(--p-muted); margin-top:1px; }
+.ci-ctrl { display:flex; align-items:center; gap:3px; flex-shrink:0; }
+.ci-qbtn { width:26px; height:26px; border-radius:6px; border:1px solid var(--p-border); background:var(--p-card2); color:var(--p-text); font-size:1rem; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:inherit; transition:all .1s; flex-shrink:0; }
+.ci-qbtn:hover { background:var(--p-blue); border-color:var(--p-blue); }
+.ci-qbtn.dec:hover { background:var(--p-red); border-color:var(--p-red); }
+.ci-qty { width:36px; text-align:center; font-size:.83rem; font-weight:700; color:var(--p-text); background:transparent; border:1px solid var(--p-border); border-radius:5px; padding:2px 0; font-family:inherit; cursor:text; }
+.ci-qty:focus { outline:none; border-color:var(--p-blue); background:var(--p-card2); }
+.ci-tot { width:62px; text-align:left; font-size:.8rem; font-weight:700; color:var(--p-text); flex-shrink:0; }
+.ci-del { width:24px; height:24px; border:none; background:none; color:var(--p-muted); font-size:.85rem; cursor:pointer; border-radius:4px; display:flex; align-items:center; justify-content:center; }
+.ci-del:hover { background:rgba(239,68,68,.15); color:var(--p-red); }
+/* Totals */
+.pos-totals { border-top:1px solid var(--p-border); background:var(--p-card2); padding:9px 14px; flex-shrink:0; }
+.pos-trow { display:flex; justify-content:space-between; padding:2px 0; font-size:.82rem; color:var(--p-muted); }
+.pos-trow.grand { font-size:1.05rem; font-weight:700; color:var(--p-text); border-top:1px solid var(--p-border); margin-top:6px; padding-top:7px; }
+.pos-trow.grand span:last-child { color:var(--p-green); }
+/* Payment tabs */
+.pos-paytabs { display:flex; gap:5px; padding:9px 12px; border-top:1px solid var(--p-border); flex-shrink:0; }
+.pos-paytab { flex:1; padding:7px 4px; background:var(--p-card2); border:1.5px solid var(--p-border); border-radius:7px; color:var(--p-muted); font-size:.79rem; font-weight:600; cursor:pointer; font-family:inherit; text-align:center; transition:all .12s; }
+.pos-paytab:hover { border-color:var(--p-blue); color:var(--p-text); }
+.pos-paytab.sel-cash { background:rgba(16,185,129,.12); border-color:var(--p-green); color:var(--p-green); }
+.pos-paytab.sel-bank { background:rgba(139,92,246,.12); border-color:var(--p-purple); color:var(--p-purple); }
+/* Action buttons */
+.pos-actions { display:grid; grid-template-columns:1fr 1fr; gap:5px; padding:9px 12px 12px; flex-shrink:0; }
+.pos-act { padding:13px 6px; border:none; border-radius:8px; font-size:.84rem; font-weight:700; cursor:pointer; font-family:inherit; transition:opacity .15s,transform .07s; display:flex; flex-direction:column; align-items:center; gap:2px; -webkit-tap-highlight-color:transparent; }
+.pos-act:active { transform:scale(.95); }
+.pos-act:disabled { opacity:.3; cursor:not-allowed; }
+.pa-icon { font-size:1.2rem; }
+.pa-lbl  { font-size:.68rem; }
+.pa-pay { grid-column:1/-1; background:var(--p-green); color:#fff; }
+.pa-pay:hover:not(:disabled) { background:#059669; }
+.pa-pay.bank-mode { background:var(--p-purple); }
+.pa-pay.bank-mode:hover:not(:disabled) { background:#7c3aed; }
+.pa-hold { background:rgba(245,158,11,.12); border:1.5px solid rgba(245,158,11,.28); color:var(--p-amber); }
+.pa-hold:hover:not(:disabled) { background:rgba(245,158,11,.22); }
+.pa-cancel { background:rgba(239,68,68,.08); border:1.5px solid rgba(239,68,68,.2); color:var(--p-red); }
+.pa-cancel:hover:not(:disabled) { background:rgba(239,68,68,.18); }
+/* Modals */
+.pos-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; z-index:2000; padding:16px; }
+.pos-mbox { background:var(--p-card); border:1px solid var(--p-border); border-radius:14px; padding:26px 22px; max-width:420px; width:100%; animation:_slideup .2s ease; }
+@keyframes _slideup { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+.pos-mbox h2 { font-size:1.1rem; color:var(--p-text); margin:10px 0 6px; text-align:center; }
+.pos-mbox p  { font-size:.85rem; color:var(--p-muted); text-align:center; }
+.pos-receipt-amt { font-size:1.7rem; font-weight:700; color:var(--p-green); text-align:center; margin:14px 0; }
+.mbox-btns { display:flex; gap:7px; margin-top:16px; }
+.mbox-btns button { flex:1; padding:11px; border-radius:8px; font-family:inherit; font-size:.88rem; font-weight:600; cursor:pointer; border:none; }
+.mbtn-new   { background:var(--p-blue); color:#fff; }
+.mbtn-print { background:var(--p-card2); color:var(--p-text); border:1px solid var(--p-border) !important; }
+.held-list { text-align:right; margin:12px 0; max-height:280px; overflow-y:auto; }
+.held-item { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border:1px solid var(--p-border); border-radius:8px; margin-bottom:7px; cursor:pointer; transition:border-color .12s; }
+.held-item:hover { border-color:var(--p-blue); }
+.held-item-info { font-size:.8rem; color:var(--p-text); }
+.held-item-info span { font-size:.7rem; color:var(--p-muted); display:block; margin-top:2px; }
+.held-restore { color:var(--p-blue); font-size:.78rem; font-weight:700; white-space:nowrap; }
+.held-del-btn { color:var(--p-red); background:none; border:none; font-size:.95rem; cursor:pointer; padding:3px 5px; border-radius:4px; }
+.held-del-btn:hover { background:rgba(239,68,68,.15); }
+/* Banner overrides */
+.pos-mode-banner { background:#161b22; border:1px solid #30363d; color:#e6edf3; margin-bottom:8px; }
+.pos-mode-banner .meta { color:#8b949e; }
+.pos-mode-chip { background:rgba(59,130,246,.15); border-color:rgba(59,130,246,.3); color:#93c5fd; }
+.pos-mode-hints .hint { background:#161b22; border-color:#30363d; color:#8b949e; }
+@media (max-width:840px) { .pos-app{flex-direction:column;height:auto} .pos-cart{flex:none} .pos-prods{min-height:340px} }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- ── شريط الهوية ── -->
 <div class="pos-mode-banner">
   <div>
     <strong>{{ ui_config.industry_icon }} {{ ui_config.industry_label }}</strong>
-    <div class="meta">تخصيص شاشة نقاط البيع حسب نشاطك التجاري في جنان بيز</div>
+    <div class="meta">كاشير نقاط البيع — {{ current_business.name if current_business else '' }}</div>
   </div>
-  <span class="pos-mode-chip">mode: {{ ui_config.pos_mode }}</span>
+  <span class="pos-mode-chip">{{ ui_config.pos_mode }}</span>
 </div>
-
-<div class="pos-mode-hints">
-  <span class="hint">🔎 {{ ui_config.pos_search_hint }}</span>
-  {% if ui_config.show_tables %}<span class="hint">🍽️ وضع الطاولات مفعل</span>{% endif %}
-  {% if ui_config.show_expiry %}<span class="hint">⏳ متابعة الصلاحية مفعل</span>{% endif %}
-  {% if ui_config.show_serial %}<span class="hint">🔢 {{ ui_config.T_serial }}</span>{% endif %}
+{% if ui_config.show_tables or ui_config.show_expiry or ui_config.show_serial or ui_config.show_variant %}
+<div class="pos-mode-hints" style="margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap">
+  {% if ui_config.show_tables  %}<span class="hint">🍽️ الطاولات</span>{% endif %}
+  {% if ui_config.show_expiry  %}<span class="hint">⏳ الصلاحية</span>{% endif %}
+  {% if ui_config.show_serial  %}<span class="hint">🔢 {{ ui_config.T_serial }}</span>{% endif %}
   {% if ui_config.show_variant %}<span class="hint">🎨 {{ ui_config.T_variant }}</span>{% endif %}
-  {% if ui_config.show_qty_tiers %}<span class="hint">📦 تسعير الكميات مفعل</span>{% endif %}
-  {% if ui_config.show_work_order %}<span class="hint">🛠️ {{ ui_config.T_work_order }}</span>{% endif %}
-  {% if ui_config.show_project %}<span class="hint">🏗️ ربط المشروع</span>{% endif %}
-  {% if ui_config.show_date_range %}<span class="hint">📅 تاريخ بداية/نهاية</span>{% endif %}
-  {% if ui_config.show_patient_id %}<span class="hint">🩺 رقم ملف المريض</span>{% endif %}
 </div>
+{% endif %}
 
-<div class="pos-wrapper">
+<!-- ═══════════════════════════════════════════════════════════════
+     الهيكل الرئيسي للـ POS
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="pos-app">
 
-  <!-- ═══════════════════════════════════════════════════════
-       لوحة البحث والمنتجات (يمين في RTL)
-  ═══════════════════════════════════════════════════════ -->
-  <div class="pos-products-panel">
+  <!-- ██ لوحة المنتجات (يمين RTL) ██ -->
+  <section class="pos-prods">
 
-    <div class="pos-search-wrap">
-      <span class="pos-search-icon">🔍</span>
-      <input type="text" id="posSearch" class="pos-search-input"
-             placeholder="{{ ui_config.pos_search_hint }}"
-             autocomplete="off" autofocus>
-      <kbd class="pos-search-hint">Enter ↵</kbd>
+    <div class="pos-searchbar">
+      <span class="pos-searchbar-icon">🔍</span>
+      <input type="text" id="posSearch" autocomplete="off" autofocus
+             placeholder="{{ ui_config.pos_search_hint }}">
+      <span class="pos-scan-hint">⌨ اسم / باركود</span>
     </div>
 
-    <div id="searchResults" class="pos-results-grid">
-      <div class="pos-welcome">
-        <div style="font-size:3.5rem;margin-bottom:10px;">🛒</div>
-        <p>ابدأ بالبحث عن {{ ui_config.T_product }} أو امسح الباركود</p>
-      </div>
+    <div class="pos-cattabs" id="catTabs">
+      <button class="pos-cattab active" data-cat="" onclick="filterCat(this,'')">الكل</button>
+      {% for cat in categories %}
+      <button class="pos-cattab" data-cat="{{ cat | e }}"
+              onclick="filterCat(this,{{ cat | tojson }})">{{ cat }}</button>
+      {% endfor %}
     </div>
 
-  </div>
-
-  <!-- ═══════════════════════════════════════════════════════
-       لوحة الفاتورة والسلة (يسار في RTL)
-  ═══════════════════════════════════════════════════════ -->
-  <div class="pos-cart-panel">
-
-    <div class="pos-cart-header">
-      <h3>🧾 {{ ui_config.T_invoice }} الحالية</h3>
-      <button class="btn-clear-cart" onclick="clearCart()">🗑 مسح</button>
+    <div class="pos-grid" id="posGrid">
+      <div class="pos-state"><div class="pos-spinner"></div><div>جارٍ تحميل المنتجات…</div></div>
     </div>
 
-    <div class="pos-cart-body">
-      <div id="cartEmpty" class="pos-cart-empty">
-        <div>🛒</div>
-        <p>السلة فارغة</p>
-      </div>
-      <table id="cartTable" class="pos-cart-table" style="display:none">
-        <thead>
-          <tr>
-            <th>{{ ui_config.T_product }}</th>
-            <th>{{ ui_config.labels.quantity if ui_config.labels is defined else 'الكمية' }}</th>
-            <th>{{ ui_config.labels.price if ui_config.labels is defined else 'السعر' }}</th>
-            <th>الضريبة</th>
-            <th>{{ ui_config.labels.total if ui_config.labels is defined else 'الإجمالي' }}</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="cartItems"></tbody>
-      </table>
-    </div>
+  </section>
 
-    <div class="pos-totals">
-      <div class="pos-total-row">
-        <span>قبل الضريبة</span>
-        <strong id="subtotalDisplay">0.00</strong>
-      </div>
-      <div class="pos-total-row">
-        <span>الضريبة</span>
-        <strong id="taxDisplay">0.00</strong>
-      </div>
-      <div class="pos-total-row pos-grand-total-row">
-        <span>الإجمالي</span>
-        <strong id="grandTotalDisplay">0.00</strong>
-      </div>
-    </div>
+  <!-- ██ لوحة السلة (يسار RTL) ██ -->
+  <section class="pos-cart">
 
-    <div class="pos-footer">
-      <select id="paymentMethod" class="pos-pay-method">
-        <option value="cash">💵 نقداً</option>
-        <option value="bank">🏦 بطاقة / تحويل</option>
-      </select>
-      <button id="checkoutBtn" class="btn-checkout" onclick="checkout()" disabled>
-        ✅ {{ ui_config.T_new_sale }}
+    <div class="pos-cart-head">
+      <span>🧾</span>
+      <div>
+        <div class="pos-inv-lbl">رقم الفاتورة</div>
+        <div class="pos-inv-num" id="invNum">#——</div>
+      </div>
+      <button class="pos-held-btn" id="heldBtn" onclick="showHeldModal()" style="display:none">
+        ⏸ معلقة <span id="heldCnt">0</span>
       </button>
     </div>
 
+    <div class="pos-cart-body" id="cartBody">
+      <div class="pos-cart-empty" id="cartEmpty">
+        <div>🛒</div>
+        <p>السلة فارغة — ابحث أو انقر على {{ ui_config.T_product }}</p>
+      </div>
+      <div id="cartList"></div>
+    </div>
+
+    <div class="pos-totals">
+      <div class="pos-trow">
+        <span>المجموع الجزئي</span>
+        <span id="dispSub">0.00 {{ (current_business.currency if current_business else 'ر.س') | e }}</span>
+      </div>
+      <div class="pos-trow">
+        <span>ضريبة القيمة المضافة 15%</span>
+        <span id="dispTax">0.00 {{ (current_business.currency if current_business else 'ر.س') | e }}</span>
+      </div>
+      <div class="pos-trow grand">
+        <span>الإجمالي النهائي</span>
+        <span id="dispGrand">0.00 {{ (current_business.currency if current_business else 'ر.س') | e }}</span>
+      </div>
+    </div>
+
+    <div class="pos-paytabs">
+      <button class="pos-paytab sel-cash" id="tabCash" onclick="setPayment('cash')">💵 نقداً</button>
+      <button class="pos-paytab" id="tabBank" onclick="setPayment('bank')">💳 شبكة</button>
+    </div>
+
+    <div class="pos-actions">
+      <button class="pos-act pa-pay" id="btnPay" onclick="checkout()" disabled>
+        <span class="pa-icon" id="payIcon">💰</span>
+        <span class="pa-lbl"  id="payLbl">إتمام البيع نقداً</span>
+      </button>
+      <button class="pos-act pa-hold" id="btnHold" onclick="holdInvoice()" disabled>
+        <span class="pa-icon">⏸</span><span class="pa-lbl">تعليق</span>
+      </button>
+      <button class="pos-act pa-cancel" onclick="cancelInvoice()">
+        <span class="pa-icon">✕</span><span class="pa-lbl">إلغاء</span>
+      </button>
+    </div>
+
+  </section>
+
+</div>
+
+<!-- Modal: نجاح البيع -->
+<div id="modalSuccess" class="pos-overlay" style="display:none">
+  <div class="pos-mbox">
+    <div style="text-align:center;font-size:3rem">✅</div>
+    <h2>تمت عملية البيع بنجاح</h2>
+    <p id="mMsg">تم إصدار الفاتورة وتسجيل القيد المحاسبي</p>
+    <div class="pos-receipt-amt" id="mAmount"></div>
+    <div class="mbox-btns">
+      <button class="mbtn-print" onclick="window.print()">🖨 طباعة</button>
+      <button class="mbtn-new"   onclick="newSale()">🛒 فاتورة جديدة</button>
+    </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════
-     Modal: نجاح عملية البيع
-═══════════════════════════════════════════════ -->
-<div id="successModal" class="pos-modal-overlay" style="display:none">
-  <div class="pos-modal-box">
-    <div class="pos-modal-icon">✅</div>
-    <h2>تمت عملية البيع</h2>
-    <p id="receiptMsg" class="pos-receipt-msg"></p>
-    <div class="pos-receipt-total">
-      <span>الإجمالي: </span><strong id="receiptTotal"></strong>
-    </div>
-    <div class="pos-modal-actions">
-      <button onclick="newSale()" class="btn btn-primary">🛒 فاتورة جديدة</button>
-      <button onclick="window.print()" class="btn btn-secondary">🖨 طباعة</button>
-    </div>
+<!-- Modal: الفواتير المعلقة -->
+<div id="modalHeld" class="pos-overlay" style="display:none"
+     onclick="if(event.target===this)this.style.display='none'">
+  <div class="pos-mbox" style="max-width:460px">
+    <h2 style="text-align:right;margin-bottom:4px">⏸ الفواتير المعلقة</h2>
+    <p style="text-align:right">اختر فاتورة لاستعادتها إلى السلة</p>
+    <div class="held-list" id="heldList"></div>
+    <button onclick="document.getElementById('modalHeld').style.display='none'"
+            style="width:100%;padding:10px;margin-top:6px;background:var(--p-card2);
+                   border:1px solid var(--p-border);border-radius:7px;
+                   color:var(--p-text);font-family:inherit;font-size:.88rem;cursor:pointer;">
+      إغلاق
+    </button>
   </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-/* ─── Constants ────────────────────────────────────────────── */
-const CURRENCY = '{{ (current_business.currency if current_business else "ر.ي") | e }}';
-const UI_CONFIG = {{ ui_config | tojson }};
+/* ══════════════════════════════════════════════════════════════════
+   POS Engine v2 — Dark Flat Workstation
+   ══════════════════════════════════════════════════════════════════ */
 
-/* ─── State ────────────────────────────────────────────────── */
-let cart = [];
-let searchTimer = null;
+const CUR      = {{ (current_business.currency if current_business else 'ر.س') | tojson }};
+const UI_CFG   = {{ ui_config | tojson }};
+const VAT      = 15;
+const HELD_KEY = 'pos_held_{{ session["business_id"] }}';
 
-/* ─── DOM refs ─────────────────────────────────────────────── */
-const searchInput   = document.getElementById('posSearch');
-const searchResults = document.getElementById('searchResults');
-const cartItems     = document.getElementById('cartItems');
-const cartEmpty     = document.getElementById('cartEmpty');
-const cartTable     = document.getElementById('cartTable');
-const checkoutBtn   = document.getElementById('checkoutBtn');
-const subtotalEl    = document.getElementById('subtotalDisplay');
-const taxEl         = document.getElementById('taxDisplay');
-const grandTotalEl  = document.getElementById('grandTotalDisplay');
+let cart      = [];
+let payMode   = 'cash';
+let searchTm  = null;
+let activeCat = '';
+let gridCache = [];
 
-/* ═══════════════════════════════════════════════════════════
-   البحث
-═══════════════════════════════════════════════════════════ */
-searchInput.addEventListener('input', () => {
-  clearTimeout(searchTimer);
-  const q = searchInput.value.trim();
-  if (!q) { showWelcome(); return; }
-  searchTimer = setTimeout(() => doSearch(q), 280);
+const $search = document.getElementById('posSearch');
+const $grid   = document.getElementById('posGrid');
+const $clist  = document.getElementById('cartList');
+const $cempty = document.getElementById('cartEmpty');
+const $sub    = document.getElementById('dispSub');
+const $tax    = document.getElementById('dispTax');
+const $grand  = document.getElementById('dispGrand');
+const $invNum = document.getElementById('invNum');
+const $btnPay = document.getElementById('btnPay');
+const $btnHold= document.getElementById('btnHold');
+const $heldBtn= document.getElementById('heldBtn');
+const $heldCnt= document.getElementById('heldCnt');
+
+/* ── Search ────────────────────────────────────────────────────── */
+$search.addEventListener('input', () => {
+  clearTimeout(searchTm);
+  searchTm = setTimeout(() => loadProducts($search.value.trim(), activeCat), 260);
 });
-
-searchInput.addEventListener('keydown', e => {
+$search.addEventListener('keydown', e => {
   if (e.key !== 'Enter') return;
-  clearTimeout(searchTimer);
-  const q = searchInput.value.trim();
-  if (q) doSearch(q, true);
+  clearTimeout(searchTm);
+  const q = $search.value.trim();
+  if (q) loadProducts(q, activeCat, true);
 });
 
-async function doSearch(q, autoAdd = false) {
-  try {
-    const res      = await fetch('/api/pos/search?q=' + encodeURIComponent(q));
-    const products = await res.json();
+function filterCat(el, cat) {
+  document.querySelectorAll('.pos-cattab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  activeCat = cat;
+  loadProducts($search.value.trim(), cat);
+}
 
+async function loadProducts(q='', cat='', autoAdd=false) {
+  $grid.innerHTML = '<div class="pos-state"><div class="pos-spinner"></div><div>جارٍ التحميل…</div></div>';
+  try {
+    let url = '/api/pos/search?q=' + encodeURIComponent(q);
+    if (cat) url += '&category=' + encodeURIComponent(cat);
+    const res      = await fetch(url);
+    const data     = await res.json();
+    const products = data.products || [];
     if (autoAdd && products.length === 1) {
-      addToCart(products[0]);
-      searchInput.value = '';
-      showWelcome();
+      addToCartById(products[0]);
+      $search.value = '';
+      await loadProducts('', activeCat);
       return;
     }
-    renderResults(products);
-  } catch (err) {
-    searchResults.innerHTML = '<div class="pos-no-results">خطأ في الاتصال بالخادم</div>';
+    gridCache = products;
+    renderGrid(products);
+  } catch {
+    $grid.innerHTML = '<div class="pos-state"><div class="icon">⚠️</div><p>تعذّر الاتصال بالخادم</p></div>';
   }
 }
 
-function showWelcome() {
-  searchResults.innerHTML = `
-    <div class="pos-welcome">
-      <div style="font-size:3.5rem;margin-bottom:10px;">${UI_CONFIG.industry_icon || '🛒'}</div>
-      <p>ابدأ بالبحث عن ${(UI_CONFIG.T_product || 'منتج')} أو امسح الباركود</p>
-    </div>`;
-}
-
-function renderResults(products) {
+function renderGrid(products) {
   if (!products.length) {
-    searchResults.innerHTML = '<div class="pos-no-results">لا توجد نتائج للبحث</div>';
+    $grid.innerHTML = '<div class="pos-state"><div class="icon">🔍</div><p>لا توجد نتائج مطابقة</p></div>';
     return;
   }
-  searchResults.innerHTML = products.map(p => {
-    const stock = parseFloat(p.stock_qty);
-    const sc    = stock <= 0 ? 'stock-zero' : stock < 5 ? 'stock-low' : 'stock-ok';
-    const data  = escAttr(JSON.stringify(p));
-    return `<div class="product-card" onclick='addToCart(${escHtml(JSON.stringify(p))})'>
-      <div class="product-card-name">${escHtml(p.name)}</div>
-      <div class="product-card-barcode">${p.barcode || '—'}</div>
-      <div class="product-card-footer">
-        <span class="product-card-price">${parseFloat(p.sale_price).toFixed(2)} ${CURRENCY}</span>
-        <span class="product-card-stock ${sc}">📦 ${stock}</span>
+  $grid.innerHTML = products.map((p, i) => {
+    const qty = parseFloat(p.stock_qty || 0);
+    const sc  = qty <= 0 ? 'sz' : qty < 5 ? 'sl' : 'sk';
+    const oos = qty <= 0 ? ' oos' : '';
+    return `<div class="pcard${oos}" onclick="addToCart(${i})">
+      <div class="pcard-cat">${_h(p.category_name||'')}</div>
+      <div class="pcard-name">${_h(p.name)}</div>
+      <div class="pcard-bc">${_h(p.barcode||'—')}</div>
+      <div class="pcard-foot">
+        <div class="pcard-price">${parseFloat(p.sale_price).toFixed(2)} <small>${CUR}</small></div>
+        <span class="pcard-stock ${sc}">📦 ${qty}</span>
       </div>
-      ${UI_CONFIG.show_expiry ? '<div style="font-size:.75rem;color:#64748b;margin-top:6px">⏳ صلاحية: حسب بيانات الصنف</div>' : ''}
-      ${UI_CONFIG.show_serial ? '<div style="font-size:.75rem;color:#64748b">🔢 ' + escHtml(UI_CONFIG.T_serial || 'رقم تسلسلي') + '</div>' : ''}
-      ${UI_CONFIG.show_variant ? '<div style="font-size:.75rem;color:#64748b">🎨 ' + escHtml(UI_CONFIG.T_variant || 'نوع / مقاس') + '</div>' : ''}
     </div>`;
   }).join('');
 }
 
-/* ═══════════════════════════════════════════════════════════
-   السلة
-═══════════════════════════════════════════════════════════ */
-function addToCart(product) {
-  const ex = cart.find(i => i.product_id === product.id);
-  if (ex) {
-    ex.quantity += 1;
-  } else {
-    cart.push({
-      product_id: product.id,
-      name:       product.name,
-      barcode:    product.barcode || '',
-      unit_price: parseFloat(product.sale_price) || 0,
-      quantity:   1,
-      tax_rate:   0,
-    });
-  }
+/* ── Cart ──────────────────────────────────────────────────────── */
+function addToCart(i)       { addToCartById(gridCache[i]); }
+function addToCartById(p) {
+  if (!p) return;
+  const price = parseFloat(p.sale_price) || 0;
+  if (price <= 0) { alert('سعر هذا المنتج غير محدد'); return; }
+  const ex = cart.find(x => x.product_id === p.id);
+  if (ex) ex.quantity += 1;
+  else cart.push({ product_id:p.id, name:p.name, barcode:p.barcode||'', unit_price:price, quantity:1 });
   renderCart();
-  searchInput.focus();
+  $search.focus();
 }
 
-function removeFromCart(idx) {
-  cart.splice(idx, 1);
+function changeQty(i, d) {
+  cart[i].quantity += d;
+  if (cart[i].quantity <= 0) cart.splice(i, 1);
   renderCart();
 }
-
-function updateQty(idx, val) {
-  const q = parseFloat(val);
-  if (!q || q <= 0) { removeFromCart(idx); return; }
-  cart[idx].quantity = q;
+function setQty(i, v) {
+  const q = parseFloat(v);
+  if (!q || q <= 0) cart.splice(i, 1); else cart[i].quantity = q;
   renderCart();
 }
-
-function clearCart() {
-  if (!cart.length) return;
-  if (!confirm('هل تريد مسح الفاتورة الحالية؟')) return;
-  cart = [];
-  renderCart();
-}
+function removeItem(i) { cart.splice(i, 1); renderCart(); }
 
 function renderCart() {
-  if (!cart.length) {
-    cartEmpty.style.display = 'block';
-    cartTable.style.display = 'none';
-    checkoutBtn.disabled    = true;
-    setTotals(0, 0);
-    return;
-  }
-
-  cartEmpty.style.display = 'none';
-  cartTable.style.display = 'table';
-  checkoutBtn.disabled    = false;
-
-  let sub = 0, tax = 0;
-  cartItems.innerHTML = cart.map((item, i) => {
-    const lineSub = item.quantity * item.unit_price;
-    const lineTax = lineSub * item.tax_rate / 100;
-    const lineTot = lineSub + lineTax;
-    sub += lineSub;
-    tax += lineTax;
-    return `<tr>
-      <td class="td-name">${escHtml(item.name)}</td>
-      <td class="td-qty">
-        <input type="number" value="${item.quantity}" min="0.5" step="0.5"
-               class="qty-input" onchange="updateQty(${i}, this.value)">
-      </td>
-      <td class="td-num">${item.unit_price.toFixed(2)}</td>
-      <td class="td-num">${lineTax.toFixed(2)}</td>
-      <td class="td-num">${lineTot.toFixed(2)}</td>
-      <td><button class="btn-remove" onclick="removeFromCart(${i})">✕</button></td>
-    </tr>`;
+  const empty = !cart.length;
+  $cempty.style.display = empty ? 'block' : 'none';
+  let sub = 0;
+  $clist.innerHTML = cart.map((item, i) => {
+    const lt = item.quantity * item.unit_price; sub += lt;
+    return `<div class="cart-item">
+      <div class="ci-info">
+        <div class="ci-name" title="${_h(item.name)}">${_h(item.name)}</div>
+        <div class="ci-price">${item.unit_price.toFixed(2)} ${CUR} × ${item.quantity}</div>
+      </div>
+      <div class="ci-ctrl">
+        <button class="ci-qbtn dec" onclick="changeQty(${i},-1)">−</button>
+        <input class="ci-qty" type="number" value="${item.quantity}" min="0.5" step="0.5"
+               onchange="setQty(${i},this.value)" onblur="setQty(${i},this.value||'0')">
+        <button class="ci-qbtn" onclick="changeQty(${i},1)">+</button>
+      </div>
+      <div class="ci-tot">${lt.toFixed(2)}<small> ${CUR}</small></div>
+      <button class="ci-del" onclick="removeItem(${i})">✕</button>
+    </div>`;
   }).join('');
-
-  setTotals(sub, tax);
+  const taxAmt = sub * VAT / 100;
+  $sub.textContent   = sub.toFixed(2)           + ' ' + CUR;
+  $tax.textContent   = taxAmt.toFixed(2)         + ' ' + CUR;
+  $grand.textContent = (sub + taxAmt).toFixed(2) + ' ' + CUR;
+  $btnPay.disabled  = empty;
+  $btnHold.disabled = empty;
 }
 
-function setTotals(sub, tax) {
-  subtotalEl.textContent   = sub.toFixed(2)          + ' ' + CURRENCY;
-  taxEl.textContent        = tax.toFixed(2)           + ' ' + CURRENCY;
-  grandTotalEl.textContent = (sub + tax).toFixed(2)   + ' ' + CURRENCY;
+/* ── Payment ───────────────────────────────────────────────────── */
+function setPayment(mode) {
+  payMode = mode;
+  document.getElementById('tabCash').className = 'pos-paytab' + (mode==='cash' ? ' sel-cash' : '');
+  document.getElementById('tabBank').className = 'pos-paytab' + (mode==='bank' ? ' sel-bank' : '');
+  if (mode === 'cash') {
+    $btnPay.classList.remove('bank-mode');
+    document.getElementById('payIcon').textContent = '💰';
+    document.getElementById('payLbl').textContent  = 'إتمام البيع نقداً';
+  } else {
+    $btnPay.classList.add('bank-mode');
+    document.getElementById('payIcon').textContent = '💳';
+    document.getElementById('payLbl').textContent  = 'إتمام البيع بطاقة';
+  }
 }
 
-/* ═══════════════════════════════════════════════════════════
-   إتمام الدفع
-═══════════════════════════════════════════════════════════ */
+/* ── Checkout ──────────────────────────────────────────────────── */
 async function checkout() {
   if (!cart.length) return;
-
-  checkoutBtn.disabled    = true;
-  checkoutBtn.textContent = '⏳ جارٍ المعالجة...';
-
+  $btnPay.disabled = true;
+  $btnPay.innerHTML = '<span class="pa-icon">⏳</span><span class="pa-lbl">جارٍ المعالجة…</span>';
+  const sub   = cart.reduce((s,i) => s + i.quantity * i.unit_price, 0);
+  const grand = sub + sub * VAT / 100;
   const payload = {
-    items: cart.map(i => ({
-      product_id: i.product_id,
-      quantity:   i.quantity,
-      unit_price: i.unit_price,
-      tax_rate:   i.tax_rate,
-    })),
-    payment_method: document.getElementById('paymentMethod').value,
+    items: cart.map(i => ({ product_id:i.product_id, quantity:i.quantity, unit_price:i.unit_price, tax_rate:VAT })),
+    payment_method: payMode,
   };
-
   try {
-    const res  = await fetch('/api/pos/checkout', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(payload),
-    });
+    const res  = await fetch('/api/pos/checkout', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
     const data = await res.json();
-
     if (data.success) {
-      document.getElementById('receiptMsg').textContent   = data.message;
-      document.getElementById('receiptTotal').textContent =
-        data.total.toFixed(2) + ' ' + CURRENCY;
-      document.getElementById('successModal').style.display = 'flex';
+      document.getElementById('mMsg').textContent    = data.message || 'تم إصدار الفاتورة بنجاح';
+      document.getElementById('mAmount').textContent = (parseFloat(data.total)||grand).toFixed(2) + ' ' + CUR;
+      document.getElementById('modalSuccess').style.display = 'flex';
     } else {
-      alert('خطأ: ' + (data.error || 'حدث خطأ غير متوقع'));
-      checkoutBtn.disabled    = false;
-      checkoutBtn.textContent = '✅ ' + (UI_CONFIG.T_new_sale || 'بيع جديد');
+      alert('خطأ: ' + (data.error || data.errors || 'فشل في إتمام العملية'));
+      _resetPayBtn();
     }
   } catch (err) {
     alert('خطأ في الاتصال: ' + err.message);
-    checkoutBtn.disabled    = false;
-    checkoutBtn.textContent = '✅ ' + (UI_CONFIG.T_new_sale || 'بيع جديد');
+    _resetPayBtn();
   }
+}
+
+function _resetPayBtn() {
+  $btnPay.disabled = !cart.length;
+  const ico = payMode==='cash' ? '💰' : '💳';
+  const lbl = payMode==='cash' ? 'إتمام البيع نقداً' : 'إتمام البيع بطاقة';
+  $btnPay.innerHTML = `<span class="pa-icon" id="payIcon">${ico}</span><span class="pa-lbl" id="payLbl">${lbl}</span>`;
 }
 
 function newSale() {
   cart = [];
   renderCart();
-  showWelcome();
-  searchInput.value       = '';
-  searchInput.focus();
-  checkoutBtn.textContent = '✅ ' + (UI_CONFIG.T_new_sale || 'بيع جديد');
-  document.getElementById('successModal').style.display = 'none';
+  _resetPayBtn();
+  document.getElementById('modalSuccess').style.display = 'none';
+  updateInvNum();
+  loadProducts('', activeCat);
+  $search.value = '';
+  $search.focus();
 }
 
-/* ─── Utilities ────────────────────────────────────────────── */
-function escHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+/* ── Hold / Cancel ─────────────────────────────────────────────── */
+function holdInvoice() {
+  if (!cart.length) return;
+  const held = _getHeld();
+  held.push({ id:Date.now(), items:JSON.parse(JSON.stringify(cart)), sub:cart.reduce((s,i)=>s+i.quantity*i.unit_price,0), time:new Date().toLocaleTimeString('ar') });
+  _setHeld(held);
+  cart = [];
+  renderCart();
+  updateInvNum();
+  updateHeldBadge();
+  loadProducts('', activeCat);
+  $search.focus();
 }
-function escAttr(s) { return escHtml(s); }
 
-/* ─── Init ─────────────────────────────────────────────────── */
+function showHeldModal() {
+  const held  = _getHeld();
+  const $list = document.getElementById('heldList');
+  if (!held.length) {
+    $list.innerHTML = '<p style="color:var(--p-muted);text-align:center;padding:20px 0">لا توجد فواتير معلقة</p>';
+  } else {
+    $list.innerHTML = held.map((h,i) => {
+      const names = h.items.slice(0,2).map(x=>_h(x.name)).join(' ، ') + (h.items.length>2?' …':'');
+      return `<div class="held-item" onclick="restoreHeld(${i})">
+        <div class="held-item-info">${names}
+          <span>⏱ ${h.time} | ${h.items.length} أصناف | ${h.sub.toFixed(2)} ${CUR}</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="held-restore">استعادة ←</span>
+          <button class="held-del-btn" onclick="event.stopPropagation();delHeld(${i})">🗑</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('modalHeld').style.display = 'flex';
+}
+
+function restoreHeld(i) {
+  const held = _getHeld();
+  if (cart.length && !confirm('السلة الحالية ستُستبدل. متابعة؟')) return;
+  cart = held[i].items;
+  held.splice(i, 1);
+  _setHeld(held);
+  renderCart();
+  updateHeldBadge();
+  document.getElementById('modalHeld').style.display = 'none';
+}
+
+function delHeld(i) {
+  const held = _getHeld();
+  held.splice(i, 1);
+  _setHeld(held);
+  showHeldModal();
+  updateHeldBadge();
+}
+
+function cancelInvoice() {
+  if (!cart.length) return;
+  if (!confirm(`إلغاء الفاتورة الحالية (${cart.length} أصناف)؟`)) return;
+  cart = [];
+  renderCart();
+  updateInvNum();
+  $search.focus();
+}
+
+function _getHeld()    { try { return JSON.parse(localStorage.getItem(HELD_KEY)||'[]'); } catch { return []; } }
+function _setHeld(arr) { localStorage.setItem(HELD_KEY, JSON.stringify(arr)); }
+function updateHeldBadge() {
+  const n = _getHeld().length;
+  $heldBtn.style.display = n ? 'inline-flex' : 'none';
+  $heldCnt.textContent   = n;
+}
+function updateInvNum() { $invNum.textContent = '#' + String(Date.now()).slice(-7); }
+function _h(s) {
+  return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ── Init ──────────────────────────────────────────────────────── */
 renderCart();
-checkoutBtn.textContent = '✅ ' + (UI_CONFIG.T_new_sale || 'بيع جديد');
+updateInvNum();
+updateHeldBadge();
+loadProducts();
 </script>
 {% endblock %}

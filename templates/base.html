@@ -81,6 +81,15 @@
         <span class="topbar-title">{% block page_title %}{% endblock %}</span>
       </div>
       <div class="topbar-right">
+        <!-- زر تثبيت التطبيق PWA -->
+        <button id="pwaInstallBtn" onclick="triggerPwaInstall()" title="تثبيت التطبيق على جهازك" style="
+          display:none; align-items:center; gap:5px;
+          background:rgba(59,130,246,.15); border:1px solid rgba(59,130,246,.4);
+          color:#93c5fd; border-radius:8px; padding:5px 11px;
+          font-size:.77rem; font-weight:600; cursor:pointer; font-family:inherit;
+          transition:background .15s;">
+          📲 تثبيت
+        </button>
         <span class="topbar-biz-badge">
           {% for k, v in industry_types if k == current_business.industry_type %}{{ v }}{% endfor %}
         </span>
@@ -130,6 +139,31 @@
 
 <!-- ── تسجيل Service Worker ─────────────────────── -->
 <script>
+// ── PWA Install Prompt ───────────────────────────────────────────
+let _pwaPrompt = null;
+const _pwaBtn  = document.getElementById('pwaInstallBtn');
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _pwaPrompt = e;
+  if (_pwaBtn) _pwaBtn.style.display = 'inline-flex';
+});
+
+function triggerPwaInstall() {
+  if (!_pwaPrompt) return;
+  _pwaPrompt.prompt();
+  _pwaPrompt.userChoice.then(choice => {
+    if (choice.outcome === 'accepted' && _pwaBtn) _pwaBtn.style.display = 'none';
+    _pwaPrompt = null;
+  });
+}
+
+window.addEventListener('appinstalled', () => {
+  if (_pwaBtn) _pwaBtn.style.display = 'none';
+  _pwaPrompt = null;
+});
+
+// ── Service Worker ───────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/static/sw.js')
@@ -149,7 +183,7 @@ if ('serviceWorker' in navigator) {
       .catch(() => {});
   });
 }
-// مراقبة حالة الاتصال
+// ── مراقبة حالة الاتصال ─────────────────────────────────────────
 function setOnlineStatus() {
   const b = document.getElementById('offlineBanner');
   if (!b) return;

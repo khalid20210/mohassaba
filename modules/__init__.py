@@ -1,10 +1,13 @@
 """
 modules/__init__.py — Application Factory
 """
+import logging
 from flask import Flask, g
 
-from .config import _load_secret_key, FLASK_CONFIG
+from .config import _load_secret_key, FLASK_CONFIG, DB_PATH, IS_PROD
 from .extensions import close_db
+
+logger = logging.getLogger(__name__)
 
 
 def create_app():
@@ -38,7 +41,7 @@ def create_app():
     app.context_processor(_terminology_processor)
     app.after_request(add_security_headers)
 
-    # ── DB Migrations (جداول جديدة) ───────────────────────────────────────────
+    # ── DB Migrations (نظام التهجير الجديد المرقّم) ───────────────────────────
     _run_migrations(app)
 
     # ── ZATCA Background Worker ────────────────────────────────────────────────
@@ -46,6 +49,9 @@ def create_app():
 
     # ── Backward-compat endpoint aliases ──────────────────────────────────────
     _register_endpoint_aliases(app)
+
+    env_label = "🟡 تطوير (dev)" if not IS_PROD else "🟢 إنتاج (prod)"
+    logger.info(f"✅ جنان بيز تعمل | البيئة: {env_label} | DB: {DB_PATH.name}")
 
     return app
 
@@ -60,15 +66,25 @@ def _terminology_processor():
 
 
 def _run_migrations(app):
-    """تشغيل migrations للجداول الجديدة مرة واحدة عند البدء"""
-    import sqlite3
+    """
+    تشغيل جميع migrations المرقّمة عند بدء التشغيل
+    (نظام versioned لـ raw SQLite — بديل Flask-Migrate لمشاريع بدون SQLAlchemy)
+    """
     from .config import DB_PATH
+    from .migration_runner import run_migrations
     from .zatca_queue import ZATCA_QUEUE_SCHEMA
     from .ocr_limits  import USAGE_LOGS_SCHEMA
+    import sqlite3
 
+    # أولاً: الـ migrations المرقّمة (الملفات في migrations/)
+    try:
+        run_migrations(DB_PATH)
+    except Exception as e:
+        logger.error(f"❌ فشل في تشغيل migrations: {e}")
+
+    # ثانياً: جداول inline الخاصة بـ ZATCA وـ OCR (احتياطي — ستُدمج لاحقاً في sql files)
     try:
         conn = sqlite3.connect(str(DB_PATH))
-        conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
         for schema in (ZATCA_QUEUE_SCHEMA, USAGE_LOGS_SCHEMA):
             for stmt in schema.strip().split(";"):
@@ -78,8 +94,7 @@ def _run_migrations(app):
         conn.commit()
         conn.close()
     except Exception as e:
-        import logging
-        logging.getLogger(__name__).warning(f"Migration warning: {e}")
+        logger.warning(f"Migration inline warning: {e}")
 
 
 def _start_zatca_worker(app):

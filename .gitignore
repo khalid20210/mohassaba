@@ -15,12 +15,22 @@ ENV/
 instance/
 .secret_key
 *.log
-*.db
-database.db
-!database/accounting.db
 uploads/*
 !uploads/.gitkeep
 !uploads/excel/
+
+# ─── قواعد البيانات ────────────────────────────────────
+# الإنتاج: لا يُرفع على Git أبداً (يبقى على السيرفر فقط)
+database/accounting_prod.db
+# التطوير: خاص بالجهاز المحلي
+database/accounting_dev.db
+# الـ DB القديمة (legacy)
+database.db
+
+# ─── متغيرات البيئة ────────────────────────────────────
+.env
+# النموذج يُرفع (بدون قيم حقيقية)
+!.env.example
 
 # ─── OS / IDE ──────────────────────────────────────────
 .DS_Store
