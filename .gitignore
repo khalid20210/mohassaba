@@ -15,6 +15,9 @@ ENV/
 instance/
 .secret_key
 *.log
+*.db
+database.db
+!database/accounting.db
 uploads/*
 !uploads/.gitkeep
 !uploads/excel/
