@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}المواعيد{% endblock %}
+{% block page_title %}📅 جدول المواعيد{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">📅 المواعيد</h1>
+    <p class="page-subtitle">{{ appointments|length }} موعد</p>
+  </div>
+  <a href="/medical/appointments/new" class="btn btn-primary">+ موعد جديد</a>
+</div>
+
+<div class="card" style="margin-bottom:16px;">
+  <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+    <div>
+      <label style="font-size:.8rem;color:#94a3b8;display:block;margin-bottom:4px;">التاريخ</label>
+      <input type="date" name="date" value="{{ request.args.get('date','') }}" class="form-input">
+    </div>
+    <div>
+      <label style="font-size:.8rem;color:#94a3b8;display:block;margin-bottom:4px;">الحالة</label>
+      <select name="status" class="form-input">
+        <option value="">الكل</option>
+        <option value="scheduled" {% if request.args.get('status')=='scheduled' %}selected{% endif %}>مجدول</option>
+        <option value="completed" {% if request.args.get('status')=='completed' %}selected{% endif %}>منجز</option>
+        <option value="cancelled" {% if request.args.get('status')=='cancelled' %}selected{% endif %}>ملغي</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">تطبيق</button>
+    <a href="/medical/appointments" class="btn btn-secondary">إعادة تعيين</a>
+  </form>
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>المريض</th><th>الطبيب</th><th>التاريخ والوقت</th><th>نوع الزيارة</th><th>الحالة</th><th>الإجراءات</th></tr>
+    </thead>
+    <tbody>
+      {% for a in appointments %}
+      <tr>
+        <td>
+          <strong>{{ a.patient_name or 'مريض #' ~ a.patient_id }}</strong>
+        </td>
+        <td>{{ a.doctor_name or '—' }}</td>
+        <td>{{ a.appointment_date or '—' }} {{ a.appointment_time or '' }}</td>
+        <td>{{ a.visit_type or 'فحص' }}</td>
+        <td>
+          {% if a.status == 'scheduled' %}<span style="background:#1e3a5f;color:#93c5fd;padding:2px 8px;border-radius:20px;font-size:.78rem;">📅 مجدول</span>
+          {% elif a.status == 'completed' %}<span style="background:#14532d;color:#86efac;padding:2px 8px;border-radius:20px;font-size:.78rem;">✓ منجز</span>
+          {% elif a.status == 'cancelled' %}<span style="background:#7f1d1d;color:#fca5a5;padding:2px 8px;border-radius:20px;font-size:.78rem;">✕ ملغي</span>
+          {% else %}{{ a.status }}{% endif %}
+        </td>
+        <td>
+          <a href="/medical/appointments/{{ a.id }}" class="btn btn-secondary" style="padding:4px 12px;font-size:.8rem;">إدارة</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;color:#64748b;padding:40px;">لا توجد مواعيد</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

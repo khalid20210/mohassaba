@@ -267,14 +267,12 @@ SIDEBAR_PERM = {
     "pricing":         "purchases",
 }
 
-# صفحات stub
+# صفحات stub — فقط الصفحات التي لم يُبنَ لها blueprint بعد
 STUB_PAGES = [
-    "inventory", "invoices", "contacts",
-    "barcode",
-    "recipes", "projects", "extracts",
-    "equipment", "fleet", "contracts", "maintenance",
-    "patients", "appointments", "prescriptions",
-    "jobs",
+    "invoices",   # قيد التطوير
+    "extracts",   # تحت /projects/<id>/extracts
+    "recipes",    # للمطاعم — قيد التطوير
+    "pricing",    # موجود في wholesale
 ]
 
 # مجلدات

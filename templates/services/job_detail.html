@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}تفاصيل أمر العمل{% endblock %}
+{% block page_title %}📋 أمر عمل #{{ job.id }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <a href="/services/jobs" style="color:#94a3b8;font-size:.85rem;">← أوامر العمل</a>
+    <h1 class="page-title" style="margin-top:4px;">أمر عمل #{{ job.id }} — {{ job.customer_name }}</h1>
+    <p class="page-subtitle">{{ job.service_type or 'خدمة غير محددة' }}</p>
+  </div>
+  <div style="display:flex;gap:8px;">
+    {% if job.status == 'open' %}
+    <form action="/services/jobs/{{ job.id }}/start" method="post" style="display:inline;">
+      <button type="submit" class="btn btn-secondary">⚙ بدء التنفيذ</button>
+    </form>
+    {% endif %}
+    {% if job.status == 'in_progress' %}
+    <form action="/services/jobs/{{ job.id }}/complete" method="post" style="display:inline;">
+      <button type="submit" class="btn btn-primary">✓ إنجاز</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+  <!-- معلومات العميل -->
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">👤 بيانات العميل</h3></div>
+    <table class="table">
+      <tr><td style="color:#94a3b8;">الاسم</td><td><strong>{{ job.customer_name }}</strong></td></tr>
+      <tr><td style="color:#94a3b8;">الهاتف</td><td>{{ job.customer_phone or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">العنوان</td><td>{{ job.customer_address or '—' }}</td></tr>
+    </table>
+  </div>
+
+  <!-- تفاصيل الطلب -->
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">📋 تفاصيل الطلب</h3></div>
+    <table class="table">
+      <tr><td style="color:#94a3b8;">الخدمة</td><td>{{ job.service_type or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">الأولوية</td>
+          <td>{% if job.priority=='urgent' %}<span style="color:#ef4444;">🔴 عاجل</span>
+              {% elif job.priority=='high' %}<span style="color:#f59e0b;">🟠 عالي</span>
+              {% else %}<span style="color:#22c55e;">🟢 عادي</span>{% endif %}</td></tr>
+      <tr><td style="color:#94a3b8;">الفني</td><td>{{ job.technician_name or 'غير محدد' }}</td></tr>
+      <tr><td style="color:#94a3b8;">الحالة</td>
+          <td>{% if job.status=='open' %}<span style="color:#38bdf8;">مفتوح</span>
+              {% elif job.status=='in_progress' %}<span style="color:#f59e0b;">قيد التنفيذ</span>
+              {% elif job.status=='completed' %}<span style="color:#22c55e;">✓ منجز</span>
+              {% else %}{{ job.status }}{% endif %}</td></tr>
+      <tr><td style="color:#94a3b8;">التكلفة المقدرة</td><td style="color:#38bdf8;">{{ "{:,.2f}".format(job.estimated_cost or 0) }} ر.س</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- وصف المشكلة -->
+{% if job.description %}
+<div class="card" style="margin-top:16px;">
+  <div class="card-header"><h3 class="card-title">📝 وصف المشكلة</h3></div>
+  <p style="color:#cbd5e1;line-height:1.7;padding:8px 0;">{{ job.description }}</p>
+</div>
+{% endif %}
+
+<!-- تحديث الحالة -->
+<div class="card" style="margin-top:16px;">
+  <div class="card-header"><h3 class="card-title">✏️ إضافة ملاحظة / تحديث</h3></div>
+  <form action="/services/jobs/{{ job.id }}/update" method="post">
+    <div style="margin-bottom:12px;">
+      <label style="display:block;color:#94a3b8;font-size:.85rem;margin-bottom:4px;">الفني المعين</label>
+      <input name="technician_name" class="form-input" value="{{ job.technician_name or '' }}" placeholder="اسم الفني">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="display:block;color:#94a3b8;font-size:.85rem;margin-bottom:4px;">التكلفة الفعلية</label>
+      <input name="actual_cost" type="number" step="0.01" class="form-input" value="{{ job.actual_cost or '' }}" placeholder="0.00">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="display:block;color:#94a3b8;font-size:.85rem;margin-bottom:4px;">ملاحظات</label>
+      <textarea name="notes" class="form-input" rows="3" placeholder="أدخل ملاحظات...">{{ job.notes or '' }}</textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">💾 حفظ التحديث</button>
+  </form>
+</div>
+{% endblock %}

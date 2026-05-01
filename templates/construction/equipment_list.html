@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}المعدات{% endblock %}
+{% block page_title %}🔧 المعدات والآليات{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">🔧 المعدات والآليات</h1>
+    <p class="page-subtitle">{{ equipment_list|length }} معدة مسجلة</p>
+  </div>
+  <a href="/projects/equipment/new" class="btn btn-primary">+ إضافة معدة</a>
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>اسم المعدة</th><th>النوع</th><th>العدد</th><th>التكلفة/يوم</th><th>الحالة</th><th>المشروع</th></tr>
+    </thead>
+    <tbody>
+      {% for eq in equipment_list %}
+      <tr>
+        <td><strong>{{ eq.name }}</strong></td>
+        <td>{{ eq.equipment_type or '—' }}</td>
+        <td>{{ eq.quantity or 1 }}</td>
+        <td>{{ "{:,.2f}".format(eq.daily_rate or 0) }} ر.س</td>
+        <td>
+          <span style="background:{% if eq.status=='available' %}#14532d;color:#86efac{% elif eq.status=='in_use' %}#1e3a5f;color:#93c5fd{% else %}#78350f;color:#fcd34d{% endif %};padding:2px 8px;border-radius:20px;font-size:.78rem;">
+            {% if eq.status == 'available' %}متاح{% elif eq.status == 'in_use' %}مستخدم{% else %}{{ eq.status or '—' }}{% endif %}
+          </span>
+        </td>
+        <td style="color:#94a3b8;">{{ eq.project_name or '—' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;color:#64748b;padding:40px;">لا توجد معدات مسجلة</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

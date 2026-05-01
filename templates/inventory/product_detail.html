@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block page_title %}📦 {{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <a href="/inventory/products" style="color:#94a3b8;font-size:.85rem;">← قائمة المنتجات</a>
+    <h1 class="page-title" style="margin-top:4px;">{{ product.name }}</h1>
+    <p class="page-subtitle">SKU: {{ product.sku or '—' }} | باركود: {{ product.barcode or '—' }}</p>
+  </div>
+  <a href="/inventory/products/{{ product.id }}/edit" class="btn btn-primary">تعديل</a>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;">
+  <!-- بطاقة المعلومات -->
+  <div>
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">📋 معلومات المنتج</h3></div>
+      <table class="table">
+        <tr><td style="color:#94a3b8;">الكمية الحالية</td>
+            <td><strong style="font-size:1.4rem;color:{% if product.current_qty <= product.min_qty %}#ef4444{% else %}#22c55e{% endif %};">{{ product.current_qty }} {{ product.unit }}</strong></td></tr>
+        <tr><td style="color:#94a3b8;">الحد الأدنى</td><td>{{ product.min_qty }} {{ product.unit }}</td></tr>
+        <tr><td style="color:#94a3b8;">سعر الشراء</td><td>{{ "{:,.2f}".format(product.cost_price or 0) }} ر.س</td></tr>
+        <tr><td style="color:#94a3b8;">سعر البيع</td><td>{{ "{:,.2f}".format(product.sell_price or 0) }} ر.س</td></tr>
+        <tr><td style="color:#94a3b8;">هامش الربح</td>
+            <td style="color:#22c55e;">
+              {% if product.cost_price and product.sell_price and product.cost_price > 0 %}
+                {{ "{:.1f}".format(((product.sell_price - product.cost_price)/product.cost_price)*100) }}%
+              {% else %}—{% endif %}
+            </td></tr>
+        <tr><td style="color:#94a3b8;">الموقع</td><td>{{ product.location or '—' }}</td></tr>
+        {% if product.expiry_date %}
+        <tr><td style="color:#94a3b8;">انتهاء الصلاحية</td><td style="color:#f59e0b;">{{ product.expiry_date }}</td></tr>
+        {% endif %}
+        {% if product.serial_number %}
+        <tr><td style="color:#94a3b8;">الرقم التسلسلي</td><td>{{ product.serial_number }}</td></tr>
+        {% endif %}
+      </table>
+    </div>
+
+    <!-- إضافة حركة سريعة -->
+    <div class="card" style="margin-top:16px;">
+      <div class="card-header"><h3 class="card-title">⚡ إضافة حركة</h3></div>
+      <form action="/inventory/movements/add" method="post" style="padding:8px 0;">
+        <input type="hidden" name="product_id" value="{{ product.id }}">
+        <div style="margin-bottom:12px;">
+          <select name="movement_type" class="form-input" style="margin-bottom:8px;">
+            <option value="purchase">شراء / إضافة مخزون</option>
+            <option value="adjustment">تعديل يدوي</option>
+            <option value="return_in">مرتجع من عميل</option>
+            <option value="damage">تلف / هالك</option>
+          </select>
+          <input type="number" name="quantity" placeholder="الكمية" class="form-input" style="margin-bottom:8px;" min="0" step="0.01" required>
+          <input type="text" name="notes" placeholder="ملاحظات (اختياري)" class="form-input">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">تسجيل الحركة</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- سجل الحركات -->
+  <div class="card">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+      <h3 class="card-title">🔄 سجل الحركات</h3>
+      <a href="/inventory/movements?product_id={{ product.id }}" style="font-size:.82rem;color:#38bdf8;">الكل</a>
+    </div>
+    {% if movements %}
+      <table class="table">
+        <thead><tr><th>النوع</th><th>الكمية</th><th>الرصيد بعد</th><th>التاريخ</th><th>ملاحظات</th></tr></thead>
+        <tbody>
+          {% for m in movements %}
+          <tr>
+            <td>
+              {% if m.movement_type == 'purchase' %}🟢 شراء
+              {% elif m.movement_type == 'sale' %}🔴 بيع
+              {% elif m.movement_type == 'adjustment' %}🔵 تعديل
+              {% elif m.movement_type == 'damage' %}⚫ تلف
+              {% elif m.movement_type == 'return_in' %}🟡 مرتجع
+              {% else %}{{ m.movement_type }}{% endif %}
+            </td>
+            <td style="color:{% if m.quantity > 0 %}#22c55e{% else %}#ef4444{% endif %};">
+              {{ '+' if m.quantity > 0 else '' }}{{ m.quantity }}
+            </td>
+            <td>{{ m.qty_after }}</td>
+            <td style="color:#64748b;font-size:.82rem;">{{ m.created_at[:16] if m.created_at else '—' }}</td>
+            <td style="color:#94a3b8;font-size:.82rem;">{{ m.notes or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p style="color:#64748b;text-align:center;padding:32px;">لا توجد حركات مسجلة</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

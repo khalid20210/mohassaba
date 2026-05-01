@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}العملاء والموردون{% endblock %}
+{% block page_title %}👥 إدارة العملاء والموردين{% endblock %}
+
+{% block content %}
+<style>
+  .contacts-kpi { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:16px; margin-bottom:24px; }
+  .kpi-card { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09); border-radius:14px; padding:20px; text-align:center; }
+  .kpi-val { font-size:1.8rem; font-weight:700; color:#38bdf8; }
+  .kpi-lbl { font-size:.8rem; color:#94a3b8; margin-top:4px; }
+</style>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">👥 لوحة العملاء والموردين</h1>
+    <p class="page-subtitle">إدارة الأرصدة والمعاملات</p>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <a href="/contacts/customers/new" class="btn btn-primary">+ عميل جديد</a>
+    <a href="/contacts/suppliers/new" class="btn btn-secondary">+ مورد جديد</a>
+  </div>
+</div>
+
+<div class="contacts-kpi">
+  <div class="kpi-card">
+    <div class="kpi-val">{{ stats.total_customers or 0 }}</div>
+    <div class="kpi-lbl">إجمالي العملاء</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-val" style="color:#f59e0b;">{{ "{:,.0f}".format(stats.total_receivables or 0) }}</div>
+    <div class="kpi-lbl">إجمالي الذمم المدينة (ر.س)</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-val" style="color:#ef4444;">{{ "{:,.0f}".format(stats.total_payables or 0) }}</div>
+    <div class="kpi-lbl">إجمالي الذمم الدائنة (ر.س)</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-val">{{ stats.total_suppliers or 0 }}</div>
+    <div class="kpi-lbl">إجمالي الموردين</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+  <!-- أكبر المدينون -->
+  <div class="card">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+      <h3 class="card-title">🔴 أكبر الديون المستحقة</h3>
+      <a href="/contacts/customers" style="font-size:.82rem;color:#38bdf8;">الكل</a>
+    </div>
+    {% if top_debtors %}
+    <table class="table">
+      <thead><tr><th>العميل</th><th>الرصيد</th><th>حد الائتمان</th></tr></thead>
+      <tbody>
+        {% for c in top_debtors %}
+        <tr>
+          <td><a href="/contacts/customers/{{ c.id }}" style="color:#38bdf8;">{{ c.name }}</a></td>
+          <td style="color:#ef4444;font-weight:600;">{{ "{:,.2f}".format(c.balance or 0) }}</td>
+          <td style="color:#94a3b8;">{{ "{:,.0f}".format(c.credit_limit or 0) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:#64748b;text-align:center;padding:24px;">✅ لا توجد ديون مستحقة</p>
+    {% endif %}
+  </div>
+
+  <!-- VIP عملاء -->
+  <div class="card">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+      <h3 class="card-title">⭐ عملاء VIP</h3>
+      <a href="/contacts/customers?type=vip" style="font-size:.82rem;color:#38bdf8;">الكل</a>
+    </div>
+    {% if vip_customers %}
+    <table class="table">
+      <thead><tr><th>العميل</th><th>الهاتف</th><th>الرصيد</th></tr></thead>
+      <tbody>
+        {% for c in vip_customers %}
+        <tr>
+          <td><a href="/contacts/customers/{{ c.id }}" style="color:#f59e0b;">⭐ {{ c.name }}</a></td>
+          <td style="color:#94a3b8;">{{ c.phone or '—' }}</td>
+          <td style="color:{% if (c.balance or 0) > 0 %}#ef4444{% elif (c.balance or 0) < 0 %}#22c55e{% else %}#94a3b8{% endif %};">
+            {{ "{:,.2f}".format(c.balance or 0) }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:#64748b;text-align:center;padding:24px;">لا يوجد عملاء VIP حتى الآن</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

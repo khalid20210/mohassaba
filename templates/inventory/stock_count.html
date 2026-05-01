@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}جرد المخزون{% endblock %}
+{% block page_title %}📝 جرد المخزون الفعلي{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">📝 جرد المخزون</h1>
+    <p class="page-subtitle">أدخل الكميات الفعلية لكل منتج لحساب الفوارق</p>
+  </div>
+</div>
+
+<form action="/inventory/stock-count/submit" method="post">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">قائمة المنتجات للجرد</h3>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>المنتج</th>
+          <th>الكمية في النظام</th>
+          <th>الكمية الفعلية</th>
+          <th>الفارق المتوقع</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td>
+            <input type="hidden" name="product_id_{{ loop.index }}" value="{{ p.id }}">
+            <strong>{{ p.name }}</strong>
+            {% if p.sku %}<br><small style="color:#64748b;">{{ p.sku }}</small>{% endif %}
+          </td>
+          <td style="color:#38bdf8;font-weight:600;">{{ p.current_qty }} {{ p.unit }}</td>
+          <td>
+            <input type="number"
+                   name="actual_qty_{{ loop.index }}"
+                   placeholder="{{ p.current_qty }}"
+                   min="0" step="0.01"
+                   class="form-input"
+                   style="width:120px;"
+                   onchange="calcDiff(this, {{ p.current_qty }})">
+          </td>
+          <td id="diff_{{ loop.index }}" style="color:#94a3b8;">—</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center;color:#64748b;padding:40px;">لا توجد منتجات</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <input type="hidden" name="product_count" value="{{ products|length }}">
+  </div>
+
+  <div style="margin-top:16px;display:flex;gap:12px;">
+    <button type="submit" class="btn btn-primary">💾 تأكيد الجرد وحفظ الفوارق</button>
+    <a href="/inventory/" class="btn btn-secondary">إلغاء</a>
+  </div>
+</form>
+
+<script>
+function calcDiff(input, systemQty) {
+  const actual = parseFloat(input.value);
+  const row = input.closest('tr');
+  const cells = row.querySelectorAll('td');
+  const diffCell = row.querySelector('[id^="diff_"]');
+  if (!isNaN(actual)) {
+    const diff = actual - systemQty;
+    if (diffCell) {
+      diffCell.textContent = (diff > 0 ? '+' : '') + diff.toFixed(2);
+      diffCell.style.color = diff === 0 ? '#22c55e' : diff > 0 ? '#38bdf8' : '#ef4444';
+    }
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}سجل الصيانة{% endblock %}
+{% block page_title %}🔧 سجل الصيانة{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">🔧 سجل الصيانة</h1>
+    <p class="page-subtitle">{{ records|length }} سجل صيانة</p>
+  </div>
+  <a href="/rental/maintenance/new" class="btn btn-primary">+ إضافة سجل</a>
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>المركبة</th><th>نوع الصيانة</th><th>الوصف</th><th>التكلفة</th><th>التاريخ</th><th>المقدم من</th></tr>
+    </thead>
+    <tbody>
+      {% for r in records %}
+      <tr>
+        <td><strong>{{ r.vehicle_info or 'مركبة #' ~ r.vehicle_id }}</strong></td>
+        <td>
+          <span style="background:rgba(255,255,255,.06);padding:2px 8px;border-radius:20px;font-size:.78rem;">
+            {% if r.maintenance_type == 'routine' %}🔄 دورية
+            {% elif r.maintenance_type == 'repair' %}🔧 إصلاح
+            {% elif r.maintenance_type == 'inspection' %}🔍 فحص
+            {% else %}{{ r.maintenance_type or '—' }}{% endif %}
+          </span>
+        </td>
+        <td style="color:#94a3b8;font-size:.85rem;">{{ r.description or '—' }}</td>
+        <td style="color:#f59e0b;font-weight:600;">{{ "{:,.2f}".format(r.cost or 0) }} ر.س</td>
+        <td style="color:#64748b;font-size:.82rem;">{{ r.maintenance_date or '—' }}</td>
+        <td style="color:#94a3b8;">{{ r.provider or '—' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;color:#64748b;padding:40px;">لا توجد سجلات صيانة</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}العملاء{% endblock %}
+{% block page_title %}👥 قائمة العملاء{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">👥 العملاء</h1>
+    <p class="page-subtitle">{{ total }} عميل مسجل</p>
+  </div>
+  <a href="/contacts/customers/new" class="btn btn-primary">+ إضافة عميل</a>
+</div>
+
+<div class="card" style="margin-bottom:16px;">
+  <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+    <div style="flex:1;min-width:200px;">
+      <label style="font-size:.8rem;color:#94a3b8;display:block;margin-bottom:4px;">بحث</label>
+      <input type="text" name="q" value="{{ request.args.get('q','') }}" placeholder="الاسم، الهاتف، البريد..." class="form-input">
+    </div>
+    <div>
+      <label style="font-size:.8rem;color:#94a3b8;display:block;margin-bottom:4px;">النوع</label>
+      <select name="type" class="form-input">
+        <option value="">الكل</option>
+        <option value="vip" {% if request.args.get('type')=='vip' %}selected{% endif %}>VIP</option>
+        <option value="wholesale" {% if request.args.get('type')=='wholesale' %}selected{% endif %}>جملة</option>
+        <option value="retail" {% if request.args.get('type')=='retail' %}selected{% endif %}>تجزئة</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">بحث</button>
+    <a href="/contacts/customers" class="btn btn-secondary">إعادة تعيين</a>
+  </form>
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>الاسم</th><th>الهاتف</th><th>النوع</th><th>الرصيد</th><th>حد الائتمان</th><th>الإجراءات</th></tr>
+    </thead>
+    <tbody>
+      {% for c in customers %}
+      <tr>
+        <td>
+          <a href="/contacts/customers/{{ c.id }}" style="color:#38bdf8;font-weight:500;">
+            {% if c.contact_type == 'vip' %}⭐ {% endif %}{{ c.name }}
+          </a>
+          {% if c.email %}<br><small style="color:#64748b;">{{ c.email }}</small>{% endif %}
+        </td>
+        <td>{{ c.phone or '—' }}</td>
+        <td>
+          <span style="background:rgba(255,255,255,.06);padding:2px 8px;border-radius:20px;font-size:.78rem;">
+            {% if c.contact_type == 'vip' %}⭐ VIP
+            {% elif c.contact_type == 'wholesale' %}🏢 جملة
+            {% elif c.contact_type == 'retail' %}🛒 تجزئة
+            {% else %}{{ c.contact_type or 'عادي' }}{% endif %}
+          </span>
+        </td>
+        <td style="font-weight:600;color:{% if (c.balance or 0) > 0 %}#ef4444{% elif (c.balance or 0) < 0 %}#22c55e{% else %}#94a3b8{% endif %};">
+          {{ "{:,.2f}".format(c.balance or 0) }}
+        </td>
+        <td style="color:#94a3b8;">{{ "{:,.0f}".format(c.credit_limit or 0) }}</td>
+        <td>
+          <a href="/contacts/customers/{{ c.id }}" class="btn btn-secondary" style="padding:4px 12px;font-size:.8rem;">تفاصيل</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;color:#64748b;padding:40px;">لا يوجد عملاء</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}أوامر العمل{% endblock %}
+{% block page_title %}📋 أوامر العمل{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">📋 أوامر العمل</h1>
+    <p class="page-subtitle">{{ jobs|length }} أمر عمل</p>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <a href="/services/contracts" class="btn btn-secondary">📄 العقود</a>
+    <a href="/services/jobs/new" class="btn btn-primary">+ أمر عمل جديد</a>
+  </div>
+</div>
+
+<!-- فلتر الحالة -->
+<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+  {% for s, label, color in [('','الكل','#94a3b8'),('open','مفتوح','#38bdf8'),('in_progress','قيد التنفيذ','#f59e0b'),('completed','منجز','#22c55e'),('cancelled','ملغي','#ef4444')] %}
+  <a href="/services/jobs{% if s %}?status={{ s }}{% endif %}"
+     style="padding:6px 14px;border-radius:20px;text-decoration:none;font-size:.82rem;
+            border:1px solid rgba(255,255,255,.1);
+            {% if request.args.get('status','')==s %}background:rgba(255,255,255,.1);color:{{ color }};{% else %}color:#64748b;{% endif %}">
+    {{ label }}
+  </a>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>العميل</th><th>الخدمة</th><th>الفني</th><th>الأولوية</th><th>الحالة</th><th>تاريخ الإنشاء</th><th>الإجراء</th></tr>
+    </thead>
+    <tbody>
+      {% for j in jobs %}
+      <tr>
+        <td>
+          <strong>{{ j.customer_name }}</strong>
+          {% if j.customer_phone %}<br><small style="color:#64748b;">{{ j.customer_phone }}</small>{% endif %}
+        </td>
+        <td>{{ j.service_type or '—' }}</td>
+        <td>{{ j.technician_name or 'غير محدد' }}</td>
+        <td>
+          {% if j.priority == 'urgent' %}<span style="color:#ef4444;font-weight:600;">🔴 عاجل</span>
+          {% elif j.priority == 'high' %}<span style="color:#f59e0b;">🟠 عالي</span>
+          {% elif j.priority == 'normal' %}<span style="color:#22c55e;">🟢 عادي</span>
+          {% else %}<span style="color:#94a3b8;">{{ j.priority or '—' }}</span>{% endif %}
+        </td>
+        <td>
+          {% if j.status == 'open' %}<span style="background:#1e3a5f;color:#93c5fd;padding:2px 8px;border-radius:20px;font-size:.78rem;">● مفتوح</span>
+          {% elif j.status == 'in_progress' %}<span style="background:#78350f;color:#fcd34d;padding:2px 8px;border-radius:20px;font-size:.78rem;">⚙ جارٍ</span>
+          {% elif j.status == 'completed' %}<span style="background:#14532d;color:#86efac;padding:2px 8px;border-radius:20px;font-size:.78rem;">✓ منجز</span>
+          {% elif j.status == 'cancelled' %}<span style="background:#7f1d1d;color:#fca5a5;padding:2px 8px;border-radius:20px;font-size:.78rem;">✕ ملغي</span>
+          {% else %}{{ j.status }}{% endif %}
+        </td>
+        <td style="color:#64748b;font-size:.82rem;">{{ j.created_at[:10] if j.created_at else '—' }}</td>
+        <td>
+          <a href="/services/jobs/{{ j.id }}" class="btn btn-secondary" style="padding:4px 12px;font-size:.8rem;">إدارة</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" style="text-align:center;color:#64748b;padding:40px;">لا توجد أوامر عمل</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

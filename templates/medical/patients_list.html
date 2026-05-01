@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}المرضى{% endblock %}
+{% block page_title %}🏥 قائمة المرضى{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">🏥 المرضى</h1>
+    <p class="page-subtitle">{{ total }} مريض مسجل</p>
+  </div>
+  <a href="/medical/patients/new" class="btn btn-primary">+ تسجيل مريض</a>
+</div>
+
+<div class="card" style="margin-bottom:16px;">
+  <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+    <div style="flex:1;min-width:200px;">
+      <input type="text" name="q" value="{{ request.args.get('q','') }}" placeholder="اسم المريض، رقم الملف، الهاتف..." class="form-input">
+    </div>
+    <button type="submit" class="btn btn-primary">بحث</button>
+    <a href="/medical/patients" class="btn btn-secondary">إعادة تعيين</a>
+  </form>
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>اسم المريض</th><th>رقم الملف</th><th>الجنس</th><th>تاريخ الميلاد</th><th>الهاتف</th><th>آخر زيارة</th><th>الإجراءات</th></tr>
+    </thead>
+    <tbody>
+      {% for p in patients %}
+      <tr>
+        <td><strong style="color:#38bdf8;">{{ p.full_name }}</strong>
+          {% if p.blood_type %}<br><small style="color:#ef4444;">فصيلة الدم: {{ p.blood_type }}</small>{% endif %}
+        </td>
+        <td style="color:#94a3b8;font-family:monospace;">{{ p.file_number }}</td>
+        <td>{{ '♂ ذكر' if p.gender == 'male' else '♀ أنثى' if p.gender == 'female' else '—' }}</td>
+        <td>{{ p.date_of_birth or '—' }}</td>
+        <td>{{ p.phone or '—' }}</td>
+        <td style="color:#64748b;font-size:.82rem;">{{ p.last_visit[:10] if p.last_visit else '—' }}</td>
+        <td>
+          <a href="/medical/appointments?patient_id={{ p.id }}" class="btn btn-secondary" style="padding:4px 10px;font-size:.8rem;">مواعيد</a>
+          <a href="/medical/prescriptions/{{ p.id }}" class="btn btn-secondary" style="padding:4px 10px;font-size:.8rem;">وصفات</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" style="text-align:center;color:#64748b;padding:40px;">لا يوجد مرضى مسجلون</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

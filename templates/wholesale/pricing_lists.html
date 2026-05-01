@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}قوائم الأسعار{% endblock %}
+{% block page_title %}💲 قوائم الأسعار{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">💲 قوائم الأسعار والخصومات</h1>
+    <p class="page-subtitle">{{ pricing_lists|length }} قائمة سعر</p>
+  </div>
+  <a href="/wholesale/pricing-lists/new" class="btn btn-primary">+ قائمة جديدة</a>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
+  {% for pl in pricing_lists %}
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+      <div>
+        <h4 style="margin:0;color:#e2e8f0;">{{ pl.name }}</h4>
+        <span style="color:#64748b;font-size:.8rem;">{{ pl.customer_type or 'عام' }}</span>
+      </div>
+      <span style="background:{% if pl.is_active %}#14532d;color:#86efac{% else %}rgba(255,255,255,.06);color:#64748b{% endif %};padding:2px 10px;border-radius:20px;font-size:.75rem;">
+        {% if pl.is_active %}✓ نشط{% else %}معطل{% endif %}
+      </span>
+    </div>
+
+    <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:12px;margin-bottom:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.82rem;">
+        {% if pl.discount_percent %}
+        <span style="color:#94a3b8;">نسبة الخصم:</span>
+        <span style="color:#22c55e;font-weight:600;">{{ pl.discount_percent }}%</span>
+        {% endif %}
+        {% if pl.min_quantity %}
+        <span style="color:#94a3b8;">الحد الأدنى:</span>
+        <span style="color:#38bdf8;">{{ pl.min_quantity }} وحدة</span>
+        {% endif %}
+        {% if pl.min_amount %}
+        <span style="color:#94a3b8;">قيمة دنيا:</span>
+        <span style="color:#f59e0b;">{{ "{:,.0f}".format(pl.min_amount) }} ر.س</span>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if pl.description %}
+    <p style="color:#64748b;font-size:.8rem;margin-bottom:12px;">{{ pl.description }}</p>
+    {% endif %}
+
+    <div style="display:flex;gap:8px;">
+      <a href="/wholesale/pricing-lists/{{ pl.id }}/edit" class="btn btn-secondary" style="flex:1;text-align:center;padding:6px;font-size:.82rem;">✏️ تعديل</a>
+      <form action="/wholesale/pricing-lists/{{ pl.id }}/toggle" method="post" style="flex:1;">
+        <button type="submit" class="btn btn-secondary" style="width:100%;padding:6px;font-size:.82rem;">
+          {% if pl.is_active %}تعطيل{% else %}تفعيل{% endif %}
+        </button>
+      </form>
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="grid-column:1/-1;text-align:center;padding:60px;">
+    <div style="font-size:3rem;margin-bottom:16px;">💲</div>
+    <h3 style="color:#94a3b8;">لا توجد قوائم أسعار</h3>
+    <p style="color:#64748b;margin-bottom:20px;">أنشئ قائمة سعر جديدة لتحديد الخصومات والأسعار الخاصة لعملاء الجملة</p>
+    <a href="/wholesale/pricing-lists/new" class="btn btn-primary">+ إنشاء قائمة أولى</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

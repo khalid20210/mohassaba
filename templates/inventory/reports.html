@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}تقارير المخزون{% endblock %}
+{% block page_title %}📊 تقارير المخزون{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">📊 تقارير المخزون</h1>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
+  <a href="/inventory/reports?type=value" class="card" style="text-decoration:none;text-align:center;padding:32px;transition:border-color .2s;border:1px solid rgba(255,255,255,.09);">
+    <div style="font-size:2.5rem;margin-bottom:12px;">💰</div>
+    <h3 style="margin:0 0 8px;">تقرير القيمة</h3>
+    <p style="color:#94a3b8;font-size:.85rem;">إجمالي قيمة المخزون بسعر الشراء والبيع</p>
+  </a>
+  <a href="/inventory/reports?type=aging" class="card" style="text-decoration:none;text-align:center;padding:32px;transition:border-color .2s;border:1px solid rgba(255,255,255,.09);">
+    <div style="font-size:2.5rem;margin-bottom:12px;">📅</div>
+    <h3 style="margin:0 0 8px;">تقرير التقادم</h3>
+    <p style="color:#94a3b8;font-size:.85rem;">المنتجات المقاربة لانتهاء الصلاحية</p>
+  </a>
+  <a href="/inventory/reports?type=movement" class="card" style="text-decoration:none;text-align:center;padding:32px;transition:border-color .2s;border:1px solid rgba(255,255,255,.09);">
+    <div style="font-size:2.5rem;margin-bottom:12px;">🔄</div>
+    <h3 style="margin:0 0 8px;">تقرير الحركات</h3>
+    <p style="color:#94a3b8;font-size:.85rem;">ملخص حركات المخزون خلال فترة زمنية</p>
+  </a>
+</div>
+{% endblock %}

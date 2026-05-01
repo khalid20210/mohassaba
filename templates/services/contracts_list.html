@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}عقود الخدمة{% endblock %}
+{% block page_title %}📄 عقود الخدمة{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">📄 عقود الخدمة</h1>
+    <p class="page-subtitle">{{ contracts|length }} عقد</p>
+  </div>
+  <a href="/services/contracts/new" class="btn btn-primary">+ عقد جديد</a>
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>العميل</th><th>نوع الخدمة</th><th>تاريخ البدء</th><th>تاريخ الانتهاء</th><th>القيمة السنوية</th><th>الحالة</th></tr>
+    </thead>
+    <tbody>
+      {% for c in contracts %}
+      {% set days_left = ((c.end_date|string) - now)|days if c.end_date else None %}
+      <tr>
+        <td>
+          <strong>{{ c.customer_name }}</strong>
+          {% if c.customer_phone %}<br><small style="color:#64748b;">{{ c.customer_phone }}</small>{% endif %}
+        </td>
+        <td>{{ c.service_type or '—' }}</td>
+        <td style="color:#94a3b8;font-size:.82rem;">{{ c.start_date or '—' }}</td>
+        <td>
+          {{ c.end_date or '—' }}
+          {% if c.end_date %}
+          <br><small style="color:{% if c.days_remaining and c.days_remaining < 30 %}#ef4444{% elif c.days_remaining and c.days_remaining < 90 %}#f59e0b{% else %}#64748b{% endif %};">
+            {% if c.days_remaining is not none %}
+              {{ c.days_remaining }} يوم متبق
+            {% endif %}
+          </small>
+          {% endif %}
+        </td>
+        <td style="color:#22c55e;font-weight:600;">{{ "{:,.2f}".format(c.annual_value or 0) }} ر.س</td>
+        <td>
+          {% if c.status == 'active' %}<span style="background:#14532d;color:#86efac;padding:2px 8px;border-radius:20px;font-size:.78rem;">● نشط</span>
+          {% elif c.status == 'expired' %}<span style="background:#7f1d1d;color:#fca5a5;padding:2px 8px;border-radius:20px;font-size:.78rem;">⚠ منتهي</span>
+          {% elif c.status == 'cancelled' %}<span style="background:rgba(255,255,255,.06);color:#64748b;padding:2px 8px;border-radius:20px;font-size:.78rem;">✕ ملغي</span>
+          {% else %}{{ c.status or '—' }}{% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;color:#64748b;padding:40px;">لا توجد عقود</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

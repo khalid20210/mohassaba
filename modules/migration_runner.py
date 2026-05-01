@@ -62,16 +62,31 @@ def run_migrations(db_path: Path) -> None:
 
             try:
                 # نفّذ كل جملة SQL منفصلة (تجاهل الفارغة والتعليقات)
+                skipped = 0
                 for stmt in _split_statements(sql):
-                    if stmt:
+                    if not stmt:
+                        continue
+                    try:
                         conn.execute(stmt)
+                    except Exception as stmt_err:
+                        err_msg = str(stmt_err).lower()
+                        # تجاهل أخطاء التكرار الشائعة في ALTER TABLE
+                        if any(k in err_msg for k in (
+                            "duplicate column", "already exists", "table already exists"
+                        )):
+                            skipped += 1
+                            continue
+                        raise
 
                 conn.execute(
                     "INSERT INTO _schema_migrations (filename) VALUES (?)",
                     (sql_file.name,),
                 )
                 conn.commit()
-                logger.info(f"✅  تم: {sql_file.name}")
+                if skipped:
+                    logger.info(f"✅  تم: {sql_file.name} ({skipped} جملة متخطاة — مكررة)")
+                else:
+                    logger.info(f"✅  تم: {sql_file.name}")
 
             except Exception as e:
                 conn.rollback()

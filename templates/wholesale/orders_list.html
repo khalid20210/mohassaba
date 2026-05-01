@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}طلبات الجملة{% endblock %}
+{% block page_title %}📦 طلبات الجملة{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">📦 طلبات الجملة</h1>
+    <p class="page-subtitle">{{ orders|length }} طلب — الإجمالي: {{ "{:,.2f}".format(total or 0) }} ر.س</p>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <a href="/wholesale/pricing-lists" class="btn btn-secondary">💲 قوائم الأسعار</a>
+    <a href="/wholesale/orders/new" class="btn btn-primary">+ طلب جديد</a>
+  </div>
+</div>
+
+<!-- إحصائيات سريعة -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+  {% for label, count, color in [
+    ('إجمالي الطلبات', orders|length, '#38bdf8'),
+    ('قيد المعالجة', orders|selectattr('status','equalto','processing')|list|length, '#f59e0b'),
+    ('مكتملة', orders|selectattr('status','equalto','completed')|list|length, '#22c55e'),
+    ('ملغية', orders|selectattr('status','equalto','cancelled')|list|length, '#ef4444')
+  ] %}
+  <div class="card" style="text-align:center;padding:16px;">
+    <div style="font-size:1.6rem;font-weight:700;color:{{ color }};">{{ count }}</div>
+    <div style="color:#64748b;font-size:.82rem;margin-top:4px;">{{ label }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>رقم الطلب</th><th>العميل</th><th>تاريخ الطلب</th><th>المبلغ الإجمالي</th><th>نوع السعر</th><th>الحالة</th></tr>
+    </thead>
+    <tbody>
+      {% for o in orders %}
+      <tr>
+        <td style="font-family:monospace;color:#38bdf8;">#{{ o.id }}</td>
+        <td>
+          <strong>{{ o.customer_name }}</strong>
+          {% if o.customer_type %}<br><small style="color:#64748b;">{{ o.customer_type }}</small>{% endif %}
+        </td>
+        <td style="color:#94a3b8;font-size:.82rem;">{{ o.order_date or o.created_at[:10] if o.created_at else '—' }}</td>
+        <td style="color:#22c55e;font-weight:600;">{{ "{:,.2f}".format(o.total_amount or 0) }} ر.س</td>
+        <td>{{ o.pricing_tier or 'عادي' }}</td>
+        <td>
+          {% if o.status == 'pending' %}<span style="background:rgba(255,255,255,.06);color:#94a3b8;padding:2px 8px;border-radius:20px;font-size:.78rem;">⏳ معلق</span>
+          {% elif o.status == 'processing' %}<span style="background:#78350f;color:#fcd34d;padding:2px 8px;border-radius:20px;font-size:.78rem;">⚙ معالجة</span>
+          {% elif o.status == 'completed' %}<span style="background:#14532d;color:#86efac;padding:2px 8px;border-radius:20px;font-size:.78rem;">✓ مكتمل</span>
+          {% elif o.status == 'cancelled' %}<span style="background:#7f1d1d;color:#fca5a5;padding:2px 8px;border-radius:20px;font-size:.78rem;">✕ ملغي</span>
+          {% else %}{{ o.status }}{% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;color:#64748b;padding:40px;">لا توجد طلبات جملة</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

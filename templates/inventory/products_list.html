@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}المنتجات{% endblock %}
+{% block page_title %}📦 قائمة المنتجات{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">📦 المنتجات</h1>
+    <p class="page-subtitle">{{ total }} منتج مسجل</p>
+  </div>
+  <a href="/inventory/products/new" class="btn btn-primary">+ إضافة منتج</a>
+</div>
+
+<!-- فلاتر البحث -->
+<div class="card" style="margin-bottom:16px;">
+  <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+    <div style="flex:1;min-width:200px;">
+      <label style="font-size:.8rem;color:#94a3b8;display:block;margin-bottom:4px;">بحث</label>
+      <input type="text" name="q" value="{{ request.args.get('q','') }}" placeholder="اسم المنتج، SKU، الباركود..." class="form-input">
+    </div>
+    <div>
+      <label style="font-size:.8rem;color:#94a3b8;display:block;margin-bottom:4px;">الحالة</label>
+      <select name="status" class="form-input">
+        <option value="">الكل</option>
+        <option value="low" {% if request.args.get('status')=='low' %}selected{% endif %}>مخزون منخفض</option>
+        <option value="ok" {% if request.args.get('status')=='ok' %}selected{% endif %}>طبيعي</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">بحث</button>
+    <a href="/inventory/products" class="btn btn-secondary">إعادة تعيين</a>
+  </form>
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>المنتج</th>
+        <th>SKU</th>
+        <th>الكمية الحالية</th>
+        <th>الحد الأدنى</th>
+        <th>سعر الشراء</th>
+        <th>سعر البيع</th>
+        <th>الحالة</th>
+        <th>الإجراءات</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in products %}
+      <tr>
+        <td>
+          <a href="/inventory/products/{{ p.id }}" style="color:#38bdf8;font-weight:500;">{{ p.name }}</a>
+          {% if p.barcode %}<br><small style="color:#64748b;">{{ p.barcode }}</small>{% endif %}
+        </td>
+        <td style="color:#94a3b8;">{{ p.sku or '—' }}</td>
+        <td>
+          <strong style="color:{% if p.current_qty <= p.min_qty %}#ef4444{% else %}#22c55e{% endif %};">
+            {{ p.current_qty }}
+          </strong> {{ p.unit }}
+        </td>
+        <td>{{ p.min_qty }}</td>
+        <td>{{ "{:,.2f}".format(p.cost_price or 0) }}</td>
+        <td>{{ "{:,.2f}".format(p.sell_price or 0) }}</td>
+        <td>
+          {% if p.current_qty <= 0 %}
+            <span style="background:#7f1d1d;color:#fca5a5;padding:2px 8px;border-radius:20px;font-size:.75rem;">نفد</span>
+          {% elif p.current_qty <= p.min_qty %}
+            <span style="background:#78350f;color:#fcd34d;padding:2px 8px;border-radius:20px;font-size:.75rem;">منخفض</span>
+          {% else %}
+            <span style="background:#14532d;color:#86efac;padding:2px 8px;border-radius:20px;font-size:.75rem;">متوفر</span>
+          {% endif %}
+        </td>
+        <td>
+          <a href="/inventory/products/{{ p.id }}" class="btn btn-secondary" style="padding:4px 12px;font-size:.8rem;">تفاصيل</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="text-align:center;color:#64748b;padding:40px;">لا توجد منتجات</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Pagination -->
+  {% if total > per_page %}
+  <div style="display:flex;justify-content:center;gap:8px;padding:16px;">
+    {% if page > 1 %}
+      <a href="?page={{ page-1 }}&q={{ request.args.get('q','') }}" class="btn btn-secondary">السابق</a>
+    {% endif %}
+    <span style="padding:8px 16px;color:#94a3b8;">صفحة {{ page }} / {{ (total // per_page) + 1 }}</span>
+    {% if page * per_page < total %}
+      <a href="?page={{ page+1 }}&q={{ request.args.get('q','') }}" class="btn btn-secondary">التالي</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}عقود الإيجار{% endblock %}
+{% block page_title %}📄 عقود الإيجار{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">📄 عقود الإيجار</h1>
+    <p class="page-subtitle">{{ contracts|length }} عقد</p>
+  </div>
+  <a href="/rental/contracts/new" class="btn btn-primary">+ عقد جديد</a>
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>رقم العقد</th><th>المستأجر</th><th>المركبة</th><th>من</th><th>إلى</th><th>الإجمالي</th><th>الحالة</th></tr>
+    </thead>
+    <tbody>
+      {% for c in contracts %}
+      <tr>
+        <td style="font-family:monospace;color:#38bdf8;">#{{ c.id }}</td>
+        <td>
+          <strong>{{ c.renter_name }}</strong>
+          {% if c.renter_phone %}<br><small style="color:#64748b;">{{ c.renter_phone }}</small>{% endif %}
+        </td>
+        <td>{{ c.vehicle_info or 'مركبة #' ~ c.vehicle_id }}</td>
+        <td style="color:#94a3b8;font-size:.82rem;">{{ c.start_date }}</td>
+        <td style="color:#94a3b8;font-size:.82rem;">{{ c.end_date }}</td>
+        <td style="color:#22c55e;font-weight:600;">{{ "{:,.2f}".format(c.total_amount or 0) }} ر.س</td>
+        <td>
+          {% if c.status == 'active' %}<span style="background:#14532d;color:#86efac;padding:2px 8px;border-radius:20px;font-size:.78rem;">● نشط</span>
+          {% elif c.status == 'completed' %}<span style="background:rgba(255,255,255,.06);color:#94a3b8;padding:2px 8px;border-radius:20px;font-size:.78rem;">✓ منتهي</span>
+          {% elif c.status == 'cancelled' %}<span style="background:#7f1d1d;color:#fca5a5;padding:2px 8px;border-radius:20px;font-size:.78rem;">✕ ملغي</span>
+          {% else %}{{ c.status }}{% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" style="text-align:center;color:#64748b;padding:40px;">لا توجد عقود</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

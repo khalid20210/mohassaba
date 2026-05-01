@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}الأسطول{% endblock %}
+{% block page_title %}🚗 إدارة الأسطول{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">🚗 أسطول المركبات</h1>
+    <p class="page-subtitle">{{ vehicles|length }} مركبة مسجلة</p>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <a href="/rental/contracts" class="btn btn-secondary">📄 العقود</a>
+    <a href="/rental/fleet/new" class="btn btn-primary">+ إضافة مركبة</a>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;">
+  {% for v in vehicles %}
+  <div class="card" style="border:1px solid rgba({% if v.status=='available' %}34,197,94{% elif v.status=='rented' %}239,68,68{% else %}148,163,184{% endif %},.25);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+      <div>
+        <h4 style="margin:0;color:#e2e8f0;">{{ v.make }} {{ v.model }}</h4>
+        <span style="color:#94a3b8;font-size:.82rem;">{{ v.year or '' }} — {{ v.plate_number }}</span>
+      </div>
+      <span style="font-size:.78rem;padding:2px 10px;border-radius:20px;
+            background:{% if v.status=='available' %}#14532d;color:#86efac{% elif v.status=='rented' %}#7f1d1d;color:#fca5a5{% else %}rgba(255,255,255,.06);color:#94a3b8{% endif %};">
+        {% if v.status == 'available' %}✓ متاح
+        {% elif v.status == 'rented' %}🔴 مؤجر
+        {% elif v.status == 'maintenance' %}🔧 صيانة
+        {% else %}{{ v.status }}{% endif %}
+      </span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:.82rem;color:#64748b;">
+      <span>السعر/يوم:</span>
+      <span style="color:#38bdf8;font-weight:600;">{{ "{:,.0f}".format(v.daily_rate or 0) }} ر.س</span>
+      <span>اللون:</span>
+      <span>{{ v.color or '—' }}</span>
+    </div>
+    {% if v.status == 'available' %}
+    <div style="margin-top:12px;">
+      <a href="/rental/contracts/new?vehicle_id={{ v.id }}" class="btn btn-primary" style="width:100%;text-align:center;padding:8px;">+ إنشاء عقد</a>
+    </div>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="card" style="grid-column:1/-1;text-align:center;padding:60px;">
+    <div style="font-size:3rem;margin-bottom:16px;">🚗</div>
+    <h3>لا توجد مركبات</h3>
+    <a href="/rental/fleet/new" class="btn btn-primary" style="margin-top:16px;">إضافة مركبة أولى</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

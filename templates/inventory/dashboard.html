@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}المخزون{% endblock %}
+{% block page_title %}📦 إدارة المخزون{% endblock %}
+
+{% block content %}
+<style>
+  .inv-kpi { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; margin-bottom:24px; }
+  .kpi-card { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09); border-radius:14px; padding:20px; text-align:center; }
+  .kpi-val  { font-size:2rem; font-weight:700; color:#38bdf8; line-height:1; }
+  .kpi-lbl  { font-size:.82rem; color:#94a3b8; margin-top:6px; }
+  .kpi-card.warn  .kpi-val { color:#f59e0b; }
+  .kpi-card.danger .kpi-val { color:#ef4444; }
+  .kpi-card.green .kpi-val  { color:#22c55e; }
+  .section-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media(max-width:768px){ .section-grid{grid-template-columns:1fr;} }
+  .table-compact td,.table-compact th{ padding:8px 12px; font-size:.85rem; }
+  .badge-low  { background:#7f1d1d; color:#fca5a5; padding:2px 8px; border-radius:20px; font-size:.75rem; }
+  .badge-ok   { background:#14532d; color:#86efac; padding:2px 8px; border-radius:20px; font-size:.75rem; }
+  .badge-warn { background:#78350f; color:#fcd34d; padding:2px 8px; border-radius:20px; font-size:.75rem; }
+</style>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">📦 لوحة المخزون</h1>
+    <p class="page-subtitle">نظرة شاملة على المخزون والتنبيهات</p>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <a href="/inventory/products/new" class="btn btn-primary">+ منتج جديد</a>
+    <a href="/inventory/movements/add" class="btn btn-secondary">تسجيل حركة</a>
+    <a href="/inventory/stock-count" class="btn btn-secondary">جرد المخزون</a>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="inv-kpi">
+  <div class="kpi-card green">
+    <div class="kpi-val">{{ stats.total_products or 0 }}</div>
+    <div class="kpi-lbl">إجمالي المنتجات</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-val">{{ "{:,.0f}".format(stats.total_value or 0) }}</div>
+    <div class="kpi-lbl">قيمة المخزون (ر.س)</div>
+  </div>
+  <div class="kpi-card warn">
+    <div class="kpi-val">{{ stats.low_stock_count or 0 }}</div>
+    <div class="kpi-lbl">منتجات نفدت / قاربت</div>
+  </div>
+  <div class="kpi-card danger">
+    <div class="kpi-val">{{ stats.expiry_soon or 0 }}</div>
+    <div class="kpi-lbl">منتجات ستنتهي صلاحيتها</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-val">{{ stats.movements_today or 0 }}</div>
+    <div class="kpi-lbl">حركات اليوم</div>
+  </div>
+</div>
+
+<div class="section-grid">
+  <!-- تنبيهات المخزون المنخفض -->
+  <div class="card">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+      <h3 class="card-title">⚠️ مخزون منخفض</h3>
+      <a href="/inventory/alerts" style="font-size:.82rem;color:#38bdf8;">عرض الكل</a>
+    </div>
+    {% if low_stock %}
+      <table class="table table-compact">
+        <thead><tr><th>المنتج</th><th>الكمية</th><th>الحد الأدنى</th></tr></thead>
+        <tbody>
+          {% for p in low_stock[:8] %}
+          <tr>
+            <td><a href="/inventory/products/{{ p.id }}" style="color:#38bdf8;">{{ p.name }}</a></td>
+            <td><span class="badge-low">{{ p.current_qty }} {{ p.unit }}</span></td>
+            <td>{{ p.min_qty }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p style="color:#64748b;text-align:center;padding:24px;">✅ لا يوجد مخزون منخفض</p>
+    {% endif %}
+  </div>
+
+  <!-- أكثر المنتجات حركةً -->
+  <div class="card">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+      <h3 class="card-title">🔥 أكثر المنتجات مبيعاً</h3>
+      <a href="/inventory/reports" style="font-size:.82rem;color:#38bdf8;">تقارير</a>
+    </div>
+    {% if top_sellers %}
+      <table class="table table-compact">
+        <thead><tr><th>المنتج</th><th>الكمية المباعة</th></tr></thead>
+        <tbody>
+          {% for p in top_sellers[:8] %}
+          <tr>
+            <td>{{ p.name }}</td>
+            <td style="color:#22c55e;font-weight:600;">{{ p.sold_qty }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p style="color:#64748b;text-align:center;padding:24px;">لا توجد بيانات مبيعات بعد</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- روابط سريعة -->
+<div class="card" style="margin-top:20px;">
+  <div class="card-header"><h3 class="card-title">⚡ وصول سريع</h3></div>
+  <div style="display:flex;flex-wrap:wrap;gap:12px;padding:16px 0 0;">
+    <a href="/inventory/products" class="btn btn-secondary">📋 قائمة المنتجات</a>
+    <a href="/inventory/movements" class="btn btn-secondary">🔄 سجل الحركات</a>
+    <a href="/inventory/alerts" class="btn btn-secondary">🔔 التنبيهات</a>
+    <a href="/inventory/reports" class="btn btn-secondary">📊 التقارير</a>
+    <a href="/inventory/stock-count" class="btn btn-secondary">📝 جرد المخزون</a>
+  </div>
+</div>
+{% endblock %}

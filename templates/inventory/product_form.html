@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}منتج جديد{% endblock %}
+{% block page_title %}📦 إضافة منتج{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <a href="/inventory/products" style="color:#94a3b8;font-size:.85rem;">← قائمة المنتجات</a>
+    <h1 class="page-title" style="margin-top:4px;">إضافة منتج جديد</h1>
+  </div>
+</div>
+
+<div class="card" style="max-width:700px;margin:0 auto;">
+  <form action="/inventory/products/new" method="post">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div style="grid-column:1/-1;">
+        <label class="form-label">اسم المنتج *</label>
+        <input type="text" name="name" class="form-input" required placeholder="أدخل اسم المنتج">
+      </div>
+      <div>
+        <label class="form-label">SKU (رمز المنتج)</label>
+        <input type="text" name="sku" class="form-input" placeholder="مثال: SKU-001">
+      </div>
+      <div>
+        <label class="form-label">الباركود</label>
+        <input type="text" name="barcode" class="form-input" placeholder="مثال: 6281234567890">
+      </div>
+      <div>
+        <label class="form-label">الكمية الابتدائية</label>
+        <input type="number" name="initial_qty" class="form-input" value="0" min="0" step="0.01">
+      </div>
+      <div>
+        <label class="form-label">وحدة القياس</label>
+        <select name="unit" class="form-input">
+          <option value="قطعة">قطعة</option>
+          <option value="كجم">كجم</option>
+          <option value="لتر">لتر</option>
+          <option value="متر">متر</option>
+          <option value="صندوق">صندوق</option>
+          <option value="كرتون">كرتون</option>
+          <option value="علبة">علبة</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">الحد الأدنى للتنبيه</label>
+        <input type="number" name="min_qty" class="form-input" value="5" min="0" step="0.01">
+      </div>
+      <div>
+        <label class="form-label">سعر الشراء (ر.س)</label>
+        <input type="number" name="cost_price" class="form-input" value="0" min="0" step="0.01">
+      </div>
+      <div>
+        <label class="form-label">سعر البيع (ر.س)</label>
+        <input type="number" name="sell_price" class="form-input" value="0" min="0" step="0.01">
+      </div>
+      <div>
+        <label class="form-label">الموقع / الرف</label>
+        <input type="text" name="location" class="form-input" placeholder="مثال: رف A-3">
+      </div>
+      <div>
+        <label class="form-label">تاريخ انتهاء الصلاحية</label>
+        <input type="date" name="expiry_date" class="form-input">
+      </div>
+      <div>
+        <label class="form-label">الرقم التسلسلي</label>
+        <input type="text" name="serial_number" class="form-input" placeholder="اختياري">
+      </div>
+      <div>
+        <label class="form-label">المورد</label>
+        <input type="text" name="supplier_id" class="form-input" placeholder="رقم المورد (اختياري)">
+      </div>
+      <div style="grid-column:1/-1;">
+        <label class="form-label">ملاحظات</label>
+        <textarea name="notes" class="form-input" rows="2" placeholder="أي ملاحظات إضافية..."></textarea>
+      </div>
+    </div>
+    <div style="margin-top:24px;display:flex;gap:12px;">
+      <button type="submit" class="btn btn-primary">💾 حفظ المنتج</button>
+      <a href="/inventory/products" class="btn btn-secondary">إلغاء</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
