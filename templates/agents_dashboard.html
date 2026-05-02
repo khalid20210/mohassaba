@@ -214,6 +214,34 @@
   </div>
 </div>
 
+<!-- ═══════ MODAL: بيانات دخول المندوب ═══════ -->
+<div class="modal-backdrop" id="credModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span style="font-size:1rem;font-weight:800;color:#dbeafe">🔑 بيانات دخول المندوب</span>
+      <button class="modal-close" onclick="closeModal('credModal')">✕</button>
+    </div>
+    <input type="hidden" id="credAgentId">
+    <div id="credCurrentInfo" style="background:#0b1220;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:.82rem;color:#94a3b8">
+      جارٍ التحميل...
+    </div>
+    <input class="inp-dash" id="credUsername" placeholder="اسم المستخدم الجديد *" autocomplete="off" autocapitalize="none">
+    <input class="inp-dash" id="credPassword" type="password" placeholder="كلمة المرور الجديدة (اتركه فارغاً للإبقاء على القديمة)" autocomplete="new-password">
+    <input class="inp-dash" id="credPassword2" type="password" placeholder="تأكيد كلمة المرور" autocomplete="new-password">
+    <div id="credMsg" style="font-size:.78rem;min-height:18px;margin-bottom:8px"></div>
+    <div style="margin-bottom:12px">
+      <a id="credPortalLink" href="/agent/login" target="_blank"
+         style="font-size:.78rem;color:#60a5fa;text-decoration:none">
+        🔗 رابط دخول المندوب: <span id="credPortalUrl"></span>
+      </a>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn-dash btn-gray" onclick="closeModal('credModal')">إلغاء</button>
+      <button class="btn-dash btn-blue" onclick="saveCred()">💾 حفظ بيانات الدخول</button>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -290,7 +318,9 @@ async function loadAgentsGrid(){
         <div style="display:flex;gap:4px">
           <button onclick="event.stopPropagation();openTargetModal(${a.id})" title="تحديد هدف"
             style="background:rgba(59,130,246,.15);border:none;border-radius:8px;padding:4px 8px;color:#60a5fa;cursor:pointer;font-size:.8rem">🎯</button>
-          <a href="/agents/mobile/${a.id}" target="_blank" onclick="event.stopPropagation()"
+          <button onclick="event.stopPropagation();openCredModal(${a.id},'${esc(a.full_name)}')" title="بيانات الدخول"
+            style="background:rgba(168,85,247,.15);border:none;border-radius:8px;padding:4px 8px;color:#c084fc;cursor:pointer;font-size:.8rem">🔑</button>
+          <a href="/agent/portal" target="_blank" onclick="event.stopPropagation()"
             style="background:rgba(34,197,94,.15);border-radius:8px;padding:4px 8px;color:#4ade80;text-decoration:none;font-size:.8rem">📱</a>
         </div>
       </div>
@@ -557,6 +587,51 @@ async function saveTarget(){
   const r = await api('POST', `/api/v1/agents/${agentId}/targets`, {month,target_amount:target,bonus_amount:bonus,bonus_threshold:threshold});
   if(r.success){ closeModal('targetModal'); alert('✅ تم حفظ الهدف'); loadPerformance(); }
   else alert('❌ '+r.error);
+}
+
+/* ─── CREDENTIALS MODAL ─── */
+async function openCredModal(agentId, agentName){
+  document.getElementById('credAgentId').value = agentId;
+  document.getElementById('credUsername').value = '';
+  document.getElementById('credPassword').value = '';
+  document.getElementById('credPassword2').value = '';
+  document.getElementById('credMsg').textContent = '';
+  const origin = window.location.origin;
+  document.getElementById('credPortalUrl').textContent = origin + '/agent/login';
+  document.getElementById('credPortalLink').href = '/agent/login';
+  document.getElementById('credCurrentInfo').textContent = 'جارٍ التحميل...';
+  openModal('credModal');
+  const r = await api('GET', `/api/v1/agents/${agentId}/credentials`);
+  if(r.success){
+    const info = document.getElementById('credCurrentInfo');
+    if(r.username){
+      info.innerHTML = `<span style="color:#4ade80">✅ لديه حساب</span> — اسم المستخدم: <b style="color:#dbeafe">${esc(r.username)}</b><br>
+        <span style="color:#94a3b8;font-size:.75rem">آخر دخول: ${r.last_login ? r.last_login.slice(0,16).replace('T',' ') : 'لم يسجّل دخولاً بعد'}</span>`;
+      document.getElementById('credUsername').value = r.username;
+    } else {
+      info.innerHTML = '<span style="color:#f59e0b">⚠️ لم يُعيَّن حساب لهذا المندوب بعد</span>';
+    }
+  }
+}
+async function saveCred(){
+  const agentId = document.getElementById('credAgentId').value;
+  const username = document.getElementById('credUsername').value.trim();
+  const pw1 = document.getElementById('credPassword').value;
+  const pw2 = document.getElementById('credPassword2').value;
+  const msg = document.getElementById('credMsg');
+  if(!username){ msg.style.color='#f87171'; msg.textContent='⚠️ اسم المستخدم مطلوب'; return; }
+  if(pw1 && pw1 !== pw2){ msg.style.color='#f87171'; msg.textContent='⚠️ كلمتا المرور غير متطابقتين'; return; }
+  if(pw1 && pw1.length < 6){ msg.style.color='#f87171'; msg.textContent='⚠️ كلمة المرور 6 أحرف على الأقل'; return; }
+  msg.style.color='#94a3b8'; msg.textContent='جارٍ الحفظ...';
+  const r = await api('POST', `/api/v1/agents/${agentId}/set-credentials`, {username, password: pw1});
+  if(r.success){
+    msg.style.color='#4ade80'; msg.textContent='✅ تم حفظ بيانات الدخول بنجاح';
+    document.getElementById('credPassword').value = '';
+    document.getElementById('credPassword2').value = '';
+    setTimeout(()=>closeModal('credModal'),1500);
+  } else {
+    msg.style.color='#f87171'; msg.textContent='❌ '+r.error;
+  }
 }
 
 /* ─── INIT ─── */

@@ -109,14 +109,23 @@ select.inp option{background:var(--bg2)}
         <div class="hdr-name">{{ agent.full_name }}</div>
         <div class="hdr-meta">كود: AGT-{{ '%03d'|format(agent.id) }} • عمولة {{ '%.1f'|format(agent.commission_rate or 0) }}%</div>
       </div>
-      <div class="battery-bar" id="batteryDisplay">
-        <span class="battery-icon">🔋</span><span id="batteryPct">--</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="battery-bar" id="batteryDisplay">
+          <span class="battery-icon">🔋</span><span id="batteryPct">--</span>
+        </div>
+        <button onclick="agentLogout()" title="تسجيل الخروج"
+          style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:4px 8px;color:#f87171;cursor:pointer;font-size:.72rem;font-family:inherit">
+          خروج
+        </button>
       </div>
     </div>
     <div class="hdr-badges">
       <span class="badge badge-yellow" id="attBadge">⏺ غير مسجّل</span>
       <span class="badge badge-blue" id="netBadge">🌐 متصل</span>
       <span class="badge badge-purple" id="targetBadge">🎯 --</span>
+      <span id="offlineBadge" style="display:none;font-size:.7rem;padding:2px 8px;border-radius:20px;border:1px solid #f59e0b;color:#f59e0b;font-weight:700;align-items:center;gap:4px">
+        💾 <span></span>
+      </span>
     </div>
   </div>
 
@@ -308,40 +317,585 @@ let locationTimer = null;
 function getQ(){ try{return JSON.parse(localStorage.getItem(OFFLINE_KEY)||'[]')}catch{return []} }
 function saveQ(q){ localStorage.setItem(OFFLINE_KEY, JSON.stringify(q)) }
 function pushOffline(type, payload){
-  const q = getQ(); q.push({action_type:type, payload, local_id:Date.now()}); saveQ(q);
-  toast('💾 حُفظ محلياً — سيُرسل عند الاتصال');
+  const q = getQ();
+  q.push({action_type:type, payload, local_id: Date.now() + '_' + Math.random().toString(36).slice(2)});
+  saveQ(q);
+  updateOfflineBadge();
+  toast('💾 حُفظ محلياً — سيُرسل تلقائياً عند عودة الاتصال');
 }
+
+function updateOfflineBadge(){
+  const q = getQ();
+  const badge = document.getElementById('offlineBadge');
+  if(!badge) return;
+  if(q.length > 0){
+    badge.querySelector('span').textContent = q.length + ' طلب أوفلاين';
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
 async function syncQ(){
-  const q = getQ(); if(!q.length||!isOnline) return;
+  const q = getQ();
+  if(!q.length || !isOnline) return;
+  toast('🔄 جارٍ مزامنة ' + q.length + ' عنصر...');
   try{
-    const r = await api('POST','/api/v1/agents/'+AGENT_ID+'/sync',{queue:q});
-    if(r.success){ saveQ([]); if(r.processed>0) toast('✅ مزامنة '+r.processed+' عنصر'); }
-  }catch{}
+    const r = await api('POST', '/api/v1/agents/'+AGENT_ID+'/sync', {queue: q});
+    if(r.success){
+      // أزِل الناجحة من القائمة المحلية فقط
+      const failed = (r.results||[])
+        .filter(res => res.status === 'failed')
+        .map(res => res.local_id);
+      const remaining = q.filter(item => failed.includes(item.local_id));
+      saveQ(remaining);
+      updateOfflineBadge();
+      const done = r.processed;
+      if(done > 0){
+        toast('✅ تمت مزامنة ' + done + ' عنصر بنجاح');
+        // تحديث الشاشة بعد المزامنة
+        await loadHomeData();
+        if(document.getElementById('pane-clients').classList.contains('active')) loadClients();
+        if(document.getElementById('pane-visits').classList.contains('active')) loadVisits();
+      }
+      if(failed.length > 0) toast('⚠️ ' + failed.length + ' عنصر فشل — سيُعاد المحاولة');
+    }
+  }catch(e){
+    toast('📵 فشلت المزامنة — ستُعاد تلقائياً');
+  }
 }
 
 /* ── NETWORK ── */
 function updateNet(){
   isOnline = navigator.onLine;
   const bar=document.getElementById('offline-bar'), badge=document.getElementById('netBadge');
-  if(isOnline){ bar.classList.remove('show'); badge.textContent='🌐 متصل'; badge.className='badge badge-blue'; syncQ(); }
-  else{ bar.classList.add('show'); badge.textContent='📵 أوفلاين'; badge.className='badge badge-red'; }
+  if(isOnline){
+    bar.classList.remove('show');
+    badge.textContent='🌐 متصل'; badge.className='badge badge-blue';
+    // مزامنة فورية عند عودة الاتصال
+    syncQ();
+  } else {
+    bar.classList.add('show');
+    badge.textContent='📵 أوفلاين'; badge.className='badge badge-red';
+  }
+  updateOfflineBadge();
 }
-window.addEventListener('online',updateNet); window.addEventListener('offline',updateNet);
+window.addEventListener('online', updateNet);
+window.addEventListener('offline', updateNet);
 
 /* ── UTILITY ── */
 function money(n){ return Number(n||0).toLocaleString('ar-SA',{minimumFractionDigits:2,maximumFractionDigits:2}) }
 function esc(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
-function toast(msg,dur=2800){
+function toast(msg,dur=3000){
   const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show');
   clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),dur);
 }
 async function api(method,url,body){
-  const opts={method,headers:{'Content-Type':'application/json'}};
+  const opts={method,headers:{'Content-Type':'application/json'},credentials:'same-origin'};
   if(body) opts.body=JSON.stringify(body);
-  const r=await fetch(url,opts); return r.json();
+  const r=await fetch(url,opts);
+  if(r.status===401){ window.location.href='/agent/login'; throw new Error('unauthorized'); }
+  return r.json();
 }
 function openModal(id){document.getElementById(id).classList.add('show')}
 function closeModal(id){document.getElementById(id).classList.remove('show')}
+
+/* ── TABS ── */
+function switchTab(name,btn){
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pane-'+name).classList.add('active'); btn.classList.add('active');
+  if(name==='clients') loadClients();
+  if(name==='visits') loadVisits();
+  if(name==='invoice') initInvoice();
+}
+
+/* ── BATTERY ── */
+async function initBattery(){
+  if(!navigator.getBattery) return;
+  try{
+    const b=await navigator.getBattery();
+    const upd=()=>{
+      const p=Math.round(b.level*100);
+      document.getElementById('batteryPct').textContent=p+'%';
+      document.querySelector('.battery-icon').textContent=p>50?'🔋':p>20?'🪫':'⚡';
+    };
+    upd(); b.addEventListener('levelchange',upd); b.addEventListener('chargingchange',upd);
+  }catch{}
+}
+
+/* ── LOCATION ── */
+async function getBatPct(){
+  try{ if(navigator.getBattery){const b=await navigator.getBattery();return Math.round(b.level*100);} }catch{}
+  return null;
+}
+
+function startTracking(){
+  if(!navigator.geolocation) return;
+  const send=async ()=>{
+    navigator.geolocation.getCurrentPosition(async pos=>{
+      const bat = await getBatPct();
+      const locationData = {latitude:pos.coords.latitude,longitude:pos.coords.longitude,accuracy:pos.coords.accuracy,battery:bat};
+      if(isOnline){
+        api('POST','/api/v1/agents/'+AGENT_ID+'/location',locationData).catch(()=>{});
+      } else {
+        pushOffline('log_location',{lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy,battery:bat});
+      }
+    });
+  };
+  send();
+  locationTimer = setInterval(send, 30*60*1000); // كل 30 دقيقة
+}
+
+/* ── ATTENDANCE ── */
+async function checkAttStatus(){
+  if(!isOnline) return;
+  try{
+    const r=await api('GET','/api/v1/agents/'+AGENT_ID+'/attendance');
+    if(!r.success) return;
+    const today=new Date().toISOString().slice(0,10);
+    const rec=(r.records||[]).find(x=>x.work_date===today);
+    const badge=document.getElementById('attBadge'), status=document.getElementById('attStatus');
+    if(rec&&rec.checkout_at){
+      badge.textContent='🚪 انصرف'; badge.className='badge badge-red';
+      status.textContent='انصراف: '+rec.checkout_at.slice(11,16)+' • '+rec.total_hours+' ساعة';
+    } else if(rec&&rec.checkin_at){
+      badge.textContent='✅ حاضر'; badge.className='badge badge-green';
+      status.textContent='حضور: '+rec.checkin_at.slice(11,16);
+      startTracking();
+    } else {
+      badge.textContent='⏺ غير مسجّل'; badge.className='badge badge-yellow';
+      status.textContent='لم يتم تسجيل الحضور بعد';
+    }
+  }catch{}
+}
+
+async function recordCheckin(){
+  const doCheckin=async (lat,lng)=>{
+    if(isOnline){
+      const r=await api('POST','/api/v1/agents/'+AGENT_ID+'/attendance/checkin',{latitude:lat,longitude:lng});
+      if(r.success){toast('✅ تم تسجيل الحضور'); startTracking(); checkAttStatus();}
+      else toast('⚠️ '+r.error);
+    } else {
+      pushOffline('checkin',{lat,lng});
+      toast('💾 تسجيل الحضور محفوظ أوفلاين');
+      document.getElementById('attBadge').textContent='✅ حاضر (أوفلاين)';
+      document.getElementById('attBadge').className='badge badge-green';
+      startTracking();
+    }
+  };
+  navigator.geolocation
+    ? navigator.geolocation.getCurrentPosition(p=>doCheckin(p.coords.latitude,p.coords.longitude),()=>doCheckin(null,null))
+    : doCheckin(null,null);
+}
+
+async function recordCheckout(){
+  if(!confirm('تأكيد الانصراف؟')) return;
+  const doCheckout=async (lat,lng)=>{
+    if(isOnline){
+      const r=await api('POST','/api/v1/agents/'+AGENT_ID+'/attendance/checkout',{latitude:lat,longitude:lng});
+      if(r.success){toast('🚪 انصراف — '+r.total_hours+' ساعة'); clearInterval(locationTimer); checkAttStatus();}
+      else toast('⚠️ '+r.error);
+    } else {
+      pushOffline('checkout',{lat,lng});
+      toast('💾 تسجيل الانصراف محفوظ أوفلاين');
+      document.getElementById('attBadge').textContent='🚪 انصرف (أوفلاين)';
+      document.getElementById('attBadge').className='badge badge-red';
+      clearInterval(locationTimer);
+    }
+  };
+  navigator.geolocation
+    ? navigator.geolocation.getCurrentPosition(p=>doCheckout(p.coords.latitude,p.coords.longitude),()=>doCheckout(null,null))
+    : doCheckout(null,null);
+}
+
+/* ── HOME DATA ── */
+async function loadHomeData(){
+  try{
+    const r=await api('GET','/api/v1/agents/'+AGENT_ID+'/targets');
+    if(r.success){
+      document.getElementById('targetAchieved').textContent=money(r.achieved_amount)+' ر.س';
+      document.getElementById('targetTotal').textContent='من: '+money(r.target_amount)+' ر.س';
+      const pct=Math.min(r.achievement_pct,100);
+      document.getElementById('targetFill').style.width=pct+'%';
+      document.getElementById('targetFill').className='target-bar-fill'+(r.achievement_pct>=100?' over':'');
+      document.getElementById('targetPct').textContent=r.achievement_pct+'%';
+      document.getElementById('targetBadge').textContent='🎯 '+r.achievement_pct+'% من الهدف';
+    }
+  }catch{}
+  try{
+    const r=await api('GET','/api/v1/agents/'+AGENT_ID+'/commissions/summary?days=1');
+    if(r.success){
+      document.getElementById('kpi-inv').textContent=r.summary.invoices_count||0;
+      document.getElementById('kpi-sales').textContent=money(r.summary.sales_total||r.summary.commissions_total);
+    }
+  }catch{}
+  try{
+    const r=await api('GET','/api/v1/agents/'+AGENT_ID+'/visits');
+    if(r.success){
+      const today=new Date().toISOString().slice(0,10);
+      const todayVisits=(r.visits||[]).filter(v=>(v.visited_at||'').startsWith(today));
+      document.getElementById('kpi-visits').textContent=todayVisits.length;
+    }
+  }catch{}
+  try{
+    const r=await api('GET','/api/v1/agents/'+AGENT_ID+'/reminders?days=30');
+    const wrap=document.getElementById('remindersWrap');
+    if(r.success&&r.reminders.length){
+      wrap.innerHTML=r.reminders.slice(0,5).map(rem=>`
+        <div class="reminder-item">
+          <div><div style="font-size:.83rem;font-weight:700">${esc(rem.name)}</div><div style="font-size:.7rem;color:var(--muted)">${esc(rem.phone||'')}</div></div>
+          <div class="reminder-days">${rem.days_since}ي</div>
+        </div>`).join('');
+    } else wrap.innerHTML='<div class="spinner" style="color:var(--green)">✅ جميع عملاؤك في دائرة الاهتمام</div>';
+  }catch{ document.getElementById('remindersWrap').innerHTML='' }
+}
+
+/* ── INVOICE ── */
+function initInvoice(){ if(!invLines.length) addInvLine(); loadProducts(); }
+
+function addInvLine(product=null){
+  invLines.push({product_id:product?.id||null,name:product?.name||'',price:product?.sale_price||0,qty:1});
+  renderInvLines();
+}
+function removeInvLine(i){ invLines.splice(i,1); renderInvLines(); }
+
+function renderInvLines(){
+  document.getElementById('invLines').innerHTML=invLines.map((l,i)=>`
+    <div class="inv-item-row">
+      <input class="inp" value="${esc(l.name)}" placeholder="المنتج" oninput="invLines[${i}].name=this.value">
+      <input class="inp" type="number" value="${l.qty}" min="0.01" step="0.01" oninput="invLines[${i}].qty=+this.value;calcTotal()">
+      <input class="inp" type="number" value="${l.price}" min="0" step="0.01" oninput="invLines[${i}].price=+this.value;calcTotal()">
+      <button class="btn btn-red btn-sm" style="padding:6px" onclick="removeInvLine(${i})">✕</button>
+    </div>`).join('');
+  calcTotal();
+}
+function calcTotal(){
+  document.getElementById('invTotal').textContent=money(invLines.reduce((s,l)=>s+(l.qty*l.price),0))+' ر.س';
+}
+
+async function submitInvoice(){
+  const clientName=document.getElementById('invClient').value.trim();
+  const clientPhone=document.getElementById('invPhone').value.trim();
+  const notes=document.getElementById('invNotes').value.trim();
+  if(!clientName){toast('⚠️ أدخل اسم العميل');return;}
+  const valid=invLines.filter(l=>l.name&&l.qty>0);
+  if(!valid.length){toast('⚠️ أضف منتجاً واحداً على الأقل');return;}
+  const payload={
+    client_name:clientName, client_phone:clientPhone, notes,
+    items:valid.map(l=>({product_id:l.product_id||null,description:l.name,qty:l.qty,unit_price:l.price}))
+  };
+  if(!isOnline){
+    pushOffline('create_invoice',payload);
+    // مسح الفاتورة بعد الحفظ أوفلاين
+    invLines=[]; selectedProducts={};
+    document.getElementById('invClient').value='';
+    document.getElementById('invPhone').value='';
+    document.getElementById('invNotes').value='';
+    initInvoice();
+    return;
+  }
+  try{
+    const r=await api('POST','/api/v1/agents/'+AGENT_ID+'/invoices',payload);
+    if(r.success){
+      toast('✅ فاتورة '+r.invoice_number+' — '+money(r.grand_total)+' ر.س',4000);
+      if(r.whatsapp_url) setTimeout(()=>window.open(r.whatsapp_url,'_blank'),800);
+      invLines=[]; selectedProducts={};
+      document.getElementById('invClient').value='';
+      document.getElementById('invPhone').value='';
+      document.getElementById('invNotes').value='';
+      initInvoice(); loadHomeData();
+    } else toast('❌ '+r.error);
+  }catch{
+    pushOffline('create_invoice',payload);
+    invLines=[]; selectedProducts={};
+    initInvoice();
+  }
+}
+
+/* ── PRODUCTS (Cached للأوفلاين) ── */
+const PROD_KEY = 'prod_cache_'+AGENT_ID;
+const PROD_AT_KEY = 'prod_cache_at_'+AGENT_ID;
+
+async function loadProducts(){
+  const cached = localStorage.getItem(PROD_KEY);
+  const cacheAge = (Date.now() - (+localStorage.getItem(PROD_AT_KEY)||0)) / 60000;
+  // استخدم الكاش إذا أقل من 60 دقيقة أو بدون نت
+  if(cached && (cacheAge < 60 || !isOnline)){
+    products = JSON.parse(cached);
+    return;
+  }
+  if(!isOnline) return;
+  try{
+    const r=await api('GET','/api/v1/agents/'+AGENT_ID+'/products');
+    if(r.success){
+      products=r.products;
+      localStorage.setItem(PROD_KEY, JSON.stringify(products));
+      localStorage.setItem(PROD_AT_KEY, Date.now());
+    }
+  }catch{}
+}
+
+function openProductPicker(){ renderProductGrid(products); openModal('productModal'); }
+function filterProducts(){
+  const q=document.getElementById('prodSearch').value.toLowerCase();
+  renderProductGrid(products.filter(p=>p.name.toLowerCase().includes(q)));
+}
+function renderProductGrid(list){
+  const g=document.getElementById('productGrid');
+  if(!list.length){g.innerHTML='<div class="spinner">لا توجد منتجات</div>';return;}
+  g.innerHTML=list.map(p=>`
+    <div class="product-card ${selectedProducts[p.id]?'selected':''}" onclick="toggleProduct(${p.id})">
+      <div class="product-name">${esc(p.name)}</div>
+      <div class="product-price">${money(p.sale_price)} ر.س</div>
+      <div class="product-stock">مخزون: ${p.stock_qty||0}</div>
+    </div>`).join('');
+}
+function toggleProduct(pid){
+  const prod=products.find(p=>p.id===pid); if(!prod) return;
+  if(selectedProducts[pid]){
+    delete selectedProducts[pid];
+    const idx=invLines.findIndex(l=>l.product_id===pid);
+    if(idx>-1) invLines.splice(idx,1);
+  } else {
+    selectedProducts[pid]={...prod};
+    invLines.push({product_id:pid,name:prod.name,price:prod.sale_price,qty:1});
+  }
+  const q=document.getElementById('prodSearch').value.toLowerCase();
+  renderProductGrid(products.filter(p=>!q||p.name.toLowerCase().includes(q)));
+  renderInvLines();
+}
+
+/* ── CLIENTS ── */
+async function loadClients(){
+  if(!isOnline){
+    const cached=localStorage.getItem('clients_'+AGENT_ID);
+    if(cached){ allClients=JSON.parse(cached); renderClients(allClients); }
+    return;
+  }
+  try{
+    const r=await api('GET','/api/v1/agents/'+AGENT_ID+'/client-profiles');
+    if(r.success){
+      allClients=r.profiles||[];
+      localStorage.setItem('clients_'+AGENT_ID, JSON.stringify(allClients));
+      renderClients(allClients);
+    }
+  }catch{}
+}
+function filterClients(){
+  const q=document.getElementById('clientSearch').value.toLowerCase();
+  renderClients(allClients.filter(c=>c.company_name.toLowerCase().includes(q)||(c.region||'').toLowerCase().includes(q)));
+}
+function renderClients(list){
+  const w=document.getElementById('clientsList');
+  if(!list.length){w.innerHTML='<div class="spinner">لا توجد منشآت</div>';return;}
+  w.innerHTML=list.map(c=>`
+    <div class="list-item" onclick="viewClient(${c.contact_id||0},'${esc(c.company_name)}')">
+      <div class="list-item-info">
+        <div class="list-item-title">🏢 ${esc(c.company_name)}</div>
+        <div class="list-item-sub">${esc(c.manager_name||'')}${c.region?' • '+esc(c.region):''}</div>
+      </div>
+      <div class="list-item-right" style="font-size:.75rem;color:var(--accent)">${esc(c.phone||'')}</div>
+    </div>`).join('');
+}
+
+async function viewClient(contactId,name){
+  if(!contactId) return;
+  document.getElementById('cdTitle').textContent=name;
+  document.getElementById('cdBody').innerHTML='<div class="spinner">جارٍ التحميل...</div>';
+  openModal('clientDetailModal');
+  if(!isOnline){document.getElementById('cdBody').innerHTML='<div class="spinner">📵 لا يتوفر اتصال</div>';return;}
+  try{
+    const r=await api('GET','/api/v1/agents/'+AGENT_ID+'/customers/'+contactId+'/history');
+    if(!r.success){document.getElementById('cdBody').innerHTML='<div class="spinner">خطأ</div>';return;}
+    const last=r.last_invoice;
+    document.getElementById('cdBody').innerHTML=`
+      <div class="kpi-grid" style="margin-bottom:12px">
+        <div class="kpi"><b>${money(r.total_spend)}</b><span>إجمالي المشتريات</span></div>
+        <div class="kpi"><b>${r.invoices.length}</b><span>فواتير</span></div>
+        <div class="kpi"><b>${r.visits.length}</b><span>زيارات</span></div>
+      </div>
+      ${last?`<div class="card" style="margin-bottom:10px"><div class="card-title">🧾 آخر فاتورة</div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-size:.82rem">${esc(last.invoice_number)}</span>
+          <span style="color:var(--green);font-weight:700">${money(last.total)} ر.س</span>
+        </div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:4px">${esc(last.invoice_date)} • ${esc(last.status)}</div>
+      </div>`:''}
+      ${r.invoices.slice(0,5).map(i=>`
+        <div class="list-item">
+          <div class="list-item-info"><div class="list-item-title">${esc(i.invoice_number)}</div><div class="list-item-sub">${esc(i.invoice_date)}</div></div>
+          <div class="list-item-right"><div class="list-item-amount">${money(i.total)} ر.س</div></div>
+        </div>`).join('')}`;
+  }catch{ document.getElementById('cdBody').innerHTML='<div class="spinner">خطأ في الاتصال</div>'; }
+}
+
+async function saveNewClient(){
+  const company=document.getElementById('ncCompany').value.trim();
+  if(!company){toast('⚠️ اسم المنشأة مطلوب');return;}
+  const payload={
+    company_name:company,
+    manager_name:document.getElementById('ncManager').value.trim(),
+    phone:document.getElementById('ncPhone').value.trim(),
+    region:document.getElementById('ncRegion').value.trim(),
+    address:document.getElementById('ncAddress').value.trim(),
+    notes:document.getElementById('ncNotes').value.trim()
+  };
+  if(!isOnline){
+    pushOffline('add_client',payload);
+    allClients.push({...payload, id:Date.now()}); // محلياً
+    localStorage.setItem('clients_'+AGENT_ID, JSON.stringify(allClients));
+    renderClients(allClients);
+    closeModal('addClientModal');
+    ['ncCompany','ncManager','ncPhone','ncRegion','ncAddress','ncNotes'].forEach(id=>document.getElementById(id).value='');
+    return;
+  }
+  const r=await api('POST','/api/v1/agents/'+AGENT_ID+'/client-profiles',payload);
+  if(r.success){
+    toast('✅ تم إضافة المنشأة');
+    closeModal('addClientModal');
+    ['ncCompany','ncManager','ncPhone','ncRegion','ncAddress','ncNotes'].forEach(id=>document.getElementById(id).value='');
+    loadClients();
+  } else toast('❌ '+r.error);
+}
+
+/* ── VISITS ── */
+function toggleRejField(){
+  document.getElementById('visitRejReason').style.display=document.getElementById('visitOutcome').value==='rejected'?'block':'none';
+}
+
+async function submitVisit(){
+  const payload={
+    visit_type:document.getElementById('visitType').value,
+    outcome:document.getElementById('visitOutcome').value,
+    notes:document.getElementById('visitNotes').value.trim(),
+    rejection_reason:document.getElementById('visitRejReason').value.trim()||null
+  };
+  const doIt=async (lat,lng)=>{
+    if(lat){payload.lat=lat;payload.lng=lng;}
+    if(!isOnline){
+      pushOffline('log_visit',payload);
+      ['visitNotes','visitClient','visitRejReason'].forEach(id=>document.getElementById(id).value='');
+      return;
+    }
+    const r=await api('POST','/api/v1/agents/'+AGENT_ID+'/visits',payload);
+    if(r.success){
+      toast('✅ تم تسجيل الزيارة');
+      ['visitNotes','visitClient','visitRejReason'].forEach(id=>document.getElementById(id).value='');
+      loadVisits();
+    } else toast('❌ '+r.error);
+  };
+  navigator.geolocation
+    ? navigator.geolocation.getCurrentPosition(p=>doIt(p.coords.latitude,p.coords.longitude),()=>doIt(null,null))
+    : doIt(null,null);
+}
+
+async function loadVisits(){
+  if(!isOnline) return;
+  try{
+    const r=await api('GET','/api/v1/agents/'+AGENT_ID+'/visits');
+    if(!r.success) return;
+    document.getElementById('visitsList').innerHTML=r.visits.length ? r.visits.map(v=>`
+      <div class="list-item">
+        <div class="list-item-info">
+          <div class="list-item-title">${v.contact_name?esc(v.contact_name):(v.notes?esc(v.notes.slice(0,30)):'زيارة')}</div>
+          <div class="list-item-sub">${esc((v.visited_at||'').slice(0,16).replace('T',' '))}</div>
+          ${v.notes?`<div style="font-size:.72rem;color:var(--muted);margin-top:3px">${esc(v.notes.slice(0,60))}</div>`:''}
+        </div>
+        <div class="list-item-right">
+          <span class="visit-outcome outcome-${v.outcome}">
+            ${{sale:'بيع ✅',interested:'مهتم 👍',rejected:'رفض ❌',neutral:'محايد 😐'}[v.outcome]||v.outcome}
+          </span>
+        </div>
+      </div>`).join('')
+      : '<div class="spinner">لا توجد زيارات مسجّلة</div>';
+  }catch{}
+}
+
+/* ── OFFERS ── */
+async function generateOfferLinks(){
+  const msg=document.getElementById('offerMsg').value.trim();
+  if(!msg){toast('⚠️ اكتب نص العرض');return;}
+  if(!isOnline){toast('📵 إرسال العروض يحتاج اتصالاً');return;}
+  const r=await api('POST','/api/v1/agents/'+AGENT_ID+'/send-offer',{message:msg});
+  const wrap=document.getElementById('offerResult');
+  if(r.success){
+    wrap.innerHTML=`<div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">${r.count} عميل:</div>`+
+      r.links.slice(0,20).map(l=>`<a href="${l.whatsapp_url}" target="_blank"
+        style="display:block;padding:8px 12px;margin-bottom:6px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:10px;color:#4ade80;text-decoration:none;font-size:.82rem">
+        📤 ${esc(l.contact_name)}</a>`).join('');
+  } else toast('❌ '+r.error);
+}
+
+async function submitDraftOrder(){
+  const client=document.getElementById('draftClient').value.trim();
+  const items=document.getElementById('draftItems').value.trim();
+  const total=parseFloat(document.getElementById('draftTotal').value)||0;
+  const notes=document.getElementById('draftNotes').value.trim();
+  if(!client||!items){toast('⚠️ أدخل العميل والمنتجات');return;}
+  const payload={client_name:client,items:[{description:items,qty:1,unit_price:total}],notes};
+  if(!isOnline){
+    pushOffline('draft_order',payload);
+    ['draftClient','draftItems','draftTotal','draftNotes'].forEach(id=>document.getElementById(id).value='');
+    return;
+  }
+  const r=await api('POST','/api/v1/agents/'+AGENT_ID+'/draft-orders',payload);
+  if(r.success){
+    toast('📨 تم إرسال الطلب للأدمن');
+    ['draftClient','draftItems','draftTotal','draftNotes'].forEach(id=>document.getElementById(id).value='');
+  } else pushOffline('draft_order',payload);
+}
+
+/* ── COLLECTION ── */
+async function submitCollection(){
+  const amount=parseFloat(document.getElementById('colAmount').value);
+  if(!amount||amount<=0){toast('⚠️ أدخل المبلغ');return;}
+  const payload={
+    amount,
+    payment_method:document.getElementById('colMethod').value,
+    notes:document.getElementById('colNotes').value.trim()||null
+  };
+  if(!isOnline){
+    pushOffline('collect_payment',payload);
+    ['colClient','colAmount','colNotes'].forEach(id=>document.getElementById(id).value='');
+    return;
+  }
+  const r=await api('POST','/api/v1/agents/'+AGENT_ID+'/collect-payment',payload);
+  if(r.success){
+    toast('✅ تم التسجيل — انتظر تأكيد الأدمن');
+    ['colClient','colAmount','colNotes'].forEach(id=>document.getElementById(id).value='');
+  } else toast('❌ '+r.error);
+}
+
+/* ── LOGOUT ── */
+async function agentLogout(){
+  if(!confirm('تأكيد تسجيل الخروج؟')) return;
+  const q = getQ();
+  if(q.length > 0){
+    if(!confirm('لديك ' + q.length + ' طلب غير مزامن. هل تريد المزامنة قبل الخروج؟')){
+      window.location.href='/agent/logout';
+      return;
+    }
+    await syncQ();
+  }
+  window.location.href='/agent/logout';
+}
+
+/* ── INIT ── */
+(async()=>{
+  updateNet();
+  await initBattery();
+  await loadProducts();
+  await checkAttStatus();
+  await loadHomeData();
+  // مزامنة تلقائية كل دقيقة
+  setInterval(()=>{ if(isOnline) syncQ(); }, 60000);
+  // مزامنة عند العودة للتبويب
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden && isOnline) syncQ();
+  });
+})();
+</script>
 
 /* ── TABS ── */
 function switchTab(name,btn){

@@ -7,9 +7,9 @@ import json
 from datetime import datetime, timedelta
 from urllib.parse import quote
 
-from flask import Blueprint, jsonify, render_template, request, session
+from flask import Blueprint, jsonify, redirect, render_template, request, session, url_for
 
-from modules.extensions import get_db
+from modules.extensions import check_password, get_db, hash_password
 from modules.middleware import onboarding_required, require_perm
 from modules.validators import (
     SCHEMA_AGENT_CREATE,
@@ -20,6 +20,111 @@ from modules.validators import (
 )
 
 bp = Blueprint("workforce", __name__)
+
+# Rate limiting for agent login
+_agent_login_attempts: dict = {}
+_AGENT_MAX_ATTEMPTS = 5
+_AGENT_WINDOW_SEC = 300  # 5 minutes
+
+
+# ─────────────────────────────────────────────────────────────
+# بوابة تسجيل الدخول المستقلة للمندوب
+# ─────────────────────────────────────────────────────────────
+@bp.route("/agent/login", methods=["GET", "POST"])
+def agent_login():
+    """صفحة تسجيل الدخول المستقلة للمندوب — بدون أي auth مطلوب"""
+    if session.get("agent_id"):
+        return redirect(url_for("workforce.agent_portal"))
+
+    if request.method == "POST":
+        ip  = request.remote_addr or "unknown"
+        now = datetime.now().timestamp()
+        _agent_login_attempts.setdefault(ip, [])
+        _agent_login_attempts[ip] = [t for t in _agent_login_attempts[ip] if now - t < _AGENT_WINDOW_SEC]
+        if len(_agent_login_attempts[ip]) >= _AGENT_MAX_ATTEMPTS:
+            error = "تم تجاوز الحد المسموح من المحاولات. انتظر 5 دقائق."
+            return render_template("agent_login.html", error=error)
+
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+
+        if not username or not password:
+            return render_template("agent_login.html", error="يرجى إدخال اسم المستخدم وكلمة المرور")
+
+        db = get_db()
+        agent = db.execute(
+            """SELECT a.*, b.name AS business_name
+               FROM agents a
+               JOIN businesses b ON b.id = a.business_id
+               WHERE a.username = ? AND a.is_active = 1""",
+            (username,),
+        ).fetchone()
+
+        if not agent or not agent["password_hash"] or not check_password(agent["password_hash"], password):
+            _agent_login_attempts[ip].append(now)
+            return render_template("agent_login.html", error="اسم المستخدم أو كلمة المرور غير صحيحة")
+
+        _agent_login_attempts.pop(ip, None)
+        session.clear()
+        session["agent_id"]      = agent["id"]
+        session["agent_biz_id"]  = agent["business_id"]
+        session["agent_name"]    = agent["full_name"]
+        session.permanent        = True
+
+        db.execute("UPDATE agents SET last_login=datetime('now') WHERE id=?", (agent["id"],))
+        db.commit()
+        return redirect(url_for("workforce.agent_portal"))
+
+    return render_template("agent_login.html", error=None)
+
+
+@bp.route("/agent/portal")
+def agent_portal():
+    """بوابة المندوب — تتطلب session مندوب"""
+    agent_id = session.get("agent_id")
+    if not agent_id:
+        return redirect(url_for("workforce.agent_login"))
+
+    db      = get_db()
+    biz_id  = session["agent_biz_id"]
+    agent   = db.execute(
+        """SELECT a.*, b.name AS business_name
+           FROM agents a
+           JOIN businesses b ON b.id = a.business_id
+           WHERE a.id=? AND a.business_id=? AND a.is_active=1""",
+        (agent_id, biz_id),
+    ).fetchone()
+    if not agent:
+        session.clear()
+        return redirect(url_for("workforce.agent_login"))
+
+    return render_template("agent_mobile.html", agent=dict(agent))
+
+
+@bp.route("/agent/logout", methods=["POST", "GET"])
+def agent_logout():
+    """تسجيل خروج المندوب"""
+    session.pop("agent_id",     None)
+    session.pop("agent_biz_id", None)
+    session.pop("agent_name",   None)
+    return redirect(url_for("workforce.agent_login"))
+
+
+@bp.route("/api/v1/agent/me")
+def agent_api_me():
+    """API — بيانات المندوب الحالي (للـ PWA)"""
+    agent_id = session.get("agent_id")
+    if not agent_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    db    = get_db()
+    biz   = session["agent_biz_id"]
+    agent = db.execute(
+        "SELECT id, full_name, phone, commission_rate, region, employee_code FROM agents WHERE id=? AND business_id=?",
+        (agent_id, biz),
+    ).fetchone()
+    if not agent:
+        return jsonify({"success": False, "error": "not found"}), 404
+    return jsonify({"success": True, "agent": dict(agent)})
 
 
 # ─────────────────────────────────────────────────────────────
@@ -245,6 +350,73 @@ def api_v1_agents_list():
         (biz_id,),
     ).fetchall()
     return jsonify({"success": True, "agents": [dict(r) for r in rows]})
+
+
+@bp.route("/api/v1/agents/<int:agent_id>/set-credentials", methods=["POST"])
+@onboarding_required
+def api_agent_set_credentials(agent_id: int):
+    """تعيين اسم المستخدم وكلمة المرور للمندوب من قِبل الأدمن"""
+    biz_id  = session["business_id"]
+    payload = request.get_json(force=True) or {}
+    username = (payload.get("username") or "").strip()
+    password = (payload.get("password") or "").strip()
+
+    if not username:
+        return jsonify({"success": False, "error": "اسم المستخدم مطلوب"}), 400
+    if len(username) < 3:
+        return jsonify({"success": False, "error": "اسم المستخدم 3 أحرف على الأقل"}), 400
+
+    db = get_db()
+    agent = db.execute(
+        "SELECT id FROM agents WHERE id=? AND business_id=?", (agent_id, biz_id)
+    ).fetchone()
+    if not agent:
+        return jsonify({"success": False, "error": "المندوب غير موجود"}), 404
+
+    # Check username uniqueness (exclude current agent)
+    conflict = db.execute(
+        "SELECT id FROM agents WHERE username=? AND id != ?", (username, agent_id)
+    ).fetchone()
+    if conflict:
+        return jsonify({"success": False, "error": "اسم المستخدم مستخدم بالفعل"}), 409
+
+    if password:
+        # Change password too
+        if len(password) < 6:
+            return jsonify({"success": False, "error": "كلمة المرور 6 أحرف على الأقل"}), 400
+        hashed = hash_password(password)
+        db.execute(
+            "UPDATE agents SET username=?, password_hash=? WHERE id=? AND business_id=?",
+            (username, hashed, agent_id, biz_id),
+        )
+    else:
+        # Update username only
+        db.execute(
+            "UPDATE agents SET username=? WHERE id=? AND business_id=?",
+            (username, agent_id, biz_id),
+        )
+    db.commit()
+    return jsonify({"success": True, "message": "تم تحديث بيانات الدخول"})
+
+
+@bp.route("/api/v1/agents/<int:agent_id>/credentials", methods=["GET"])
+@onboarding_required
+def api_agent_get_credentials(agent_id: int):
+    """جلب اسم المستخدم للمندوب (بدون كلمة المرور)"""
+    biz_id = session["business_id"]
+    db     = get_db()
+    row    = db.execute(
+        "SELECT username, last_login FROM agents WHERE id=? AND business_id=?",
+        (agent_id, biz_id),
+    ).fetchone()
+    if not row:
+        return jsonify({"success": False}), 404
+    return jsonify({
+        "success":    True,
+        "username":   row["username"],
+        "last_login": row["last_login"],
+        "has_password": bool(row["username"]),
+    })
 
 
 @bp.route("/api/v1/agents", methods=["POST"])
@@ -916,56 +1088,235 @@ def api_v1_agent_create_invoice(agent_id: int):
 #  مزامنة أوفلاين (Offline Sync Queue)
 # ═══════════════════════════════════════════════════════════════
 
+def _get_agent_biz(agent_id: int) -> tuple:
+    """يُعيد (db, biz_id) مع دعم كلا النوعين من الجلسة: admin أو agent"""
+    db = get_db()
+    if session.get("agent_id") == agent_id:
+        return db, session["agent_biz_id"]
+    if session.get("business_id"):
+        return db, session["business_id"]
+    return db, None
+
+
 @bp.route("/api/v1/agents/<int:agent_id>/sync", methods=["POST"])
-@onboarding_required
 def api_v1_agent_sync(agent_id: int):
-    """استقبال الإجراءات المحفوظة أوفلاين ومعالجتها"""
+    """مزامنة الطلبات المحفوظة أوفلاين — يعالجها فعلياً: فواتير، زيارات، تحصيل، حضور، موقع"""
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+
     payload = request.get_json(force=True) or {}
-    queue = payload.get("queue", [])
+    queue   = payload.get("queue", [])
     if not queue:
         return jsonify({"success": True, "processed": 0})
 
-    db = get_db()
-    biz_id = session["business_id"]
-    results = []
+    results   = []
     processed = 0
+    from urllib.parse import quote as _quote
 
     for item in queue:
-        action = item.get("action_type", "")
-        item_payload = item.get("payload", {})
-        local_id = item.get("local_id")
+        action      = item.get("action_type", "")
+        p           = item.get("payload", {})
+        local_id    = item.get("local_id")
 
-        # تسجيل في قائمة الانتظار
+        # تسجيل في جدول المزامنة
         db.execute(
             """INSERT INTO agent_sync_queue (business_id, agent_id, action_type, payload_json, status)
-               VALUES (?,?,?,?,'pending')""",
-            (biz_id, agent_id, action, json.dumps(item_payload, ensure_ascii=False)),
+               VALUES (?,?,?,?,'processing')""",
+            (biz_id, agent_id, action, json.dumps(p, ensure_ascii=False)),
         )
         sq_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
 
         try:
+            # ─── إنشاء فاتورة ──────────────────────────────────────────
             if action == "create_invoice":
-                # إعادة استخدام منطق إنشاء الفاتورة
-                request._cached_json = (item_payload, False)  # patch مؤقت
-                # تسجيل بسيط بدون call داخلية
+                items    = p.get("items", [])
+                if not items:
+                    raise ValueError("لا توجد أصناف في الفاتورة")
+                now_str  = datetime.now().isoformat(timespec="seconds")
+                inv_num  = f"AGT-{datetime.now().strftime('%Y%m%d%H%M%S')}-{agent_id}"
+                grand    = sum(float(i.get("qty",1))*float(i.get("unit_price",0)) for i in items)
+
                 db.execute(
-                    "UPDATE agent_sync_queue SET status='done', synced_at=datetime('now') WHERE id=?",
-                    (sq_id,),
+                    """INSERT INTO invoices
+                       (business_id, invoice_number, invoice_date, due_date, status,
+                        contact_id, notes, subtotal, tax_amount, total_amount, created_by_type, created_by_id)
+                       VALUES (?,?,date('now'),date('now','+30 days'),'unpaid',?,?,?,0,?,'agent',?)""",
+                    (biz_id, inv_num,
+                     p.get("contact_id") or None,
+                     (p.get("client_name","") + " - " + p.get("notes","")).strip(" -") or None,
+                     grand, grand, agent_id),
                 )
-                results.append({"local_id": local_id, "status": "queued", "sq_id": sq_id})
-            else:
+                inv_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+                for i in items:
+                    qty   = float(i.get("qty",1))
+                    price = float(i.get("unit_price",0))
+                    db.execute(
+                        """INSERT INTO invoice_items (invoice_id, product_id, description, qty, unit_price, total)
+                           VALUES (?,?,?,?,?,?)""",
+                        (inv_id, i.get("product_id"), i.get("description","").strip() or None,
+                         qty, price, round(qty*price,2)),
+                    )
+                    if i.get("product_id"):
+                        db.execute(
+                            """UPDATE products SET stock_qty = MAX(0, stock_qty - ?)
+                               WHERE id=? AND business_id=?""",
+                            (qty, i["product_id"], biz_id),
+                        )
+                        db.execute(
+                            """INSERT INTO inventory_movements
+                               (business_id, product_id, movement_type, quantity, reference_type, reference_id, notes)
+                               VALUES (?,?,'out',?,?,'invoice',?,?)""",
+                            (biz_id, i["product_id"], qty, "invoice", inv_id,
+                             f"مبيعات مندوب #{agent_id} — أوفلاين"),
+                        )
+
+                # عمولة
+                ag = db.execute("SELECT commission_rate FROM agents WHERE id=? AND business_id=?",
+                                (agent_id, biz_id)).fetchone()
+                if ag and float(ag["commission_rate"] or 0) > 0:
+                    rate  = float(ag["commission_rate"])
+                    comm  = round(grand * rate / 100, 2)
+                    db.execute(
+                        """INSERT INTO agent_commissions
+                           (business_id, agent_id, invoice_id, invoice_total, commission_rate, commission_amount, status)
+                           VALUES (?,?,?,?,?,?,'pending')""",
+                        (biz_id, agent_id, inv_id, grand, rate, comm),
+                    )
                 db.execute(
-                    "UPDATE agent_sync_queue SET status='done', synced_at=datetime('now') WHERE id=?",
-                    (sq_id,),
+                    "INSERT OR IGNORE INTO agent_invoice_links (business_id, agent_id, invoice_id) VALUES (?,?,?)",
+                    (biz_id, agent_id, inv_id),
+                )
+                results.append({"local_id": local_id, "status": "done",
+                                 "invoice_id": inv_id, "invoice_number": inv_num})
+
+            # ─── تسجيل زيارة ──────────────────────────────────────────
+            elif action == "log_visit":
+                db.execute(
+                    """INSERT INTO agent_visits
+                       (business_id, agent_id, contact_id, client_profile_id, visit_type,
+                        outcome, notes, rejection_reason, lat, lng)
+                       VALUES (?,?,?,?,?,?,?,?,?,?)""",
+                    (biz_id, agent_id,
+                     p.get("contact_id"), p.get("client_profile_id"),
+                     p.get("visit_type","visit"), p.get("outcome","neutral"),
+                     p.get("notes","").strip() or None,
+                     p.get("rejection_reason","").strip() or None,
+                     p.get("lat"), p.get("lng")),
                 )
                 results.append({"local_id": local_id, "status": "done"})
+
+            # ─── تحصيل دفعة ───────────────────────────────────────────
+            elif action == "collect_payment":
+                amt = float(p.get("amount",0))
+                if amt <= 0:
+                    raise ValueError("مبلغ التحصيل غير صالح")
+                db.execute(
+                    """INSERT INTO agent_collections
+                       (business_id, agent_id, contact_id, invoice_id, amount,
+                        payment_method, notes, collected_at, confirmed)
+                       VALUES (?,?,?,?,?,?,?,datetime('now'),0)""",
+                    (biz_id, agent_id,
+                     p.get("contact_id"), p.get("invoice_id"),
+                     amt, p.get("payment_method","cash"),
+                     p.get("notes","").strip() or None),
+                )
+                results.append({"local_id": local_id, "status": "done"})
+
+            # ─── تسجيل حضور ───────────────────────────────────────────
+            elif action == "checkin":
+                today = datetime.now().strftime("%Y-%m-%d")
+                existing = db.execute(
+                    "SELECT id FROM agent_attendance WHERE agent_id=? AND work_date=?",
+                    (agent_id, today),
+                ).fetchone()
+                if not existing:
+                    db.execute(
+                        """INSERT INTO agent_attendance
+                           (business_id, agent_id, work_date, checkin_at, checkin_lat, checkin_lng)
+                           VALUES (?,?,?,datetime('now'),?,?)""",
+                        (biz_id, agent_id, today,
+                         p.get("lat"), p.get("lng")),
+                    )
+                results.append({"local_id": local_id, "status": "done"})
+
+            # ─── تسجيل انصراف ─────────────────────────────────────────
+            elif action == "checkout":
+                rec = db.execute(
+                    "SELECT id, checkin_at FROM agent_attendance WHERE agent_id=? AND work_date=date('now')",
+                    (agent_id,),
+                ).fetchone()
+                if rec:
+                    now_ts = datetime.now()
+                    ci     = datetime.fromisoformat(rec["checkin_at"].replace("Z",""))
+                    hours  = round((now_ts - ci).total_seconds() / 3600, 2)
+                    db.execute(
+                        """UPDATE agent_attendance
+                           SET checkout_at=datetime('now'), checkout_lat=?, checkout_lng=?, total_hours=?
+                           WHERE id=?""",
+                        (p.get("lat"), p.get("lng"), hours, rec["id"]),
+                    )
+                results.append({"local_id": local_id, "status": "done"})
+
+            # ─── موقع GPS ─────────────────────────────────────────────
+            elif action == "log_location":
+                db.execute(
+                    """INSERT INTO agent_locations
+                       (business_id, agent_id, latitude, longitude, accuracy, battery, recorded_at)
+                       VALUES (?,?,?,?,?,?,datetime('now'))""",
+                    (biz_id, agent_id,
+                     p.get("lat"), p.get("lng"),
+                     p.get("accuracy"), p.get("battery")),
+                )
+                results.append({"local_id": local_id, "status": "done"})
+
+            # ─── إضافة عميل ───────────────────────────────────────────
+            elif action == "add_client":
+                db.execute(
+                    """INSERT INTO agent_client_profiles
+                       (business_id, agent_id, company_name, manager_name, phone, region, address, notes, is_active)
+                       VALUES (?,?,?,?,?,?,?,?,1)""",
+                    (biz_id, agent_id,
+                     p.get("company_name","").strip(),
+                     p.get("manager_name","").strip() or None,
+                     p.get("phone","").strip() or None,
+                     p.get("region","").strip() or None,
+                     p.get("address","").strip() or None,
+                     p.get("notes","").strip() or None),
+                )
+                results.append({"local_id": local_id, "status": "done"})
+
+            # ─── طلب مسودة ────────────────────────────────────────────
+            elif action == "draft_order":
+                db.execute(
+                    """INSERT INTO agent_draft_orders
+                       (business_id, agent_id, contact_id, client_name, items_json, total, notes, status)
+                       VALUES (?,?,?,?,?,?,?,'pending')""",
+                    (biz_id, agent_id,
+                     p.get("contact_id"),
+                     p.get("client_name","").strip() or None,
+                     json.dumps(p.get("items",[]), ensure_ascii=False),
+                     float(p.get("total",0)),
+                     p.get("notes","").strip() or None),
+                )
+                results.append({"local_id": local_id, "status": "done"})
+
+            else:
+                results.append({"local_id": local_id, "status": "skipped", "reason": f"action '{action}' unknown"})
+
+            db.execute(
+                "UPDATE agent_sync_queue SET status='done', synced_at=datetime('now') WHERE id=?",
+                (sq_id,),
+            )
             processed += 1
-        except Exception as e:
+
+        except Exception as exc:
             db.execute(
                 "UPDATE agent_sync_queue SET status='failed', error_msg=? WHERE id=?",
-                (str(e), sq_id),
+                (str(exc), sq_id),
             )
-            results.append({"local_id": local_id, "status": "failed", "error": str(e)})
+            results.append({"local_id": local_id, "status": "failed", "error": str(exc)})
 
     db.commit()
     return jsonify({"success": True, "processed": processed, "results": results})
@@ -976,11 +1327,11 @@ def api_v1_agent_sync(agent_id: int):
 # ═══════════════════════════════════════════════════════════════
 
 @bp.route("/api/v1/agents/<int:agent_id>/products")
-@onboarding_required
 def api_v1_agent_products(agent_id: int):
     """جلب كاتالوج المنتجات مع المخزون — للحفظ أوفلاين"""
-    db = get_db()
-    biz_id = session["business_id"]
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
     rows = db.execute(
         """SELECT p.id, p.name, p.sku, p.sale_price, p.stock_qty,
                   pc.name AS category_name,
