@@ -6,7 +6,7 @@ import secrets
 from datetime import datetime, timedelta
 
 from flask import (
-    Blueprint, flash, g, redirect, render_template,
+    Blueprint, flash, g, jsonify, redirect, render_template,
     request, send_from_directory, session, url_for
 )
 
@@ -15,10 +15,11 @@ from modules.config import (
     LOGO_FOLDER, STUB_PAGES
 )
 from modules.extensions import (
-    csrf_protect, get_db, seed_business_accounts
+    csrf_protect, get_db, seed_business_accounts, hash_password
 )
 from modules.middleware import (
-    login_required, onboarding_required, require_perm, user_has_perm
+    login_required, onboarding_required, require_perm, user_has_perm,
+    owner_required
 )
 from modules.terminology import get_terms
 
@@ -514,6 +515,289 @@ def settings():
 @bp.route("/offline")
 def offline():
     return render_template("offline.html")
+
+
+# ─── Team Management ──────────────────────────────────────────────────────────
+
+# الصلاحيات المتاحة في النظام مع تسمياتها
+PERM_LABELS = {
+    "sales":      "المبيعات والفواتير",
+    "purchases":  "المشتريات",
+    "warehouse":  "المخزون والباركود",
+    "contacts":   "العملاء والموردين",
+    "pos":        "نقطة البيع",
+    "accounting": "المحاسبة والقيود",
+    "reports":    "التقارير",
+    "analytics":  "تحليل المبيعات",
+    "settings":   "الإعدادات",
+}
+
+
+@bp.route("/team")
+@owner_required
+def team():
+    db     = get_db()
+    biz_id = session["business_id"]
+    roles  = db.execute(
+        "SELECT * FROM roles WHERE business_id=? ORDER BY name", (biz_id,)
+    ).fetchall()
+    members = db.execute(
+        """SELECT u.id, u.full_name, u.username, u.phone, u.is_active,
+                  u.last_login, r.name AS role_name, r.permissions AS role_perms
+           FROM users u
+           LEFT JOIN roles r ON r.id = u.role_id
+           WHERE u.business_id=?
+           ORDER BY u.full_name""",
+        (biz_id,)
+    ).fetchall()
+    return render_template(
+        "team.html",
+        roles=[dict(r) for r in roles],
+        members=[dict(m) for m in members],
+        perm_labels=PERM_LABELS,
+        csrf_token=session.get("csrf_token", ""),
+    )
+
+
+# ── API: قائمة الأعضاء ────────────────────────────────────────────────────────
+@bp.route("/api/v1/team", methods=["GET"])
+@owner_required
+def api_team_list():
+    db     = get_db()
+    biz_id = session["business_id"]
+    rows = db.execute(
+        """SELECT u.id, u.full_name, u.username, u.phone, u.is_active,
+                  u.last_login, r.id AS role_id, r.name AS role_name,
+                  r.permissions AS role_perms
+           FROM users u
+           LEFT JOIN roles r ON r.id = u.role_id
+           WHERE u.business_id=?
+           ORDER BY u.full_name""",
+        (biz_id,)
+    ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+# ── API: إضافة عضو جديد ───────────────────────────────────────────────────────
+@bp.route("/api/v1/team", methods=["POST"])
+@owner_required
+def api_team_add():
+    db     = get_db()
+    biz_id = session["business_id"]
+    data   = request.get_json(silent=True) or {}
+
+    full_name = (data.get("full_name") or "").strip()
+    username  = (data.get("username")  or "").strip()
+    password  = (data.get("password")  or "").strip()
+    phone     = (data.get("phone")     or "").strip()
+    role_id   = data.get("role_id")
+
+    if not full_name or not username or not password:
+        return jsonify({"error": "الاسم واسم المستخدم وكلمة المرور مطلوبة"}), 400
+    if len(password) < 6:
+        return jsonify({"error": "كلمة المرور يجب أن تكون 6 أحرف على الأقل"}), 400
+
+    existing = db.execute(
+        "SELECT id FROM users WHERE business_id=? AND username=?", (biz_id, username)
+    ).fetchone()
+    if existing:
+        return jsonify({"error": "اسم المستخدم موجود مسبقاً"}), 409
+
+    # التحقق أن role_id تابع لنفس المنشأة
+    if role_id:
+        role_row = db.execute(
+            "SELECT id FROM roles WHERE id=? AND business_id=?", (role_id, biz_id)
+        ).fetchone()
+        if not role_row:
+            role_id = None
+
+    # إذا لم يُعطَ role_id، ننشئ دوراً مؤقتاً بدون صلاحيات
+    if not role_id:
+        db.execute(
+            "INSERT INTO roles (business_id, name, permissions) VALUES (?,?,?)",
+            (biz_id, f"دور {full_name}", "{}")
+        )
+        db.commit()
+        role_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+    pw_hash = hash_password(password)
+    try:
+        db.execute(
+            """INSERT INTO users (business_id, role_id, username, full_name, phone, password_hash)
+               VALUES (?,?,?,?,?,?)""",
+            (biz_id, role_id, username, full_name, phone, pw_hash)
+        )
+        db.commit()
+        new_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+        return jsonify({"success": True, "id": new_id})
+    except Exception as e:
+        db.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+# ── API: تعديل بيانات عضو ────────────────────────────────────────────────────
+@bp.route("/api/v1/team/<int:user_id>", methods=["PUT"])
+@owner_required
+def api_team_update(user_id: int):
+    db     = get_db()
+    biz_id = session["business_id"]
+
+    row = db.execute(
+        "SELECT id FROM users WHERE id=? AND business_id=?", (user_id, biz_id)
+    ).fetchone()
+    if not row:
+        return jsonify({"error": "المستخدم غير موجود"}), 404
+
+    data      = request.get_json(silent=True) or {}
+    full_name = (data.get("full_name") or "").strip()
+    phone     = (data.get("phone")     or "").strip()
+    role_id   = data.get("role_id")
+    is_active = int(bool(data.get("is_active", True)))
+    new_pw    = (data.get("password") or "").strip()
+
+    if not full_name:
+        return jsonify({"error": "الاسم مطلوب"}), 400
+
+    if role_id:
+        role_row = db.execute(
+            "SELECT id FROM roles WHERE id=? AND business_id=?", (role_id, biz_id)
+        ).fetchone()
+        if not role_row:
+            role_id = None
+
+    if new_pw:
+        if len(new_pw) < 6:
+            return jsonify({"error": "كلمة المرور يجب أن تكون 6 أحرف على الأقل"}), 400
+        pw_hash = hash_password(new_pw)
+        db.execute(
+            "UPDATE users SET full_name=?, phone=?, role_id=?, is_active=?, password_hash=? WHERE id=?",
+            (full_name, phone, role_id, is_active, pw_hash, user_id)
+        )
+    else:
+        db.execute(
+            "UPDATE users SET full_name=?, phone=?, role_id=?, is_active=? WHERE id=?",
+            (full_name, phone, role_id, is_active, user_id)
+        )
+    db.commit()
+    return jsonify({"success": True})
+
+
+# ── API: تغيير صلاحيات مستخدم مباشرة (بدون تغيير الدور) ──────────────────────
+@bp.route("/api/v1/team/<int:user_id>/permissions", methods=["POST"])
+@owner_required
+def api_team_user_perms(user_id: int):
+    db     = get_db()
+    biz_id = session["business_id"]
+
+    row = db.execute(
+        "SELECT u.role_id FROM users u WHERE u.id=? AND u.business_id=?",
+        (user_id, biz_id)
+    ).fetchone()
+    if not row:
+        return jsonify({"error": "المستخدم غير موجود"}), 404
+
+    data    = request.get_json(silent=True) or {}
+    perms   = {k: bool(v) for k, v in data.items() if k in PERM_LABELS}
+    perms_j = json.dumps(perms, ensure_ascii=False)
+
+    role_id = row["role_id"]
+    if role_id:
+        # تحديث الدور مباشرة إذا كان له دور خاص
+        db.execute(
+            "UPDATE roles SET permissions=? WHERE id=? AND business_id=?",
+            (perms_j, role_id, biz_id)
+        )
+    else:
+        # إنشاء دور جديد خاص بهذا المستخدم
+        db.execute(
+            "INSERT INTO roles (business_id, name, permissions) VALUES (?,?,?)",
+            (biz_id, f"دور مخصص #{user_id}", perms_j)
+        )
+        db.commit()
+        new_role_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+        db.execute("UPDATE users SET role_id=? WHERE id=?", (new_role_id, user_id))
+    db.commit()
+    return jsonify({"success": True, "permissions": perms})
+
+
+# ── API: الأدوار ──────────────────────────────────────────────────────────────
+@bp.route("/api/v1/roles", methods=["GET"])
+@owner_required
+def api_roles_list():
+    db     = get_db()
+    biz_id = session["business_id"]
+    rows   = db.execute(
+        "SELECT id, name, permissions, is_system FROM roles WHERE business_id=? ORDER BY name",
+        (biz_id,)
+    ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+@bp.route("/api/v1/roles", methods=["POST"])
+@owner_required
+def api_roles_create():
+    db     = get_db()
+    biz_id = session["business_id"]
+    data   = request.get_json(silent=True) or {}
+    name   = (data.get("name") or "").strip()
+    perms  = {k: bool(v) for k, v in data.items() if k in PERM_LABELS}
+    if not name:
+        return jsonify({"error": "اسم الدور مطلوب"}), 400
+    try:
+        db.execute(
+            "INSERT INTO roles (business_id, name, permissions) VALUES (?,?,?)",
+            (biz_id, name, json.dumps(perms, ensure_ascii=False))
+        )
+        db.commit()
+        new_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+        return jsonify({"success": True, "id": new_id, "name": name, "permissions": perms})
+    except Exception as e:
+        db.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@bp.route("/api/v1/roles/<int:role_id>", methods=["PUT"])
+@owner_required
+def api_roles_update(role_id: int):
+    db     = get_db()
+    biz_id = session["business_id"]
+    row    = db.execute(
+        "SELECT id, is_system FROM roles WHERE id=? AND business_id=?", (role_id, biz_id)
+    ).fetchone()
+    if not row:
+        return jsonify({"error": "الدور غير موجود"}), 404
+
+    data  = request.get_json(silent=True) or {}
+    name  = (data.get("name") or "").strip()
+    perms = {k: bool(v) for k, v in data.items() if k in PERM_LABELS}
+    if not name:
+        return jsonify({"error": "اسم الدور مطلوب"}), 400
+    db.execute(
+        "UPDATE roles SET name=?, permissions=? WHERE id=?",
+        (name, json.dumps(perms, ensure_ascii=False), role_id)
+    )
+    db.commit()
+    return jsonify({"success": True})
+
+
+@bp.route("/api/v1/roles/<int:role_id>", methods=["DELETE"])
+@owner_required
+def api_roles_delete(role_id: int):
+    db     = get_db()
+    biz_id = session["business_id"]
+    row    = db.execute(
+        "SELECT id, is_system FROM roles WHERE id=? AND business_id=?", (role_id, biz_id)
+    ).fetchone()
+    if not row:
+        return jsonify({"error": "الدور غير موجود"}), 404
+    if row["is_system"]:
+        return jsonify({"error": "لا يمكن حذف أدوار النظام"}), 403
+    # تحديث المستخدمين المرتبطين بهذا الدور
+    db.execute("UPDATE users SET role_id=NULL WHERE role_id=? AND business_id=?", (role_id, biz_id))
+    db.execute("DELETE FROM roles WHERE id=?", (role_id,))
+    db.commit()
+    return jsonify({"success": True})
+
 
 
 @bp.route("/sw.js")
