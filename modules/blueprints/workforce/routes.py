@@ -861,8 +861,8 @@ def api_v1_agent_client_profiles_create(agent_id: int):
     biz_id = session["business_id"]
     db.execute(
         """INSERT INTO agent_client_profiles
-           (business_id, agent_id, contact_id, company_name, manager_name, phone, region, address, notes)
-           VALUES (?,?,?,?,?,?,?,?,?)""",
+           (business_id, agent_id, contact_id, company_name, manager_name, phone, region, address, notes, lat, lng)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
         (biz_id, agent_id,
          payload.get("contact_id"),
          payload["company_name"].strip(),
@@ -870,7 +870,9 @@ def api_v1_agent_client_profiles_create(agent_id: int):
          payload.get("phone", "").strip() or None,
          payload.get("region", "").strip() or None,
          payload.get("address", "").strip() or None,
-         payload.get("notes", "").strip() or None),
+         payload.get("notes", "").strip() or None,
+         payload.get("lat") or None,
+         payload.get("lng") or None),
     )
     db.commit()
     return jsonify({"success": True, "message": "تم إضافة المنشأة"})
@@ -883,7 +885,7 @@ def api_v1_agent_client_profile_update(agent_id: int, profile_id: int):
     db = get_db()
     biz_id = session["business_id"]
     fields, vals = [], []
-    for col in ["company_name", "manager_name", "phone", "region", "address", "notes"]:
+    for col in ["company_name", "manager_name", "phone", "region", "address", "notes", "lat", "lng"]:
         if col in payload:
             fields.append(f"{col}=?")
             vals.append(payload[col])
@@ -909,8 +911,14 @@ def api_v1_customer_history(agent_id: int, contact_id: int):
     biz_id = session["business_id"]
 
     contact = db.execute(
-        "SELECT id, name, phone FROM contacts WHERE id=? AND business_id=?",
-        (contact_id, biz_id),
+        """SELECT c.id, c.name, c.phone,
+                  cp.company_name, cp.manager_name, cp.region, cp.address,
+                  cp.lat, cp.lng
+           FROM contacts c
+           LEFT JOIN agent_client_profiles cp
+             ON cp.contact_id=c.id AND cp.agent_id=? AND cp.business_id=?
+           WHERE c.id=? AND c.business_id=?""",
+        (agent_id, biz_id, contact_id, biz_id),
     ).fetchone()
     if not contact:
         return jsonify({"success": False, "error": "العميل غير موجود"}), 404
@@ -1275,15 +1283,17 @@ def api_v1_agent_sync(agent_id: int):
             elif action == "add_client":
                 db.execute(
                     """INSERT INTO agent_client_profiles
-                       (business_id, agent_id, company_name, manager_name, phone, region, address, notes, is_active)
-                       VALUES (?,?,?,?,?,?,?,?,1)""",
+                       (business_id, agent_id, company_name, manager_name, phone, region, address, notes, lat, lng, is_active)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,1)""",
                     (biz_id, agent_id,
                      p.get("company_name","").strip(),
                      p.get("manager_name","").strip() or None,
                      p.get("phone","").strip() or None,
                      p.get("region","").strip() or None,
                      p.get("address","").strip() or None,
-                     p.get("notes","").strip() or None),
+                     p.get("notes","").strip() or None,
+                     p.get("lat") or None,
+                     p.get("lng") or None),
                 )
                 results.append({"local_id": local_id, "status": "done"})
 

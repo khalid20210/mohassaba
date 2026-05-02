@@ -290,6 +290,12 @@ select.inp option{background:var(--bg2)}
     <input class="inp" id="ncRegion" placeholder="المنطقة / المدينة">
     <input class="inp" id="ncAddress" placeholder="العنوان التفصيلي">
     <textarea class="inp" id="ncNotes" rows="2" placeholder="ملاحظات"></textarea>
+    <input type="hidden" id="ncLat">
+    <input type="hidden" id="ncLng">
+    <div id="ncLocStatus" style="font-size:.75rem;color:var(--muted);margin-bottom:8px;min-height:18px"></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button class="btn btn-outline btn-sm" style="flex:1" onclick="captureClientLocation()">📍 تسجيل موقع المنشأة</button>
+    </div>
     <button class="btn btn-primary" onclick="saveNewClient()">✅ حفظ المنشأة</button>
   </div>
 </div>
@@ -709,12 +715,19 @@ async function viewClient(contactId,name){
     const r=await api('GET','/api/v1/agents/'+AGENT_ID+'/customers/'+contactId+'/history');
     if(!r.success){document.getElementById('cdBody').innerHTML='<div class="spinner">خطأ</div>';return;}
     const last=r.last_invoice;
+    const c=r.contact;
+    const mapLink = c.lat&&c.lng
+      ? `<a href="https://maps.google.com/?q=${c.lat},${c.lng}" target="_blank" style="color:#60a5fa;text-decoration:none">📍 عرض موقع المنشأة على الخريطة</a>`
+      : '';
     document.getElementById('cdBody').innerHTML=`
       <div class="kpi-grid" style="margin-bottom:12px">
         <div class="kpi"><b>${money(r.total_spend)}</b><span>إجمالي المشتريات</span></div>
         <div class="kpi"><b>${r.invoices.length}</b><span>فواتير</span></div>
         <div class="kpi"><b>${r.visits.length}</b><span>زيارات</span></div>
       </div>
+      ${c.region||c.address||mapLink?`<div style="font-size:.78rem;color:var(--muted);margin-bottom:10px;line-height:1.6">
+        ${c.region?'📌 '+esc(c.region)+'  ':''}${c.address?esc(c.address)+'  ':''}${mapLink}
+      </div>`:''}
       ${last?`<div class="card" style="margin-bottom:10px"><div class="card-title">🧾 آخر فاتورة</div>
         <div style="display:flex;justify-content:space-between">
           <span style="font-size:.82rem">${esc(last.invoice_number)}</span>
@@ -733,30 +746,51 @@ async function viewClient(contactId,name){
 async function saveNewClient(){
   const company=document.getElementById('ncCompany').value.trim();
   if(!company){toast('⚠️ اسم المنشأة مطلوب');return;}
+  const lat = document.getElementById('ncLat').value || null;
+  const lng = document.getElementById('ncLng').value || null;
   const payload={
     company_name:company,
     manager_name:document.getElementById('ncManager').value.trim(),
     phone:document.getElementById('ncPhone').value.trim(),
     region:document.getElementById('ncRegion').value.trim(),
     address:document.getElementById('ncAddress').value.trim(),
-    notes:document.getElementById('ncNotes').value.trim()
+    notes:document.getElementById('ncNotes').value.trim(),
+    lat: lat ? parseFloat(lat) : null,
+    lng: lng ? parseFloat(lng) : null,
   };
   if(!isOnline){
     pushOffline('add_client',payload);
-    allClients.push({...payload, id:Date.now()}); // محلياً
+    allClients.push({...payload, id:Date.now()});
     localStorage.setItem('clients_'+AGENT_ID, JSON.stringify(allClients));
     renderClients(allClients);
     closeModal('addClientModal');
-    ['ncCompany','ncManager','ncPhone','ncRegion','ncAddress','ncNotes'].forEach(id=>document.getElementById(id).value='');
+    ['ncCompany','ncManager','ncPhone','ncRegion','ncAddress','ncNotes','ncLat','ncLng'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('ncLocStatus').textContent='';
     return;
   }
   const r=await api('POST','/api/v1/agents/'+AGENT_ID+'/client-profiles',payload);
   if(r.success){
     toast('✅ تم إضافة المنشأة');
     closeModal('addClientModal');
-    ['ncCompany','ncManager','ncPhone','ncRegion','ncAddress','ncNotes'].forEach(id=>document.getElementById(id).value='');
+    ['ncCompany','ncManager','ncPhone','ncRegion','ncAddress','ncNotes','ncLat','ncLng'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('ncLocStatus').textContent='';
     loadClients();
   } else toast('❌ '+r.error);
+}
+
+function captureClientLocation(){
+  if(!navigator.geolocation){ toast('⚠️ الموقع غير مدعوم'); return; }
+  document.getElementById('ncLocStatus').textContent = '📍 جارٍ تحديد الموقع...';
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      document.getElementById('ncLat').value = pos.coords.latitude;
+      document.getElementById('ncLng').value = pos.coords.longitude;
+      document.getElementById('ncLocStatus').innerHTML =
+        '✅ <span style="color:#4ade80">تم تسجيل الموقع</span> ' +
+        '— <a href="https://maps.google.com/?q='+pos.coords.latitude+','+pos.coords.longitude+'" target="_blank" style="color:#60a5fa;font-size:.72rem">عرض الخريطة</a>';
+    },
+    ()=>{ document.getElementById('ncLocStatus').textContent = '⚠️ تعذّر تحديد الموقع'; }
+  );
 }
 
 /* ── VISITS ── */
@@ -1108,12 +1142,18 @@ async function viewClient(contactId,name){
     const r=await api('GET','/api/v1/agents/'+AGENT_ID+'/customers/'+contactId+'/history');
     if(!r.success){document.getElementById('cdBody').innerHTML='<div class="spinner">خطأ</div>';return;}
     const last=r.last_invoice;
+    const c=r.contact;
+    const mapLink2 = c.lat&&c.lng
+      ? `<a href="https://maps.google.com/?q=${c.lat},${c.lng}" target="_blank" style="color:#60a5fa;text-decoration:none">📍 عرض موقع المنشأة على الخريطة</a>` : '';
     document.getElementById('cdBody').innerHTML=`
       <div class="kpi-grid" style="margin-bottom:12px">
         <div class="kpi"><b>${money(r.total_spend)}</b><span>إجمالي المشتريات</span></div>
         <div class="kpi"><b>${r.invoices.length}</b><span>فواتير</span></div>
         <div class="kpi"><b>${r.visits.length}</b><span>زيارات</span></div>
       </div>
+      ${c.region||c.address||mapLink2?`<div style="font-size:.78rem;color:var(--muted);margin-bottom:10px;line-height:1.6">
+        ${c.region?'📌 '+esc(c.region)+'  ':''}${c.address?esc(c.address)+'  ':''}${mapLink2}
+      </div>`:''}
       ${last?`<div class="card" style="margin-bottom:10px"><div class="card-title">🧾 آخر فاتورة</div>
         <div style="display:flex;justify-content:space-between"><span style="font-size:.82rem">${esc(last.invoice_number)}</span><span style="color:var(--green);font-weight:700">${money(last.total)} ر.س</span></div>
         <div style="font-size:.72rem;color:var(--muted);margin-top:4px">${esc(last.invoice_date)} • ${esc(last.status)}</div></div>`:''}
@@ -1125,9 +1165,11 @@ async function viewClient(contactId,name){
 async function saveNewClient(){
   const company=document.getElementById('ncCompany').value.trim();
   if(!company){toast('⚠️ اسم المنشأة مطلوب');return;}
-  const payload={company_name:company,manager_name:document.getElementById('ncManager').value.trim(),phone:document.getElementById('ncPhone').value.trim(),region:document.getElementById('ncRegion').value.trim(),address:document.getElementById('ncAddress').value.trim(),notes:document.getElementById('ncNotes').value.trim()};
+  const lat2 = document.getElementById('ncLat').value || null;
+  const lng2 = document.getElementById('ncLng').value || null;
+  const payload={company_name:company,manager_name:document.getElementById('ncManager').value.trim(),phone:document.getElementById('ncPhone').value.trim(),region:document.getElementById('ncRegion').value.trim(),address:document.getElementById('ncAddress').value.trim(),notes:document.getElementById('ncNotes').value.trim(),lat:lat2?parseFloat(lat2):null,lng:lng2?parseFloat(lng2):null};
   const r=await api('POST','/api/v1/agents/'+AGENT_ID+'/client-profiles',payload);
-  if(r.success){ toast('✅ تم إضافة المنشأة'); closeModal('addClientModal'); ['ncCompany','ncManager','ncPhone','ncRegion','ncAddress','ncNotes'].forEach(id=>document.getElementById(id).value=''); loadClients(); }
+  if(r.success){ toast('✅ تم إضافة المنشأة'); closeModal('addClientModal'); ['ncCompany','ncManager','ncPhone','ncRegion','ncAddress','ncNotes','ncLat','ncLng'].forEach(id=>document.getElementById(id).value=''); document.getElementById('ncLocStatus').textContent=''; loadClients(); }
   else toast('❌ '+r.error);
 }
 
