@@ -7,6 +7,9 @@ from flask import Flask, g
 from .config import _load_secret_key, FLASK_CONFIG, DB_PATH, IS_PROD
 from .extensions import close_db
 
+import os as _os
+_BEHIND_PROXY = _os.environ.get("BEHIND_PROXY", "false").lower() in ("1", "true", "yes")
+
 logger = logging.getLogger(__name__)
 
 
@@ -18,6 +21,11 @@ def create_app():
     )
     app.secret_key = _load_secret_key()
     app.config.update(FLASK_CONFIG)
+
+    # ── ProxyFix: تفعيله عند وجود Proxy/nginx أمام التطبيق ─────────────────────
+    if _BEHIND_PROXY:
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
     # ── Teardown ──────────────────────────────────────────────────────────────
     app.teardown_appcontext(close_db)

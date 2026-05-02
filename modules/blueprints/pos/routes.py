@@ -11,7 +11,7 @@ from flask import (
 from modules.extensions import (
     get_db, get_account_id, next_entry_number, next_invoice_number
 )
-from modules.middleware import onboarding_required, require_perm
+from modules.middleware import onboarding_required, require_perm, user_has_perm
 from modules.terminology import get_terms
 from modules.validators import validate, V, SCHEMA_POS_CHECKOUT
 from modules.zatca_queue import enqueue_invoice
@@ -319,6 +319,16 @@ def api_pos_checkout():
         wh = db.execute("SELECT id FROM warehouses WHERE business_id=? LIMIT 1", (biz_id,)).fetchone()
     warehouse_id = wh["id"] if wh else None
 
+    # ── جلب نسبة الضريبة من إعدادات المنشأة (لا نثق بالـ client) ──────────
+    biz_tax_row = db.execute(
+        "SELECT rate FROM tax_settings WHERE business_id=? AND is_active=1 ORDER BY id LIMIT 1",
+        (biz_id,)
+    ).fetchone()
+    biz_tax_rate = float(biz_tax_row["rate"]) if biz_tax_row else 0.0
+
+    # هل المستخدم لديه صلاحية تعديل السعر؟
+    can_edit_price = user_has_perm("edit_price")
+
     today = datetime.now().strftime("%Y-%m-%d")
     now   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     subtotal = tax_total = cogs_total = 0.0
@@ -326,15 +336,14 @@ def api_pos_checkout():
 
     for item in items:
         try:
-            product_id = int(item["product_id"])
-            qty        = float(item["quantity"])
-            unit_price = float(item["unit_price"])
-            tax_rate   = float(item.get("tax_rate", 0))
+            product_id     = int(item["product_id"])
+            qty            = float(item["quantity"])
+            client_price   = float(item.get("unit_price", 0))
         except (KeyError, ValueError, TypeError):
             return jsonify({"success": False, "error": "بيانات البنود غير صالحة"}), 400
 
-        if qty <= 0 or unit_price < 0:
-            return jsonify({"success": False, "error": "الكمية والسعر يجب أن يكونا موجبين"}), 400
+        if qty <= 0:
+            return jsonify({"success": False, "error": "الكمية يجب أن تكون موجبة"}), 400
 
         product = db.execute(
             "SELECT * FROM products WHERE id=? AND business_id=? AND is_active=1",
@@ -342,6 +351,20 @@ def api_pos_checkout():
         ).fetchone()
         if not product:
             return jsonify({"success": False, "error": f"المنتج ID={product_id} غير موجود"}), 400
+
+        # السعر الأساسي من قاعدة البيانات دائماً
+        db_price   = float(product["sale_price"] or 0)
+        # السماح بتعديل السعر فقط لمن يملك الصلاحية، وعدم السماح بسعر أعلى من الأساسي
+        if can_edit_price and client_price >= 0:
+            unit_price = client_price
+        else:
+            unit_price = db_price
+
+        if unit_price < 0:
+            return jsonify({"success": False, "error": "السعر لا يمكن أن يكون سالباً"}), 400
+
+        # الضريبة دائماً من إعدادات المنشأة
+        tax_rate = biz_tax_rate
 
         line_sub  = round(qty * unit_price, 4)
         line_tax  = round(line_sub * tax_rate / 100, 4)
@@ -400,6 +423,17 @@ def api_pos_checkout():
                     "INSERT OR IGNORE INTO stock (business_id,product_id,warehouse_id,quantity,avg_cost) VALUES (?,?,?,0,0)",
                     (biz_id, item["product_id"], warehouse_id)
                 )
+                # فحص المخزون قبل الخصم لمنع القيم السالبة
+                if product_row := db.execute(
+                    "SELECT quantity FROM stock WHERE product_id=? AND warehouse_id=?",
+                    (item["product_id"], warehouse_id)
+                ).fetchone():
+                    if float(product_row["quantity"]) < item["quantity"]:
+                        db.execute("ROLLBACK")
+                        return jsonify({
+                            "success": False,
+                            "error": f"المخزون غير كافٍ للمنتج: {item['description']} (المتاح: {product_row['quantity']:.2f})"
+                        }), 400
                 db.execute(
                     "UPDATE stock SET quantity=quantity-?,last_updated=? WHERE product_id=? AND warehouse_id=?",
                     (item["quantity"], now, item["product_id"], warehouse_id)
