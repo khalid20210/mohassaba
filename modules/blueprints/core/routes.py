@@ -19,7 +19,7 @@ from modules.extensions import (
 )
 from modules.middleware import (
     login_required, onboarding_required, require_perm, user_has_perm,
-    owner_required
+    owner_required, write_audit_log
 )
 from modules.terminology import get_terms
 
@@ -814,3 +814,57 @@ def stub_page(page):
     if page not in STUB_PAGES:
         return render_template("404.html"), 404
     return render_template("stub_page.html", page_name=page)
+
+
+# ═══════════════════════════════════════════════════════════════
+#  Audit Trail — سجل العمليات
+# ═══════════════════════════════════════════════════════════════
+
+@bp.route("/audit-log")
+@owner_required
+def audit_log_page():
+    return render_template("audit_log.html")
+
+
+@bp.route("/api/v1/audit-log")
+@owner_required
+def api_audit_log():
+    db     = get_db()
+    biz_id = session["business_id"]
+
+    action_filter = request.args.get("action", "")
+    user_filter   = request.args.get("user",   "")
+    date_from     = request.args.get("from",   "")
+    date_to       = request.args.get("to",     "")
+    page          = max(1, int(request.args.get("page", 1)))
+    per_page      = 50
+
+    conditions = ["business_id=?"]
+    params     = [biz_id]
+
+    if action_filter:
+        conditions.append("action=?")
+        params.append(action_filter)
+    if user_filter:
+        conditions.append("actor_name LIKE ?")
+        params.append(f"%{user_filter}%")
+    if date_from:
+        conditions.append("created_at >= ?")
+        params.append(date_from)
+    if date_to:
+        conditions.append("created_at <= ?")
+        params.append(date_to + " 23:59:59")
+
+    where = " AND ".join(conditions)
+    total = db.execute(f"SELECT COUNT(*) FROM audit_logs WHERE {where}", params).fetchone()[0]
+    rows  = db.execute(
+        f"SELECT * FROM audit_logs WHERE {where} ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        params + [per_page, (page - 1) * per_page]
+    ).fetchall()
+
+    return jsonify({
+        "total":   total,
+        "page":    page,
+        "pages":   (total + per_page - 1) // per_page,
+        "logs":    [dict(r) for r in rows],
+    })

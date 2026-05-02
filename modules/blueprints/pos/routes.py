@@ -11,7 +11,7 @@ from flask import (
 from modules.extensions import (
     get_db, get_account_id, next_entry_number, next_invoice_number
 )
-from modules.middleware import onboarding_required, require_perm, user_has_perm
+from modules.middleware import onboarding_required, require_perm, user_has_perm, write_audit_log
 from modules.terminology import get_terms
 from modules.validators import validate, V, SCHEMA_POS_CHECKOUT
 from modules.zatca_queue import enqueue_invoice
@@ -506,6 +506,20 @@ def api_pos_checkout():
             )
         except Exception:
             pass  # ZATCA failure must never block the sale
+
+        # ── Audit Trail ──────────────────────────────────────────────────────
+        import json as _json
+        write_audit_log(
+            db, biz_id, "pos_sale",
+            entity_type="invoice", entity_id=invoice_id,
+            new_value=_json.dumps({
+                "invoice_number": inv_number,
+                "total": grand_total,
+                "tax": tax_total,
+                "payment_method": payment_method,
+                "items_count": len(validated),
+            }, ensure_ascii=False)
+        )
 
         return jsonify({
             "success":        True,

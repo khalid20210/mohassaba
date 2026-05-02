@@ -12,6 +12,7 @@ from modules.config import INDUSTRY_TYPES, _load_secret_key
 from modules.extensions import (
     check_password, csrf_protect, get_db, hash_password, seed_business_accounts
 )
+from modules.middleware import write_audit_log
 from modules.terminology import get_terms
 
 bp = Blueprint("auth", __name__)
@@ -310,16 +311,25 @@ def auth_login():
         if not user or not check_password(user["password_hash"], password):
             _login_attempts[ip].append(now)
             flash("اسم المستخدم أو كلمة المرور غير صحيحة", "error")
+            # تسجيل محاولة دخول فاشلة
+            try:
+                write_audit_log(db, 0, "login_failed",
+                    entity_type="user", new_value=username[:50])
+            except Exception:
+                pass
             return render_template("auth/login.html")
 
         _login_attempts.pop(ip, None)
+        biz_id_val = user["business_id"]
         session.clear()
         session["user_id"]     = user["id"]
-        session["business_id"] = user["business_id"]
+        session["business_id"] = biz_id_val
         session.permanent      = True
 
         db.execute("UPDATE users SET last_login=datetime('now') WHERE id=?", (user["id"],))
         db.commit()
+        # تسجيل دخول ناجح
+        write_audit_log(db, biz_id_val, "login", entity_type="user", entity_id=user["id"])
         return redirect(url_for("core.dashboard"))
 
     return render_template("auth/login.html")
@@ -460,6 +470,14 @@ def auth_forgot_password():
 
 @bp.route("/auth/logout")
 def auth_logout():
+    uid    = session.get("user_id")
+    biz_id = session.get("business_id")
+    if uid and biz_id:
+        try:
+            db = get_db()
+            write_audit_log(db, biz_id, "logout", entity_type="user", entity_id=uid)
+        except Exception:
+            pass
     session.clear()
     flash("تم تسجيل الخروج بنجاح", "info")
     return redirect(url_for("auth.auth_login"))

@@ -160,6 +160,8 @@ def _register_endpoint_aliases(app):
         "offline":      "core.offline",
         "service_worker": "core.service_worker",
         "stub_page":    "core.stub_page",
+        "audit_log_page": "core.audit_log_page",
+        "api_audit_log":  "core.api_audit_log",
         # accounting
         "accounting":           "accounting.accounting",
         "reports":              "accounting.reports",
