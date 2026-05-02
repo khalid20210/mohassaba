@@ -1743,3 +1743,221 @@ def api_v1_agents_performance():
         "month": month,
         "agents": [dict(r) for r in rows],
     })
+
+
+# ═══════════════════════════════════════════════════════════════
+#  إعدادات المندوبين العامة (الأدمن)
+# ═══════════════════════════════════════════════════════════════
+
+@bp.route("/api/v1/agent-settings", methods=["GET", "POST"])
+@require_perm("settings")
+def api_agent_settings():
+    """GET: جلب الإعدادات — POST: حفظ الإعدادات"""
+    db     = get_db()
+    biz_id = session["business_id"]
+
+    if request.method == "GET":
+        row = db.execute(
+            "SELECT * FROM business_settings_ext WHERE business_id=?", (biz_id,)
+        ).fetchone()
+        defaults = {
+            "agent_location_interval": 30,
+            "agent_reminder_days":     30,
+            "agent_can_discount":      0,
+            "agent_can_edit_price":    0,
+            "agent_can_view_cost":     0,
+            "agent_can_collect":       1,
+            "agent_can_add_client":    1,
+            "agent_can_create_draft":  1,
+            "agent_can_send_offer":    1,
+            "agent_max_discount_pct":  0.0,
+        }
+        if row:
+            data = dict(row)
+            for k, v in defaults.items():
+                if data.get(k) is None:
+                    data[k] = v
+        else:
+            data = defaults
+        return jsonify({"success": True, "settings": data})
+
+    # POST — حفظ
+    payload = request.get_json(force=True) or {}
+
+    allowed_int  = ["agent_location_interval", "agent_reminder_days",
+                    "agent_can_discount", "agent_can_edit_price",
+                    "agent_can_view_cost", "agent_can_collect",
+                    "agent_can_add_client", "agent_can_create_draft",
+                    "agent_can_send_offer"]
+    allowed_real = ["agent_max_discount_pct"]
+
+    fields, vals = [], []
+    for k in allowed_int:
+        if k in payload:
+            fields.append(f"{k}=?")
+            vals.append(int(payload[k]))
+    for k in allowed_real:
+        if k in payload:
+            fields.append(f"{k}=?")
+            vals.append(float(payload[k]))
+
+    if not fields:
+        return jsonify({"success": False, "error": "لا توجد بيانات"}), 400
+
+    vals.append(biz_id)
+    # upsert
+    db.execute(
+        f"""INSERT INTO business_settings_ext (business_id, updated_at)
+            VALUES (?, datetime('now'))
+            ON CONFLICT(business_id) DO UPDATE SET updated_at=datetime('now')""",
+        (biz_id,)
+    )
+    db.execute(
+        f"UPDATE business_settings_ext SET {', '.join(fields)}, updated_at=datetime('now') WHERE business_id=?",
+        vals
+    )
+    db.commit()
+    return jsonify({"success": True, "message": "تم حفظ الإعدادات"})
+
+
+# ═══════════════════════════════════════════════════════════════
+#  صلاحيات مندوب بعينه (override فوق الإعدادات العامة)
+# ═══════════════════════════════════════════════════════════════
+
+@bp.route("/api/v1/agents/<int:agent_id>/permissions", methods=["GET", "POST"])
+@require_perm("settings")
+def api_agent_permissions(agent_id: int):
+    """GET: جلب صلاحيات مندوب — POST: حفظ/تعديل"""
+    db     = get_db()
+    biz_id = session["business_id"]
+
+    agent = db.execute(
+        "SELECT * FROM agents WHERE id=? AND business_id=?", (agent_id, biz_id)
+    ).fetchone()
+    if not agent:
+        return jsonify({"success": False, "error": "المندوب غير موجود"}), 404
+
+    # جلب الإعدادات العامة كـ fallback
+    ext = db.execute(
+        "SELECT * FROM business_settings_ext WHERE business_id=?", (biz_id,)
+    ).fetchone()
+    ext_d = dict(ext) if ext else {}
+
+    perm_map = {
+        "perm_discount":    ("agent_can_discount",    0),
+        "perm_edit_price":  ("agent_can_edit_price",  0),
+        "perm_view_cost":   ("agent_can_view_cost",   0),
+        "perm_collect":     ("agent_can_collect",     1),
+        "perm_add_client":  ("agent_can_add_client",  1),
+        "perm_create_draft":("agent_can_create_draft",1),
+        "perm_send_offer":  ("agent_can_send_offer",  1),
+        "max_discount_pct": ("agent_max_discount_pct",0.0),
+    }
+
+    if request.method == "GET":
+        a = dict(agent)
+        perms = {}
+        for col, (global_col, default) in perm_map.items():
+            # NULL = يرث من العام، أي قيمة أخرى = override
+            individual = a.get(col)
+            effective  = individual if individual is not None else ext_d.get(global_col, default)
+            perms[col] = {
+                "individual": individual,
+                "effective":  effective,
+                "inherited":  individual is None,
+            }
+        return jsonify({"success": True, "agent_id": agent_id, "permissions": perms})
+
+    # POST
+    payload = request.get_json(force=True) or {}
+    fields, vals = [], []
+    for col in ["perm_discount","perm_edit_price","perm_view_cost",
+                "perm_collect","perm_add_client","perm_create_draft","perm_send_offer"]:
+        if col in payload:
+            v = payload[col]
+            fields.append(f"{col}=?")
+            vals.append(None if v is None else int(v))
+    if "max_discount_pct" in payload:
+        v = payload["max_discount_pct"]
+        fields.append("max_discount_pct=?")
+        vals.append(None if v is None else float(v))
+
+    if not fields:
+        return jsonify({"success": False, "error": "لا توجد بيانات"}), 400
+
+    vals += [agent_id, biz_id]
+    db.execute(
+        f"UPDATE agents SET {', '.join(fields)}, updated_at=datetime('now') WHERE id=? AND business_id=?",
+        vals
+    )
+    db.commit()
+    return jsonify({"success": True, "message": "تم حفظ صلاحيات المندوب"})
+
+
+# ═══════════════════════════════════════════════════════════════
+#  endpoint للمندوب: جلب إعداداته الفعلية (مدمجة عام + فردي)
+# ═══════════════════════════════════════════════════════════════
+
+@bp.route("/api/v1/agent/settings")
+def api_agent_my_settings():
+    """المندوب يجلب إعداداته (يدعم session المندوب)"""
+    # يدعم session المندوب المستقل
+    if "agent_id" in session:
+        agent_id = session["agent_id"]
+        biz_id   = session["agent_biz_id"]
+    elif "user_id" in session:
+        # للأدمن أو التجربة
+        agent_id = request.args.get("agent_id", type=int)
+        biz_id   = session.get("business_id")
+        if not agent_id:
+            return jsonify({"success": False, "error": "agent_id مطلوب"}), 400
+    else:
+        return jsonify({"success": False, "error": "غير مصرح"}), 401
+
+    db = get_db()
+    agent = db.execute(
+        "SELECT * FROM agents WHERE id=? AND business_id=?", (agent_id, biz_id)
+    ).fetchone()
+    if not agent:
+        return jsonify({"success": False, "error": "المندوب غير موجود"}), 404
+
+    ext = db.execute(
+        "SELECT * FROM business_settings_ext WHERE business_id=?", (biz_id,)
+    ).fetchone()
+    ext_d = dict(ext) if ext else {}
+
+    a = dict(agent)
+    # القيم الافتراضية
+    defaults = {
+        "agent_location_interval": 30,
+        "agent_reminder_days":     30,
+        "agent_can_discount":      0,
+        "agent_can_edit_price":    0,
+        "agent_can_view_cost":     0,
+        "agent_can_collect":       1,
+        "agent_can_add_client":    1,
+        "agent_can_create_draft":  1,
+        "agent_can_send_offer":    1,
+        "agent_max_discount_pct":  0.0,
+    }
+    perm_map = {
+        "can_discount":    ("perm_discount",    "agent_can_discount",    0),
+        "can_edit_price":  ("perm_edit_price",  "agent_can_edit_price",  0),
+        "can_view_cost":   ("perm_view_cost",   "agent_can_view_cost",   0),
+        "can_collect":     ("perm_collect",     "agent_can_collect",     1),
+        "can_add_client":  ("perm_add_client",  "agent_can_add_client",  1),
+        "can_create_draft":("perm_create_draft","agent_can_create_draft",1),
+        "can_send_offer":  ("perm_send_offer",  "agent_can_send_offer",  1),
+        "max_discount_pct":("max_discount_pct", "agent_max_discount_pct",0.0),
+    }
+    perms = {}
+    for key, (ind_col, global_col, default) in perm_map.items():
+        ind = a.get(ind_col)
+        perms[key] = ind if ind is not None else ext_d.get(global_col, defaults.get(global_col, default))
+
+    return jsonify({
+        "success": True,
+        "location_interval": ext_d.get("agent_location_interval", 30),
+        "reminder_days":     ext_d.get("agent_reminder_days", 30),
+        "permissions": perms,
+    })

@@ -57,6 +57,11 @@
 .col-badge-pending{background:rgba(245,158,11,.15);color:#fbbf24;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700}
 .col-badge-done{background:rgba(34,197,94,.15);color:#4ade80;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700}
 
+/* ═══════════════ SETTINGS ═══════════════ */
+.perm-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(148,163,184,.08);font-size:.83rem;color:#e2e8f0;cursor:pointer}
+.perm-row input[type=checkbox]{accent-color:#3b82f6;width:16px;height:16px;cursor:pointer}
+.perm-section{font-size:.75rem;font-weight:700;color:#60a5fa;margin:12px 0 6px;text-transform:uppercase;letter-spacing:.04em}
+
 /* ═══════════════ FORMS ═══════════════ */
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .inp-dash{width:100%;background:#0b1220;color:#e2e8f0;border:1px solid rgba(148,163,184,.2);border-radius:10px;padding:9px 12px;font-family:inherit;font-size:.86rem;outline:none;margin-bottom:10px}
@@ -91,6 +96,7 @@
   <button class="dash-tab" onclick="showTab('performance',this)">📊 الأداء</button>
   <button class="dash-tab" onclick="showTab('collections',this)">💵 التحصيلات</button>
   <button class="dash-tab" onclick="showTab('drafts',this)">📝 الطلبات</button>
+  <button class="dash-tab" onclick="showTab('settings',this)">⚙️ إعدادات المندوبين</button>
 </div>
 
 <!-- TAB: نظرة عامة -->
@@ -157,6 +163,70 @@
   </div>
 </div>
 
+<!-- ═══════ TAB: إعدادات المندوبين ═══════ -->
+<div id="tab-settings" class="tab-pane" style="display:none">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+    <!-- الإعدادات العامة -->
+    <div style="background:#0f172a;border:1px solid rgba(148,163,184,.18);border-radius:14px;padding:18px">
+      <div style="font-size:.93rem;font-weight:800;color:#dbeafe;margin-bottom:14px">⚙️ إعدادات عامة لجميع المناديب</div>
+
+      <label style="font-size:.78rem;color:#94a3b8;display:block;margin-bottom:4px">📍 فترة تتبع الموقع</label>
+      <select id="gs_location_interval" class="inp-dash" style="margin-bottom:12px">
+        <option value="1">لحظي (كل دقيقة)</option>
+        <option value="5">كل 5 دقائق</option>
+        <option value="10">كل 10 دقائق</option>
+        <option value="15">كل 15 دقيقة</option>
+        <option value="30" selected>كل 30 دقيقة (افتراضي)</option>
+        <option value="60">كل ساعة</option>
+        <option value="120">كل ساعتين</option>
+      </select>
+
+      <label style="font-size:.78rem;color:#94a3b8;display:block;margin-bottom:4px">🔔 تنبيه العملاء الخاملين (أيام)</label>
+      <select id="gs_reminder_days" class="inp-dash" style="margin-bottom:12px">
+        <option value="7">7 أيام</option>
+        <option value="10">10 أيام</option>
+        <option value="14">14 يوم</option>
+        <option value="21">21 يوم</option>
+        <option value="30" selected>30 يوم (افتراضي)</option>
+        <option value="45">45 يوم</option>
+        <option value="60">60 يوم</option>
+        <option value="90">90 يوم</option>
+      </select>
+
+      <div style="font-size:.82rem;font-weight:700;color:#94a3b8;margin-bottom:10px">صلاحيات افتراضية لجميع المناديب:</div>
+      <div id="gs_perms_area">
+        <label class="perm-row"><input type="checkbox" id="gs_can_discount"> السماح بالخصم</label>
+        <label class="perm-row"><input type="checkbox" id="gs_can_edit_price"> تغيير سعر المنتج</label>
+        <label class="perm-row"><input type="checkbox" id="gs_can_view_cost"> رؤية تكلفة المنتج</label>
+        <label class="perm-row"><input type="checkbox" id="gs_can_collect" checked> تحصيل دفعات</label>
+        <label class="perm-row"><input type="checkbox" id="gs_can_add_client" checked> إضافة عملاء جدد</label>
+        <label class="perm-row"><input type="checkbox" id="gs_can_create_draft" checked> إنشاء طلب مسودة</label>
+        <label class="perm-row"><input type="checkbox" id="gs_can_send_offer" checked> إرسال عروض واتساب</label>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+        <input class="inp-dash" id="gs_max_discount" placeholder="أقصى نسبة خصم %" type="number" step="0.5" style="width:160px;margin:0">
+        <span style="font-size:.75rem;color:#94a3b8">%</span>
+      </div>
+      <div id="gs_msg" style="font-size:.75rem;min-height:18px;margin-top:8px;color:#4ade80"></div>
+      <button class="btn-dash btn-blue" style="margin-top:10px;width:100%" onclick="saveGlobalSettings()">💾 حفظ الإعدادات العامة</button>
+    </div>
+
+    <!-- إعدادات فردية -->
+    <div style="background:#0f172a;border:1px solid rgba(148,163,184,.18);border-radius:14px;padding:18px">
+      <div style="font-size:.93rem;font-weight:800;color:#dbeafe;margin-bottom:10px">🛡️ صلاحيات فردية لكل مندوب</div>
+      <p style="font-size:.78rem;color:#94a3b8;margin-bottom:12px;line-height:1.5">اضغط زر 🛡️ على بطاقة أي مندوب لتخصيص صلاحياته، أو اختر مندوباً من القائمة:</p>
+      <select id="qs_agent_select" class="inp-dash" style="margin-bottom:10px" onchange="if(this.value)openPermModal(parseInt(this.value),this.options[this.selectedIndex].text)">
+        <option value="">— اختر مندوباً —</option>
+      </select>
+      <div style="font-size:.78rem;color:#94a3b8;line-height:1.5">
+        <b style="color:#fbbf24">NULL = يرث من الإعدادات العامة</b><br>
+        يمكنك تفعيل أو تعطيل صلاحية لمندوب بعينه دون التأثير على الآخرين.
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════ MODAL: مندوب جديد ═══════ -->
 <div class="modal-backdrop" id="newAgentModal">
   <div class="modal-card">
@@ -210,6 +280,35 @@
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn-dash btn-gray" onclick="closeModal('targetModal')">إلغاء</button>
       <button class="btn-dash btn-blue" onclick="saveTarget()">✅ حفظ الهدف</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ MODAL: بيانات دخول المندوب ═══════ -->
+<div class="modal-backdrop" id="permModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span id="permTitle" style="font-size:1rem;font-weight:800;color:#fbbf24">🛡️ صلاحيات المندوب</span>
+      <button class="modal-close" onclick="closeModal('permModal')">✕</button>
+    </div>
+    <input type="hidden" id="permAgentId">
+    <p style="font-size:.75rem;color:#64748b;margin-bottom:12px">NULL = يرث من الإعدادات العامة — فعّل/عطّل لتخصيص هذا المندوب فقط</p>
+
+    <div class="perm-section">الصلاحيات</div>
+    <div id="permRows">
+      <!-- يُبنى ديناميكياً -->
+    </div>
+
+    <div style="margin-top:12px;display:flex;align-items:center;gap:8px">
+      <label style="font-size:.8rem;color:#94a3b8;white-space:nowrap">أقصى خصم %</label>
+      <input class="inp-dash" id="perm_max_discount" type="number" step="0.5" min="0" max="100" placeholder="NULL = من الإعدادات العامة" style="margin:0;flex:1">
+      <button style="background:#1e293b;border:none;border-radius:8px;padding:6px 10px;color:#94a3b8;cursor:pointer;font-size:.75rem" onclick="document.getElementById('perm_max_discount').value=''">مسح</button>
+    </div>
+
+    <div id="permMsg" style="font-size:.75rem;min-height:18px;margin-top:8px;color:#4ade80"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button class="btn-dash btn-gray" onclick="closeModal('permModal')">إلغاء</button>
+      <button class="btn-dash btn-blue" onclick="savePerm()">💾 حفظ الصلاحيات</button>
     </div>
   </div>
 </div>
@@ -301,6 +400,13 @@ async function loadAgentsGrid(){
   agents = r.agents;
   document.getElementById('agentCount').textContent = agents.length + ' مندوب';
 
+  // ملء قائمة الإعدادات الفردية
+  const qs = document.getElementById('qs_agent_select');
+  if(qs){
+    qs.innerHTML = '<option value="">— اختر مندوباً —</option>' +
+      agents.map(a=>`<option value="${a.id}">${esc(a.full_name)}</option>`).join('');
+  }
+
   const grid = document.getElementById('agentsGrid');
   if(!agents.length){ grid.innerHTML='<div style="color:#94a3b8;font-size:.82rem;padding:20px">لا توجد مناديب بعد</div>'; return; }
 
@@ -320,6 +426,8 @@ async function loadAgentsGrid(){
             style="background:rgba(59,130,246,.15);border:none;border-radius:8px;padding:4px 8px;color:#60a5fa;cursor:pointer;font-size:.8rem">🎯</button>
           <button onclick="event.stopPropagation();openCredModal(${a.id},'${esc(a.full_name)}')" title="بيانات الدخول"
             style="background:rgba(168,85,247,.15);border:none;border-radius:8px;padding:4px 8px;color:#c084fc;cursor:pointer;font-size:.8rem">🔑</button>
+          <button onclick="event.stopPropagation();openPermModal(${a.id},'${esc(a.full_name)}')" title="صلاحيات المندوب"
+            style="background:rgba(245,158,11,.15);border:none;border-radius:8px;padding:4px 8px;color:#fbbf24;cursor:pointer;font-size:.8rem">🛡️</button>
           <a href="/agent/portal" target="_blank" onclick="event.stopPropagation()"
             style="background:rgba(34,197,94,.15);border-radius:8px;padding:4px 8px;color:#4ade80;text-decoration:none;font-size:.8rem">📱</a>
         </div>
@@ -637,5 +745,147 @@ async function saveCred(){
 /* ─── INIT ─── */
 initMonthFilter();
 loadAll();
+loadGlobalSettings();
+
+/* ══════════════════════════════════════════════════════
+   إعدادات المندوبين العامة
+══════════════════════════════════════════════════════ */
+async function loadGlobalSettings(){
+  try{
+    const r = await fetch('/api/v1/agent-settings');
+    const d = await r.json();
+    if(!d.success) return;
+    const s = d.settings;
+    // فترة الموقع
+    const sel = document.getElementById('gs_location_interval');
+    if(sel) sel.value = s.agent_location_interval || 30;
+    // أيام التنبيه
+    const rsel = document.getElementById('gs_reminder_days');
+    if(rsel) rsel.value = s.agent_reminder_days || 30;
+    // الصلاحيات
+    const map = {
+      'gs_can_discount':    'agent_can_discount',
+      'gs_can_edit_price':  'agent_can_edit_price',
+      'gs_can_view_cost':   'agent_can_view_cost',
+      'gs_can_collect':     'agent_can_collect',
+      'gs_can_add_client':  'agent_can_add_client',
+      'gs_can_create_draft':'agent_can_create_draft',
+      'gs_can_send_offer':  'agent_can_send_offer',
+    };
+    for(const [id, key] of Object.entries(map)){
+      const el = document.getElementById(id);
+      if(el) el.checked = !!s[key];
+    }
+    const disc = document.getElementById('gs_max_discount');
+    if(disc) disc.value = s.agent_max_discount_pct || '';
+  }catch(e){ console.error(e); }
+}
+
+async function saveGlobalSettings(){
+  const payload = {
+    agent_location_interval: parseInt(document.getElementById('gs_location_interval').value),
+    agent_reminder_days:     parseInt(document.getElementById('gs_reminder_days').value),
+    agent_can_discount:      document.getElementById('gs_can_discount').checked ? 1 : 0,
+    agent_can_edit_price:    document.getElementById('gs_can_edit_price').checked ? 1 : 0,
+    agent_can_view_cost:     document.getElementById('gs_can_view_cost').checked ? 1 : 0,
+    agent_can_collect:       document.getElementById('gs_can_collect').checked ? 1 : 0,
+    agent_can_add_client:    document.getElementById('gs_can_add_client').checked ? 1 : 0,
+    agent_can_create_draft:  document.getElementById('gs_can_create_draft').checked ? 1 : 0,
+    agent_can_send_offer:    document.getElementById('gs_can_send_offer').checked ? 1 : 0,
+    agent_max_discount_pct:  parseFloat(document.getElementById('gs_max_discount').value) || 0,
+  };
+  const msg = document.getElementById('gs_msg');
+  msg.textContent = '...';
+  const r = await fetch('/api/v1/agent-settings', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload),
+  }).then(x=>x.json()).catch(()=>({success:false,error:'خطأ في الاتصال'}));
+  if(r.success){
+    msg.style.color='#4ade80'; msg.textContent='✅ تم حفظ الإعدادات';
+    setTimeout(()=>msg.textContent='',3000);
+  } else {
+    msg.style.color='#f87171'; msg.textContent='❌ '+r.error;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   صلاحيات مندوب فردي
+══════════════════════════════════════════════════════ */
+const PERM_LABELS = {
+  perm_discount:    'السماح بالخصم',
+  perm_edit_price:  'تغيير سعر المنتج',
+  perm_view_cost:   'رؤية تكلفة المنتج',
+  perm_collect:     'تحصيل دفعات',
+  perm_add_client:  'إضافة عملاء جدد',
+  perm_create_draft:'إنشاء طلب مسودة',
+  perm_send_offer:  'إرسال عروض واتساب',
+};
+
+async function openPermModal(agentId, agentName){
+  document.getElementById('permAgentId').value = agentId;
+  document.getElementById('permTitle').textContent = '🛡️ صلاحيات: ' + agentName;
+  document.getElementById('permMsg').textContent = '';
+  const rows = document.getElementById('permRows');
+  rows.innerHTML = '<div style="color:#94a3b8;font-size:.8rem">جارٍ التحميل...</div>';
+  openModal('permModal');
+
+  const r = await fetch(`/api/v1/agents/${agentId}/permissions`).then(x=>x.json()).catch(()=>({success:false}));
+  if(!r.success){ rows.innerHTML='<div style="color:#f87171">خطأ في التحميل</div>'; return; }
+  const perms = r.permissions;
+
+  rows.innerHTML = Object.entries(PERM_LABELS).map(([col, label])=>{
+    const p = perms[col] || {};
+    const chk = p.effective ? 'checked' : '';
+    const badge = p.inherited
+      ? '<span style="font-size:.65rem;color:#64748b;margin-right:4px">(موروث)</span>'
+      : '<span style="font-size:.65rem;color:#fbbf24;margin-right:4px">(مخصص)</span>';
+    return `<label class="perm-row">
+      <input type="checkbox" id="perm_${col}" ${chk} onchange="markCustom(this,'${col}')">
+      ${label} ${badge}
+      <button onclick="event.preventDefault();resetPerm('${col}')" style="margin-right:auto;background:transparent;border:none;color:#64748b;cursor:pointer;font-size:.7rem" title="إعادة للافتراضي">↩</button>
+    </label>`;
+  }).join('');
+
+  const md = (perms.max_discount_pct||{}).effective;
+  document.getElementById('perm_max_discount').value = (perms.max_discount_pct||{}).inherited ? '' : (md||'');
+}
+
+function markCustom(el, col){
+  // عند التغيير يُعدّ مخصصاً — يُستخدم فقط للعرض
+}
+
+function resetPerm(col){
+  const el = document.getElementById('perm_'+col);
+  if(el){ el.dataset.reset = '1'; el.indeterminate = true; el.checked = false; }
+  // عند الحفظ سنرسل null
+}
+
+async function savePerm(){
+  const agentId = document.getElementById('permAgentId').value;
+  const payload = {};
+  for(const col of Object.keys(PERM_LABELS)){
+    const el = document.getElementById('perm_'+col);
+    if(!el) continue;
+    if(el.dataset.reset === '1') payload[col] = null;   // null = ارث من العام
+    else payload[col] = el.checked ? 1 : 0;
+  }
+  const disc = document.getElementById('perm_max_discount').value;
+  payload['max_discount_pct'] = disc === '' ? null : parseFloat(disc);
+
+  const msg = document.getElementById('permMsg');
+  const r = await fetch(`/api/v1/agents/${agentId}/permissions`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload),
+  }).then(x=>x.json()).catch(()=>({success:false,error:'خطأ'}));
+  if(r.success){
+    msg.style.color='#4ade80'; msg.textContent='✅ تم حفظ الصلاحيات';
+    setTimeout(()=>closeModal('permModal'),1500);
+  } else {
+    msg.style.color='#f87171'; msg.textContent='❌ '+r.error;
+  }
+}
+
 </script>
 {% endblock %}

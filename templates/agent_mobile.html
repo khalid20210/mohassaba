@@ -178,6 +178,12 @@ select.inp option{background:var(--bg2)}
           <span style="font-size:.82rem;color:var(--muted)">الإجمالي</span>
           <span class="inv-total-val" id="invTotal">0.00 ر.س</span>
         </div>
+        <div id="invoiceDiscountRow" style="display:none;margin-bottom:8px">
+          <input class="inp" id="invDiscount" placeholder="خصم (ر.س أو %)" type="number" step="0.5" min="0">
+        </div>
+        <div id="invoiceDiscountRow" style="display:none;margin-bottom:8px">
+          <input class="inp" id="invDiscount" placeholder="خصم (ر.س أو %)" type="number" step="0.5" min="0">
+        </div>
         <button class="btn btn-primary" style="margin-top:10px" onclick="submitInvoice()">✅ إصدار وإرسال واتساب</button>
       </div>
     </div>
@@ -188,7 +194,7 @@ select.inp option{background:var(--bg2)}
         <div class="card-title">🏢 منشآت عملائي</div>
         <input class="inp" id="clientSearch" placeholder="🔍 بحث..." oninput="filterClients()">
         <div id="clientsList"><div class="spinner">جارٍ التحميل...</div></div>
-        <button class="btn btn-outline btn-sm" style="margin-top:8px" onclick="openModal('addClientModal')">+ إضافة منشأة</button>
+        <button id="addClientBtn" class="btn btn-outline btn-sm" style="margin-top:8px" onclick="openModal('addClientModal')">+ إضافة منشأة</button>
       </div>
     </div>
 
@@ -318,6 +324,55 @@ let allClients = [];
 let invLines = [];
 let selectedProducts = {};
 let locationTimer = null;
+
+// إعدادات المندوب — تُجلب من الخادم عند التحميل
+let AGENT_SETTINGS = {
+  location_interval: 30,   // دقيقة
+  reminder_days:     30,   // يوم
+  permissions: {
+    can_discount:    false,
+    can_edit_price:  false,
+    can_view_cost:   false,
+    can_collect:     true,
+    can_add_client:  true,
+    can_create_draft:true,
+    can_send_offer:  true,
+    max_discount_pct:0,
+  }
+};
+
+async function loadAgentSettings(){
+  try{
+    const r = await fetch('/api/v1/agent/settings', {credentials:'same-origin'});
+    if(r.status === 401){ window.location.href='/agent/login'; return; }
+    const d = await r.json();
+    if(!d.success) return;
+    AGENT_SETTINGS.location_interval = d.location_interval || 30;
+    AGENT_SETTINGS.reminder_days     = d.reminder_days || 30;
+    if(d.permissions) Object.assign(AGENT_SETTINGS.permissions, d.permissions);
+    applyPermissions();
+  }catch(e){ console.warn('settings load failed:', e); }
+}
+
+function applyPermissions(){
+  const p = AGENT_SETTINGS.permissions;
+  // إخفاء/إظهار التبويبات حسب الصلاحيات
+  const tabs = {
+    'tab-btn-collect':   p.can_collect,
+    'tab-btn-clients':   true,  // دائماً مرئي
+    'tab-btn-offers':    p.can_send_offer || p.can_create_draft,
+  };
+  for(const [id, show] of Object.entries(tabs)){
+    const el = document.getElementById(id);
+    if(el) el.style.display = show ? '' : 'none';
+  }
+  // الخصم في الفاتورة
+  const discRow = document.getElementById('invoiceDiscountRow');
+  if(discRow) discRow.style.display = p.can_discount ? '' : 'none';
+  // إضافة عميل
+  const addClientBtn = document.getElementById('addClientBtn');
+  if(addClientBtn) addClientBtn.style.display = p.can_add_client ? '' : 'none';
+}
 
 /* ── OFFLINE QUEUE ── */
 function getQ(){ try{return JSON.parse(localStorage.getItem(OFFLINE_KEY)||'[]')}catch{return []} }
@@ -450,7 +505,8 @@ function startTracking(){
     });
   };
   send();
-  locationTimer = setInterval(send, 30*60*1000); // كل 30 دقيقة
+  const intervalMs = (AGENT_SETTINGS.location_interval || 30) * 60 * 1000;
+  locationTimer = setInterval(send, intervalMs); // من الإعدادات
 }
 
 /* ── ATTENDANCE ── */
@@ -545,7 +601,7 @@ async function loadHomeData(){
     }
   }catch{}
   try{
-    const r=await api('GET','/api/v1/agents/'+AGENT_ID+'/reminders?days=30');
+    const r=await api('GET','/api/v1/agents/'+AGENT_ID+'/reminders?days='+(AGENT_SETTINGS.reminder_days||30));
     const wrap=document.getElementById('remindersWrap');
     if(r.success&&r.reminders.length){
       wrap.innerHTML=r.reminders.slice(0,5).map(rem=>`
@@ -620,7 +676,7 @@ async function submitInvoice(){
 }
 
 /* ── PRODUCTS (Cached للأوفلاين) ── */
-const PROD_KEY = 'prod_cache_'+AGENT_ID;
+const PROD_KEY  = 'prod_cache_'+AGENT_ID;
 const PROD_AT_KEY = 'prod_cache_at_'+AGENT_ID;
 
 async function loadProducts(){
@@ -918,6 +974,7 @@ async function agentLogout(){
 /* ── INIT ── */
 (async()=>{
   updateNet();
+  await loadAgentSettings();   // جلب إعدادات المندوب أولاً
   await initBattery();
   await loadProducts();
   await checkAttStatus();
@@ -1027,7 +1084,7 @@ async function loadHomeData(){
     }
   }catch{}
   try{
-    const r=await api('GET','/api/v1/agents/'+AGENT_ID+'/reminders?days=30');
+    const r=await api('GET','/api/v1/agents/'+AGENT_ID+'/reminders?days='+(AGENT_SETTINGS.reminder_days||30));
     const wrap=document.getElementById('remindersWrap');
     if(r.success&&r.reminders.length){
       wrap.innerHTML=r.reminders.slice(0,5).map(rem=>`
