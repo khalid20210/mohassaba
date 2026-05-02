@@ -490,36 +490,33 @@ def api_v1_agent_assign_invoice(agent_id: int):
 
     try:
         db.execute("BEGIN IMMEDIATE")
+        # agent_invoice_links: UNIQUE(business_id, invoice_id) — استخدم INSERT OR IGNORE ثم UPDATE
         db.execute(
-            """INSERT OR REPLACE INTO agent_invoice_links
-               (id, business_id, agent_id, invoice_id, created_at)
-               VALUES (
-                   (SELECT id FROM agent_invoice_links WHERE business_id=? AND invoice_id=?),
-                   ?,?,?,datetime('now')
-               )""",
-            (biz_id, clean["invoice_id"], biz_id, agent_id, clean["invoice_id"]),
+            """INSERT OR IGNORE INTO agent_invoice_links
+               (business_id, agent_id, invoice_id, created_at)
+               VALUES (?,?,?,datetime('now'))""",
+            (biz_id, agent_id, clean["invoice_id"]),
         )
         db.execute(
-            """INSERT OR REPLACE INTO agent_commissions
-               (id, business_id, agent_id, invoice_id, invoice_total, commission_rate, commission_amount, status, created_at)
-               VALUES (
-                   (SELECT id FROM agent_commissions WHERE business_id=? AND invoice_id=?),
-                   ?,?,?,?,?,?,
-                   COALESCE((SELECT status FROM agent_commissions WHERE business_id=? AND invoice_id=?), 'pending'),
-                   datetime('now')
-               )""",
-            (
-                biz_id,
-                clean["invoice_id"],
-                biz_id,
-                agent_id,
-                clean["invoice_id"],
-                round(float(inv["total"] or 0), 2),
-                rate,
-                amount,
-                biz_id,
-                clean["invoice_id"],
-            ),
+            """UPDATE agent_invoice_links SET agent_id=?
+               WHERE business_id=? AND invoice_id=?""",
+            (agent_id, biz_id, clean["invoice_id"]),
+        )
+        # agent_commissions: استخدم INSERT OR IGNORE + UPDATE
+        db.execute(
+            """INSERT OR IGNORE INTO agent_commissions
+               (business_id, agent_id, invoice_id, invoice_total,
+                commission_rate, commission_amount, status, created_at)
+               VALUES (?,?,?,?,?,?,'pending',datetime('now'))""",
+            (biz_id, agent_id, clean["invoice_id"],
+             round(float(inv["total"] or 0), 2), rate, amount),
+        )
+        db.execute(
+            """UPDATE agent_commissions
+               SET agent_id=?, invoice_total=?, commission_rate=?, commission_amount=?
+               WHERE business_id=? AND invoice_id=? AND status='pending'""",
+            (agent_id, round(float(inv["total"] or 0), 2), rate, amount,
+             biz_id, clean["invoice_id"]),
         )
         db.commit()
     except Exception as e:

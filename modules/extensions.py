@@ -157,10 +157,12 @@ def next_invoice_number(db: sqlite3.Connection, business_id: int) -> str:
     ).fetchone()
     prefix = prefix_row["value"] if prefix_row else "INV"
     row = db.execute(
-        "SELECT COUNT(*) as cnt FROM invoices WHERE business_id=? AND invoice_type='sale'",
-        (business_id,)
+        """SELECT COALESCE(MAX(CAST(REPLACE(invoice_number, ? || '-', '') AS INTEGER)), 0) AS last_seq
+           FROM invoices WHERE business_id=? AND invoice_type='sale'
+           AND invoice_number LIKE ? || '-%'""",
+        (prefix, business_id, prefix)
     ).fetchone()
-    seq = (row["cnt"] or 0) + 1
+    seq = (row["last_seq"] or 0) + 1
     return f"{prefix}-{seq:05d}"
 
 
