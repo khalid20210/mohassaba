@@ -345,11 +345,12 @@ def auth_register():
         if guard:
             return guard
 
-        username  = request.form.get("username",  "").strip()
-        full_name = request.form.get("full_name",  "").strip()
-        email     = request.form.get("email",      "").strip().lower()
-        password  = request.form.get("password",   "")
-        confirm   = request.form.get("confirm_password", "")
+        username     = request.form.get("username",  "").strip()
+        full_name    = request.form.get("full_name",  "").strip()
+        email        = request.form.get("email",      "").strip().lower()
+        password     = request.form.get("password",   "")
+        confirm      = request.form.get("confirm_password", "")
+        country_code = request.form.get("country_code", "SA").strip().upper() or "SA"
 
         errors = []
         if not username:        errors.append("اسم المستخدم مطلوب")
@@ -361,17 +362,24 @@ def auth_register():
         if errors:
             for e in errors:
                 flash(e, "error")
-            return render_template("auth/register.html")
+            db2 = get_db()
+            from modules.country_engine import list_countries
+            return render_template("auth/register.html",
+                                   countries=list_countries(db2),
+                                   selected_country=country_code)
 
         db = get_db()
         if db.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone():
             flash("اسم المستخدم مستخدم بالفعل", "error")
-            return render_template("auth/register.html")
+            from modules.country_engine import list_countries
+            return render_template("auth/register.html",
+                                   countries=list_countries(db),
+                                   selected_country=country_code)
 
         try:
             db.execute(
-                "INSERT INTO businesses (name, is_active) VALUES (?, 0)",
-                (f"منشأة {username}",)
+                "INSERT INTO businesses (name, is_active, country_code) VALUES (?, 0, ?)",
+                (f"منشأة {username}", country_code)
             )
             biz_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
 
@@ -392,7 +400,26 @@ def auth_register():
         except Exception:
             db.rollback()
             flash("حدث خطأ أثناء إنشاء الحساب — يرجى المحاولة مرة أخرى", "error")
-            return render_template("auth/register.html")
+            from modules.country_engine import list_countries
+            return render_template("auth/register.html",
+                                   countries=list_countries(get_db()),
+                                   selected_country=country_code)
+
+        # ضبط ضريبة افتراضية من بروفايل الدولة (tax_settings)
+        try:
+            from modules.country_engine import get_country
+            cp = get_country(db, country_code)
+            if cp and cp.get("default_tax_rate", 0) > 0:
+                db.execute(
+                    """INSERT OR IGNORE INTO tax_settings
+                       (business_id, rate, tax_name, is_active)
+                       VALUES (?, ?, ?, 1)""",
+                    (biz_id, cp["default_tax_rate"],
+                     cp.get("tax_label_ar", "ضريبة"))
+                )
+            db.commit()
+        except Exception:
+            pass  # الضريبة غير معيقة للتسجيل
 
         session.clear()
         session["user_id"]          = user_id
@@ -400,7 +427,13 @@ def auth_register():
         session["needs_onboarding"] = True
         return redirect(url_for("core.onboarding"))
 
-    return render_template("auth/register.html")
+    # GET: جلب قائمة الدول للقالب
+    try:
+        from modules.country_engine import list_countries
+        countries = list_countries(get_db())
+    except Exception:
+        countries = []
+    return render_template("auth/register.html", countries=countries, selected_country="SA")
 
 
 @bp.route("/auth/forgot-password", methods=["GET", "POST"])

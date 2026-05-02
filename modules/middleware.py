@@ -111,10 +111,11 @@ def write_audit_log(db, business_id: int, action: str,
 def load_user():
     """حقن بيانات المستخدم والمنشأة في g قبل كل request"""
     import logging
-    g.user         = None
-    g.business     = None
-    g.sidebar_items= []
-    g.user_perms   = {}
+    g.user           = None
+    g.business       = None
+    g.sidebar_items  = []
+    g.user_perms     = {}
+    g.country_profile = None
 
     user_id = session.get("user_id")
     if user_id:
@@ -172,6 +173,13 @@ def load_user():
                 rest_items    = [x for x in filtered if x["key"] != "settings"]
                 g.sidebar_items = rest_items + settings_item
 
+            # ── بروفايل الدولة (عملة + ضريبة) ──────────────────────────
+            try:
+                from modules.country_engine import get_business_country
+                g.country_profile = get_business_country(db, int(biz_id))
+            except Exception:
+                g.country_profile = None
+
 
 def inject_globals():
     """Context processor: يُضاف لكل القوالب"""
@@ -186,6 +194,7 @@ def inject_globals():
         "now_date":         datetime.now().strftime("%Y-%m-%d"),
         "csrf_token":       generate_csrf_token(),
         "user_has_perm":    user_has_perm,
+        "country_profile":  g.country_profile,
     }
 
 

@@ -394,6 +394,22 @@ body {
         </div>
 
         <div class="jb-field">
+          <label class="jb-label">الدولة <span class="req">*</span></label>
+          <select name="country_code" id="countrySelect" class="jb-input" onchange="updateCountryHint(this)">
+            {% for c in countries %}
+            <option value="{{ c.country_code }}"
+              data-tax="{{ c.default_tax_rate }}"
+              data-currency="{{ c.currency_symbol }}"
+              data-tax-sys="{{ c.tax_system }}"
+              {% if c.country_code == (selected_country or 'SA') %}selected{% endif %}>
+              {{ c.country_name_ar }} — {{ c.currency_symbol }}
+            </option>
+            {% endfor %}
+          </select>
+          <div class="jb-hint" id="countryHint">يحدد العملة ونسبة الضريبة الافتراضية تلقائياً</div>
+        </div>
+
+        <div class="jb-field">
           <label class="jb-label">البريد الإلكتروني</label>
           <input type="email" name="email" class="jb-input" placeholder="email@example.com" value="{{ request.form.get('email', '') }}">
         </div>
@@ -423,6 +439,26 @@ body {
 
 {% block scripts %}
 <script>
+function updateCountryHint(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  const tax = parseFloat(opt.dataset.tax || 0);
+  const sym = opt.dataset.currency || '';
+  const sys = opt.dataset.taxSys || 'none';
+  const hint = document.getElementById('countryHint');
+  if (!hint) return;
+  if (tax > 0) {
+    const sysLabel = sys === 'zatca' ? ' (ZATCA)' : sys === 'vat' ? ' (VAT)' : '';
+    hint.textContent = `العملة: ${sym} | ضريبة افتراضية: ${tax}%${sysLabel}`;
+  } else {
+    hint.textContent = `العملة: ${sym} | بدون ضريبة`;
+  }
+}
+// تحديث عند تحميل الصفحة
+window.addEventListener('DOMContentLoaded', () => {
+  const sel = document.getElementById('countrySelect');
+  if (sel) updateCountryHint(sel);
+});
+
 let showcaseItems = [], showcaseIndex = 0, showcaseTimer = null;
 const showcaseDelay = 6000;
 
