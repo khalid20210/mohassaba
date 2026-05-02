@@ -240,3 +240,92 @@ def add_equipment():
     
     flash("تم إضافة المعدة", "success")
     return redirect("/projects/equipment")
+
+
+# ─── PROJECT ACTIONS ────────────────────────────────────────
+@bp.route("/<int:project_id>/edit", methods=["POST"])
+@require_perm("sales")
+def edit_project(project_id):
+    """تحديث بيانات المشروع"""
+    from modules.extensions import get_db
+    db = get_db()
+    data = request.form
+    db.execute("""
+        UPDATE projects SET
+            project_name=?, location=?, planned_end_date=?,
+            budget_total=?, project_status=?, notes=?, updated_at=datetime('now')
+        WHERE id=? AND business_id=?
+    """, (
+        data.get("name"), data.get("location"), data.get("end_date"),
+        float(data.get("budget", 0)), data.get("status", "planning"),
+        data.get("notes", ""), project_id, g.business["id"]
+    ))
+    db.commit()
+    flash("تم تحديث المشروع", "success")
+    return redirect(f"/projects/{project_id}")
+
+
+@bp.route("/<int:project_id>/complete", methods=["POST"])
+@require_perm("sales")
+def complete_project(project_id):
+    """إغلاق المشروع كمنجز"""
+    from modules.extensions import get_db
+    db = get_db()
+    db.execute(
+        "UPDATE projects SET project_status='completed', actual_end_date=date('now'), updated_at=datetime('now') WHERE id=? AND business_id=?",
+        (project_id, g.business["id"])
+    )
+    db.commit()
+    flash("تم إغلاق المشروع ✅", "success")
+    return redirect(f"/projects/{project_id}")
+
+
+# ─── EQUIPMENT ACTIONS ──────────────────────────────────────
+@bp.route("/equipment/<int:eq_id>")
+@require_perm("sales")
+def view_equipment(eq_id):
+    """تفاصيل المعدة"""
+    from modules.extensions import get_db
+    db = get_db()
+    bid = g.business["id"]
+    eq = db.execute("SELECT * FROM equipment WHERE id=? AND business_id=?", (eq_id, bid)).fetchone()
+    if not eq:
+        return "المعدة غير موجودة", 404
+    return render_template("construction/equipment_detail.html", equipment=eq)
+
+
+@bp.route("/equipment/<int:eq_id>/update", methods=["POST"])
+@require_perm("sales")
+def update_equipment(eq_id):
+    """تحديث حالة المعدة"""
+    from modules.extensions import get_db
+    db = get_db()
+    data = request.form
+    db.execute("""
+        UPDATE equipment SET status=?, assigned_project_id=?, notes=?
+        WHERE id=? AND business_id=?
+    """, (
+        data.get("status", "available"),
+        data.get("project_id") or None,
+        data.get("notes", ""),
+        eq_id, g.business["id"]
+    ))
+    db.commit()
+    flash("تم تحديث المعدة", "success")
+    return redirect(f"/projects/equipment/{eq_id}")
+
+
+# ─── API ────────────────────────────────────────────────────
+@bp.route("/api/stats")
+@require_perm("sales")
+def api_construction_stats():
+    """إحصائيات المقاولات"""
+    from modules.extensions import get_db
+    db = get_db()
+    bid = g.business["id"]
+    projects = db.execute("SELECT project_status, COUNT(*) c FROM projects WHERE business_id=? GROUP BY project_status", (bid,)).fetchall()
+    total_budget = db.execute("SELECT COALESCE(SUM(budget_total),0) FROM projects WHERE business_id=? AND project_status NOT IN ('cancelled')", (bid,)).fetchone()[0]
+    return jsonify({
+        "projects": {r["project_status"]: r["c"] for r in projects},
+        "total_budget": total_budget
+    })

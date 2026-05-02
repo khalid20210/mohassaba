@@ -5,6 +5,126 @@
 {% block content %}
 <div class="page-header">
   <div>
+    <p class="page-subtitle">{{ contracts|length }} عقد</p>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <a href="/services/jobs" class="btn btn-secondary">🔧 أوامر العمل</a>
+    <button class="btn btn-primary" onclick="document.getElementById('newContractModal').classList.add('show')">+ عقد جديد</button>
+  </div>
+</div>
+
+<!-- فلتر -->
+<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+  {% for s, label in [('','الكل'),('active','نشط'),('expired','منتهي'),('cancelled','ملغي')] %}
+  <a href="/services/contracts{% if s %}?status={{ s }}{% endif %}"
+     style="padding:6px 14px;border-radius:20px;text-decoration:none;font-size:.82rem;border:1px solid rgba(255,255,255,.1);{% if request.args.get('status','')==s %}background:rgba(59,130,246,.15);color:#60a5fa;border-color:#3b82f6;{% else %}color:#64748b;{% endif %}">
+    {{ label }}
+  </a>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>#</th><th>رقم العقد</th><th>العميل</th><th>نوع الخدمة</th><th>البداية</th><th>النهاية</th><th>القيمة</th><th>الدورية</th><th>الحالة</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for c in contracts %}
+      <tr>
+        <td style="color:#64748b;font-size:.82rem;">{{ c.id }}</td>
+        <td style="font-weight:700;color:#93c5fd;">{{ c.contract_number or '—' }}</td>
+        <td>{{ c.client_id or '—' }}</td>
+        <td>{{ c.contract_type or '—' }}</td>
+        <td style="color:#94a3b8;font-size:.82rem;">{{ c.start_date or '—' }}</td>
+        <td>
+          {{ c.end_date or '—' }}
+        </td>
+        <td style="color:#22c55e;font-weight:700;">{{ "{:,.2f}".format(c.contract_value or 0) }} ر.س</td>
+        <td style="color:#94a3b8;font-size:.82rem;">{{ c.billing_frequency or '—' }}</td>
+        <td>
+          {% if c.status == 'active' %}<span style="background:#14532d;color:#86efac;padding:2px 10px;border-radius:20px;font-size:.78rem;">● نشط</span>
+          {% elif c.status == 'expired' %}<span style="background:#7f1d1d;color:#fca5a5;padding:2px 10px;border-radius:20px;font-size:.78rem;">⚠ منتهٍ</span>
+          {% elif c.status == 'cancelled' %}<span style="background:rgba(255,255,255,.06);color:#64748b;padding:2px 10px;border-radius:20px;font-size:.78rem;">✕ ملغي</span>
+          {% else %}<span style="color:#94a3b8;">{{ c.status or '—' }}</span>{% endif %}
+        </td>
+        <td>
+          <div style="display:flex;gap:4px;">
+            <a href="/services/contracts/{{ c.id }}" class="btn btn-secondary" style="padding:4px 10px;font-size:.78rem;">تفاصيل</a>
+            {% if c.status == 'active' %}
+            <form method="post" action="/services/contracts/{{ c.id }}/cancel" onsubmit="return confirm('إلغاء العقد؟')">
+              <button type="submit" class="btn" style="padding:4px 10px;font-size:.78rem;background:#7f1d1d;color:#fca5a5;border:none;">إلغاء</button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="10" style="text-align:center;color:#64748b;padding:40px;">لا توجد عقود</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal: عقد جديد -->
+<div class="modal-overlay" id="newContractModal">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 class="modal-title">📄 عقد خدمة جديد</h3>
+      <button class="modal-close" onclick="document.getElementById('newContractModal').classList.remove('show')">✕</button>
+    </div>
+    <form method="post" action="/services/contracts/new">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">رقم العقد</label>
+          <input name="number" class="form-input" placeholder="SVC-001">
+        </div>
+        <div class="form-group">
+          <label class="form-label">معرف العميل *</label>
+          <input name="client_id" class="form-input" type="number" placeholder="رقم العميل">
+        </div>
+        <div class="form-group">
+          <label class="form-label">نوع الخدمة</label>
+          <input name="type" class="form-input" placeholder="صيانة / أمن / نظافة...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">قيمة العقد (ر.س)</label>
+          <input name="value" class="form-input" type="number" step="0.01" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">تاريخ البدء</label>
+          <input name="start_date" type="date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">تاريخ الانتهاء</label>
+          <input name="end_date" type="date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">دورية الفوترة</label>
+          <select name="billing" class="form-input">
+            <option value="monthly">شهري</option>
+            <option value="quarterly">ربع سنوي</option>
+            <option value="annually">سنوي</option>
+            <option value="one_time">مرة واحدة</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">وصف الخدمة</label>
+        <textarea name="description" class="form-input" rows="3" placeholder="وصف الخدمات المشمولة..."></textarea>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('newContractModal').classList.remove('show')">إلغاء</button>
+        <button type="submit" class="btn btn-primary">✅ إنشاء العقد</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+
+{% block content %}
+<div class="page-header">
+  <div>
     <h1 class="page-title">📄 عقود الخدمة</h1>
     <p class="page-subtitle">{{ contracts|length }} عقد</p>
   </div>

@@ -207,3 +207,142 @@ def api_get_patient(patient_id):
     if patient:
         return jsonify(dict(patient))
     return jsonify({"error": "Patient not found"}), 404
+
+
+# ─── PATIENT DETAIL & EDIT ──────────────────────────────────
+@bp.route("/patients/<int:patient_id>")
+@require_perm("sales")
+def view_patient(patient_id):
+    """ملف المريض الكامل"""
+    from modules.extensions import get_db
+    db = get_db()
+    bid = g.business["id"]
+    patient = db.execute(
+        "SELECT * FROM patients WHERE id=? AND business_id=?",
+        (patient_id, bid)
+    ).fetchone()
+    if not patient:
+        return "المريض غير موجود", 404
+    appointments = db.execute(
+        "SELECT * FROM appointments WHERE patient_id=? AND business_id=? ORDER BY appointment_date DESC LIMIT 20",
+        (patient_id, bid)
+    ).fetchall()
+    prescriptions = db.execute(
+        "SELECT * FROM prescriptions WHERE patient_id=? AND business_id=? ORDER BY created_at DESC LIMIT 10",
+        (patient_id, bid)
+    ).fetchall()
+    return render_template("medical/patient_detail.html",
+        patient=patient, appointments=appointments, prescriptions=prescriptions)
+
+
+@bp.route("/patients/<int:patient_id>/edit", methods=["POST"])
+@require_perm("sales")
+def edit_patient(patient_id):
+    """تعديل بيانات المريض"""
+    from modules.extensions import get_db
+    db = get_db()
+    data = request.form
+    db.execute("""
+        UPDATE patients SET
+            patient_name=?, patient_phone=?, date_of_birth=?,
+            gender=?, national_id=?, email=?, address=?, updated_at=datetime('now')
+        WHERE id=? AND business_id=?
+    """, (
+        data.get("name"), data.get("phone"), data.get("dob"),
+        data.get("gender"), data.get("national_id"),
+        data.get("email"), data.get("address"),
+        patient_id, g.business["id"]
+    ))
+    db.commit()
+    flash("تم تحديث بيانات المريض ✅", "success")
+    return redirect(f"/medical/patients/{patient_id}")
+
+
+# ─── APPOINTMENT ACTIONS ────────────────────────────────────
+@bp.route("/appointments/new", methods=["POST"])
+@require_perm("sales")
+def create_appointment():
+    """حجز موعد جديد"""
+    from modules.extensions import get_db
+    db = get_db()
+    data = request.form
+    bid = g.business["id"]
+    db.execute("""
+        INSERT INTO appointments (
+            business_id, patient_id, appointment_date, appointment_time,
+            doctor_name, appointment_type, status, notes, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, 'scheduled', ?, datetime('now'))
+    """, (
+        bid,
+        data.get("patient_id"),
+        data.get("date"),
+        data.get("time"),
+        data.get("doctor"),
+        data.get("type", "consultation"),
+        data.get("notes", ""),
+    ))
+    db.commit()
+    flash("تم حجز الموعد ✅", "success")
+    return redirect("/medical/appointments")
+
+
+@bp.route("/appointments/<int:appt_id>/cancel", methods=["POST"])
+@require_perm("sales")
+def cancel_appointment(appt_id):
+    """إلغاء موعد"""
+    from modules.extensions import get_db
+    db = get_db()
+    db.execute(
+        "UPDATE appointments SET status='cancelled' WHERE id=? AND business_id=?",
+        (appt_id, g.business["id"])
+    )
+    db.commit()
+    flash("تم إلغاء الموعد", "warning")
+    return redirect("/medical/appointments")
+
+
+# ─── PRESCRIPTIONS ──────────────────────────────────────────
+@bp.route("/prescriptions/<int:patient_id>/new", methods=["POST"])
+@require_perm("sales")
+def add_prescription(patient_id):
+    """إضافة وصفة طبية"""
+    from modules.extensions import get_db
+    db = get_db()
+    data = request.form
+    bid = g.business["id"]
+    db.execute("""
+        INSERT INTO prescriptions (
+            business_id, patient_id, doctor_name, diagnosis,
+            medications, notes, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+    """, (
+        bid, patient_id,
+        data.get("doctor"),
+        data.get("diagnosis"),
+        data.get("medications"),
+        data.get("notes", ""),
+    ))
+    db.commit()
+    flash("تم حفظ الوصفة الطبية ✅", "success")
+    return redirect(f"/medical/patients/{patient_id}")
+
+
+# ─── API ────────────────────────────────────────────────────
+@bp.route("/api/stats")
+@require_perm("sales")
+def api_medical_stats():
+    """إحصائيات يومية"""
+    from modules.extensions import get_db
+    db = get_db()
+    bid = g.business["id"]
+    today = datetime.today().strftime('%Y-%m-%d')
+    today_appts = db.execute(
+        "SELECT COUNT(*) FROM appointments WHERE business_id=? AND date(appointment_date)=?",
+        (bid, today)
+    ).fetchone()[0]
+    total_patients = db.execute("SELECT COUNT(*) FROM patients WHERE business_id=?", (bid,)).fetchone()[0]
+    pending = db.execute(
+        "SELECT COUNT(*) FROM appointments WHERE business_id=? AND status='scheduled' AND appointment_date>=?",
+        (bid, today)
+    ).fetchone()[0]
+    return jsonify({"today_appointments": today_appts, "total_patients": total_patients, "pending_appointments": pending})

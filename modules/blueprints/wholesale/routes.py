@@ -139,6 +139,103 @@ def create_pricing_list():
     return redirect("/wholesale/pricing")
 
 
+# ─── ORDER ACTIONS ──────────────────────────────────────────
+@bp.route("/orders/<int:order_id>")
+@require_perm("sales")
+def view_order(order_id):
+    """تفاصيل الطلب"""
+    from modules.extensions import get_db
+    db = get_db()
+    bid = g.business["id"]
+    order = db.execute(
+        "SELECT * FROM orders WHERE id=? AND business_id=?",
+        (order_id, bid)
+    ).fetchone()
+    if not order:
+        return "الطلب غير موجود", 404
+    order = dict(order)
+    order["order_items"] = json.loads(order.get("order_items") or "[]")
+    return render_template("wholesale/order_detail.html", order=order)
+
+
+@bp.route("/orders/<int:order_id>/confirm", methods=["POST"])
+@require_perm("sales")
+def confirm_order(order_id):
+    """تأكيد الطلب"""
+    from modules.extensions import get_db
+    db = get_db()
+    db.execute(
+        "UPDATE orders SET order_status='confirmed' WHERE id=? AND business_id=?",
+        (order_id, g.business["id"])
+    )
+    db.commit()
+    flash("تم تأكيد الطلب ✅", "success")
+    return redirect(f"/wholesale/orders/{order_id}")
+
+
+@bp.route("/orders/<int:order_id>/deliver", methods=["POST"])
+@require_perm("sales")
+def deliver_order(order_id):
+    """تسليم الطلب"""
+    from modules.extensions import get_db
+    db = get_db()
+    db.execute(
+        "UPDATE orders SET order_status='delivered', delivered_at=datetime('now') WHERE id=? AND business_id=?",
+        (order_id, g.business["id"])
+    )
+    db.commit()
+    flash("تم تسليم الطلب 🚚", "success")
+    return redirect(f"/wholesale/orders/{order_id}")
+
+
+@bp.route("/orders/<int:order_id>/cancel", methods=["POST"])
+@require_perm("sales")
+def cancel_order(order_id):
+    """إلغاء الطلب"""
+    from modules.extensions import get_db
+    db = get_db()
+    db.execute(
+        "UPDATE orders SET order_status='cancelled' WHERE id=? AND business_id=?",
+        (order_id, g.business["id"])
+    )
+    db.commit()
+    flash("تم إلغاء الطلب", "warning")
+    return redirect("/wholesale/orders")
+
+
+# ─── PRICING ACTIONS ────────────────────────────────────────
+@bp.route("/pricing/<int:list_id>")
+@require_perm("purchases")
+def view_pricing_list(list_id):
+    """تفاصيل قائمة الأسعار"""
+    from modules.extensions import get_db
+    db = get_db()
+    bid = g.business["id"]
+    pl = db.execute(
+        "SELECT * FROM pricing_lists WHERE id=? AND business_id=?",
+        (list_id, bid)
+    ).fetchone()
+    if not pl:
+        return "قائمة الأسعار غير موجودة", 404
+    pl = dict(pl)
+    pl["pricing_items"] = json.loads(pl.get("pricing_items") or "[]")
+    return render_template("wholesale/pricing_detail.html", pricing_list=pl)
+
+
+@bp.route("/pricing/<int:list_id>/toggle", methods=["POST"])
+@require_perm("purchases")
+def toggle_pricing_list(list_id):
+    """تفعيل/تعطيل قائمة الأسعار"""
+    from modules.extensions import get_db
+    db = get_db()
+    bid = g.business["id"]
+    current = db.execute("SELECT is_active FROM pricing_lists WHERE id=? AND business_id=?", (list_id, bid)).fetchone()
+    if current:
+        db.execute("UPDATE pricing_lists SET is_active=? WHERE id=?", (0 if current["is_active"] else 1, list_id))
+        db.commit()
+    return redirect("/wholesale/pricing")
+
+
 @bp.route("/api/orders/<int:order_id>")
 def api_get_order(order_id):
     """API: الحصول على تفاصيل الطلب"""

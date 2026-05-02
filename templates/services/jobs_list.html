@@ -1,5 +1,132 @@
 {% extends "base.html" %}
 {% block title %}أوامر العمل{% endblock %}
+{% block page_title %}🔧 أوامر العمل{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <p class="page-subtitle">{{ jobs|length }} أمر عمل</p>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <a href="/services/contracts" class="btn btn-secondary">📄 العقود</a>
+    <button class="btn btn-primary" onclick="document.getElementById('newJobModal').classList.add('show')">+ أمر عمل جديد</button>
+  </div>
+</div>
+
+<!-- فلتر الحالة -->
+<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+  {% for s, label in [('','الكل'),('open','مفتوح'),('in_progress','قيد التنفيذ'),('completed','منجز'),('cancelled','ملغي')] %}
+  <a href="/services/jobs{% if s %}?status={{ s }}{% endif %}"
+     style="padding:6px 14px;border-radius:20px;text-decoration:none;font-size:.82rem;border:1px solid rgba(255,255,255,.1);{% if request.args.get('status','')==s %}background:rgba(59,130,246,.15);color:#60a5fa;border-color:#3b82f6;{% else %}color:#64748b;{% endif %}">
+    {{ label }}
+  </a>
+  {% endfor %}
+</div>
+
+<!-- إحصائيات -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+  {% set cnt = {'open':0,'in_progress':0,'completed':0} %}
+  {% for j in jobs %}{% if j.job_status in cnt %}{% set _ = cnt.update({j.job_status: cnt[j.job_status]+1}) %}{% endif %}{% endfor %}
+  <div class="card" style="text-align:center;padding:12px;"><div style="font-size:1.4rem;font-weight:800;">{{ jobs|length }}</div><div style="font-size:.78rem;color:#94a3b8;">الإجمالي</div></div>
+  <div class="card" style="text-align:center;padding:12px;"><div style="font-size:1.4rem;font-weight:800;color:#38bdf8;">{{ cnt.open }}</div><div style="font-size:.78rem;color:#94a3b8;">مفتوح</div></div>
+  <div class="card" style="text-align:center;padding:12px;"><div style="font-size:1.4rem;font-weight:800;color:#f59e0b;">{{ cnt.in_progress }}</div><div style="font-size:.78rem;color:#94a3b8;">قيد التنفيذ</div></div>
+  <div class="card" style="text-align:center;padding:12px;"><div style="font-size:1.4rem;font-weight:800;color:#22c55e;">{{ cnt.completed }}</div><div style="font-size:.78rem;color:#94a3b8;">منجز</div></div>
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>#</th><th>العميل</th><th>نوع الخدمة</th><th>الموقع</th>
+        <th>الفني</th><th>الأولوية</th><th>الحالة</th><th>الجدولة</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for j in jobs %}
+      <tr>
+        <td style="color:#64748b;font-size:.82rem;">{{ j.id }}</td>
+        <td><strong>{{ j.client_id or '—' }}</strong></td>
+        <td>{{ j.job_type or '—' }}</td>
+        <td style="color:#64748b;font-size:.82rem;">{{ j.location or '—' }}</td>
+        <td>{{ j.technician_id or '—' }}</td>
+        <td>
+          {% if j.priority=='urgent' %}<span style="color:#ef4444;font-weight:700;">🔴 عاجل</span>
+          {% elif j.priority=='high' %}<span style="color:#f59e0b;font-weight:700;">🟠 عالٍ</span>
+          {% else %}<span style="color:#22c55e;">🟢 عادي</span>{% endif %}
+        </td>
+        <td>
+          {% if j.job_status=='open' %}<span style="background:#1e3a5f;color:#93c5fd;padding:2px 10px;border-radius:20px;font-size:.78rem;">◎ مفتوح</span>
+          {% elif j.job_status=='in_progress' %}<span style="background:#78350f;color:#fcd34d;padding:2px 10px;border-radius:20px;font-size:.78rem;">⏳ جارٍ</span>
+          {% elif j.job_status=='completed' %}<span style="background:#14532d;color:#86efac;padding:2px 10px;border-radius:20px;font-size:.78rem;">✓ منجز</span>
+          {% elif j.job_status=='cancelled' %}<span style="background:#7f1d1d;color:#fca5a5;padding:2px 10px;border-radius:20px;font-size:.78rem;">✕ ملغي</span>
+          {% else %}<span style="color:#94a3b8;">{{ j.job_status or 'pending' }}</span>{% endif %}
+        </td>
+        <td style="color:#64748b;font-size:.82rem;">{{ j.scheduled_date or (j.created_at[:10] if j.created_at else '—') }}</td>
+        <td><a href="/services/jobs/{{ j.id }}" class="btn btn-secondary" style="padding:4px 12px;font-size:.8rem;">إدارة</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="9" style="text-align:center;color:#64748b;padding:40px;">لا توجد أوامر عمل</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal: أمر عمل جديد -->
+<div class="modal-overlay" id="newJobModal">
+  <div class="modal-box" style="max-width:540px;">
+    <div class="modal-header">
+      <h3 class="modal-title">🔧 أمر عمل جديد</h3>
+      <button class="modal-close" onclick="document.getElementById('newJobModal').classList.remove('show')">✕</button>
+    </div>
+    <form method="post" action="/services/jobs/new">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">رقم الأمر</label>
+          <input name="job_number" class="form-input" placeholder="JOB-001">
+        </div>
+        <div class="form-group">
+          <label class="form-label">نوع الخدمة *</label>
+          <input name="type" class="form-input" placeholder="صيانة / تركيب ...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">معرف العميل</label>
+          <input name="client_id" class="form-input" type="number" placeholder="رقم العميل">
+        </div>
+        <div class="form-group">
+          <label class="form-label">الفني (معرف)</label>
+          <input name="technician_id" class="form-input" placeholder="رقم الفني">
+        </div>
+        <div class="form-group">
+          <label class="form-label">تاريخ الجدولة</label>
+          <input name="scheduled_date" type="date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">الأولوية</label>
+          <select name="priority" class="form-input">
+            <option value="normal">عادي</option>
+            <option value="high">عالٍ</option>
+            <option value="urgent">عاجل</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">الموقع / العنوان</label>
+        <input name="location" class="form-input" placeholder="عنوان الخدمة">
+      </div>
+      <div class="form-group">
+        <label class="form-label">وصف المشكلة</label>
+        <textarea name="description" class="form-input" rows="3" placeholder="اكتب وصف المشكلة..."></textarea>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('newJobModal').classList.remove('show')">إلغاء</button>
+        <button type="submit" class="btn btn-primary">✅ إنشاء الأمر</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block title %}أوامر العمل{% endblock %}
 {% block page_title %}📋 أوامر العمل{% endblock %}
 
 {% block content %}

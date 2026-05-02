@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}عقد إيجار #{{ contract.id }}{% endblock %}
+{% block page_title %}📄 عقد إيجار #{{ contract.id }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <a href="/rental/contracts" style="color:#94a3b8;font-size:.85rem;">← عقود الإيجار</a>
+    <p class="page-subtitle" style="margin-top:4px;">{{ contract.vehicle_name or 'مركبة' }}</p>
+  </div>
+  <div style="display:flex;gap:8px;">
+    {% if contract.status == 'active' %}
+    <form method="post" action="/rental/contracts/{{ contract.id }}/close" onsubmit="return confirm('إنهاء العقد وإعادة المركبة للأسطول؟')">
+      <button type="submit" class="btn btn-primary">✅ إنهاء العقد</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- حالة العقد -->
+<div style="margin-bottom:16px;">
+  {% if contract.status=='active' %}
+    <span style="background:#14532d;color:#86efac;padding:6px 18px;border-radius:20px;font-size:.85rem;font-weight:700;">● نشط</span>
+  {% elif contract.status=='closed' %}
+    <span style="background:rgba(255,255,255,.06);color:#94a3b8;padding:6px 18px;border-radius:20px;font-size:.85rem;font-weight:700;">✓ منتهٍ</span>
+  {% elif contract.status=='cancelled' %}
+    <span style="background:#7f1d1d;color:#fca5a5;padding:6px 18px;border-radius:20px;font-size:.85rem;font-weight:700;">✕ ملغي</span>
+  {% endif %}
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">🚗 بيانات المركبة</h3></div>
+    <table class="table">
+      <tr><td style="color:#94a3b8;">المركبة</td><td><strong>{{ contract.vehicle_name or '—' }}</strong></td></tr>
+      <tr><td style="color:#94a3b8;">رقم اللوحة</td><td>{{ contract.plate_number or '—' }}</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">👤 بيانات المستأجر</h3></div>
+    <table class="table">
+      <tr><td style="color:#94a3b8;">الاسم</td><td><strong>{{ contract.renter_name or contract.renter_id or '—' }}</strong></td></tr>
+      <tr><td style="color:#94a3b8;">رقم الهوية</td><td>{{ contract.renter_id_number or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">الهاتف</td><td>{{ contract.renter_phone or '—' }}</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">📅 فترة الإيجار</h3></div>
+    <table class="table">
+      <tr><td style="color:#94a3b8;">تاريخ البدء</td><td>{{ contract.rental_start_date or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">تاريخ الانتهاء</td><td>{{ contract.rental_end_date or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">نوع الإيجار</td><td>{{ contract.rental_type or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">الكيلومتراج الابتدائي</td><td>{{ contract.pickup_mileage or '—' }} كم</td></tr>
+      <tr><td style="color:#94a3b8;">الكيلومتراج النهائي</td><td>{{ contract.return_mileage or '—' }} كم</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">💰 المالية</h3></div>
+    <table class="table">
+      <tr><td style="color:#94a3b8;">السعر اليومي</td><td style="color:#38bdf8;font-weight:700;">{{ "{:,.2f}".format(contract.daily_rate or 0) }} ر.س</td></tr>
+      <tr><td style="color:#94a3b8;">إجمالي الإيجار</td><td style="color:#22c55e;font-weight:700;font-size:1.1rem;">{{ "{:,.2f}".format(contract.total_amount or 0) }} ر.س</td></tr>
+      <tr><td style="color:#94a3b8;">المدفوع</td><td style="color:#22c55e;font-weight:700;">{{ "{:,.2f}".format(contract.paid_amount or 0) }} ر.س</td></tr>
+      <tr><td style="color:#94a3b8;">المتبقي</td><td style="color:#ef4444;font-weight:700;">{{ "{:,.2f}".format((contract.total_amount or 0) - (contract.paid_amount or 0)) }} ر.س</td></tr>
+    </table>
+  </div>
+</div>
+
+{% if contract.notes %}
+<div class="card" style="margin-top:16px;">
+  <div class="card-header"><h3 class="card-title">📝 ملاحظات</h3></div>
+  <p style="color:#cbd5e1;line-height:1.8;">{{ contract.notes }}</p>
+</div>
+{% endif %}
+{% endblock %}

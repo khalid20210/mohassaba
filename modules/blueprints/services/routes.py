@@ -177,3 +177,150 @@ def create_contract():
     
     flash("تم إنشاء العقد", "success")
     return redirect("/services/contracts")
+
+
+# ─── JOBS ACTIONS ───────────────────────────────────────────
+@bp.route("/jobs/<int:job_id>/start", methods=["POST"])
+@require_perm("sales")
+def start_job(job_id):
+    """بدء تنفيذ أمر العمل"""
+    from modules.extensions import get_db
+    db = get_db()
+    db.execute(
+        "UPDATE jobs SET job_status='in_progress', started_at=datetime('now') WHERE id=? AND business_id=?",
+        (job_id, g.business["id"])
+    )
+    db.commit()
+    flash("تم بدء التنفيذ", "success")
+    return redirect(f"/services/jobs/{job_id}")
+
+
+@bp.route("/jobs/<int:job_id>/complete", methods=["POST"])
+@require_perm("sales")
+def complete_job(job_id):
+    """إغلاق أمر العمل كمنجز"""
+    from modules.extensions import get_db
+    db = get_db()
+    actual_cost = request.form.get("actual_cost", 0)
+    notes = request.form.get("notes", "")
+    db.execute(
+        "UPDATE jobs SET job_status='completed', completed_at=datetime('now'), actual_cost=?, notes=? WHERE id=? AND business_id=?",
+        (float(actual_cost), notes, job_id, g.business["id"])
+    )
+    db.commit()
+    flash("تم إغلاق أمر العمل كمنجز ✅", "success")
+    return redirect(f"/services/jobs/{job_id}")
+
+
+@bp.route("/jobs/<int:job_id>/cancel", methods=["POST"])
+@require_perm("sales")
+def cancel_job(job_id):
+    """إلغاء أمر العمل"""
+    from modules.extensions import get_db
+    db = get_db()
+    db.execute(
+        "UPDATE jobs SET job_status='cancelled' WHERE id=? AND business_id=?",
+        (job_id, g.business["id"])
+    )
+    db.commit()
+    flash("تم إلغاء أمر العمل", "warning")
+    return redirect("/services/jobs")
+
+
+@bp.route("/jobs/<int:job_id>/update", methods=["POST"])
+@require_perm("sales")
+def update_job(job_id):
+    """تحديث بيانات أمر العمل"""
+    from modules.extensions import get_db
+    db = get_db()
+    data = request.form
+    db.execute("""
+        UPDATE jobs SET
+            technician_id=?, actual_cost=?, notes=?, scheduled_date=?
+        WHERE id=? AND business_id=?
+    """, (
+        data.get("technician_id") or None,
+        float(data.get("actual_cost") or 0),
+        data.get("notes", ""),
+        data.get("scheduled_date") or None,
+        job_id, g.business["id"]
+    ))
+    db.commit()
+    flash("تم تحديث أمر العمل", "success")
+    return redirect(f"/services/jobs/{job_id}")
+
+
+# ─── CONTRACTS ACTIONS ───────────────────────────────────────
+@bp.route("/contracts/<int:contract_id>")
+@require_perm("sales")
+def view_contract(contract_id):
+    """عرض تفاصيل عقد"""
+    from modules.extensions import get_db
+    db = get_db()
+    contract = db.execute(
+        "SELECT * FROM service_contracts WHERE id=? AND business_id=?",
+        (contract_id, g.business["id"])
+    ).fetchone()
+    if not contract:
+        return "العقد غير موجود", 404
+    return render_template("services/contract_detail.html", contract=contract)
+
+
+@bp.route("/contracts/<int:contract_id>/renew", methods=["POST"])
+@require_perm("sales")
+def renew_contract(contract_id):
+    """تجديد عقد"""
+    from modules.extensions import get_db
+    db = get_db()
+    data = request.form
+    db.execute("""
+        UPDATE service_contracts SET end_date=?, contract_value=?, status='active' WHERE id=? AND business_id=?
+    """, (data.get("end_date"), float(data.get("value", 0)), contract_id, g.business["id"]))
+    db.commit()
+    flash("تم تجديد العقد ✅", "success")
+    return redirect(f"/services/contracts/{contract_id}")
+
+
+@bp.route("/contracts/<int:contract_id>/cancel", methods=["POST"])
+@require_perm("sales")
+def cancel_contract(contract_id):
+    """إلغاء عقد"""
+    from modules.extensions import get_db
+    db = get_db()
+    db.execute(
+        "UPDATE service_contracts SET status='cancelled' WHERE id=? AND business_id=?",
+        (contract_id, g.business["id"])
+    )
+    db.commit()
+    flash("تم إلغاء العقد", "warning")
+    return redirect("/services/contracts")
+
+
+# ─── API ─────────────────────────────────────────────────────
+@bp.route("/api/jobs/stats")
+@require_perm("sales")
+def api_jobs_stats():
+    """إحصائيات أوامر العمل"""
+    from modules.extensions import get_db
+    db = get_db()
+    bid = g.business["id"]
+    rows = db.execute("""
+        SELECT job_status, COUNT(*) as cnt FROM jobs WHERE business_id=? GROUP BY job_status
+    """, (bid,)).fetchall()
+    return jsonify({r["job_status"]: r["cnt"] for r in rows})
+
+
+@bp.route("/api/contracts/expiring")
+@require_perm("sales")
+def api_expiring_contracts():
+    """عقود توشك على الانتهاء (30 يوم)"""
+    from modules.extensions import get_db
+    db = get_db()
+    bid = g.business["id"]
+    rows = db.execute("""
+        SELECT * FROM service_contracts
+        WHERE business_id=? AND status='active'
+        AND end_date BETWEEN date('now') AND date('now','+30 days')
+        ORDER BY end_date ASC
+    """, (bid,)).fetchall()
+    return jsonify([dict(r) for r in rows])

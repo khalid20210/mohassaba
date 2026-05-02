@@ -4,6 +4,102 @@
 
 {% block content %}
 <div class="page-header">
+  <div><p class="page-subtitle">{{ contracts|length }} عقد</p></div>
+  <div style="display:flex;gap:10px;">
+    <a href="/rental/fleet" class="btn btn-secondary">🚗 الأسطول</a>
+    <button class="btn btn-primary" onclick="document.getElementById('newContractModal').classList.add('show')">+ عقد جديد</button>
+  </div>
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>#</th><th>المركبة</th><th>المستأجر</th><th>نوع الإيجار</th><th>تاريخ البدء</th><th>السعر/يوم</th><th>الإجمالي</th><th>الحالة</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for c in contracts %}
+      <tr>
+        <td style="color:#64748b;font-size:.82rem;">{{ c.id }}</td>
+        <td><strong>{{ c.vehicle_name or '—' }}</strong><br><small style="color:#64748b;">{{ c.plate_number or '' }}</small></td>
+        <td>{{ c.renter_name or c.renter_id or '—' }}</td>
+        <td style="color:#94a3b8;font-size:.82rem;">{{ c.rental_type or '—' }}</td>
+        <td style="color:#94a3b8;font-size:.82rem;">{{ c.rental_start_date or '—' }}</td>
+        <td style="color:#38bdf8;font-weight:700;">{{ "{:,.0f}".format(c.daily_rate or 0) }} ر.س</td>
+        <td style="color:#22c55e;font-weight:700;">{{ "{:,.2f}".format(c.total_amount or 0) }} ر.س</td>
+        <td>
+          {% if c.status=='active' %}<span style="background:#14532d;color:#86efac;padding:2px 10px;border-radius:20px;font-size:.78rem;">● نشط</span>
+          {% elif c.status=='closed' %}<span style="background:rgba(255,255,255,.06);color:#94a3b8;padding:2px 10px;border-radius:20px;font-size:.78rem;">✓ منتهٍ</span>
+          {% else %}<span style="color:#94a3b8;">{{ c.status or '—' }}</span>{% endif %}
+        </td>
+        <td>
+          <div style="display:flex;gap:4px;">
+            <a href="/rental/contracts/{{ c.id }}" class="btn btn-secondary" style="padding:4px 10px;font-size:.78rem;">تفاصيل</a>
+            {% if c.status=='active' %}
+            <form method="post" action="/rental/contracts/{{ c.id }}/close" onsubmit="return confirm('إنهاء العقد وإعادة السيارة؟')">
+              <button type="submit" class="btn" style="padding:4px 10px;font-size:.78rem;background:#14532d;color:#86efac;border:none;">إنهاء</button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="9" style="text-align:center;color:#64748b;padding:40px;">لا توجد عقود إيجار</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal: عقد جديد -->
+<div class="modal-overlay" id="newContractModal">
+  <div class="modal-box" style="max-width:500px;">
+    <div class="modal-header">
+      <h3 class="modal-title">📄 عقد إيجار جديد</h3>
+      <button class="modal-close" onclick="document.getElementById('newContractModal').classList.remove('show')">✕</button>
+    </div>
+    <form method="post" action="/rental/contracts/new">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">معرف المركبة *</label>
+          <input name="vehicle_id" class="form-input" type="number" placeholder="رقم المركبة" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">معرف المستأجر</label>
+          <input name="renter_id" class="form-input" type="number" placeholder="رقم العميل">
+        </div>
+        <div class="form-group">
+          <label class="form-label">تاريخ البدء</label>
+          <input name="start_date" type="date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">عدد الأيام</label>
+          <input name="days" class="form-input" type="number" placeholder="7" min="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">السعر اليومي (ر.س)</label>
+          <input name="daily_rate" class="form-input" type="number" step="0.01" placeholder="150.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">نوع الإيجار</label>
+          <select name="rental_type" class="form-input">
+            <option value="daily">يومي</option>
+            <option value="weekly">أسبوعي</option>
+            <option value="monthly">شهري</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('newContractModal').classList.remove('show')">إلغاء</button>
+        <button type="submit" class="btn btn-primary">✅ إنشاء العقد</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block page_title %}📄 عقود الإيجار{% endblock %}
+
+{% block content %}
+<div class="page-header">
   <div>
     <h1 class="page-title">📄 عقود الإيجار</h1>
     <p class="page-subtitle">{{ contracts|length }} عقد</p>

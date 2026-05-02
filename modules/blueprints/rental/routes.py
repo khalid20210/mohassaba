@@ -146,7 +146,125 @@ def create_contract():
     return redirect("/rental/contracts")
 
 
-# MAINTENANCE
+@bp.route("/contracts/<int:contract_id>")
+@require_perm("sales")
+def view_contract(contract_id):
+    """تفاصيل عقد الإيجار"""
+    from modules.extensions import get_db
+    db = get_db()
+    bid = g.business["id"]
+    contract = db.execute("""
+        SELECT rc.*, fv.vehicle_name, fv.plate_number, c.name as renter_name, c.phone as renter_phone
+        FROM rental_contracts rc
+        JOIN fleet_vehicles fv ON rc.vehicle_id = fv.id
+        LEFT JOIN contacts c ON rc.renter_id = c.id
+        WHERE rc.id=? AND rc.business_id=?
+    """, (contract_id, bid)).fetchone()
+    if not contract:
+        return "العقد غير موجود", 404
+    return render_template("rental/contract_detail.html", contract=contract)
+
+
+@bp.route("/contracts/<int:contract_id>/close", methods=["POST"])
+@require_perm("sales")
+def close_contract(contract_id):
+    """إنهاء عقد الإيجار وإعادة السيارة"""
+    from modules.extensions import get_db
+    db = get_db()
+    bid = g.business["id"]
+    contract = db.execute(
+        "SELECT vehicle_id FROM rental_contracts WHERE id=? AND business_id=?",
+        (contract_id, bid)
+    ).fetchone()
+    if contract:
+        db.execute(
+            "UPDATE rental_contracts SET status='closed', actual_return_date=date('now') WHERE id=?",
+            (contract_id,)
+        )
+        db.execute(
+            "UPDATE fleet_vehicles SET status='available' WHERE id=?",
+            (contract["vehicle_id"],)
+        )
+        db.commit()
+    flash("تم إنهاء عقد الإيجار وإعادة السيارة ✅", "success")
+    return redirect("/rental/contracts")
+
+
+@bp.route("/fleet/<int:vehicle_id>")
+@require_perm("sales")
+def view_vehicle(vehicle_id):
+    """تفاصيل السيارة"""
+    from modules.extensions import get_db
+    db = get_db()
+    bid = g.business["id"]
+    vehicle = db.execute(
+        "SELECT * FROM fleet_vehicles WHERE id=? AND business_id=?",
+        (vehicle_id, bid)
+    ).fetchone()
+    if not vehicle:
+        return "السيارة غير موجودة", 404
+    contracts = db.execute(
+        "SELECT * FROM rental_contracts WHERE vehicle_id=? ORDER BY rental_start_date DESC LIMIT 10",
+        (vehicle_id,)
+    ).fetchall()
+    maintenance = db.execute(
+        "SELECT * FROM maintenance_records WHERE vehicle_id=? ORDER BY service_date DESC LIMIT 10",
+        (vehicle_id,)
+    ).fetchall()
+    return render_template("rental/vehicle_detail.html", vehicle=vehicle, contracts=contracts, maintenance=maintenance)
+
+
+@bp.route("/fleet/<int:vehicle_id>/update", methods=["POST"])
+@require_perm("sales")
+def update_vehicle(vehicle_id):
+    """تحديث بيانات السيارة"""
+    from modules.extensions import get_db
+    db = get_db()
+    data = request.form
+    db.execute("""
+        UPDATE fleet_vehicles SET
+            rental_rate_daily=?, status=?, notes=?
+        WHERE id=? AND business_id=?
+    """, (
+        float(data.get("rate_daily", 0)),
+        data.get("status", "available"),
+        data.get("notes", ""),
+        vehicle_id, g.business["id"]
+    ))
+    db.commit()
+    flash("تم تحديث بيانات السيارة", "success")
+    return redirect(f"/rental/fleet/{vehicle_id}")
+
+
+# ─── API ────────────────────────────────────────────────────
+@bp.route("/api/fleet/available")
+def api_available_fleet():
+    """API: السيارات المتاحة"""
+    from modules.extensions import get_db
+    db = get_db()
+    bid = g.business["id"]
+    vehicles = db.execute(
+        "SELECT id, vehicle_name, plate_number, rental_rate_daily FROM fleet_vehicles WHERE business_id=? AND status='available'",
+        (bid,)
+    ).fetchall()
+    return jsonify([dict(v) for v in vehicles])
+
+
+@bp.route("/api/stats")
+@require_perm("sales")
+def api_rental_stats():
+    """إحصائيات الأسطول"""
+    from modules.extensions import get_db
+    db = get_db()
+    bid = g.business["id"]
+    total = db.execute("SELECT COUNT(*) FROM fleet_vehicles WHERE business_id=?", (bid,)).fetchone()[0]
+    rented = db.execute("SELECT COUNT(*) FROM fleet_vehicles WHERE business_id=? AND status='rented'", (bid,)).fetchone()[0]
+    maint = db.execute("SELECT COUNT(*) FROM fleet_vehicles WHERE business_id=? AND status='maintenance'", (bid,)).fetchone()[0]
+    revenue = db.execute(
+        "SELECT COALESCE(SUM(total_amount),0) FROM rental_contracts WHERE business_id=? AND strftime('%Y-%m',rental_start_date)=strftime('%Y-%m','now')",
+        (bid,)
+    ).fetchone()[0]
+    return jsonify({"total": total, "rented": rented, "maintenance": maint, "available": total-rented-maint, "monthly_revenue": revenue})
 @bp.route("/maintenance")
 @require_perm("sales")
 def list_maintenance():

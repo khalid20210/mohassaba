@@ -4,6 +4,127 @@
 
 {% block content %}
 <div class="page-header">
+  <div><p class="page-subtitle">{{ total or patients|length }} مريض مسجل</p></div>
+  <div style="display:flex;gap:10px;">
+    <a href="/medical/appointments" class="btn btn-secondary">📅 المواعيد</a>
+    <a href="/medical/prescriptions" class="btn btn-secondary">💊 الوصفات</a>
+    <button class="btn btn-primary" onclick="document.getElementById('newPatientModal').classList.add('show')">+ تسجيل مريض</button>
+  </div>
+</div>
+
+<!-- بحث -->
+<div class="card" style="margin-bottom:16px;padding:12px;">
+  <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+    <div style="flex:1;min-width:200px;">
+      <input type="text" name="q" value="{{ request.args.get('q','') }}" placeholder="اسم المريض، رقم الملف، الهاتف..." class="form-input">
+    </div>
+    <button type="submit" class="btn btn-primary">🔍 بحث</button>
+    <a href="/medical/patients" class="btn btn-secondary">إعادة تعيين</a>
+  </form>
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>اسم المريض</th><th>رقم الملف</th><th>الجنس</th><th>تاريخ الميلاد</th><th>الهاتف</th><th>فصيلة الدم</th><th>آخر زيارة</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for p in patients %}
+      <tr>
+        <td>
+          <a href="/medical/patients/{{ p.id }}" style="color:#38bdf8;font-weight:700;text-decoration:none;">{{ p.full_name }}</a>
+        </td>
+        <td style="color:#94a3b8;font-family:monospace;font-size:.82rem;">{{ p.file_number or '—' }}</td>
+        <td>{{ '♂ ذكر' if p.gender=='male' else '♀ أنثى' if p.gender=='female' else '—' }}</td>
+        <td style="color:#94a3b8;font-size:.82rem;">{{ p.date_of_birth or '—' }}</td>
+        <td>{{ p.phone or '—' }}</td>
+        <td style="color:#ef4444;font-weight:700;">{{ p.blood_type or '—' }}</td>
+        <td style="color:#64748b;font-size:.82rem;">{{ (p.last_visit[:10] if p.last_visit else '—') }}</td>
+        <td>
+          <div style="display:flex;gap:4px;">
+            <a href="/medical/patients/{{ p.id }}" class="btn btn-secondary" style="padding:4px 10px;font-size:.78rem;">ملف</a>
+            <a href="/medical/appointments?patient_id={{ p.id }}" class="btn btn-secondary" style="padding:4px 10px;font-size:.78rem;">مواعيد</a>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="text-align:center;color:#64748b;padding:40px;">لا يوجد مرضى مسجلون</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal: مريض جديد -->
+<div class="modal-overlay" id="newPatientModal">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 class="modal-title">🏥 تسجيل مريض جديد</h3>
+      <button class="modal-close" onclick="document.getElementById('newPatientModal').classList.remove('show')">✕</button>
+    </div>
+    <form method="post" action="/medical/patients/new">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group" style="grid-column:1/-1;">
+          <label class="form-label">الاسم الكامل *</label>
+          <input name="full_name" class="form-input" placeholder="اسم المريض الكامل" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">تاريخ الميلاد</label>
+          <input name="dob" type="date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">الجنس</label>
+          <select name="gender" class="form-input">
+            <option value="male">ذكر</option>
+            <option value="female">أنثى</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">رقم الهاتف</label>
+          <input name="phone" class="form-input" placeholder="05xxxxxxxx">
+        </div>
+        <div class="form-group">
+          <label class="form-label">فصيلة الدم</label>
+          <select name="blood_type" class="form-input">
+            <option value="">غير معروفة</option>
+            <option value="A+">A+</option>
+            <option value="A-">A-</option>
+            <option value="B+">B+</option>
+            <option value="B-">B-</option>
+            <option value="AB+">AB+</option>
+            <option value="AB-">AB-</option>
+            <option value="O+">O+</option>
+            <option value="O-">O-</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">الطول (سم)</label>
+          <input name="height" class="form-input" type="number" placeholder="170">
+        </div>
+        <div class="form-group">
+          <label class="form-label">الوزن (كغ)</label>
+          <input name="weight" class="form-input" type="number" placeholder="70">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">الأمراض المزمنة</label>
+        <input name="chronic" class="form-input" placeholder="سكري، ضغط، ربو...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">الحساسية</label>
+        <input name="allergies" class="form-input" placeholder="البنسلين، ...">
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('newPatientModal').classList.remove('show')">إلغاء</button>
+        <button type="submit" class="btn btn-primary">✅ تسجيل المريض</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+
+{% block content %}
+<div class="page-header">
   <div>
     <h1 class="page-title">🏥 المرضى</h1>
     <p class="page-subtitle">{{ total }} مريض مسجل</p>

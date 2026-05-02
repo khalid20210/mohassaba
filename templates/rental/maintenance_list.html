@@ -4,6 +4,101 @@
 
 {% block content %}
 <div class="page-header">
+  <div><p class="page-subtitle">{{ records|length }} سجل صيانة</p></div>
+  <div style="display:flex;gap:10px;">
+    <a href="/rental/fleet" class="btn btn-secondary">🚗 الأسطول</a>
+    <button class="btn btn-primary" onclick="document.getElementById('newMaintModal').classList.add('show')">+ إضافة سجل</button>
+  </div>
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>#</th><th>المركبة</th><th>نوع الصيانة</th><th>الوصف</th><th>التكلفة</th><th>التاريخ</th><th>مقدم الخدمة</th><th>الحالة</th></tr>
+    </thead>
+    <tbody>
+      {% for r in records %}
+      <tr>
+        <td style="color:#64748b;font-size:.82rem;">{{ r.id }}</td>
+        <td><strong>{{ r.vehicle_name or 'مركبة #'~r.vehicle_id }}</strong></td>
+        <td>
+          <span style="background:rgba(255,255,255,.06);padding:2px 8px;border-radius:20px;font-size:.78rem;">
+            {% if r.maintenance_type=='routine' %}🔄 دورية
+            {% elif r.maintenance_type=='repair' %}🔧 إصلاح
+            {% elif r.maintenance_type=='inspection' %}🔍 فحص
+            {% elif r.maintenance_type=='tires' %}🔵 إطارات
+            {% else %}{{ r.maintenance_type or '—' }}{% endif %}
+          </span>
+        </td>
+        <td style="color:#94a3b8;font-size:.85rem;">{{ r.description or '—' }}</td>
+        <td style="color:#f59e0b;font-weight:700;">{{ "{:,.2f}".format(r.cost or 0) }} ر.س</td>
+        <td style="color:#64748b;font-size:.82rem;">{{ r.maintenance_date or '—' }}</td>
+        <td style="color:#94a3b8;">{{ r.service_provider or '—' }}</td>
+        <td>
+          {% if r.status=='completed' %}<span style="background:#14532d;color:#86efac;padding:2px 8px;border-radius:20px;font-size:.78rem;">✓ مكتمل</span>
+          {% elif r.status=='pending' %}<span style="background:#78350f;color:#fcd34d;padding:2px 8px;border-radius:20px;font-size:.78rem;">⏳ معلق</span>
+          {% else %}<span style="color:#94a3b8;">{{ r.status or '—' }}</span>{% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="text-align:center;color:#64748b;padding:40px;">لا توجد سجلات صيانة</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal: سجل صيانة جديد -->
+<div class="modal-overlay" id="newMaintModal">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-header">
+      <h3 class="modal-title">🔧 إضافة سجل صيانة</h3>
+      <button class="modal-close" onclick="document.getElementById('newMaintModal').classList.remove('show')">✕</button>
+    </div>
+    <form method="post" action="/rental/maintenance/new">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">معرف المركبة *</label>
+          <input name="vehicle_id" class="form-input" type="number" placeholder="رقم المركبة" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">نوع الصيانة</label>
+          <select name="maintenance_type" class="form-input">
+            <option value="routine">دورية</option>
+            <option value="repair">إصلاح</option>
+            <option value="inspection">فحص</option>
+            <option value="tires">إطارات</option>
+            <option value="other">أخرى</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">التكلفة (ر.س)</label>
+          <input name="cost" class="form-input" type="number" step="0.01" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">تاريخ الصيانة</label>
+          <input name="date" type="date" class="form-input">
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label class="form-label">مقدم الخدمة</label>
+          <input name="provider" class="form-input" placeholder="ورشة / شركة...">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">وصف العمل</label>
+        <textarea name="description" class="form-input" rows="3" placeholder="تفاصيل أعمال الصيانة..."></textarea>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('newMaintModal').classList.remove('show')">إلغاء</button>
+        <button type="submit" class="btn btn-primary">✅ حفظ السجل</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+
+{% block content %}
+<div class="page-header">
   <div>
     <h1 class="page-title">🔧 سجل الصيانة</h1>
     <p class="page-subtitle">{{ records|length }} سجل صيانة</p>

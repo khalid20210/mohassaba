@@ -4,6 +4,103 @@
 
 {% block content %}
 <div class="page-header">
+  <div><p class="page-subtitle">{{ pricing_lists|length }} قائمة سعر</p></div>
+  <div style="display:flex;gap:10px;">
+    <a href="/wholesale/orders" class="btn btn-secondary">📦 الطلبات</a>
+    <button class="btn btn-primary" onclick="document.getElementById('newPricingModal').classList.add('show')">+ قائمة جديدة</button>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
+  {% for pl in pricing_lists %}
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+      <div>
+        <h4 style="margin:0;color:#e2e8f0;">{{ pl.list_name or pl.name }}</h4>
+        <span style="color:#64748b;font-size:.8rem;">{{ pl.customer_type or 'عام' }}</span>
+      </div>
+      <span style="padding:2px 10px;border-radius:20px;font-size:.75rem;{% if pl.is_active %}background:#14532d;color:#86efac;{% else %}background:rgba(255,255,255,.06);color:#64748b;{% endif %}">
+        {% if pl.is_active %}✓ نشط{% else %}معطل{% endif %}
+      </span>
+    </div>
+    <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:12px;margin-bottom:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.82rem;">
+        {% if pl.discount_percent %}
+        <span style="color:#94a3b8;">نسبة الخصم</span><span style="color:#22c55e;font-weight:700;">{{ pl.discount_percent }}%</span>
+        {% endif %}
+        {% if pl.min_order_qty %}
+        <span style="color:#94a3b8;">الحد الأدنى</span><span style="color:#38bdf8;">{{ pl.min_order_qty }} وحدة</span>
+        {% endif %}
+      </div>
+    </div>
+    {% if pl.description %}
+    <p style="color:#64748b;font-size:.8rem;margin-bottom:12px;">{{ pl.description }}</p>
+    {% endif %}
+    <div style="display:flex;gap:8px;">
+      <a href="/wholesale/pricing/{{ pl.id }}" class="btn btn-secondary" style="flex:1;text-align:center;padding:6px;font-size:.82rem;">تفاصيل</a>
+      <form action="/wholesale/pricing/{{ pl.id }}/toggle" method="post" style="flex:1;">
+        <button type="submit" class="btn btn-secondary" style="width:100%;padding:6px;font-size:.82rem;">
+          {% if pl.is_active %}تعطيل{% else %}تفعيل{% endif %}
+        </button>
+      </form>
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="grid-column:1/-1;text-align:center;padding:60px;">
+    <div style="font-size:3rem;margin-bottom:16px;">💲</div>
+    <h3>لا توجد قوائم أسعار</h3>
+    <button class="btn btn-primary" style="margin-top:16px;" onclick="document.getElementById('newPricingModal').classList.add('show')">إنشاء قائمة أولى</button>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Modal: قائمة جديدة -->
+<div class="modal-overlay" id="newPricingModal">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-header">
+      <h3 class="modal-title">💲 قائمة أسعار جديدة</h3>
+      <button class="modal-close" onclick="document.getElementById('newPricingModal').classList.remove('show')">✕</button>
+    </div>
+    <form method="post" action="/wholesale/pricing/new">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group" style="grid-column:1/-1;">
+          <label class="form-label">اسم القائمة *</label>
+          <input name="name" class="form-input" placeholder="عملاء الجملة الكبار" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">نوع العميل</label>
+          <select name="customer_type" class="form-input">
+            <option value="wholesale">جملة</option>
+            <option value="retail">تجزئة</option>
+            <option value="vip">VIP</option>
+            <option value="distributor">موزع</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">نسبة الخصم (%)</label>
+          <input name="discount" class="form-input" type="number" step="0.01" min="0" max="100" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">حد أدنى للكمية</label>
+          <input name="min_qty" class="form-input" type="number" placeholder="100">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">وصف</label>
+        <textarea name="description" class="form-input" rows="2" placeholder="شروط وتفاصيل القائمة..."></textarea>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('newPricingModal').classList.remove('show')">إلغاء</button>
+        <button type="submit" class="btn btn-primary">✅ إنشاء القائمة</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+
+{% block content %}
+<div class="page-header">
   <div>
     <h1 class="page-title">💲 قوائم الأسعار والخصومات</h1>
     <p class="page-subtitle">{{ pricing_lists|length }} قائمة سعر</p>

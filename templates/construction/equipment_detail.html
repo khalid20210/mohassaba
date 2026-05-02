@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ equipment.equipment_name or 'معدة' }}{% endblock %}
+{% block page_title %}🛞 {{ equipment.equipment_name or 'معدة' }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <a href="/projects/equipment" style="color:#94a3b8;font-size:.85rem;">← المعدات</a>
+    <p class="page-subtitle" style="margin-top:4px;">{{ equipment.equipment_type or '' }}</p>
+  </div>
+  <button class="btn btn-secondary" onclick="document.getElementById('editEquipModal').classList.add('show')">✏️ تعديل</button>
+</div>
+
+<div style="margin-bottom:16px;">
+  {% if equipment.status=='available' %}
+    <span style="background:#14532d;color:#86efac;padding:6px 18px;border-radius:20px;font-size:.85rem;font-weight:700;">✓ متاح</span>
+  {% elif equipment.status=='in_use' %}
+    <span style="background:#1e3a5f;color:#93c5fd;padding:6px 18px;border-radius:20px;font-size:.85rem;font-weight:700;">● مستخدم</span>
+  {% elif equipment.status=='maintenance' %}
+    <span style="background:#78350f;color:#fcd34d;padding:6px 18px;border-radius:20px;font-size:.85rem;font-weight:700;">🔧 صيانة</span>
+  {% endif %}
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">📋 بيانات المعدة</h3></div>
+    <table class="table">
+      <tr><td style="color:#94a3b8;">الاسم</td><td><strong>{{ equipment.equipment_name }}</strong></td></tr>
+      <tr><td style="color:#94a3b8;">النوع</td><td>{{ equipment.equipment_type or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">الكمية</td><td>{{ equipment.quantity or 1 }}</td></tr>
+      <tr><td style="color:#94a3b8;">الحالة</td><td>{{ equipment.status or '—' }}</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">💰 التكاليف</h3></div>
+    <table class="table">
+      <tr><td style="color:#94a3b8;">التكلفة اليومية</td><td style="color:#38bdf8;font-weight:700;font-size:1.1rem;">{{ "{:,.2f}".format(equipment.daily_rate or 0) }} ر.س</td></tr>
+      <tr><td style="color:#94a3b8;">المشروع الحالي</td><td>{{ equipment.project_name or '—' }}</td></tr>
+    </table>
+  </div>
+</div>
+
+{% if equipment.notes %}
+<div class="card" style="margin-top:16px;">
+  <div class="card-header"><h3 class="card-title">📝 ملاحظات</h3></div>
+  <p style="color:#cbd5e1;line-height:1.8;">{{ equipment.notes }}</p>
+</div>
+{% endif %}
+
+<!-- Modal: تعديل -->
+<div class="modal-overlay" id="editEquipModal">
+  <div class="modal-box" style="max-width:440px;">
+    <div class="modal-header">
+      <h3 class="modal-title">✏️ تعديل المعدة</h3>
+      <button class="modal-close" onclick="document.getElementById('editEquipModal').classList.remove('show')">✕</button>
+    </div>
+    <form method="post" action="/projects/equipment/{{ equipment.id }}/update">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">الحالة</label>
+          <select name="status" class="form-input">
+            <option value="available" {% if equipment.status=='available' %}selected{% endif %}>متاح</option>
+            <option value="in_use" {% if equipment.status=='in_use' %}selected{% endif %}>مستخدم</option>
+            <option value="maintenance" {% if equipment.status=='maintenance' %}selected{% endif %}>صيانة</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">معرف المشروع</label>
+          <input name="project_id" class="form-input" type="number" value="{{ equipment.project_id or '' }}" placeholder="رقم المشروع">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ملاحظات</label>
+        <textarea name="notes" class="form-input" rows="3">{{ equipment.notes or '' }}</textarea>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('editEquipModal').classList.remove('show')">إلغاء</button>
+        <button type="submit" class="btn btn-primary">💾 حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ pricing.list_name or 'قائمة أسعار' }}{% endblock %}
+{% block page_title %}💲 {{ pricing.list_name or 'قائمة أسعار' }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <a href="/wholesale/pricing" style="color:#94a3b8;font-size:.85rem;">← قوائم الأسعار</a>
+    <p class="page-subtitle" style="margin-top:4px;">{{ pricing.customer_type or '' }}</p>
+  </div>
+  <form method="post" action="/wholesale/pricing/{{ pricing.id }}/toggle" style="display:inline;">
+    <button type="submit" class="btn {% if pricing.is_active %}btn-secondary{% else %}btn-primary{% endif %}">
+      {% if pricing.is_active %}⏸ تعطيل{% else %}▶ تفعيل{% endif %}
+    </button>
+  </form>
+</div>
+
+<div style="margin-bottom:16px;">
+  {% if pricing.is_active %}
+    <span style="background:#14532d;color:#86efac;padding:6px 18px;border-radius:20px;font-size:.85rem;font-weight:700;">✓ نشطة</span>
+  {% else %}
+    <span style="background:rgba(255,255,255,.06);color:#64748b;padding:6px 18px;border-radius:20px;font-size:.85rem;font-weight:700;">◎ معطلة</span>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-header"><h3 class="card-title">📋 تفاصيل القائمة</h3></div>
+  <table class="table">
+    <tr><td style="color:#94a3b8;">الاسم</td><td><strong>{{ pricing.list_name }}</strong></td></tr>
+    <tr><td style="color:#94a3b8;">نوع العميل</td><td>{{ pricing.customer_type or '—' }}</td></tr>
+    <tr><td style="color:#94a3b8;">نسبة الخصم</td><td style="color:#22c55e;font-weight:700;font-size:1.1rem;">{{ pricing.discount_percent or 0 }}%</td></tr>
+    <tr><td style="color:#94a3b8;">حد أدنى للكمية</td><td>{{ pricing.min_order_qty or '—' }} وحدة</td></tr>
+    <tr><td style="color:#94a3b8;">تاريخ البدء</td><td>{{ pricing.valid_from or '—' }}</td></tr>
+    <tr><td style="color:#94a3b8;">تاريخ الانتهاء</td><td>{{ pricing.valid_to or '—' }}</td></tr>
+  </table>
+</div>
+
+{% if pricing.description %}
+<div class="card" style="margin-top:16px;">
+  <div class="card-header"><h3 class="card-title">📝 وصف</h3></div>
+  <p style="color:#cbd5e1;line-height:1.8;">{{ pricing.description }}</p>
+</div>
+{% endif %}
+
+<!-- الطلبات المرتبطة -->
+<div class="card" style="margin-top:16px;">
+  <div class="card-header"><h3 class="card-title">📦 الطلبات المستخدمة لهذه القائمة</h3></div>
+  <p style="color:#64748b;padding:20px;text-align:center;">سيتم عرض الطلبات المرتبطة هنا</p>
+</div>
+{% endblock %}
