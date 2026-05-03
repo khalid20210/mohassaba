@@ -21,6 +21,11 @@ def require_perm(*perms):
                 return redirect("/login")
             
             user_perms = g.user.get("permissions", {})
+            if isinstance(user_perms, str):
+                try:
+                    user_perms = json.loads(user_perms or "{}")
+                except Exception:
+                    user_perms = {}
             if user_perms.get("all"):
                 return f(*args, **kwargs)
             

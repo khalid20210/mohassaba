@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}شروط الاستخدام — Jinan Biz{% endblock %}
+
+{% block head %}
+<style>
+.legal-wrap {
+  max-width: 920px;
+  margin: 36px auto;
+  padding: 0 16px 28px;
+  color: #dbeafe;
+  direction: rtl;
+}
+.legal-card {
+  background: linear-gradient(180deg, rgba(10,22,50,.95), rgba(8,14,34,.95));
+  border: 1px solid rgba(80,130,220,.16);
+  border-radius: 16px;
+  padding: 22px 18px;
+}
+.legal-title {
+  font-size: 1.35rem;
+  font-weight: 900;
+  margin-bottom: 6px;
+}
+.legal-sub {
+  font-size: .82rem;
+  color: rgba(170,205,255,.65);
+  margin-bottom: 18px;
+}
+.legal-section {
+  margin-bottom: 14px;
+}
+.legal-section h3 {
+  font-size: .92rem;
+  margin-bottom: 6px;
+  color: #bfdbfe;
+}
+.legal-section p {
+  font-size: .82rem;
+  line-height: 1.9;
+  color: rgba(220,234,255,.86);
+}
+.legal-back {
+  display: inline-flex;
+  margin-top: 10px;
+  color: #93c5fd;
+  text-decoration: none;
+  font-weight: 700;
+}
+.legal-back:hover { text-decoration: underline; }
+</style>
+{% endblock %}
+
+{% block auth_content %}
+<div class="legal-wrap">
+  <div class="legal-card">
+    <div class="legal-title">شروط الاستخدام</div>
+    <div class="legal-sub">آخر تحديث: 2 مايو 2026</div>
+
+    <div class="legal-section">
+      <h3>1) قبول الشروط</h3>
+      <p>استخدامك للمنصة يعني موافقتك على شروط التشغيل والالتزام بالأنظمة المحلية ذات العلاقة.</p>
+    </div>
+
+    <div class="legal-section">
+      <h3>2) مسؤولية الحساب</h3>
+      <p>أنت مسؤول عن سرية بيانات الدخول وصحة المدخلات المحاسبية الصادرة من فريقك.</p>
+    </div>
+
+    <div class="legal-section">
+      <h3>3) الاستخدام المشروع</h3>
+      <p>يُمنع استخدام المنصة لأي غرض مخالف للأنظمة أو يسبب إساءة للخدمة أو تعطيلها.</p>
+    </div>
+
+    <div class="legal-section">
+      <h3>4) التحديثات</h3>
+      <p>قد تُحدَّث هذه الشروط عند تطوير الخدمة، ويُعتمد الإصدار المنشور داخل المنصة.</p>
+    </div>
+
+    <a class="legal-back" href="{{ url_for('auth_register') }}">العودة إلى إنشاء الحساب</a>
+  </div>
+</div>
+{% endblock %}

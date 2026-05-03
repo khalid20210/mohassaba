@@ -19,16 +19,35 @@ except ImportError:
 
 from flask import g, request, session, redirect, url_for, flash
 
-from .config import DB_PATH, UPLOAD_FOLDER, ALLOWED_EXT
+from .config import (
+    DB_PATH,
+    UPLOAD_FOLDER,
+    ALLOWED_EXT,
+    SQLITE_BUSY_TIMEOUT_MS,
+    SQLITE_JOURNAL_MODE,
+    SQLITE_SYNCHRONOUS,
+    SQLITE_CACHE_SIZE,
+)
 
 
 # ─── قاعدة البيانات ───────────────────────────────────────────────────────────
 
 def get_db() -> sqlite3.Connection:
     if "db" not in g:
-        g.db = sqlite3.connect(DB_PATH)
+        g.db = sqlite3.connect(
+            DB_PATH,
+            timeout=max(1, SQLITE_BUSY_TIMEOUT_MS // 1000),
+            check_same_thread=False,
+        )
         g.db.row_factory = sqlite3.Row
         g.db.execute("PRAGMA foreign_keys = ON")
+        g.db.execute(f"PRAGMA busy_timeout = {SQLITE_BUSY_TIMEOUT_MS}")
+        g.db.execute(f"PRAGMA journal_mode = {SQLITE_JOURNAL_MODE}")
+        g.db.execute(f"PRAGMA synchronous = {SQLITE_SYNCHRONOUS}")
+        g.db.execute(f"PRAGMA cache_size = {SQLITE_CACHE_SIZE}")
+        g.db.execute("PRAGMA temp_store = MEMORY")
+        g.db.execute("PRAGMA wal_autocheckpoint = 10000")
+        g.db.execute("PRAGMA mmap_size = 268435456")
     return g.db
 
 
@@ -87,6 +106,79 @@ def csrf_protect():
             flash("طلب غير صالح — يرجى إعادة المحاولة", "error")
             return redirect(request.referrer or url_for("core.dashboard"))
     return None
+
+
+# ─── تشفير النسخ الاحتياطية (AES-256-GCM عبر Fernet/cryptography) ─────────────
+
+def encrypt_backup(data_bytes: bytes, password: str) -> bytes:
+    """
+    يشفر النسخة الاحتياطية بـ AES-256-GCM (عبر مكتبة cryptography).
+    يُنتج ملف: [salt(16)] + [iv(12)] + [tag(16)] + [ciphertext].
+    المفتاح يُشتق بـ PBKDF2-HMAC-SHA256 (310000 iteration).
+    يُعيد bytes جاهزة للتحميل.
+    الرسالة الافتراضية بدون تشفير إن لم تتوفر المكتبة.
+    """
+    if not password:
+        return data_bytes  # لا تشفير بدون كلمة مرور
+
+    try:
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+        from cryptography.hazmat.primitives import hashes
+        import os as _os
+
+        salt = _os.urandom(16)
+        kdf  = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=310_000,
+        )
+        key = kdf.derive(password.encode("utf-8"))
+        iv  = _os.urandom(12)
+        aesgcm     = AESGCM(key)
+        ciphertext = aesgcm.encrypt(iv, data_bytes, None)  # includes tag (last 16 bytes)
+
+        return salt + iv + ciphertext
+
+    except ImportError:
+        # fallback: حزمة cryptography غير مثبّتة — بدون تشفير مع تحذير في الـ header
+        _warning = b"\x00UNENCRYPTED_BACKUP\x00"
+        return _warning + data_bytes
+
+
+def decrypt_backup(data_bytes: bytes, password: str) -> bytes:
+    """
+    يفك تشفير ملف نسخ احتياطية مشفر بـ encrypt_backup.
+    يُعيد bytes الأصلية.
+    """
+    if not password:
+        return data_bytes
+
+    if data_bytes[:20] == b"\x00UNENCRYPTED_BACKUP\x00":
+        return data_bytes[20:]
+
+    try:
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+        from cryptography.hazmat.primitives import hashes
+
+        salt       = data_bytes[:16]
+        iv         = data_bytes[16:28]
+        ciphertext = data_bytes[28:]
+
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=310_000,
+        )
+        key    = kdf.derive(password.encode("utf-8"))
+        aesgcm = AESGCM(key)
+        return aesgcm.decrypt(iv, ciphertext, None)
+
+    except Exception as exc:
+        raise ValueError(f"فشل فك التشفير — كلمة المرور غير صحيحة أو الملف تالف: {exc}") from exc
 
 
 # ─── ZATCA QR — المرحلة الأولى (TLV Base64) ──────────────────────────────────
@@ -156,22 +248,57 @@ def next_invoice_number(db: sqlite3.Connection, business_id: int) -> str:
         (business_id,)
     ).fetchone()
     prefix = prefix_row["value"] if prefix_row else "INV"
+
+    # ── جدول عدادات سريع (O(1)) ────────────────────────────────────────────
+    db.execute(
+        """CREATE TABLE IF NOT EXISTS biz_counters (
+               business_id INTEGER NOT NULL,
+               counter_key TEXT NOT NULL,
+               seq         INTEGER NOT NULL DEFAULT 0,
+               PRIMARY KEY (business_id, counter_key)
+           )"""
+    )
+    key = f"invoice_sale_{prefix}"
+    db.execute(
+        "INSERT OR IGNORE INTO biz_counters (business_id, counter_key, seq) VALUES (?,?,0)",
+        (business_id, key)
+    )
+    db.execute(
+        "UPDATE biz_counters SET seq=seq+1 WHERE business_id=? AND counter_key=?",
+        (business_id, key)
+    )
     row = db.execute(
-        """SELECT COALESCE(MAX(CAST(REPLACE(invoice_number, ? || '-', '') AS INTEGER)), 0) AS last_seq
-           FROM invoices WHERE business_id=? AND invoice_type='sale'
-           AND invoice_number LIKE ? || '-%'""",
-        (prefix, business_id, prefix)
+        "SELECT seq FROM biz_counters WHERE business_id=? AND counter_key=?",
+        (business_id, key)
     ).fetchone()
-    seq = (row["last_seq"] or 0) + 1
+    seq = row["seq"] if row else 1
     return f"{prefix}-{seq:05d}"
 
 
 def next_entry_number(db: sqlite3.Connection, business_id: int) -> str:
+    # ── جدول عدادات سريع (O(1)) ────────────────────────────────────────────
+    db.execute(
+        """CREATE TABLE IF NOT EXISTS biz_counters (
+               business_id INTEGER NOT NULL,
+               counter_key TEXT NOT NULL,
+               seq         INTEGER NOT NULL DEFAULT 0,
+               PRIMARY KEY (business_id, counter_key)
+           )"""
+    )
+    key = "journal_entry"
+    db.execute(
+        "INSERT OR IGNORE INTO biz_counters (business_id, counter_key, seq) VALUES (?,?,0)",
+        (business_id, key)
+    )
+    db.execute(
+        "UPDATE biz_counters SET seq=seq+1 WHERE business_id=? AND counter_key=?",
+        (business_id, key)
+    )
     row = db.execute(
-        "SELECT COUNT(*) as cnt FROM journal_entries WHERE business_id=?",
-        (business_id,)
+        "SELECT seq FROM biz_counters WHERE business_id=? AND counter_key=?",
+        (business_id, key)
     ).fetchone()
-    seq = (row["cnt"] or 0) + 1
+    seq = row["seq"] if row else 1
     return f"JE-{seq:06d}"
 
 

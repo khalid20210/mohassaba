@@ -6,6 +6,8 @@ from flask import Flask, g
 
 from .config import _load_secret_key, FLASK_CONFIG, DB_PATH, IS_PROD
 from .extensions import close_db
+from .observability import setup_logging
+from .runtime_services import setup_runtime_services, validate_runtime_requirements
 
 import os as _os
 _BEHIND_PROXY = _os.environ.get("BEHIND_PROXY", "false").lower() in ("1", "true", "yes")
@@ -21,6 +23,23 @@ def create_app():
     )
     app.secret_key = _load_secret_key()
     app.config.update(FLASK_CONFIG)
+
+    # ── Runtime Services (Session/Redis/Queue) ─────────────────────────────
+    try:
+        setup_runtime_services(app)
+    except Exception as e:
+        logger.warning(f"Runtime services fallback mode: {e}")
+
+    # ── Fail-Fast Startup (اختياري للإنتاج الصارم) ─────────────────────────
+    from .config import FAIL_FAST_ON_STARTUP
+    if FAIL_FAST_ON_STARTUP:
+        ok, errors = validate_runtime_requirements()
+        if not ok:
+            raise RuntimeError(" | ".join(errors))
+    
+    # ── نظام المراقبة الشامل ──────────────────────────────────────────────────
+    log_level = "INFO" if IS_PROD else "DEBUG"
+    setup_logging(app, log_level)
 
     # ── ProxyFix: تفعيله عند وجود Proxy/nginx أمام التطبيق ─────────────────────
     if _BEHIND_PROXY:
@@ -47,8 +66,10 @@ def create_app():
     from .blueprints.rental.routes     import bp as rental_bp
     from .blueprints.wholesale.routes  import bp as wholesale_bp
     from .blueprints.services.routes   import bp as services_bp
+    from .blueprints.invoices.routes   import bp as invoices_bp
+    from .blueprints.recipes.routes    import bp as recipes_bp
 
-    for bp in (auth_bp, core_bp, accounting_bp, supply_bp, pos_bp, restaurant_bp, workforce_bp, owner_bp, inventory_bp, contacts_bp, barcode_bp, medical_bp, construction_bp, rental_bp, wholesale_bp, services_bp):
+    for bp in (auth_bp, core_bp, accounting_bp, supply_bp, pos_bp, restaurant_bp, workforce_bp, owner_bp, inventory_bp, contacts_bp, barcode_bp, medical_bp, construction_bp, rental_bp, wholesale_bp, services_bp, invoices_bp, recipes_bp):
         app.register_blueprint(bp)
 
     # ── Jinja2 Custom Filters ─────────────────────────────────────────────────
@@ -60,13 +81,19 @@ def create_app():
             return default if default is not None else []
     app.jinja_env.filters["from_json"] = _from_json
     app.jinja_env.globals["enumerate"] = enumerate
+    app.jinja_env.filters["enumerate"] = enumerate
 
     # ── Middleware ─────────────────────────────────────────────────────────────
-    from .middleware import load_user, inject_globals, add_security_headers
-
+    from .middleware import platform_guard, load_user, inject_globals, add_security_headers, enforce_global_csrf
+    from .request_tracking import track_request_start, track_request_end
+    
+    app.before_request(platform_guard)
+    app.before_request(track_request_start)
     app.before_request(load_user)
+    app.before_request(enforce_global_csrf)
     app.context_processor(inject_globals)
     app.context_processor(_terminology_processor)
+    app.after_request(track_request_end)
     app.after_request(add_security_headers)
 
     # ── DB Migrations (نظام التهجير الجديد المرقّم) ───────────────────────────
@@ -74,6 +101,13 @@ def create_app():
 
     # ── ZATCA Background Worker ────────────────────────────────────────────────
     _start_zatca_worker(app)
+
+    # ── Sync Storm Worker (معالج المزامنة اللامتزامن) ─────────────────────────
+    try:
+        from modules.sync_engine import start_worker as _start_sync_worker
+        _start_sync_worker()
+    except Exception as _se:
+        logger.warning(f"SyncWorker لم يبدأ: {_se}")
 
     # ── Backward-compat endpoint aliases ──────────────────────────────────────
     _register_endpoint_aliases(app)

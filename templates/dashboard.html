@@ -366,6 +366,195 @@
   </div>
 </section>
 
+<!-- ═══ اقتراحات إعادة الطلب (Retail Inventory Reorder Widget) ═══ -->
+{% if reorder_suggestions and reorder_suggestions|length > 0 %}
+<section class="db-workspace" style="margin-bottom:18px">
+  <div class="db-panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="margin:0">📋 اقتراحات إعادة الطلب — المخزون منخفض</h3>
+      <a href="/inventory/products" style="font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none">إدارة المخزون ←</a>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;font-size:.85rem;border-collapse:collapse">
+        <thead>
+          <tr style="border-bottom:1px solid rgba(75,195,255,.28)">
+            <th style="text-align:right;padding:8px 0;color:var(--db-muted);font-weight:600">الصنف</th>
+            <th style="text-align:center;padding:8px 0;color:var(--db-muted);font-weight:600">المتاح</th>
+            <th style="text-align:center;padding:8px 0;color:var(--db-muted);font-weight:600">الحد الأدنى</th>
+            <th style="text-align:center;padding:8px 0;color:var(--db-muted);font-weight:600">الحد الأقصى</th>
+            <th style="text-align:center;padding:8px 0;color:var(--db-muted);font-weight:600">الكمية المقترحة</th>
+            <th style="text-align:center;padding:8px 0;color:var(--db-muted);font-weight:600">إجراء</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in reorder_suggestions %}
+          <tr style="border-bottom:1px solid rgba(75,195,255,.12);padding:8px 0">
+            <td style="padding:8px 0">
+              <div style="color:#ecfbff;font-weight:600">{{ item.sku }}</div>
+              {% if item.barcode %}<div style="font-size:.75rem;color:var(--db-muted)">{{ item.barcode }}</div>{% endif %}
+            </td>
+            <td style="padding:8px 0;text-align:center;color:#45a8ff;font-weight:600">{{ item.current_qty|round(2) }}</td>
+            <td style="padding:8px 0;text-align:center;color:var(--db-muted)">{{ item.min_qty|round(2) }}</td>
+            <td style="padding:8px 0;text-align:center;color:var(--db-muted)">{{ item.max_qty|round(2) }}</td>
+            <td style="padding:8px 0;text-align:center;color:#0ad0c5;font-weight:700">{{ (item.max_qty - item.current_qty)|round(2) }}</td>
+            <td style="padding:8px 0;text-align:center">
+              <a href="/inventory/products/{{ item.id }}" style="display:inline-block;padding:4px 10px;border-radius:8px;background:rgba(69,168,255,.2);color:#45a8ff;text-decoration:none;font-size:.78rem;font-weight:600">عرض</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ═══ Widgets متقدمة حسب نوع النشاط ═══ -->
+<!-- للتجزئة: أفضل المبيعات اليوم + معدل الدوران + الأصناف البطيئة -->
+{% if industry_kpis.pos_mode in ('standard', 'retail', 'fashion', 'pharmacy') %}
+  {% if industry_kpis.today_sales and industry_kpis.today_sales|length > 0 %}
+  <section class="db-workspace" style="margin-bottom:18px">
+    <div class="db-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h3 style="margin:0">🔥 أفضل المبيعات — اليوم</h3>
+        <a href="/analytics" style="font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none">التحليلات ←</a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
+        {% for item in industry_kpis.today_sales[:5] %}
+        <div style="background:rgba(69,168,255,.08);border:1px solid rgba(69,168,255,.22);border-radius:12px;padding:12px">
+          <div style="color:var(--db-muted);font-size:.75rem">{{ item.description[:20] }}</div>
+          <div style="color:#0ad0c5;font-weight:700;font-size:1.2rem;margin:8px 0">{{ item.rev|round(0)|int }} ر.س</div>
+          <div style="color:var(--db-muted);font-size:.75rem">{{ item.qty|round(0)|int }} وحدة</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if industry_kpis.inventory_turnover %}
+  <section class="db-workspace" style="margin-bottom:18px">
+    <div class="db-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h3 style="margin:0">📊 معدل دوران المخزون</h3>
+        <a href="/inventory/reports/inventory-turnover" style="font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none">التقرير الكامل ←</a>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(10,208,197,.12),rgba(69,168,255,.12));border:1px solid rgba(10,208,197,.22);border-radius:12px;padding:16px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <div>
+            <div style="color:var(--db-muted);font-size:.85rem">معدل الدوران (30 يوم)</div>
+            <div style="color:#0ad0c5;font-weight:700;font-size:1.6rem;margin-top:4px">{{ industry_kpis.inventory_turnover|round(2) }}x</div>
+          </div>
+          <div style="text-align:left;font-size:.75rem;color:var(--db-muted)">
+            {% if industry_kpis.inventory_turnover >= 2 %}<span style="color:#10b981">✓ نشط جداً</span>
+            {% elif industry_kpis.inventory_turnover >= 0.5 %}<span style="color:#f59e0b">○ متوسط</span>
+            {% else %}<span style="color:#ef4444">✗ بطيء</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if industry_kpis.slow_moving and industry_kpis.slow_moving|length > 0 %}
+  <section class="db-workspace" style="margin-bottom:18px">
+    <div class="db-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h3 style="margin:0">🐌 الأصناف البطيئة (غير مباعة)</h3>
+        <a href="/inventory/reports/inventory-turnover?days=30" style="font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none">التقرير ←</a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;max-height:200px;overflow-y:auto">
+        {% for item in industry_kpis.slow_moving[:8] %}
+        <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.22);border-radius:12px;padding:12px;font-size:.85rem">
+          <div style="color:#ecfbff;font-weight:600">{{ item.sku }}</div>
+          <div style="color:var(--db-muted);font-size:.75rem">{{ item.product_name[:18] }}</div>
+          <div style="color:#ef4444;font-weight:700;margin-top:4px">{{ item.current_qty|round(2) }} وحدة</div>
+          <div style="color:var(--db-muted);font-size:.75rem">قيمة: {{ item.stock_value|round(0)|int }} ر.س</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+<!-- للجملة: أكثر الموزعين + الديون المتأخرة + أصناف منخفضة -->
+{% elif industry_kpis.pos_mode == 'wholesale' %}
+  {% if industry_kpis.top_distributors and industry_kpis.top_distributors|length > 0 %}
+  <section class="db-workspace" style="margin-bottom:18px">
+    <div class="db-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h3 style="margin:0">👥 أفضل الموزعين (30 يوم)</h3>
+        <a href="/inventory/reports/distributor-performance" style="font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none">التقرير الكامل ←</a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
+        {% for dist in industry_kpis.top_distributors[:5] %}
+        <div style="background:linear-gradient(135deg,rgba(69,168,255,.12),rgba(10,208,197,.12));border:1px solid rgba(75,195,255,.22);border-radius:12px;padding:14px">
+          <div style="color:var(--db-muted);font-size:.75rem">{{ dist.party_name[:20] }}</div>
+          <div style="color:#0ad0c5;font-weight:700;font-size:1.1rem;margin:8px 0">{{ dist.volume|round(0)|int }} ر.س</div>
+          <div style="color:var(--db-muted);font-size:.75rem">{{ dist.orders }} طلب</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if industry_kpis.overdue_debts and industry_kpis.overdue_debts|length > 0 %}
+  <section class="db-workspace" style="margin-bottom:18px">
+    <div class="db-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h3 style="margin:0;color:#ef4444">⚠️ ديون الموزعين المتأخرة</h3>
+        <a href="/wholesale/customers/overdue" style="font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none">جميع الديون ←</a>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;font-size:.8rem;border-collapse:collapse">
+          <thead>
+            <tr style="border-bottom:1px solid rgba(239,68,68,.28)">
+              <th style="text-align:right;padding:8px 0;color:var(--db-muted);font-weight:600">الموزع</th>
+              <th style="text-align:center;padding:8px 0;color:var(--db-muted);font-weight:600">المبلغ</th>
+              <th style="text-align:center;padding:8px 0;color:var(--db-muted);font-weight:600">أيام التأخير</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for debt in industry_kpis.overdue_debts[:5] %}
+            <tr style="border-bottom:1px solid rgba(239,68,68,.12)">
+              <td style="padding:8px 0;color:#ecfbff">{{ debt.party_name[:18] }}</td>
+              <td style="padding:8px 0;text-align:center;color:#ef4444;font-weight:700">{{ debt.outstanding|round(0)|int }} ر.س</td>
+              <td style="padding:8px 0;text-align:center;color:#f59e0b">{{ debt.days_overdue }} أيام</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if industry_kpis.low_stock_wholesale and industry_kpis.low_stock_wholesale|length > 0 %}
+  <section class="db-workspace" style="margin-bottom:18px">
+    <div class="db-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h3 style="margin:0">📦 أصناف منخفضة المخزون</h3>
+        <a href="/inventory/products" style="font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none">المخزون ←</a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;max-height:180px;overflow-y:auto">
+        {% for item in industry_kpis.low_stock_wholesale[:8] %}
+        <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.22);border-radius:12px;padding:12px;font-size:.8rem">
+          <div style="color:#ecfbff;font-weight:600">{{ item.sku }}</div>
+          <div style="color:var(--db-muted);font-size:.7rem">{{ item.product_name[:16] }}</div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px">
+            <div style="color:#f59e0b;font-weight:700">{{ item.current_qty|round(3) }}</div>
+            <div style="color:var(--db-muted)">الحد: {{ item.min_qty|round(3) }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+{% endif %}
+
 <section class="db-workspace">
   <div class="db-panel">
     <h3>مساحة العمل الرئيسية</h3>
@@ -406,6 +595,16 @@
   </aside>
 </section>
 
+<!-- ═══ التنبيهات القادمة (reminders widget) ═══ -->
+<div id="remindersWidget" style="margin-top:16px;display:none">
+  <div class="db-panel">
+    <h3>🔔 التزامات قادمة — خلال 30 يوماً
+      <a href="/reminders" style="font-size:.75rem;font-weight:400;color:#6bc9e8;margin-right:8px;text-decoration:none">إدارة الكل ←</a>
+    </h3>
+    <div id="remindersWidgetBody"></div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -427,5 +626,40 @@
 
     requestAnimationFrame(tick);
   });
+
+  // تحميل التنبيهات القادمة
+  fetch('/api/v1/reminders/upcoming')
+    .then(r => r.json())
+    .then(items => {
+      if (!items || items.length === 0) return;
+      const widget = document.getElementById('remindersWidget');
+      const body   = document.getElementById('remindersWidgetBody');
+      widget.style.display = 'block';
+
+      const TYPE_ICONS = {
+        tax:'📋', insurance:'🏥', social_insurance:'👥',
+        installment:'💳', license:'📄', custom:'🔔'
+      };
+
+      body.innerHTML = `<div style="display:grid;gap:8px;margin-top:4px">` +
+        items.map(r => {
+          const icon = TYPE_ICONS[r.reminder_type] || '🔔';
+          const urgent = r.days_left <= 7;
+          const overdue = r.days_left < 0;
+          const color  = overdue ? '#ef4444' : (urgent ? '#f59e0b' : '#a5f3fc');
+          const badge  = overdue ? `⚠️ متأخر ${Math.abs(r.days_left)} يوم`
+                       : (r.days_left === 0 ? '🚨 اليوم'
+                       : `${r.days_left} يوم`);
+          return `<div style="display:flex;justify-content:space-between;align-items:center;
+                    background:rgba(17,62,84,.38);border:1px solid rgba(84,203,255,.2);
+                    border-radius:11px;padding:10px 14px">
+            <span style="font-size:.86rem;color:#b9e3f2">${icon} ${r.title}</span>
+            <span style="font-size:.78rem;color:${color};font-weight:700;white-space:nowrap;margin-right:8px">
+              ${badge}
+            </span>
+          </div>`;
+        }).join('') + `</div>`;
+    })
+    .catch(() => {}); // بهدوء إذا لم يكن جدول reminders موجوداً بعد
 </script>
 {% endblock %}

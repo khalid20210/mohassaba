@@ -12,6 +12,50 @@ from functools import wraps
 bp = Blueprint("inventory", __name__, url_prefix="/inventory")
 
 
+def _normalize_movement_type(raw_type: str):
+    """Map UI movement types to DB-supported values."""
+    mt = (raw_type or "").strip().lower()
+    mapping = {
+        "purchase": "purchase",
+        "adjustment": "adjustment",
+        "return": "return",
+        "return_in": "return",
+        "damage": "damage",
+        "broken": "damage",
+        "waste": "damage",
+        "transfer": "transfer",
+        "transfer_out": "transfer",
+        "sale": "sale",
+    }
+    return mapping.get(mt)
+
+
+def _upsert_low_stock_alert(db, business_id: int, product_id: int, sku: str, current_qty: float, min_qty: float):
+    """Create or resolve low stock alert based on current quantity."""
+    alert = db.execute(
+        """SELECT id FROM stock_alerts
+           WHERE business_id=? AND product_id=? AND alert_type='low_stock' AND is_resolved=0
+           ORDER BY id DESC LIMIT 1""",
+        (business_id, product_id)
+    ).fetchone()
+
+    if current_qty <= min_qty:
+        msg = f"المخزون منخفض للصنف {sku or ('#' + str(product_id))}: المتاح {current_qty:.2f} / الحد {min_qty:.2f}"
+        if alert:
+            db.execute("UPDATE stock_alerts SET alert_message=? WHERE id=?", (msg, alert["id"]))
+        else:
+            db.execute(
+                """INSERT INTO stock_alerts (business_id, product_id, alert_type, alert_message)
+                   VALUES (?, ?, 'low_stock', ?)""",
+                (business_id, product_id, msg)
+            )
+    elif alert:
+        db.execute(
+            "UPDATE stock_alerts SET is_resolved=1, resolved_at=datetime('now') WHERE id=?",
+            (alert["id"],)
+        )
+
+
 def require_perm(*perms):
     """Decorator: التحقق من الصلاحيات"""
     def decorator(f):
@@ -21,6 +65,11 @@ def require_perm(*perms):
                 return redirect("/login")
             
             user_perms = g.user.get("permissions", {})
+            if isinstance(user_perms, str):
+                try:
+                    user_perms = json.loads(user_perms or "{}")
+                except Exception:
+                    user_perms = {}
             # إذا كان المستخدم مالك (all=true) يُسمح له بكل شيء
             if user_perms.get("all"):
                 return f(*args, **kwargs)
@@ -37,7 +86,7 @@ def require_perm(*perms):
 
 
 def log_activity(module, action, entity_id=None, changes=None):
-    """تسجيل النشاط في activity_log"""
+    """تسجيل النشاط في audit_logs"""
     from modules.extensions import get_db
     
     if not g.user or not g.business:
@@ -45,15 +94,15 @@ def log_activity(module, action, entity_id=None, changes=None):
     
     db = get_db()
     db.execute("""
-        INSERT INTO activity_log (business_id, module, action, entity_id, changes_json, user_id, ip_address, created_at)
+        INSERT INTO audit_logs (business_id, user_id, action, entity_type, entity_id, new_value, ip_address, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
     """, (
         g.business["id"],
-        module,
+        g.user.get("id"),
         action,
+        module,
         entity_id,
         json.dumps(changes) if changes else None,
-        g.user.get("id"),
         request.remote_addr
     ))
     db.commit()
@@ -307,26 +356,53 @@ def edit_product(product_id):
 def list_movements():
     """سجل حركات المخزون"""
     from modules.extensions import get_db
-    
+
     db = get_db()
     business_id = g.business["id"]
-    
+
     page = int(request.args.get("page", 1))
     per_page = 30
-    
-    movements = db.execute("""
-        SELECT im.*, pi.sku FROM inventory_movements im
-        LEFT JOIN product_inventory pi ON im.product_id = pi.id
-        WHERE im.business_id = ?
-        ORDER BY im.created_at DESC
-        LIMIT ? OFFSET ?
-    """, (business_id, per_page, (page - 1) * per_page)).fetchall()
-    
+
+    movement_type = request.args.get("type", "").strip().lower()
+    date_from = request.args.get("from", "").strip()
+    date_to = request.args.get("to", "").strip()
+    product_id = request.args.get("product_id", "").strip()
+
+    where = ["im.business_id = ?"]
+    params = [business_id]
+
+    normalized_type = _normalize_movement_type(movement_type) if movement_type else None
+    if movement_type and normalized_type:
+        where.append("im.movement_type = ?")
+        params.append(normalized_type)
+
+    if date_from:
+        where.append("date(im.created_at) >= date(?)")
+        params.append(date_from)
+    if date_to:
+        where.append("date(im.created_at) <= date(?)")
+        params.append(date_to)
+    if product_id.isdigit():
+        where.append("im.product_id = ?")
+        params.append(int(product_id))
+
+    where_sql = " AND ".join(where)
+
+    movements = db.execute(
+        f"""SELECT im.*, pi.sku, pi.sku AS product_name, im.reason AS notes
+            FROM inventory_movements im
+            LEFT JOIN product_inventory pi ON im.product_id = pi.id
+            WHERE {where_sql}
+            ORDER BY im.created_at DESC
+            LIMIT ? OFFSET ?""",
+        (*params, per_page, (page - 1) * per_page)
+    ).fetchall()
+
     total = db.execute(
-        "SELECT COUNT(*) FROM inventory_movements WHERE business_id = ?",
-        (business_id,)
+        f"SELECT COUNT(*) FROM inventory_movements im WHERE {where_sql}",
+        params,
     ).fetchone()[0]
-    
+
     return render_template("inventory/movements_list.html", **{
         "movements": movements,
         "total": total,
@@ -340,32 +416,43 @@ def list_movements():
 def add_movement():
     """تسجيل حركة مخزون يدوية"""
     from modules.extensions import get_db
-    
+
     db = get_db()
     business_id = g.business["id"]
-    
+
     data = request.form
     product_id = int(data.get("product_id"))
     quantity = float(data.get("quantity"))
-    movement_type = data.get("movement_type")  # adjustment, damage, transfer, etc.
-    
+    raw_type = data.get("movement_type")
+    movement_type = _normalize_movement_type(raw_type)
+
+    if not movement_type:
+        return jsonify({"error": "نوع الحركة غير مدعوم"}), 400
+    if quantity <= 0:
+        return jsonify({"error": "الكمية يجب أن تكون أكبر من صفر"}), 400
+
     # تحديث الكمية
     product = db.execute(
-        "SELECT current_qty FROM product_inventory WHERE id = ? AND business_id = ?",
+        "SELECT current_qty, sku, min_qty FROM product_inventory WHERE id = ? AND business_id = ?",
         (product_id, business_id)
     ).fetchone()
-    
+
     if not product:
         return jsonify({"error": "الصنف غير موجود"}), 404
-    
-    if movement_type == "adjustment":
-        new_qty = product["current_qty"] + quantity
+
+    incoming_types = {"adjustment", "purchase", "return"}
+    if movement_type in incoming_types:
+        new_qty = float(product["current_qty"] or 0) + quantity
     else:
-        new_qty = product["current_qty"] - quantity
-    
+        new_qty = float(product["current_qty"] or 0) - quantity
+
     if new_qty < 0:
         return jsonify({"error": "الكمية المطلوبة تتجاوز المخزون المتاح"}), 400
-    
+
+    reason = (data.get("reason") or data.get("notes") or "").strip()
+    if raw_type in ("broken", "waste"):
+        reason = f"{raw_type}: {reason}" if reason else raw_type
+
     # تسجيل الحركة
     db.execute("""
         INSERT INTO inventory_movements (
@@ -377,20 +464,29 @@ def add_movement():
         product_id,
         movement_type,
         quantity,
-        data.get("reason"),
+        reason,
         g.user.get("id"),
     ))
-    
+
     # تحديث الكمية
     db.execute(
-        "UPDATE product_inventory SET current_qty = ? WHERE id = ?",
+        "UPDATE product_inventory SET current_qty = ?, updated_at = datetime('now') WHERE id = ?",
         (new_qty, product_id)
     )
-    
+
+    _upsert_low_stock_alert(
+        db,
+        business_id,
+        product_id,
+        product["sku"],
+        float(new_qty),
+        float(product["min_qty"] or 0),
+    )
+
     db.commit()
-    
-    log_activity("inventory", f"movement_{movement_type}", product_id, {"quantity": quantity})
-    return jsonify({"success": True, "new_qty": new_qty})
+
+    log_activity("inventory", f"movement_{movement_type}", product_id, {"quantity": quantity, "raw_type": raw_type})
+    return jsonify({"success": True, "new_qty": new_qty, "movement_type": movement_type})
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -572,19 +668,568 @@ def reports():
 def api_stock(product_id):
     """API: الحصول على الكمية المتاحة"""
     from modules.extensions import get_db
-    
+
     db = get_db()
     business_id = g.business["id"]
-    
+
     product = db.execute(
         "SELECT current_qty, sku FROM product_inventory WHERE id = ? AND business_id = ?",
         (product_id, business_id)
     ).fetchone()
-    
+
     if product:
         return jsonify({
             "available_qty": product["current_qty"],
             "sku": product["sku"]
         })
-    
+
     return jsonify({"error": "Product not found"}), 404
+
+
+@bp.route("/api/reorder-suggestions")
+@require_perm("warehouse")
+def api_reorder_suggestions():
+    """API: اقتراحات إعادة الطلب حسب الحد الأدنى."""
+    from modules.extensions import get_db
+
+    db = get_db()
+    business_id = g.business["id"]
+
+    rows = db.execute(
+        """SELECT id, sku, barcode, current_qty, min_qty, max_qty
+           FROM product_inventory
+           WHERE business_id=? AND min_qty > 0 AND current_qty <= min_qty
+           ORDER BY (min_qty - current_qty) DESC, sku ASC
+           LIMIT 150""",
+        (business_id,)
+    ).fetchall()
+
+    suggestions = []
+    for r in rows:
+        r = dict(r)
+        max_qty = float(r.get("max_qty") or 0)
+        min_qty = float(r.get("min_qty") or 0)
+        current = float(r.get("current_qty") or 0)
+        target = max(max_qty, min_qty)
+        r["reorder_qty"] = max(round(target - current, 3), 0)
+        suggestions.append(r)
+
+    return jsonify({"success": True, "count": len(suggestions), "items": suggestions})
+
+
+@bp.route("/api/quick-adjust", methods=["POST"])
+@require_perm("warehouse")
+def api_quick_adjust():
+    """API: تسوية سريعة للتجزئة (هالك/مكسور/تعديل)."""
+    from modules.extensions import get_db
+
+    db = get_db()
+    business_id = g.business["id"]
+    payload = request.get_json(silent=True) or {}
+
+    try:
+        product_id = int(payload.get("product_id"))
+        quantity = float(payload.get("quantity"))
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "error": "بيانات غير صالحة"}), 400
+
+    raw_type = payload.get("movement_type")
+    movement_type = _normalize_movement_type(raw_type)
+    if movement_type not in {"adjustment", "damage", "purchase", "return", "sale", "transfer"}:
+        return jsonify({"success": False, "error": "نوع الحركة غير مدعوم"}), 400
+    if quantity <= 0:
+        return jsonify({"success": False, "error": "الكمية يجب أن تكون أكبر من صفر"}), 400
+
+    product = db.execute(
+        "SELECT id, sku, current_qty, min_qty FROM product_inventory WHERE id=? AND business_id=?",
+        (product_id, business_id)
+    ).fetchone()
+    if not product:
+        return jsonify({"success": False, "error": "الصنف غير موجود"}), 404
+
+    incoming_types = {"adjustment", "purchase", "return"}
+    current = float(product["current_qty"] or 0)
+    new_qty = current + quantity if movement_type in incoming_types else current - quantity
+    if new_qty < 0:
+        return jsonify({"success": False, "error": "لا يمكن أن يصبح المخزون سالباً"}), 400
+
+    reason = str(payload.get("reason") or "").strip()
+    if raw_type in ("broken", "waste"):
+        reason = f"{raw_type}: {reason}" if reason else raw_type
+
+    db.execute(
+        """INSERT INTO inventory_movements
+           (business_id, product_id, movement_type, quantity, reason, performed_by, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, datetime('now'))""",
+        (business_id, product_id, movement_type, quantity, reason, g.user.get("id"))
+    )
+    db.execute(
+        "UPDATE product_inventory SET current_qty=?, updated_at=datetime('now') WHERE id=? AND business_id=?",
+        (new_qty, product_id, business_id)
+    )
+
+    _upsert_low_stock_alert(
+        db,
+        business_id,
+        product_id,
+        product["sku"],
+        float(new_qty),
+        float(product["min_qty"] or 0),
+    )
+    db.commit()
+
+    log_activity("inventory", f"quick_adjust_{movement_type}", product_id, {
+        "quantity": quantity,
+        "raw_type": raw_type,
+        "reason": reason,
+    })
+    return jsonify({"success": True, "new_qty": new_qty, "movement_type": movement_type})
+
+
+@bp.route("/reports/damage-waste")
+@require_perm("warehouse")
+def report_damage_waste():
+    """تقرير الهالك والمكسور حسب الفترة الزمنية."""
+    from modules.extensions import get_db
+
+    db = get_db()
+    business_id = g.business["id"]
+
+    date_from = request.args.get("from", "").strip()
+    date_to = request.args.get("to", "").strip()
+
+    where = ["im.business_id = ? AND im.movement_type = 'damage'"]
+    params = [business_id]
+
+    if date_from:
+        where.append("DATE(im.created_at) >= DATE(?)")
+        params.append(date_from)
+    if date_to:
+        where.append("DATE(im.created_at) <= DATE(?)")
+        params.append(date_to)
+
+    where_sql = " AND ".join(where)
+
+    # ملخص التقرير
+    summary = db.execute(
+        f"""SELECT 
+            COUNT(*) AS count,
+            SUM(quantity) AS total_qty
+        FROM inventory_movements im
+        WHERE {where_sql}""",
+        params,
+    ).fetchone()
+
+    # تفاصيل الهالك حسب السبب
+    by_reason = db.execute(
+        f"""SELECT 
+            im.reason, 
+            COUNT(*) AS cnt,
+            SUM(quantity) AS total_qty,
+            pi.sku
+        FROM inventory_movements im
+        LEFT JOIN product_inventory pi ON im.product_id = pi.id
+        WHERE {where_sql}
+        GROUP BY im.reason
+        ORDER BY total_qty DESC""",
+        params,
+    ).fetchall()
+
+    # أكثر الأصناف هالكاً
+    top_damaged = db.execute(
+        f"""SELECT 
+            pi.sku,
+            COUNT(*) AS cnt,
+            SUM(im.quantity) AS total_qty,
+            ROUND(SUM(im.quantity * COALESCE(pi.unit_cost, 0)), 2) AS estimated_cost
+        FROM inventory_movements im
+        LEFT JOIN product_inventory pi ON im.product_id = pi.id
+        WHERE {where_sql}
+        GROUP BY im.product_id
+        ORDER BY total_qty DESC
+        LIMIT 10""",
+        params,
+    ).fetchall()
+
+    return render_template(
+        "inventory/report_damage_waste.html",
+        date_from=date_from,
+        date_to=date_to,
+        summary=dict(summary) if summary else {"count": 0, "total_qty": 0},
+        by_reason=[dict(r) for r in by_reason],
+        top_damaged=[dict(r) for r in top_damaged],
+    )
+
+
+@bp.route("/reports/inventory-turnover")
+@require_perm("warehouse")
+def report_inventory_turnover():
+    """تقرير معدل دوران المخزون والأصناف البطيئة."""
+    from modules.extensions import get_db
+
+    db = get_db()
+    business_id = g.business["id"]
+
+    days = request.args.get("days", "30")
+    try:
+        days = int(days)
+    except ValueError:
+        days = 30
+
+    since = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+
+    # معدل دوران كل صنف: (إجمالي المبيعات / متوسط المخزون)
+    turnover = db.execute(f"""
+        SELECT 
+            pi.sku,
+            p.name AS product_name,
+            pi.current_qty AS current_stock,
+            ROUND(pi.unit_cost * pi.current_qty, 2) AS stock_value,
+            COALESCE(SUM(CASE WHEN i.invoice_type='sale' AND i.status='paid' THEN il.quantity ELSE 0 END), 0) AS units_sold,
+            COALESCE(SUM(CASE WHEN i.invoice_type='sale' AND i.status='paid' THEN il.total ELSE 0 END), 0) AS sales_value,
+            CASE 
+                WHEN COALESCE(pi.current_qty, 0) > 0 
+                THEN ROUND(COALESCE(SUM(CASE WHEN i.invoice_type='sale' AND i.status='paid' THEN il.quantity ELSE 0 END), 0) / pi.current_qty, 2)
+                ELSE 0 
+            END AS turnover_rate,
+            ROUND(COALESCE(SUM(CASE WHEN i.invoice_type='sale' AND i.status='paid' THEN il.quantity ELSE 0 END), 0) * 1.0 / {days}, 2) AS avg_daily_sales
+        FROM product_inventory pi
+        LEFT JOIN products p ON p.id = pi.product_id
+        LEFT JOIN invoice_lines il ON il.description = p.name
+        LEFT JOIN invoices i ON i.id = il.invoice_id AND i.business_id = pi.business_id
+          AND DATE(i.created_at) >= ?
+        WHERE pi.business_id = ?
+        GROUP BY pi.id
+        ORDER BY turnover_rate DESC
+    """, (since, business_id)).fetchall()
+
+    # الأصناف البطيئة جداً (لم تُباع في آخر 30/60/90 يوم)
+    slow_moving = db.execute(f"""
+        SELECT 
+            pi.sku,
+            p.name AS product_name,
+            pi.current_qty,
+            ROUND(pi.unit_cost * pi.current_qty, 2) AS stock_value,
+            CASE 
+                WHEN NOT EXISTS (
+                    SELECT 1 FROM invoice_lines il
+                    JOIN invoices i ON i.id = il.invoice_id
+                    WHERE il.description = p.name AND i.business_id = pi.business_id
+                      AND i.invoice_type = 'sale' AND i.status = 'paid'
+                      AND DATE(i.created_at) >= ?
+                )
+                THEN 'لم تُباع'
+                ELSE 'مبيعات بطيئة'
+            END AS status,
+            COALESCE((
+                SELECT MAX(DATE(i.created_at)) FROM invoice_lines il
+                JOIN invoices i ON i.id = il.invoice_id
+                WHERE il.description = p.name AND i.business_id = pi.business_id
+                  AND i.invoice_type = 'sale' AND i.status = 'paid'
+            ), 'غير معروف') AS last_sale_date
+        FROM product_inventory pi
+        JOIN products p ON p.id = pi.product_id
+        WHERE pi.business_id = ? AND pi.current_qty > 0
+          AND p.name NOT IN (
+              SELECT DISTINCT il.description FROM invoice_lines il
+              JOIN invoices i ON i.id = il.invoice_id
+              WHERE i.business_id = pi.business_id AND i.invoice_type = 'sale'
+                AND i.status = 'paid' AND DATE(i.created_at) >= ?
+          )
+        ORDER BY pi.current_qty DESC
+        LIMIT 20
+    """, (since, business_id, since)).fetchall()
+
+    return render_template(
+        "inventory/report_inventory_turnover.html",
+        days=days,
+        turnover=[dict(r) for r in turnover],
+        slow_moving=[dict(r) for r in slow_moving],
+    )
+
+
+@bp.route("/reports/distributor-performance")
+@require_perm("sales")
+def report_distributor_performance():
+    """تقرير أداء الموزعين (للجملة): إجمالي الطلبات، الحجم، الديون."""
+    from modules.extensions import get_db
+
+    db = get_db()
+    business_id = g.business["id"]
+
+    months = request.args.get("months", "3")
+    try:
+        months = int(months)
+    except ValueError:
+        months = 3
+
+    since = (datetime.now() - timedelta(days=months * 30)).strftime("%Y-%m-%d")
+
+    # أداء كل موزع
+    distributors = db.execute(f"""
+        SELECT 
+            c.id,
+            c.name AS distributor_name,
+            COUNT(i.id) AS total_orders,
+            COALESCE(SUM(CASE WHEN i.status='paid' THEN i.total ELSE 0 END), 0) AS paid_amount,
+            COALESCE(SUM(CASE WHEN i.status='pending' THEN i.total - COALESCE(i.paid_amount, 0) ELSE 0 END), 0) AS outstanding_debt,
+            ROUND(COALESCE(SUM(i.total), 0), 2) AS total_volume,
+            COUNT(CASE WHEN i.status='paid' THEN 1 END) AS paid_orders,
+            COUNT(CASE WHEN i.status='pending' THEN 1 END) AS pending_orders,
+            CASE 
+                WHEN COUNT(i.id) > 0 
+                THEN ROUND(COUNT(CASE WHEN i.status='paid' THEN 1 END) * 100.0 / COUNT(i.id), 1)
+                ELSE 0 
+            END AS payment_rate
+        FROM contacts c
+        LEFT JOIN invoices i ON i.party_id = c.id AND i.business_id = c.business_id
+          AND i.invoice_type = 'sale' AND DATE(i.created_at) >= ?
+        WHERE c.business_id = ? AND c.contact_type = 'customer'
+        GROUP BY c.id
+        ORDER BY total_volume DESC
+    """, (since, business_id)).fetchall()
+
+    return render_template(
+        "inventory/report_distributor_performance.html",
+        months=months,
+        distributors=[dict(r) for r in distributors],
+    )
+
+
+# ═══════════════════════════════════════════════════════════════
+#  تقرير المبيعات التفصيلي بفلاتر (كاشير + تاريخ + صنف)
+# ═══════════════════════════════════════════════════════════════
+
+@bp.route("/reports/sales-detail")
+@require_perm("reports")
+def report_sales_detail():
+    """تقرير مبيعات تفصيلي مع فلترة بالتاريخ والصنف والكاشير."""
+    from modules.extensions import get_db
+
+    db = get_db()
+    business_id = g.business["id"]
+
+    date_from = request.args.get("from", (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d"))
+    date_to   = request.args.get("to",   datetime.now().strftime("%Y-%m-%d"))
+    cashier_filter = request.args.get("cashier", "").strip()
+    product_filter = request.args.get("product", "").strip()
+
+    where_clauses = [
+        "i.business_id = ?",
+        "i.invoice_type IN ('sale', 'table')",
+        "i.status = 'paid'",
+        "DATE(i.created_at) >= ?",
+        "DATE(i.created_at) <= ?",
+    ]
+    params = [business_id, date_from, date_to]
+
+    if cashier_filter:
+        where_clauses.append("i.created_by = ?")
+        params.append(cashier_filter)
+    if product_filter:
+        where_clauses.append("il.description LIKE ?")
+        params.append(f"%{product_filter}%")
+
+    where_sql = " AND ".join(where_clauses)
+
+    # سطور المبيعات التفصيلية
+    sales_lines = db.execute(f"""
+        SELECT
+            DATE(i.created_at) AS sale_date,
+            i.invoice_number,
+            il.description AS product_name,
+            ROUND(il.quantity, 3) AS qty,
+            ROUND(il.unit_price, 2) AS unit_price,
+            ROUND(il.total, 2) AS line_total,
+            i.created_by AS cashier_id,
+            COALESCE(u.full_name, CAST(i.created_by AS TEXT)) AS cashier_name
+        FROM invoice_lines il
+        JOIN invoices i ON i.id = il.invoice_id
+        LEFT JOIN users u ON u.id = i.created_by
+        WHERE {where_sql}
+        ORDER BY i.created_at DESC, il.id
+        LIMIT 500
+    """, params).fetchall()
+
+    # ملخص حسب التاريخ
+    daily_summary = db.execute(f"""
+        SELECT
+            DATE(i.created_at) AS sale_date,
+            COUNT(DISTINCT i.id) AS invoice_count,
+            ROUND(SUM(il.quantity), 2) AS total_qty,
+            ROUND(SUM(il.total), 2) AS total_revenue
+        FROM invoice_lines il
+        JOIN invoices i ON i.id = il.invoice_id
+        WHERE {where_sql}
+        GROUP BY DATE(i.created_at)
+        ORDER BY sale_date DESC
+    """, params).fetchall()
+
+    # ملخص حسب الصنف
+    product_summary = db.execute(f"""
+        SELECT
+            il.description AS product_name,
+            ROUND(SUM(il.quantity), 2) AS total_qty,
+            ROUND(SUM(il.total), 2) AS total_revenue,
+            ROUND(AVG(il.unit_price), 2) AS avg_price,
+            COUNT(DISTINCT i.id) AS sale_count
+        FROM invoice_lines il
+        JOIN invoices i ON i.id = il.invoice_id
+        WHERE {where_sql}
+        GROUP BY il.description
+        ORDER BY total_revenue DESC
+        LIMIT 30
+    """, params).fetchall()
+
+    # الكاشيرون المتاحون للفلتر
+    cashiers = db.execute("""
+        SELECT DISTINCT i.created_by AS id, COALESCE(u.full_name, CAST(i.created_by AS TEXT)) AS name
+        FROM invoices i
+        LEFT JOIN users u ON u.id = i.created_by
+        WHERE i.business_id=? AND i.invoice_type IN ('sale','table') AND i.status='paid'
+        ORDER BY name
+    """, (business_id,)).fetchall()
+
+    grand_total = sum(r["total_revenue"] for r in daily_summary)
+
+    return render_template(
+        "inventory/report_sales_detail.html",
+        date_from=date_from,
+        date_to=date_to,
+        cashier_filter=cashier_filter,
+        product_filter=product_filter,
+        sales_lines=[dict(r) for r in sales_lines],
+        daily_summary=[dict(r) for r in daily_summary],
+        product_summary=[dict(r) for r in product_summary],
+        cashiers=[dict(r) for r in cashiers],
+        grand_total=round(grand_total, 2),
+    )
+
+
+# ═══════════════════════════════════════════════════════════════
+#  تحليل هامش الربح للمنتجات
+# ═══════════════════════════════════════════════════════════════
+
+@bp.route("/reports/profit-margin")
+@require_perm("reports")
+def report_profit_margin():
+    """تحليل هامش الربح: مقارنة سعر التكلفة بسعر البيع لكل صنف."""
+    from modules.extensions import get_db
+
+    db = get_db()
+    business_id = g.business["id"]
+
+    days = request.args.get("days", "30")
+    try:
+        days = int(days)
+    except ValueError:
+        days = 30
+
+    since = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+
+    # هامش الربح لكل صنف
+    margins = db.execute(f"""
+        SELECT
+            pi.sku,
+            p.name AS product_name,
+            ROUND(COALESCE(pi.unit_cost, 0), 2) AS unit_cost,
+            ROUND(COALESCE(p.sale_price, 0), 2) AS sale_price,
+            ROUND(COALESCE(p.sale_price, 0) - COALESCE(pi.unit_cost, 0), 2) AS gross_profit_per_unit,
+            CASE
+                WHEN COALESCE(p.sale_price, 0) > 0
+                THEN ROUND((COALESCE(p.sale_price, 0) - COALESCE(pi.unit_cost, 0)) * 100.0 / p.sale_price, 1)
+                ELSE 0
+            END AS margin_pct,
+            COALESCE(SUM(il.quantity), 0) AS units_sold,
+            ROUND(COALESCE(SUM(il.total), 0), 2) AS revenue,
+            ROUND(COALESCE(SUM(il.quantity * COALESCE(pi.unit_cost, 0)), 0), 2) AS cogs,
+            ROUND(COALESCE(SUM(il.total), 0) - COALESCE(SUM(il.quantity * COALESCE(pi.unit_cost, 0)), 0), 2) AS gross_profit
+        FROM product_inventory pi
+        LEFT JOIN products p ON p.id = pi.product_id
+        LEFT JOIN invoice_lines il ON il.description = p.name
+        LEFT JOIN invoices i ON i.id = il.invoice_id AND i.business_id = pi.business_id
+          AND i.invoice_type = 'sale' AND i.status = 'paid'
+          AND DATE(i.created_at) >= ?
+        WHERE pi.business_id = ?
+        GROUP BY pi.id
+        ORDER BY gross_profit DESC
+    """, (since, business_id)).fetchall()
+
+    # الأكثر ربحية
+    top_margin   = sorted([dict(r) for r in margins], key=lambda x: x["margin_pct"], reverse=True)[:10]
+    # الأقل ربحية (هامش سلبي أو منخفض)
+    low_margin   = [r for r in [dict(r) for r in margins] if r["margin_pct"] < 20][:10]
+    # إجمالي
+    total_revenue = sum(r["revenue"] for r in [dict(r) for r in margins])
+    total_cogs    = sum(r["cogs"] for r in [dict(r) for r in margins])
+    total_profit  = total_revenue - total_cogs
+    avg_margin    = round(total_profit * 100 / total_revenue, 1) if total_revenue > 0 else 0
+
+    return render_template(
+        "inventory/report_profit_margin.html",
+        days=days,
+        margins=[dict(r) for r in margins],
+        top_margin=top_margin,
+        low_margin=low_margin,
+        total_revenue=round(total_revenue, 2),
+        total_cogs=round(total_cogs, 2),
+        total_profit=round(total_profit, 2),
+        avg_margin=avg_margin,
+    )
+
+
+# ═══════════════════════════════════════════════════════════════
+#  الموردون المتأخرون في الدفع
+# ═══════════════════════════════════════════════════════════════
+
+@bp.route("/reports/suppliers-overdue")
+@require_perm("purchases")
+def report_suppliers_overdue():
+    """قائمة المشتريات غير المدفوعة للموردين."""
+    from modules.extensions import get_db
+
+    db = get_db()
+    business_id = g.business["id"]
+
+    # مشتريات معلقة (غير مدفوعة)
+    overdue_by_supplier = db.execute("""
+        SELECT
+            c.id AS supplier_id,
+            c.name AS supplier_name,
+            c.phone,
+            COUNT(i.id) AS invoice_count,
+            ROUND(SUM(i.total - COALESCE(i.paid_amount, 0)), 2) AS total_owed,
+            MIN(i.due_date) AS oldest_due,
+            CAST((julianday('now') - julianday(MIN(COALESCE(i.due_date, i.invoice_date)))) AS INTEGER) AS max_days_overdue
+        FROM invoices i
+        JOIN contacts c ON c.id = i.party_id
+        WHERE i.business_id=? AND i.invoice_type='purchase'
+          AND i.status IN ('unpaid', 'partial', 'pending')
+          AND (i.total - COALESCE(i.paid_amount, 0)) > 0
+        GROUP BY c.id
+        ORDER BY total_owed DESC
+    """, (business_id,)).fetchall()
+
+    # تفاصيل الفواتير المستحقة
+    overdue_invoices = db.execute("""
+        SELECT
+            i.id, i.invoice_number, i.invoice_date, i.due_date,
+            ROUND(i.total - COALESCE(i.paid_amount, 0), 2) AS owed,
+            CAST((julianday('now') - julianday(COALESCE(i.due_date, i.invoice_date))) AS INTEGER) AS days_since,
+            c.name AS supplier_name, c.id AS supplier_id
+        FROM invoices i
+        JOIN contacts c ON c.id = i.party_id
+        WHERE i.business_id=? AND i.invoice_type='purchase'
+          AND i.status IN ('unpaid', 'partial', 'pending')
+          AND (i.total - COALESCE(i.paid_amount, 0)) > 0
+        ORDER BY i.due_date ASC NULLS LAST
+    """, (business_id,)).fetchall()
+
+    total_owed = sum(r["total_owed"] for r in overdue_by_supplier)
+
+    return render_template(
+        "inventory/report_suppliers_overdue.html",
+        overdue_by_supplier=[dict(r) for r in overdue_by_supplier],
+        overdue_invoices=[dict(r) for r in overdue_invoices],
+        total_owed=round(total_owed, 2),
+    )

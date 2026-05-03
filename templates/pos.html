@@ -97,6 +97,22 @@
   font-size:.72rem; padding:3px 10px; cursor:pointer; font-family:inherit; font-weight:600;
 }
 .pos-held-btn:hover { background:rgba(245,158,11,.22); }
+.pos-shift-chip {
+  background:rgba(16,185,129,.12); color:var(--p-green);
+  border:1px solid rgba(16,185,129,.32); border-radius:999px;
+  font-size:.7rem; padding:3px 8px; margin-inline-start:6px; display:none;
+}
+.pos-premium-strip {
+  margin-bottom:8px; display:flex; gap:6px; flex-wrap:wrap;
+}
+.pos-premium-badge {
+  background:rgba(245,158,11,.12);
+  color:#fbbf24;
+  border:1px solid rgba(245,158,11,.34);
+  border-radius:999px;
+  font-size:.7rem;
+  padding:3px 9px;
+}
 .pos-cart-body { flex:1; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--p-border) transparent; }
 .pos-cart-body::-webkit-scrollbar { width:3px; }
 .pos-cart-body::-webkit-scrollbar-thumb { background:var(--p-border); }
@@ -165,6 +181,15 @@
 .pos-mode-banner .meta { color:#8b949e; }
 .pos-mode-chip { background:rgba(59,130,246,.15); border-color:rgba(59,130,246,.3); color:#93c5fd; }
 .pos-mode-hints .hint { background:#161b22; border-color:#30363d; color:#8b949e; }
+.pos-wholesale-terms { margin-bottom:8px; display:flex; gap:6px; flex-wrap:wrap; }
+.pos-wholesale-terms .term-chip {
+  background:rgba(245,158,11,.10);
+  border:1px solid rgba(245,158,11,.30);
+  color:#fbbf24;
+  border-radius:999px;
+  padding:4px 10px;
+  font-size:.74rem;
+}
 @media (max-width:840px) { .pos-app{flex-direction:column;height:auto} .pos-cart{flex:none} .pos-prods{min-height:340px} }
 </style>
 {% endblock %}
@@ -186,6 +211,20 @@
   {% if ui_config.show_variant %}<span class="hint">🎨 {{ ui_config.T_variant }}</span>{% endif %}
 </div>
 {% endif %}
+{% if ui_config.pos_mode == 'wholesale' and ui_config.wholesale_packaging_terms %}
+<div class="pos-wholesale-terms">
+  {% for unit in ui_config.wholesale_packaging_terms %}
+  <span class="term-chip">{{ unit.label }}</span>
+  {% endfor %}
+  <span class="term-chip">سوق {{ ui_config.country_code }}</span>
+</div>
+{% endif %}
+<div class="pos-premium-strip">
+  <span class="pos-premium-badge">🔒✨ متعدد الكاشير (خطة مدفوعة)</span>
+  <span class="pos-premium-badge">🔒✨ الفروع (خطة مدفوعة)</span>
+  <span class="pos-premium-badge">🔒✨ النسخ السحابي (خطة مدفوعة)</span>
+  <span class="pos-premium-badge">🔒✨ OCR ذكي (خطة مدفوعة)</span>
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════════
      الهيكل الرئيسي للـ POS
@@ -199,9 +238,12 @@
       <span class="pos-searchbar-icon">🔍</span>
       <input type="text" id="posSearch" autocomplete="off" autofocus
              placeholder="{{ ui_config.pos_search_hint }}">
-      <span class="pos-scan-hint">⌨ اسم / باركود</span>
+      <span class="pos-scan-hint">
+        {% if ui_config.enforce_barcode_only %}📷 باركود فقط{% else %}⌨ اسم / باركود{% endif %}
+      </span>
     </div>
 
+    {% if not ui_config.enforce_barcode_only %}
     <div class="pos-cattabs" id="catTabs">
       <button class="pos-cattab active" data-cat="" onclick="filterCat(this,'')">الكل</button>
       {% for cat in categories %}
@@ -209,6 +251,7 @@
               onclick="filterCat(this,{{ cat | tojson }})">{{ cat }}</button>
       {% endfor %}
     </div>
+    {% endif %}
 
     <div class="pos-grid" id="posGrid">
       <div class="pos-state"><div class="pos-spinner"></div><div>جارٍ تحميل المنتجات…</div></div>
@@ -225,15 +268,23 @@
         <div class="pos-inv-lbl">رقم الفاتورة</div>
         <div class="pos-inv-num" id="invNum">#——</div>
       </div>
+      <span class="pos-shift-chip" id="shiftChip">🕒 وردية مفتوحة</span>
       <button class="pos-held-btn" id="heldBtn" onclick="showHeldModal()" style="display:none">
         ⏸ معلقة <span id="heldCnt">0</span>
       </button>
+      <button class="pos-held-btn" onclick="toggleShiftModal()">🕒 وردية</button>
     </div>
 
     <div class="pos-cart-body" id="cartBody">
       <div class="pos-cart-empty" id="cartEmpty">
         <div>🛒</div>
-        <p>السلة فارغة — ابحث أو انقر على {{ ui_config.T_product }}</p>
+        <p>
+          {% if ui_config.enforce_barcode_only %}
+            السلة فارغة — مرر الباركود لإضافة {{ ui_config.T_product }}
+          {% else %}
+            السلة فارغة — ابحث أو انقر على {{ ui_config.T_product }}
+          {% endif %}
+        </p>
       </div>
       <div id="cartList"></div>
     </div>
@@ -256,6 +307,7 @@
     <div class="pos-paytabs">
       <button class="pos-paytab sel-cash" id="tabCash" onclick="setPayment('cash')">💵 نقداً</button>
       <button class="pos-paytab" id="tabBank" onclick="setPayment('bank')">💳 شبكة</button>
+      <button class="pos-paytab" id="tabCredit" onclick="setPayment('credit')">🧾 آجل</button>
     </div>
 
     <div class="pos-actions">
@@ -268,6 +320,12 @@
       </button>
       <button class="pos-act pa-cancel" onclick="cancelInvoice()">
         <span class="pa-icon">✕</span><span class="pa-lbl">إلغاء</span>
+      </button>
+      <button class="pos-act pa-hold" onclick="showXReport()">
+        <span class="pa-icon">📊</span><span class="pa-lbl">X-Report</span>
+      </button>
+      <button class="pos-act pa-hold" onclick="showDailyReport()">
+        <span class="pa-icon">📈</span><span class="pa-lbl">تقرير يومي</span>
       </button>
     </div>
 
@@ -304,6 +362,40 @@
     </button>
   </div>
 </div>
+
+<!-- Modal: إدارة الوردية -->
+<div id="modalShift" class="pos-overlay" style="display:none"
+     onclick="if(event.target===this)this.style.display='none'">
+  <div class="pos-mbox" style="max-width:470px">
+    <h2 style="text-align:right;margin-bottom:8px">🕒 إدارة الوردية</h2>
+    <div id="shiftInfo" style="font-size:.84rem;color:var(--p-muted);line-height:1.9"></div>
+    <div class="mbox-btns" style="margin-top:10px">
+      <button class="mbtn-new" onclick="openShiftPrompt()">فتح وردية</button>
+      <button class="mbtn-print" onclick="closeShiftPrompt()">إغلاق وردية (Z)</button>
+    </div>
+    <button onclick="document.getElementById('modalShift').style.display='none'"
+            style="width:100%;padding:10px;margin-top:8px;background:var(--p-card2);
+                   border:1px solid var(--p-border);border-radius:7px;
+                   color:var(--p-text);font-family:inherit;font-size:.88rem;cursor:pointer;">
+      إغلاق
+    </button>
+  </div>
+</div>
+
+<!-- Modal: تقرير سريع -->
+<div id="modalReport" class="pos-overlay" style="display:none"
+     onclick="if(event.target===this)this.style.display='none'">
+  <div class="pos-mbox" style="max-width:520px">
+    <h2 style="text-align:right" id="reportTitle">📊 تقرير</h2>
+    <div id="reportBody" style="font-size:.84rem;color:var(--p-text);line-height:1.95;max-height:320px;overflow:auto"></div>
+    <button onclick="document.getElementById('modalReport').style.display='none'"
+            style="width:100%;padding:10px;margin-top:8px;background:var(--p-card2);
+                   border:1px solid var(--p-border);border-radius:7px;
+                   color:var(--p-text);font-family:inherit;font-size:.88rem;cursor:pointer;">
+      إغلاق
+    </button>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -314,14 +406,17 @@
 
 const CUR      = {{ (current_business.currency if current_business else 'ر.س') | tojson }};
 const UI_CFG   = {{ ui_config | tojson }};
+const BARCODE_ONLY = Boolean(UI_CFG.enforce_barcode_only);
 const VAT      = 15;
-const HELD_KEY = 'pos_held_{{ session["business_id"] }}';
 
 let cart      = [];
 let payMode   = 'cash';
 let searchTm  = null;
 let activeCat = '';
 let gridCache = [];
+let shiftOpen = false;
+let currentCustomerId = null;
+let currentCustomerName = '';
 
 const $search = document.getElementById('posSearch');
 const $grid   = document.getElementById('posGrid');
@@ -335,9 +430,11 @@ const $btnPay = document.getElementById('btnPay');
 const $btnHold= document.getElementById('btnHold');
 const $heldBtn= document.getElementById('heldBtn');
 const $heldCnt= document.getElementById('heldCnt');
+const $shiftChip = document.getElementById('shiftChip');
 
 /* ── Search ────────────────────────────────────────────────────── */
 $search.addEventListener('input', () => {
+  if (BARCODE_ONLY) return;
   clearTimeout(searchTm);
   searchTm = setTimeout(() => loadProducts($search.value.trim(), activeCat), 260);
 });
@@ -349,6 +446,7 @@ $search.addEventListener('keydown', e => {
 });
 
 function filterCat(el, cat) {
+  if (BARCODE_ONLY) return;
   document.querySelectorAll('.pos-cattab').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   activeCat = cat;
@@ -356,10 +454,16 @@ function filterCat(el, cat) {
 }
 
 async function loadProducts(q='', cat='', autoAdd=false) {
+  if (BARCODE_ONLY && !q) {
+    $grid.innerHTML = '<div class="pos-state"><div class="icon">📷</div><p>مرر الباركود ثم اضغط Enter لإظهار المنتج</p></div>';
+    gridCache = [];
+    return;
+  }
+
   $grid.innerHTML = '<div class="pos-state"><div class="pos-spinner"></div><div>جارٍ التحميل…</div></div>';
   try {
     let url = '/api/pos/search?q=' + encodeURIComponent(q);
-    if (cat) url += '&category=' + encodeURIComponent(cat);
+    if (cat && !BARCODE_ONLY) url += '&category=' + encodeURIComponent(cat);
     const res      = await fetch(url);
     const data     = await res.json();
     const products = data.products || [];
@@ -403,9 +507,11 @@ function addToCartById(p) {
   if (!p) return;
   const price = parseFloat(p.sale_price) || 0;
   if (price <= 0) { alert('سعر هذا المنتج غير محدد'); return; }
+  const weightedQty = parseFloat(p.weighted_qty || 0);
+  const addQty = weightedQty > 0 ? weightedQty : 1;
   const ex = cart.find(x => x.product_id === p.id);
-  if (ex) ex.quantity += 1;
-  else cart.push({ product_id:p.id, name:p.name, barcode:p.barcode||'', unit_price:price, quantity:1 });
+  if (ex) ex.quantity += addQty;
+  else cart.push({ product_id:p.id, name:p.name, barcode:p.barcode||'', unit_price:price, quantity:addQty });
   renderCart();
   $search.focus();
 }
@@ -456,14 +562,19 @@ function setPayment(mode) {
   payMode = mode;
   document.getElementById('tabCash').className = 'pos-paytab' + (mode==='cash' ? ' sel-cash' : '');
   document.getElementById('tabBank').className = 'pos-paytab' + (mode==='bank' ? ' sel-bank' : '');
+  document.getElementById('tabCredit').className = 'pos-paytab' + (mode==='credit' ? ' sel-cash' : '');
   if (mode === 'cash') {
     $btnPay.classList.remove('bank-mode');
     document.getElementById('payIcon').textContent = '💰';
     document.getElementById('payLbl').textContent  = 'إتمام البيع نقداً';
-  } else {
+  } else if (mode === 'bank') {
     $btnPay.classList.add('bank-mode');
     document.getElementById('payIcon').textContent = '💳';
     document.getElementById('payLbl').textContent  = 'إتمام البيع بطاقة';
+  } else {
+    $btnPay.classList.remove('bank-mode');
+    document.getElementById('payIcon').textContent = '🧾';
+    document.getElementById('payLbl').textContent  = 'إتمام البيع آجل';
   }
 }
 
@@ -478,6 +589,13 @@ async function checkout() {
     items: cart.map(i => ({ product_id:i.product_id, quantity:i.quantity, unit_price:i.unit_price, tax_rate:VAT })),
     payment_method: payMode,
   };
+  if (payMode === 'credit') {
+    if (!ensureCreditCustomer()) {
+      _resetPayBtn();
+      return;
+    }
+    payload.customer_id = currentCustomerId;
+  }
   try {
     const res  = await fetch('/api/pos/checkout', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
     const data = await res.json();
@@ -497,13 +615,15 @@ async function checkout() {
 
 function _resetPayBtn() {
   $btnPay.disabled = !cart.length;
-  const ico = payMode==='cash' ? '💰' : '💳';
-  const lbl = payMode==='cash' ? 'إتمام البيع نقداً' : 'إتمام البيع بطاقة';
+  const ico = payMode==='cash' ? '💰' : (payMode==='bank' ? '💳' : '🧾');
+  const lbl = payMode==='cash' ? 'إتمام البيع نقداً' : (payMode==='bank' ? 'إتمام البيع بطاقة' : 'إتمام البيع آجل');
   $btnPay.innerHTML = `<span class="pa-icon" id="payIcon">${ico}</span><span class="pa-lbl" id="payLbl">${lbl}</span>`;
 }
 
 function newSale() {
   cart = [];
+  currentCustomerId = null;
+  currentCustomerName = '';
   renderCart();
   _resetPayBtn();
   document.getElementById('modalSuccess').style.display = 'none';
@@ -514,34 +634,65 @@ function newSale() {
 }
 
 /* ── Hold / Cancel ─────────────────────────────────────────────── */
-function holdInvoice() {
+async function holdInvoice() {
   if (!cart.length) return;
-  const held = _getHeld();
-  held.push({ id:Date.now(), items:JSON.parse(JSON.stringify(cart)), sub:cart.reduce((s,i)=>s+i.quantity*i.unit_price,0), time:new Date().toLocaleTimeString('ar') });
-  _setHeld(held);
-  cart = [];
-  renderCart();
-  updateInvNum();
-  updateHeldBadge();
-  loadProducts('', activeCat);
-  $search.focus();
+  if (payMode === 'credit' && !ensureCreditCustomer()) return;
+  const baseLabel = currentCustomerName
+    ? `${currentCustomerName} - ${new Date().toLocaleTimeString('ar-SA', {hour:'2-digit', minute:'2-digit'})}`
+    : `معلقة ${new Date().toLocaleTimeString('ar-SA', {hour:'2-digit', minute:'2-digit'})}`;
+  const label = prompt('اسم مختصر للفاتورة المعلقة (اختياري):', baseLabel);
+  if (label === null) return;
+  try {
+    const res = await fetch('/api/pos/suspend', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        label: String(label || '').trim(),
+        customer_id: currentCustomerId,
+        customer_name: currentCustomerName,
+        items: cart.map(i => ({
+          product_id: i.product_id,
+          name: i.name,
+          quantity: i.quantity,
+          unit_price: i.unit_price,
+        })),
+      })
+    });
+    const data = await res.json();
+    if (!data.success) {
+      alert(data.error || 'تعذر تعليق الفاتورة');
+      return;
+    }
+    cart = [];
+    renderCart();
+    updateInvNum();
+    await updateHeldBadge();
+    loadProducts('', activeCat);
+    $search.focus();
+  } catch (err) {
+    alert('خطأ في تعليق الفاتورة: ' + err.message);
+  }
 }
 
-function showHeldModal() {
-  const held  = _getHeld();
+async function showHeldModal() {
+  const held = await _fetchSuspended();
   const $list = document.getElementById('heldList');
   if (!held.length) {
     $list.innerHTML = '<p style="color:var(--p-muted);text-align:center;padding:20px 0">لا توجد فواتير معلقة</p>';
   } else {
-    $list.innerHTML = held.map((h,i) => {
-      const names = h.items.slice(0,2).map(x=>_h(x.name)).join(' ، ') + (h.items.length>2?' …':'');
-      return `<div class="held-item" onclick="restoreHeld(${i})">
-        <div class="held-item-info">${names}
-          <span>⏱ ${h.time} | ${h.items.length} أصناف | ${h.sub.toFixed(2)} ${CUR}</span>
+    $list.innerHTML = held.map((h) => {
+      const label = _h(h.label || `معلقة #${h.id}`);
+      const when = _h(String(h.suspended_at || '').replace('T', ' ').slice(0, 16) || '—');
+      const preview = _h(h.customer_name || 'فاتورة معلقة');
+      const itemsCount = parseInt(h.items_count || 0, 10);
+      return `<div class="held-item" onclick="restoreHeld(${h.id})">
+        <div class="held-item-info">${preview}
+          <span>⏱ ${when} | ${itemsCount} أصناف | ${parseFloat(h.subtotal || 0).toFixed(2)} ${CUR}</span>
+          <span>🏷 ${label}</span>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
           <span class="held-restore">استعادة ←</span>
-          <button class="held-del-btn" onclick="event.stopPropagation();delHeld(${i})">🗑</button>
+          <button class="held-del-btn" onclick="event.stopPropagation();delHeld(${h.id})">🗑</button>
         </div>
       </div>`;
     }).join('');
@@ -549,38 +700,87 @@ function showHeldModal() {
   document.getElementById('modalHeld').style.display = 'flex';
 }
 
-function restoreHeld(i) {
-  const held = _getHeld();
+async function restoreHeld(saleId) {
   if (cart.length && !confirm('السلة الحالية ستُستبدل. متابعة؟')) return;
-  cart = held[i].items;
-  held.splice(i, 1);
-  _setHeld(held);
-  renderCart();
-  updateHeldBadge();
-  document.getElementById('modalHeld').style.display = 'none';
+  try {
+    const res = await fetch(`/api/pos/suspended/${saleId}/restore`, { method: 'POST' });
+    const data = await res.json();
+    if (!data.success) {
+      alert(data.error || 'تعذر استعادة الفاتورة المعلقة');
+      return;
+    }
+    cart = (data.items || []).map(i => ({
+      product_id: i.product_id || null,
+      name: i.name || i.description || '—',
+      barcode: i.barcode || '',
+      quantity: parseFloat(i.quantity || i.qty || 1),
+      unit_price: parseFloat(i.unit_price || i.price || 0),
+    })).filter(i => i.unit_price > 0 && i.quantity > 0);
+    currentCustomerId = data.customer_id || null;
+    currentCustomerName = data.customer_name || '';
+    renderCart();
+    await updateHeldBadge();
+    document.getElementById('modalHeld').style.display = 'none';
+  } catch (err) {
+    alert('خطأ في استعادة الفاتورة: ' + err.message);
+  }
 }
 
-function delHeld(i) {
-  const held = _getHeld();
-  held.splice(i, 1);
-  _setHeld(held);
-  showHeldModal();
-  updateHeldBadge();
+async function delHeld(saleId) {
+  if (!confirm('حذف الفاتورة المعلقة نهائياً؟')) return;
+  try {
+    const res = await fetch(`/api/pos/suspended/${saleId}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!data.success) {
+      alert(data.error || 'تعذر حذف الفاتورة المعلقة');
+      return;
+    }
+    await showHeldModal();
+    await updateHeldBadge();
+  } catch (err) {
+    alert('خطأ في حذف الفاتورة: ' + err.message);
+  }
 }
 
 function cancelInvoice() {
   if (!cart.length) return;
   if (!confirm(`إلغاء الفاتورة الحالية (${cart.length} أصناف)؟`)) return;
   cart = [];
+  currentCustomerId = null;
+  currentCustomerName = '';
   renderCart();
   updateInvNum();
   $search.focus();
 }
 
-function _getHeld()    { try { return JSON.parse(localStorage.getItem(HELD_KEY)||'[]'); } catch { return []; } }
-function _setHeld(arr) { localStorage.setItem(HELD_KEY, JSON.stringify(arr)); }
-function updateHeldBadge() {
-  const n = _getHeld().length;
+function ensureCreditCustomer() {
+  if (currentCustomerId) return true;
+  const customerId = prompt('أدخل رقم العميل (ID) للبيع الآجل:');
+  if (!customerId || !/^\d+$/.test(customerId)) {
+    alert('يجب إدخال رقم عميل صحيح للبيع الآجل');
+    return false;
+  }
+  currentCustomerId = parseInt(customerId, 10);
+  const nameInput = prompt('اسم العميل (اختياري):', currentCustomerName || '');
+  if (nameInput !== null) {
+    currentCustomerName = String(nameInput || '').trim();
+  }
+  return true;
+}
+
+async function _fetchSuspended() {
+  try {
+    const res = await fetch('/api/pos/suspended');
+    const data = await res.json();
+    return data.success ? (data.suspended || []) : [];
+  } catch {
+    return [];
+  }
+}
+
+async function updateHeldBadge() {
+  const list = await _fetchSuspended();
+  const n = list.length;
   $heldBtn.style.display = n ? 'inline-flex' : 'none';
   $heldCnt.textContent   = n;
 }
@@ -590,10 +790,174 @@ function _h(s) {
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+/* ── Shift + Reports ──────────────────────────────────────────── */
+async function refreshShiftState() {
+  try {
+    const res = await fetch('/api/pos/shift/current');
+    const data = await res.json();
+    shiftOpen = Boolean(data.open);
+    $shiftChip.style.display = shiftOpen ? 'inline-flex' : 'none';
+  } catch {
+    shiftOpen = false;
+    $shiftChip.style.display = 'none';
+  }
+}
+
+async function toggleShiftModal() {
+  await refreshShiftInfo();
+  document.getElementById('modalShift').style.display = 'flex';
+}
+
+async function refreshShiftInfo() {
+  const box = document.getElementById('shiftInfo');
+  try {
+    const res = await fetch('/api/pos/shift/current');
+    const data = await res.json();
+    if (!data.open || !data.shift) {
+      box.innerHTML = 'لا توجد وردية مفتوحة حالياً.<br>يمكنك فتح وردية جديدة الآن.';
+      shiftOpen = false;
+      $shiftChip.style.display = 'none';
+      return;
+    }
+    const s = data.shift;
+    shiftOpen = true;
+    $shiftChip.style.display = 'inline-flex';
+    box.innerHTML = `
+      <div>رقم الوردية: <strong>#${s.id}</strong></div>
+      <div>بداية الوردية: <strong>${_h(s.opened_at || '—')}</strong></div>
+      <div>رصيد البداية: <strong>${(parseFloat(s.opening_cash)||0).toFixed(2)} ${CUR}</strong></div>
+      <div>مبيعات الوردية: <strong>${(parseFloat(s.sales_total)||0).toFixed(2)} ${CUR}</strong></div>
+      <div>عدد الفواتير: <strong>${parseInt(s.sales_count||0,10)}</strong></div>
+    `;
+  } catch {
+    box.innerHTML = 'تعذر تحميل بيانات الوردية حالياً.';
+  }
+}
+
+async function openShiftPrompt() {
+  const opening = prompt('رصيد بداية الوردية النقدي:', '0');
+  if (opening === null) return;
+  const val = parseFloat(opening || '0');
+  if (Number.isNaN(val) || val < 0) {
+    alert('قيمة غير صالحة');
+    return;
+  }
+  const res = await fetch('/api/pos/shift/open', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ opening_cash: val })
+  });
+  const data = await res.json();
+  if (!data.success) {
+    alert(data.error || 'تعذر فتح الوردية');
+    return;
+  }
+  await refreshShiftInfo();
+  alert('تم فتح الوردية بنجاح');
+}
+
+async function closeShiftPrompt() {
+  const expectedRes = await fetch('/api/pos/shift/x-report');
+  const expectedData = await expectedRes.json();
+  if (!expectedData.success) {
+    alert(expectedData.error || 'لا توجد وردية مفتوحة');
+    return;
+  }
+  const expected = parseFloat(expectedData.shift.expected_drawer || 0);
+  const closing = prompt(`النقد المتوقع: ${expected.toFixed(2)} ${CUR}\nأدخل النقد المعدود عند الإغلاق:`, expected.toFixed(2));
+  if (closing === null) return;
+  const counted = parseFloat(closing || '0');
+  if (Number.isNaN(counted) || counted < 0) {
+    alert('قيمة غير صالحة');
+    return;
+  }
+  const res = await fetch('/api/pos/shift/close', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ closing_cash: counted })
+  });
+  const data = await res.json();
+  if (!data.success) {
+    alert(data.error || 'تعذر إغلاق الوردية');
+    return;
+  }
+  await refreshShiftInfo();
+  showZReportData(data.shift);
+}
+
+async function showXReport() {
+  const res = await fetch('/api/pos/shift/x-report');
+  const data = await res.json();
+  if (!data.success) {
+    alert(data.error || 'تعذر تجهيز X-Report');
+    return;
+  }
+  const s = data.shift;
+  document.getElementById('reportTitle').textContent = '📊 X-Report (لحظي)';
+  document.getElementById('reportBody').innerHTML = `
+    <div>بداية الوردية: <strong>${_h(s.opened_at || '—')}</strong></div>
+    <div>مبيعات إجمالية: <strong>${(parseFloat(s.sales_total)||0).toFixed(2)} ${CUR}</strong></div>
+    <div>فواتير البيع: <strong>${parseInt(s.sales_count||0,10)}</strong></div>
+    <div>نقداً: <strong>${(parseFloat(s.cash_total)||0).toFixed(2)} ${CUR}</strong></div>
+    <div>شبكة: <strong>${(parseFloat(s.bank_total)||0).toFixed(2)} ${CUR}</strong></div>
+    <div>آجل: <strong>${(parseFloat(s.credit_total)||0).toFixed(2)} ${CUR}</strong></div>
+    <div>مرتجعات: <strong>${(parseFloat(s.returns_total)||0).toFixed(2)} ${CUR}</strong></div>
+    <div>النقد المتوقع بالصندوق: <strong>${(parseFloat(s.expected_drawer)||0).toFixed(2)} ${CUR}</strong></div>
+  `;
+  document.getElementById('modalReport').style.display = 'flex';
+}
+
+function showZReportData(s) {
+  document.getElementById('reportTitle').textContent = '🧾 Z-Report (إغلاق وردية)';
+  document.getElementById('reportBody').innerHTML = `
+    <div>الوردية: <strong>#${s.id}</strong></div>
+    <div>بداية: <strong>${_h(s.opened_at || '—')}</strong></div>
+    <div>إغلاق: <strong>${_h(s.closed_at || '—')}</strong></div>
+    <div>المبيعات: <strong>${(parseFloat(s.sales_total)||0).toFixed(2)} ${CUR}</strong></div>
+    <div>مرتجعات: <strong>${(parseFloat(s.returns_total)||0).toFixed(2)} ${CUR}</strong></div>
+    <div>النقد المتوقع: <strong>${(parseFloat(s.expected_cash)||0).toFixed(2)} ${CUR}</strong></div>
+    <div>النقد المعدود: <strong>${(parseFloat(s.closing_cash)||0).toFixed(2)} ${CUR}</strong></div>
+    <div>فرق الصندوق: <strong>${(parseFloat(s.difference)||0).toFixed(2)} ${CUR}</strong></div>
+  `;
+  document.getElementById('modalReport').style.display = 'flex';
+}
+
+async function showDailyReport() {
+  const day = prompt('تاريخ التقرير (YYYY-MM-DD):', new Date().toISOString().slice(0,10));
+  if (!day) return;
+  const res = await fetch('/api/pos/reports/daily?date=' + encodeURIComponent(day));
+  const data = await res.json();
+  if (!data.success) {
+    alert(data.error || 'تعذر جلب التقرير اليومي');
+    return;
+  }
+  const s = data.summary || {};
+  const top = (data.top_items || []).map(i =>
+    `<div>• ${_h(i.name || '—')} — ${parseFloat(i.qty||0).toFixed(2)} / ${parseFloat(i.amount||0).toFixed(2)} ${CUR}</div>`
+  ).join('');
+  document.getElementById('reportTitle').textContent = `📈 التقرير اليومي (${_h(data.date || day)})`;
+  document.getElementById('reportBody').innerHTML = `
+    <div>عدد الفواتير: <strong>${parseInt(s.total_invoices || 0, 10)}</strong></div>
+    <div>إجمالي المبيعات: <strong>${(parseFloat(s.gross_sales)||0).toFixed(2)} ${CUR}</strong></div>
+    <div>المرتجعات: <strong>${(parseFloat(s.returns_total)||0).toFixed(2)} ${CUR}</strong></div>
+    <div>صافي المبيعات: <strong>${(parseFloat(s.net_sales)||0).toFixed(2)} ${CUR}</strong></div>
+    <div>مبيعات نقدي: <strong>${(parseFloat(s.cash_sales)||0).toFixed(2)} ${CUR}</strong></div>
+    <div>مبيعات شبكة: <strong>${(parseFloat(s.bank_sales)||0).toFixed(2)} ${CUR}</strong></div>
+    <div>مبيعات آجل: <strong>${(parseFloat(s.credit_sales)||0).toFixed(2)} ${CUR}</strong></div>
+    <hr style="border-color:var(--p-border)">
+    <div style="margin-bottom:6px"><strong>أعلى حركة أصناف:</strong></div>
+    ${top || '<div style="color:var(--p-muted)">لا توجد حركة أصناف في هذا اليوم.</div>'}
+  `;
+  document.getElementById('modalReport').style.display = 'flex';
+}
+
 /* ── Init ──────────────────────────────────────────────────────── */
 renderCart();
 updateInvNum();
 updateHeldBadge();
-loadProducts();
+if (BARCODE_ONLY) {
+  loadProducts('', activeCat);
+} else {
+  loadProducts();
+}
+refreshShiftState();
 </script>
 {% endblock %}

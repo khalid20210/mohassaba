@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}النسخ الاحتياطية{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">💾 محرك النسخ الاحتياطية</h2>
+    <p class="page-subtitle">تحميل نسخة شاملة أو جزئية من بيانات منشأتك بصيغة JSON</p>
+  </div>
+</div>
+
+<!-- بطاقات الإجراءات -->
+<div class="stats-grid" style="margin-bottom:24px">
+
+  <!-- نسخة كاملة -->
+  <div class="stat-card" style="flex-direction:column;gap:12px;align-items:flex-start;padding:20px">
+    <div style="font-size:2rem">📦</div>
+    <div>
+      <div class="stat-value" style="font-size:1.1rem">نسخة شاملة</div>
+      <div class="stat-label">جميع البيانات: منتجات، فواتير، محاسبة، جهات الاتصال</div>
+    </div>
+    <a href="/api/v1/backup/download" class="btn btn-primary" style="align-self:stretch;text-align:center">
+      ⬇️ تحميل JSON الآن
+    </a>
+  </div>
+
+  <!-- معلومات -->
+  <div class="stat-card" style="flex-direction:column;gap:10px;align-items:flex-start;padding:20px">
+    <div style="font-size:2rem">ℹ️</div>
+    <div>
+      <div class="stat-value" style="font-size:1.1rem">ما يشمله الملف</div>
+      <ul style="font-size:.8rem;color:var(--text-muted);padding-right:16px;margin:8px 0 0;line-height:1.9">
+        <li>بيانات المنشأة والمستخدمون</li>
+        <li>جميع المنتجات والمخزون</li>
+        <li>الفواتير وبنودها</li>
+        <li>القيود والحسابات المحاسبية</li>
+        <li>العملاء والموردون</li>
+        <li>التنبيهات والالتزامات</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- تعليمات الاستيراد -->
+  <div class="stat-card" style="flex-direction:column;gap:10px;align-items:flex-start;padding:20px">
+    <div style="font-size:2rem">📋</div>
+    <div>
+      <div class="stat-value" style="font-size:1.1rem">للاستيراد والتوافق</div>
+      <ul style="font-size:.8rem;color:var(--text-muted);padding-right:16px;margin:8px 0 0;line-height:1.9">
+        <li>الملف بتنسيق JSON قياسي</li>
+        <li>يعمل مع PostgreSQL عند الترقية</li>
+        <li>يحتوي metadata للإصدار</li>
+        <li>آمن ومشفر على جهازك</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- توصيات الجدولة -->
+<div class="card" style="margin-bottom:20px;border:2px dashed var(--border)">
+  <div style="padding:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <div style="font-size:2.5rem">📅</div>
+    <div style="flex:1">
+      <strong>توصية الجدولة</strong><br>
+      <span style="font-size:.85rem;color:var(--text-muted)">
+        لضمان سلامة بياناتك: نسخ يدوي <strong>أسبوعياً</strong> على الأقل.
+        احفظ الملف في Google Drive أو OneDrive أو قرص خارجي.
+      </span>
+    </div>
+    <a href="/api/v1/backup/download" class="btn btn-outline">
+      ⬇️ تحميل الآن
+    </a>
+  </div>
+</div>
+
+<!-- سجل النسخ السابقة -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">📜 سجل النسخ الاحتياطية</span>
+  </div>
+  {% if backup_logs %}
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>التاريخ</th>
+        <th>النوع</th>
+        <th>الحجم</th>
+        <th>بواسطة</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in backup_logs %}
+      <tr>
+        <td style="font-size:.82rem">{{ log.created_at[:16] }}</td>
+        <td>
+          <span style="padding:2px 8px;border-radius:12px;font-size:.75rem;
+                background:{% if log.backup_type=='manual' %}#dbeafe{% else %}#dcfce7{% endif %};
+                color:{% if log.backup_type=='manual' %}#1d4ed8{% else %}#15803d{% endif %}">
+            {% if log.backup_type == 'manual' %}يدوي{% else %}مجدوَل{% endif %}
+          </span>
+        </td>
+        <td>{{ log.file_size_kb or '—' }} KB</td>
+        <td>{{ log.created_by_name or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding:40px;text-align:center;color:var(--text-muted)">
+    <div style="font-size:2.5rem">💾</div>
+    <p style="margin-top:8px">لا توجد نسخ سابقة — قم بإنشاء أولى النسخ الآن</p>
+    <a href="/api/v1/backup/download" class="btn btn-primary" style="margin-top:12px">⬇️ إنشاء نسخة احتياطية</a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- قسم استيراد Excel -->
+<div class="card" style="margin-top:20px">
+  <div class="card-header">
+    <span class="card-title">📊 استيراد وتصدير Excel</span>
+  </div>
+  <div style="padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div>
+      <h4 style="margin:0 0 8px">استيراد المنتجات</h4>
+      <p style="font-size:.82rem;color:var(--text-muted);margin:0 0 12px">
+        رفع ملف Excel بقائمة المنتجات (الاسم، الباركود، السعر، الكمية)
+      </p>
+      <a href="/purchase-import" class="btn btn-outline">📥 استيراد المنتجات</a>
+    </div>
+    <div>
+      <h4 style="margin:0 0 8px">تصدير التقارير</h4>
+      <p style="font-size:.82rem;color:var(--text-muted);margin:0 0 12px">
+        تصدير الفواتير والمبيعات بصيغة Excel من صفحة التقارير
+      </p>
+      <a href="/reports" class="btn btn-outline">📈 التقارير</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -70,12 +70,20 @@ def run_migrations(db_path: Path) -> None:
                         conn.execute(stmt)
                     except Exception as stmt_err:
                         err_msg = str(stmt_err).lower()
-                        # تجاهل أخطاء التكرار الشائعة في ALTER TABLE
+                        normalized_stmt = stmt.strip().lower()
+                        # تجاهل أخطاء التكرار الشائعة في ALTER TABLE/CREATE
                         if any(k in err_msg for k in (
                             "duplicate column", "already exists", "table already exists"
                         )):
                             skipped += 1
                             continue
+
+                        # في قواعد قديمة قد لا توجد أعمدة لبعض الفهارس الجديدة
+                        # نتجاوز فقط أخطاء no such column الخاصة بإنشاء الفهارس.
+                        if "no such column" in err_msg and normalized_stmt.startswith("create index"):
+                            skipped += 1
+                            continue
+
                         raise
 
                 conn.execute(

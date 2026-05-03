@@ -9,7 +9,10 @@
     <h1 class="page-title" style="margin-top:4px;">{{ product.name }}</h1>
     <p class="page-subtitle">SKU: {{ product.sku or '—' }} | باركود: {{ product.barcode or '—' }}</p>
   </div>
-  <a href="/inventory/products/{{ product.id }}/edit" class="btn btn-primary">تعديل</a>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <button onclick="openQuickAdjust()" class="btn btn-primary" style="background:#f59e0b;border-color:#f59e0b">⚡ تسوية سريعة</button>
+    <a href="/inventory/products/{{ product.id }}/edit" class="btn btn-primary">تعديل</a>
+  </div>
 </div>
 
 <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;">
@@ -48,7 +51,7 @@
           <select name="movement_type" class="form-input" style="margin-bottom:8px;">
             <option value="purchase">شراء / إضافة مخزون</option>
             <option value="adjustment">تعديل يدوي</option>
-            <option value="return_in">مرتجع من عميل</option>
+            <option value="return">مرتجع من عميل</option>
             <option value="damage">تلف / هالك</option>
           </select>
           <input type="number" name="quantity" placeholder="الكمية" class="form-input" style="margin-bottom:8px;" min="0" step="0.01" required>
@@ -76,7 +79,7 @@
               {% elif m.movement_type == 'sale' %}🔴 بيع
               {% elif m.movement_type == 'adjustment' %}🔵 تعديل
               {% elif m.movement_type == 'damage' %}⚫ تلف
-              {% elif m.movement_type == 'return_in' %}🟡 مرتجع
+              {% elif m.movement_type == 'return' %}🟡 مرتجع
               {% else %}{{ m.movement_type }}{% endif %}
             </td>
             <td style="color:{% if m.quantity > 0 %}#22c55e{% else %}#ef4444{% endif %};">
@@ -84,7 +87,7 @@
             </td>
             <td>{{ m.qty_after }}</td>
             <td style="color:#64748b;font-size:.82rem;">{{ m.created_at[:16] if m.created_at else '—' }}</td>
-            <td style="color:#94a3b8;font-size:.82rem;">{{ m.notes or '—' }}</td>
+            <td style="color:#94a3b8;font-size:.82rem;">{{ m.reason or m.notes or '—' }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -94,4 +97,89 @@
     {% endif %}
   </div>
 </div>
+
+<!-- مودال التسوية السريعة -->
+<div id="quickAdjustModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:12px;padding:24px;max-width:420px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,.2)">
+    <h2 style="margin:0 0 16px;font-size:1.1rem;color:#1e293b">⚡ تسوية سريعة للمخزون</h2>
+    <div style="margin-bottom:16px;padding:12px;background:#f0fdf4;border-radius:8px;border-left:4px solid #22c55e;font-size:.85rem;color:#065f46">
+      <strong>{{ product.sku }}</strong> — الرصيد الحالي: <strong>{{ product.current_qty }}</strong>
+    </div>
+    <form id="quickAdjustForm" onsubmit="submitQuickAdjust(event)" style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <label style="display:block;font-weight:600;font-size:.85rem;color:#475569;margin-bottom:6px">نوع التسوية *</label>
+        <select id="qaType" required style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:.9rem">
+          <option value="damage">⚫ تلف / هالك</option>
+          <option value="adjustment">🔵 تعديل يدوي</option>
+          <option value="purchase">🟢 إضافة مخزون</option>
+          <option value="return">🟡 مرتجع</option>
+        </select>
+      </div>
+      <div>
+        <label style="display:block;font-weight:600;font-size:.85rem;color:#475569;margin-bottom:6px">الكمية *</label>
+        <input id="qaQty" type="number" min="0.001" step="0.01" required placeholder="أدخل الكمية" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:.9rem">
+      </div>
+      <div>
+        <label style="display:block;font-weight:600;font-size:.85rem;color:#475569;margin-bottom:6px">السبب / الملاحظة</label>
+        <input id="qaReason" type="text" placeholder="مثال: تلف أثناء التخزين" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:.9rem">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button type="submit" class="btn btn-primary" style="flex:1;background:#22c55e;border-color:#22c55e;padding:10px">✓ حفظ التسوية</button>
+        <button type="button" onclick="closeQuickAdjust()" class="btn" style="flex:1;background:#f1f5f9;border:1px solid #d1d5db;color:#374151;padding:10px">إلغاء</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openQuickAdjust() {
+  document.getElementById('quickAdjustModal').style.display = 'flex';
+}
+
+function closeQuickAdjust() {
+  document.getElementById('quickAdjustModal').style.display = 'none';
+  document.getElementById('quickAdjustForm').reset();
+}
+
+async function submitQuickAdjust(e) {
+  e.preventDefault();
+  const type = document.getElementById('qaType').value;
+  const qty = parseFloat(document.getElementById('qaQty').value);
+  const reason = document.getElementById('qaReason').value;
+  
+  if (!qty || qty <= 0) {
+    alert('أدخل كمية صحيحة');
+    return;
+  }
+  
+  try {
+    const res = await fetch('/inventory/api/quick-adjust', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        product_id: {{ product.id }},
+        quantity: qty,
+        movement_type: type,
+        reason: reason
+      })
+    });
+    
+    const data = await res.json();
+    if (data.success) {
+      alert('✓ تم حفظ التسوية بنجاح\nالرصيد الجديد: ' + data.new_qty.toFixed(2));
+      closeQuickAdjust();
+      location.reload();
+    } else {
+      alert('❌ ' + (data.error || 'حدث خطأ'));
+    }
+  } catch (err) {
+    alert('❌ خطأ الاتصال: ' + err.message);
+  }
+}
+
+// إغلاق المودال عند الضغط خارجه
+document.getElementById('quickAdjustModal').onclick = function(e) {
+  if (e.target === this) closeQuickAdjust();
+};
+</script>
 {% endblock %}

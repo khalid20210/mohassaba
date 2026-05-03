@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+{% block title %}التنبيهات والالتزامات{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">🔔 التنبيهات والالتزامات</h2>
+    <p class="page-subtitle">أقساط، تأمينات اجتماعية، إقرارات ضريبية، وتذكيرات مخصصة</p>
+  </div>
+  <button onclick="openAdd()" class="btn btn-primary">+ إضافة تنبيه</button>
+</div>
+
+<!-- إحصائيات سريعة -->
+<div class="stats-grid" id="statsGrid" style="margin-bottom:20px"></div>
+
+<!-- الجداول -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px" id="typeSections"></div>
+
+<!-- جميع التنبيهات -->
+<div class="card">
+  <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+    <span class="card-title">📋 كل التنبيهات</span>
+    <label style="display:flex;align-items:center;gap:6px;font-size:.82rem">
+      <input type="checkbox" id="showDismissed" onchange="loadReminders()"> عرض المرفوضة
+    </label>
+  </div>
+  <div id="remindersBody" style="padding:0 4px 16px"></div>
+</div>
+
+<!-- نافذة الإضافة/التعديل -->
+<div id="reminderModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;padding:20px;overflow:auto">
+  <div style="background:var(--card-bg);border-radius:16px;max-width:540px;margin:40px auto;padding:28px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <h3 id="modalTitle" style="margin:0">➕ إضافة تنبيه</h3>
+      <button onclick="closeModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">العنوان <span class="required">*</span></label>
+      <input id="rTitle" type="text" class="form-control" placeholder="مثال: قسط البنك الشهري">
+    </div>
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label class="form-label">النوع</label>
+        <select id="rType" class="form-control">
+          {% for key, (icon, label) in reminder_types.items() %}
+          <option value="{{ key }}">{{ icon }} {{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">تاريخ الاستحقاق <span class="required">*</span></label>
+        <input id="rDueDate" type="date" class="form-control">
+      </div>
+    </div>
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label class="form-label">المبلغ (اختياري)</label>
+        <input id="rAmount" type="number" step="0.01" min="0" class="form-control" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="display:flex;align-items:center;gap:8px">
+          <input type="checkbox" id="rRecurring" onchange="toggleRecurrence()"> متكرر
+        </label>
+        <div id="recurrenceDays" style="display:none;margin-top:8px">
+          <input id="rRecurrenceDays" type="number" min="1" class="form-control"
+                 placeholder="كل كم يوم؟ (مثلاً: 30 للشهري)">
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ملاحظات</label>
+      <textarea id="rNotes" class="form-control" rows="2" placeholder="تفاصيل إضافية..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button onclick="saveReminder()" class="btn btn-primary btn-lg" style="flex:1">💾 حفظ</button>
+      <button onclick="closeModal()" class="btn btn-secondary">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.reminder-card {
+  display:flex;align-items:flex-start;gap:14px;padding:14px 20px;
+  border-bottom:1px solid var(--border);transition:background .15s;
+}
+.reminder-card:last-child { border-bottom:none; }
+.reminder-card:hover { background:var(--bg); }
+.reminder-icon {
+  font-size:1.6rem;min-width:36px;text-align:center;padding-top:2px;
+}
+.reminder-meta { flex:1;min-width:0; }
+.reminder-title { font-weight:600;font-size:.92rem;margin:0 0 4px; }
+.reminder-sub { font-size:.78rem;color:var(--text-muted);display:flex;gap:12px;flex-wrap:wrap; }
+.days-badge {
+  padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:700;
+}
+.days-overdue  { background:#fee2e2;color:#dc2626; }
+.days-urgent   { background:#fef3c7;color:#d97706; }
+.days-upcoming { background:#dbeafe;color:#1d4ed8; }
+.days-ok       { background:#dcfce7;color:#15803d; }
+</style>
+
+<script>
+let editingId = null;
+
+const TYPE_META = {
+  {% for key, (icon, label) in reminder_types.items() %}
+  '{{ key }}': { icon:'{{ icon }}', label:'{{ label }}' },
+  {% endfor %}
+};
+
+function toggleRecurrence() {
+  document.getElementById('recurrenceDays').style.display =
+    document.getElementById('rRecurring').checked ? 'block' : 'none';
+}
+
+function openAdd() {
+  editingId = null;
+  document.getElementById('modalTitle').textContent = '➕ إضافة تنبيه';
+  document.getElementById('rTitle').value = '';
+  document.getElementById('rType').value = 'custom';
+  document.getElementById('rDueDate').value = '';
+  document.getElementById('rAmount').value = '';
+  document.getElementById('rNotes').value = '';
+  document.getElementById('rRecurring').checked = false;
+  document.getElementById('rRecurrenceDays').value = '';
+  document.getElementById('recurrenceDays').style.display = 'none';
+  document.getElementById('reminderModal').style.display = 'block';
+}
+
+function openEdit(item) {
+  editingId = item.id;
+  document.getElementById('modalTitle').textContent = '✏️ تعديل التنبيه';
+  document.getElementById('rTitle').value = item.title || '';
+  document.getElementById('rType').value  = item.reminder_type || 'custom';
+  document.getElementById('rDueDate').value = item.due_date || '';
+  document.getElementById('rAmount').value  = item.amount != null ? item.amount : '';
+  document.getElementById('rNotes').value   = item.notes || '';
+  document.getElementById('rRecurring').checked = !!item.is_recurring;
+  document.getElementById('rRecurrenceDays').value = item.recurrence_days || '';
+  document.getElementById('recurrenceDays').style.display =
+    item.is_recurring ? 'block' : 'none';
+  document.getElementById('reminderModal').style.display = 'block';
+}
+
+function closeModal() {
+  document.getElementById('reminderModal').style.display = 'none';
+}
+
+function saveReminder() {
+  const title    = document.getElementById('rTitle').value.trim();
+  const due_date = document.getElementById('rDueDate').value;
+  if (!title || !due_date) { alert('العنوان والتاريخ مطلوبان'); return; }
+
+  const body = {
+    title,
+    reminder_type:   document.getElementById('rType').value,
+    due_date,
+    amount:          parseFloat(document.getElementById('rAmount').value) || null,
+    notes:           document.getElementById('rNotes').value.trim(),
+    is_recurring:    document.getElementById('rRecurring').checked,
+    recurrence_days: parseInt(document.getElementById('rRecurrenceDays').value) || null,
+  };
+
+  const url    = editingId ? `/api/v1/reminders/${editingId}` : '/api/v1/reminders';
+  const method = editingId ? 'PUT' : 'POST';
+
+  fetch(url, { method, headers:{'Content-Type':'application/json'},
+               body: JSON.stringify(body) })
+    .then(r=>r.json()).then(d=>{
+      if(d.success) { closeModal(); loadReminders(); }
+      else alert('❌ ' + (d.error||'خطأ'));
+    });
+}
+
+function dismissReminder(id) {
+  if (!confirm('تأكيد رفض هذا التنبيه؟')) return;
+  fetch(`/api/v1/reminders/${id}/dismiss`, {method:'POST'})
+    .then(r=>r.json()).then(d=>{
+      if(d.success) loadReminders();
+      else alert('❌ ' + (d.error||'خطأ'));
+    });
+}
+
+function deleteReminder(id) {
+  if (!confirm('حذف هذا التنبيه نهائياً؟')) return;
+  fetch(`/api/v1/reminders/${id}`, {method:'DELETE'})
+    .then(r=>r.json()).then(d=>{
+      if(d.success) loadReminders();
+    });
+}
+
+function daysBadge(daysLeft) {
+  if (daysLeft < 0)  return `<span class="days-badge days-overdue">⚠️ متأخر ${Math.abs(daysLeft)} يوم</span>`;
+  if (daysLeft === 0)return `<span class="days-badge days-urgent">🚨 اليوم</span>`;
+  if (daysLeft <= 7) return `<span class="days-badge days-urgent">⏰ ${daysLeft} أيام</span>`;
+  if (daysLeft <= 30)return `<span class="days-badge days-upcoming">📅 ${daysLeft} يوم</span>`;
+  return `<span class="days-badge days-ok">✓ ${daysLeft} يوم</span>`;
+}
+
+function loadReminders() {
+  const showDismissed = document.getElementById('showDismissed').checked ? 1 : 0;
+  fetch(`/api/v1/reminders?dismissed=${showDismissed}`)
+    .then(r=>r.json()).then(data=>{
+      const items = data.reminders || [];
+      const body  = document.getElementById('remindersBody');
+
+      if (items.length === 0) {
+        body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)">🔔 لا توجد تنبيهات</div>';
+        return;
+      }
+
+      const today = new Date().toISOString().slice(0,10);
+      body.innerHTML = items.map(item => {
+        const meta  = TYPE_META[item.reminder_type] || {icon:'🔔', label:'تذكير'};
+        const due   = item.due_date || '';
+        const daysLeft = Math.round((new Date(due) - new Date(today)) / 86400000);
+        const badge = daysBadge(daysLeft);
+        const dimmed = item.is_dismissed ? 'opacity:.55;' : '';
+
+        return `<div class="reminder-card" style="${dimmed}">
+          <div class="reminder-icon">${meta.icon}</div>
+          <div class="reminder-meta">
+            <p class="reminder-title">${item.title}</p>
+            <div class="reminder-sub">
+              <span>${meta.label}</span>
+              <span>📅 ${due}</span>
+              ${item.amount ? `<span>💰 ${parseFloat(item.amount).toLocaleString('ar-SA')} ر.س</span>` : ''}
+              ${item.is_recurring ? `<span>🔁 كل ${item.recurrence_days||'?'} يوم</span>` : ''}
+              ${item.notes ? `<span title="${item.notes}">📝 ${item.notes.slice(0,40)}${item.notes.length>40?'…':''}</span>` : ''}
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+            ${badge}
+            <div style="display:flex;gap:6px;margin-top:4px">
+              <button onclick='openEdit(${JSON.stringify(item)})' class="btn btn-sm btn-outline">✏️</button>
+              ${!item.is_dismissed ? `<button onclick="dismissReminder(${item.id})" class="btn btn-sm btn-outline" title="رفض">✓</button>` : ''}
+              <button onclick="deleteReminder(${item.id})" class="btn btn-sm btn-danger" title="حذف">🗑️</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+
+      // بطاقات الإحصاء حسب النوع
+      const grouped = {};
+      items.filter(i=>!i.is_dismissed).forEach(i=>{
+        grouped[i.reminder_type] = (grouped[i.reminder_type]||0)+1;
+      });
+      const stats = document.getElementById('statsGrid');
+      stats.innerHTML = Object.entries(grouped).map(([type, cnt])=>{
+        const m = TYPE_META[type] || {icon:'🔔', label:'أخرى'};
+        return `<div class="stat-card">
+          <div class="stat-icon">${m.icon}</div>
+          <div><div class="stat-value">${cnt}</div><div class="stat-label">${m.label}</div></div>
+        </div>`;
+      }).join('') || '<p style="color:var(--text-muted);padding:8px 0">لا توجد تنبيهات نشطة</p>';
+    });
+}
+
+loadReminders();
+</script>
+{% endblock %}

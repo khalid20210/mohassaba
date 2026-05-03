@@ -32,21 +32,21 @@ def owner_dashboard():
     month   = datetime.now().strftime("%Y-%m")
 
     sales_today = db.execute(
-        """SELECT COALESCE(SUM(total_amount), 0) FROM invoices
+        """SELECT COALESCE(SUM(total), 0) FROM invoices
            WHERE business_id=? AND invoice_type='sale'
              AND date(created_at)=?""",
         (biz_id, today)
     ).fetchone()[0]
 
     sales_month = db.execute(
-        """SELECT COALESCE(SUM(total_amount), 0) FROM invoices
+        """SELECT COALESCE(SUM(total), 0) FROM invoices
            WHERE business_id=? AND invoice_type='sale'
              AND strftime('%Y-%m', created_at)=?""",
         (biz_id, month)
     ).fetchone()[0]
 
     cost_month = db.execute(
-        """SELECT COALESCE(SUM(total_amount), 0) FROM invoices
+        """SELECT COALESCE(SUM(total), 0) FROM invoices
            WHERE business_id=? AND invoice_type='purchase'
              AND strftime('%Y-%m', created_at)=?""",
         (biz_id, month)
@@ -65,13 +65,13 @@ def owner_dashboard():
 
     pending_deductions = db.execute(
         """SELECT COUNT(*) FROM shift_blind_closures
-           WHERE business_id=? AND status='pending' AND deficit > 0""",
+           WHERE business_id=? AND shortage_amount > 0""",
         (biz_id,)
     ).fetchone()[0]
 
     # ── آخر 30 يوم: مبيعات يومية ─────────────────────────────────────────────
     daily_sales = db.execute(
-        """SELECT date(created_at) as day, COALESCE(SUM(total_amount),0) as total
+        """SELECT date(created_at) as day, COALESCE(SUM(total),0) as total
            FROM invoices
            WHERE business_id=? AND invoice_type='sale'
              AND created_at >= date('now','-29 days')
@@ -81,11 +81,11 @@ def owner_dashboard():
 
     # ── مبيعات المناديب (top agents) ─────────────────────────────────────────
     agent_sales = db.execute(
-        """SELECT a.full_name, a.agent_code,
-                  COALESCE(SUM(ail.commission_amount),0) as total_commission,
-                  COUNT(ail.id) as invoice_count
+        """SELECT a.full_name, a.employee_code,
+                  COALESCE(SUM(ac.commission_amount),0) as total_commission,
+                  COUNT(ac.id) as invoice_count
            FROM agents a
-           LEFT JOIN agent_invoice_links ail ON ail.agent_id=a.id AND ail.business_id=?
+           LEFT JOIN agent_commissions ac ON ac.agent_id=a.id AND ac.business_id=?
            WHERE a.business_id=? AND a.is_active=1
            GROUP BY a.id
            ORDER BY total_commission DESC LIMIT 10""",
@@ -303,30 +303,21 @@ def approve_blind_closure(closure_id: int):
     ).fetchone()
     if not closure:
         return jsonify({"error": "إقفال غير موجود"}), 404
-    if closure["status"] == "approved":
-        return jsonify({"error": "تم اعتماد هذا الإقفال مسبقاً"}), 409
 
-    deficit = float(closure["deficit"] or 0)
+    deficit = float(closure["shortage_amount"] or 0)
 
     # تسجيل خصم الرواتب إذا كان هناك عجز
     if deficit > 0:
         db.execute(
             """INSERT INTO payroll_deductions
-                   (business_id, employee_id, deduction_type, amount, reason, reference_id)
+                   (business_id, employee_id, source_type, source_id, amount, reason)
                VALUES (?, ?, 'blind_deficit', ?, ?, ?)""",
             (biz_id, closure["employee_id"],
+             closure_id,
              deficit,
-             f"عجز إقفال أعمى بتاريخ {closure['shift_date']}",
-             closure_id)
+             f"عجز إقفال أعمى بتاريخ {closure['shift_date']}")
         )
 
-    # تحديث حالة الإقفال
-    db.execute(
-        """UPDATE shift_blind_closures
-           SET status='approved', approved_by=?
-           WHERE id=? AND business_id=?""",
-        (user_id, closure_id, biz_id)
-    )
     db.commit()
 
     write_audit_log(
@@ -445,10 +436,10 @@ def hr_panel():
 
     agents = db.execute(
         """SELECT a.*,
-                  COALESCE(SUM(ail.commission_amount),0) as pending_commission
+                  COALESCE(SUM(ac.commission_amount),0) as pending_commission
            FROM agents a
-           LEFT JOIN agent_invoice_links ail
-               ON ail.agent_id=a.id AND ail.is_paid=0
+           LEFT JOIN agent_commissions ac
+               ON ac.agent_id=a.id AND ac.status != 'paid'
            WHERE a.business_id=? AND a.is_active=1
            GROUP BY a.id
            ORDER BY a.full_name""",
@@ -545,7 +536,7 @@ def chart_data():
 
     # مبيعات آخر 30 يوم
     daily = db.execute(
-        """SELECT date(created_at) as day, COALESCE(SUM(total_amount),0) as total
+        """SELECT date(created_at) as day, COALESCE(SUM(total),0) as total
            FROM invoices
            WHERE business_id=? AND invoice_type='sale'
              AND created_at >= date('now','-29 days')
@@ -556,10 +547,10 @@ def chart_data():
     # مبيعات المناديب
     agents = db.execute(
         """SELECT a.full_name,
-                  COUNT(ail.id) as invoice_count,
-                  COALESCE(SUM(ail.commission_amount),0) as commission
+                  COUNT(ac.id) as invoice_count,
+                  COALESCE(SUM(ac.commission_amount),0) as commission
            FROM agents a
-           LEFT JOIN agent_invoice_links ail ON ail.agent_id=a.id
+           LEFT JOIN agent_commissions ac ON ac.agent_id=a.id
            WHERE a.business_id=? AND a.is_active=1
            GROUP BY a.id ORDER BY commission DESC LIMIT 8""",
         (biz_id,)

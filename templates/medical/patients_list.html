@@ -1,32 +1,32 @@
-{% extends "base.html" %}
-{% block title %}المرضى{% endblock %}
-{% block page_title %}🏥 قائمة المرضى{% endblock %}
+﻿{% extends "base.html" %}
+{% block title %}ط§ظ„ظ…ط±ط¶ظ‰{% endblock %}
+{% block page_title %}ًںڈ¥ ظ‚ط§ط¦ظ…ط© ط§ظ„ظ…ط±ط¶ظ‰{% endblock %}
 
 {% block content %}
 <div class="page-header">
-  <div><p class="page-subtitle">{{ total or patients|length }} مريض مسجل</p></div>
+  <div><p class="page-subtitle">{{ total or patients|length }} ظ…ط±ظٹط¶ ظ…ط³ط¬ظ„</p></div>
   <div style="display:flex;gap:10px;">
-    <a href="/medical/appointments" class="btn btn-secondary">📅 المواعيد</a>
-    <a href="/medical/prescriptions" class="btn btn-secondary">💊 الوصفات</a>
-    <button class="btn btn-primary" onclick="document.getElementById('newPatientModal').classList.add('show')">+ تسجيل مريض</button>
+    <a href="/medical/appointments" class="btn btn-secondary">ًں“… ط§ظ„ظ…ظˆط§ط¹ظٹط¯</a>
+    <a href="/medical/prescriptions" class="btn btn-secondary">ًں’ٹ ط§ظ„ظˆطµظپط§طھ</a>
+    <button class="btn btn-primary" onclick="document.getElementById('newPatientModal').classList.add('show')">+ طھط³ط¬ظٹظ„ ظ…ط±ظٹط¶</button>
   </div>
 </div>
 
-<!-- بحث -->
+<!-- ط¨ط­ط« -->
 <div class="card" style="margin-bottom:16px;padding:12px;">
   <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
     <div style="flex:1;min-width:200px;">
-      <input type="text" name="q" value="{{ request.args.get('q','') }}" placeholder="اسم المريض، رقم الملف، الهاتف..." class="form-input">
+      <input type="text" name="q" value="{{ request.args.get('q','') }}" placeholder="ط§ط³ظ… ط§ظ„ظ…ط±ظٹط¶طŒ ط±ظ‚ظ… ط§ظ„ظ…ظ„ظپطŒ ط§ظ„ظ‡ط§طھظپ..." class="form-input">
     </div>
-    <button type="submit" class="btn btn-primary">🔍 بحث</button>
-    <a href="/medical/patients" class="btn btn-secondary">إعادة تعيين</a>
+    <button type="submit" class="btn btn-primary">ًں”چ ط¨ط­ط«</button>
+    <a href="/medical/patients" class="btn btn-secondary">ط¥ط¹ط§ط¯ط© طھط¹ظٹظٹظ†</a>
   </form>
 </div>
 
 <div class="card">
   <table class="table">
     <thead>
-      <tr><th>اسم المريض</th><th>رقم الملف</th><th>الجنس</th><th>تاريخ الميلاد</th><th>الهاتف</th><th>فصيلة الدم</th><th>آخر زيارة</th><th></th></tr>
+      <tr><th>ط§ط³ظ… ط§ظ„ظ…ط±ظٹط¶</th><th>ط±ظ‚ظ… ط§ظ„ظ…ظ„ظپ</th><th>ط§ظ„ط¬ظ†ط³</th><th>طھط§ط±ظٹط® ط§ظ„ظ…ظٹظ„ط§ط¯</th><th>ط§ظ„ظ‡ط§طھظپ</th><th>ظپطµظٹظ„ط© ط§ظ„ط¯ظ…</th><th>ط¢ط®ط± ط²ظٹط§ط±ط©</th><th></th></tr>
     </thead>
     <tbody>
       {% for p in patients %}
@@ -34,58 +34,58 @@
         <td>
           <a href="/medical/patients/{{ p.id }}" style="color:#38bdf8;font-weight:700;text-decoration:none;">{{ p.full_name }}</a>
         </td>
-        <td style="color:#94a3b8;font-family:monospace;font-size:.82rem;">{{ p.file_number or '—' }}</td>
-        <td>{{ '♂ ذكر' if p.gender=='male' else '♀ أنثى' if p.gender=='female' else '—' }}</td>
-        <td style="color:#94a3b8;font-size:.82rem;">{{ p.date_of_birth or '—' }}</td>
-        <td>{{ p.phone or '—' }}</td>
-        <td style="color:#ef4444;font-weight:700;">{{ p.blood_type or '—' }}</td>
-        <td style="color:#64748b;font-size:.82rem;">{{ (p.last_visit[:10] if p.last_visit else '—') }}</td>
+        <td style="color:#94a3b8;font-family:monospace;font-size:.82rem;">{{ p.file_number or 'â€”' }}</td>
+        <td>{{ 'â™‚ ط°ظƒط±' if p.gender=='male' else 'â™€ ط£ظ†ط«ظ‰' if p.gender=='female' else 'â€”' }}</td>
+        <td style="color:#94a3b8;font-size:.82rem;">{{ p.date_of_birth or 'â€”' }}</td>
+        <td>{{ p.phone or 'â€”' }}</td>
+        <td style="color:#ef4444;font-weight:700;">{{ p.blood_type or 'â€”' }}</td>
+        <td style="color:#64748b;font-size:.82rem;">{{ (p.last_visit[:10] if p.last_visit else 'â€”') }}</td>
         <td>
           <div style="display:flex;gap:4px;">
-            <a href="/medical/patients/{{ p.id }}" class="btn btn-secondary" style="padding:4px 10px;font-size:.78rem;">ملف</a>
-            <a href="/medical/appointments?patient_id={{ p.id }}" class="btn btn-secondary" style="padding:4px 10px;font-size:.78rem;">مواعيد</a>
+            <a href="/medical/patients/{{ p.id }}" class="btn btn-secondary" style="padding:4px 10px;font-size:.78rem;">ظ…ظ„ظپ</a>
+            <a href="/medical/appointments?patient_id={{ p.id }}" class="btn btn-secondary" style="padding:4px 10px;font-size:.78rem;">ظ…ظˆط§ط¹ظٹط¯</a>
           </div>
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="8" style="text-align:center;color:#64748b;padding:40px;">لا يوجد مرضى مسجلون</td></tr>
+      <tr><td colspan="8" style="text-align:center;color:#64748b;padding:40px;">ظ„ط§ ظٹظˆط¬ط¯ ظ…ط±ط¶ظ‰ ظ…ط³ط¬ظ„ظˆظ†</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 
-<!-- Modal: مريض جديد -->
+<!-- Modal: ظ…ط±ظٹط¶ ط¬ط¯ظٹط¯ -->
 <div class="modal-overlay" id="newPatientModal">
   <div class="modal-box" style="max-width:560px;">
     <div class="modal-header">
-      <h3 class="modal-title">🏥 تسجيل مريض جديد</h3>
-      <button class="modal-close" onclick="document.getElementById('newPatientModal').classList.remove('show')">✕</button>
+      <h3 class="modal-title">ًںڈ¥ طھط³ط¬ظٹظ„ ظ…ط±ظٹط¶ ط¬ط¯ظٹط¯</h3>
+      <button class="modal-close" onclick="document.getElementById('newPatientModal').classList.remove('show')">âœ•</button>
     </div>
     <form method="post" action="/medical/patients/new">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="form-group" style="grid-column:1/-1;">
-          <label class="form-label">الاسم الكامل *</label>
-          <input name="full_name" class="form-input" placeholder="اسم المريض الكامل" required>
+          <label class="form-label">ط§ظ„ط§ط³ظ… ط§ظ„ظƒط§ظ…ظ„ *</label>
+          <input name="full_name" class="form-input" placeholder="ط§ط³ظ… ط§ظ„ظ…ط±ظٹط¶ ط§ظ„ظƒط§ظ…ظ„" required>
         </div>
         <div class="form-group">
-          <label class="form-label">تاريخ الميلاد</label>
+          <label class="form-label">طھط§ط±ظٹط® ط§ظ„ظ…ظٹظ„ط§ط¯</label>
           <input name="dob" type="date" class="form-input">
         </div>
         <div class="form-group">
-          <label class="form-label">الجنس</label>
+          <label class="form-label">ط§ظ„ط¬ظ†ط³</label>
           <select name="gender" class="form-input">
-            <option value="male">ذكر</option>
-            <option value="female">أنثى</option>
+            <option value="male">ط°ظƒط±</option>
+            <option value="female">ط£ظ†ط«ظ‰</option>
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">رقم الهاتف</label>
+          <label class="form-label">ط±ظ‚ظ… ط§ظ„ظ‡ط§طھظپ</label>
           <input name="phone" class="form-input" placeholder="05xxxxxxxx">
         </div>
         <div class="form-group">
-          <label class="form-label">فصيلة الدم</label>
+          <label class="form-label">ظپطµظٹظ„ط© ط§ظ„ط¯ظ…</label>
           <select name="blood_type" class="form-input">
-            <option value="">غير معروفة</option>
+            <option value="">ط؛ظٹط± ظ…ط¹ط±ظˆظپط©</option>
             <option value="A+">A+</option>
             <option value="A-">A-</option>
             <option value="B+">B+</option>
@@ -97,76 +97,28 @@
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">الطول (سم)</label>
+          <label class="form-label">ط§ظ„ط·ظˆظ„ (ط³ظ…)</label>
           <input name="height" class="form-input" type="number" placeholder="170">
         </div>
         <div class="form-group">
-          <label class="form-label">الوزن (كغ)</label>
+          <label class="form-label">ط§ظ„ظˆط²ظ† (ظƒط؛)</label>
           <input name="weight" class="form-input" type="number" placeholder="70">
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">الأمراض المزمنة</label>
-        <input name="chronic" class="form-input" placeholder="سكري، ضغط، ربو...">
+        <label class="form-label">ط§ظ„ط£ظ…ط±ط§ط¶ ط§ظ„ظ…ط²ظ…ظ†ط©</label>
+        <input name="chronic" class="form-input" placeholder="ط³ظƒط±ظٹطŒ ط¶ط؛ط·طŒ ط±ط¨ظˆ...">
       </div>
       <div class="form-group">
-        <label class="form-label">الحساسية</label>
-        <input name="allergies" class="form-input" placeholder="البنسلين، ...">
+        <label class="form-label">ط§ظ„ط­ط³ط§ط³ظٹط©</label>
+        <input name="allergies" class="form-input" placeholder="ط§ظ„ط¨ظ†ط³ظ„ظٹظ†طŒ ...">
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
-        <button type="button" class="btn btn-secondary" onclick="document.getElementById('newPatientModal').classList.remove('show')">إلغاء</button>
-        <button type="submit" class="btn btn-primary">✅ تسجيل المريض</button>
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('newPatientModal').classList.remove('show')">ط¥ظ„ط؛ط§ط،</button>
+        <button type="submit" class="btn btn-primary">âœ… طھط³ط¬ظٹظ„ ط§ظ„ظ…ط±ظٹط¶</button>
       </div>
     </form>
   </div>
 </div>
 {% endblock %}
 
-
-{% block content %}
-<div class="page-header">
-  <div>
-    <h1 class="page-title">🏥 المرضى</h1>
-    <p class="page-subtitle">{{ total }} مريض مسجل</p>
-  </div>
-  <a href="/medical/patients/new" class="btn btn-primary">+ تسجيل مريض</a>
-</div>
-
-<div class="card" style="margin-bottom:16px;">
-  <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
-    <div style="flex:1;min-width:200px;">
-      <input type="text" name="q" value="{{ request.args.get('q','') }}" placeholder="اسم المريض، رقم الملف، الهاتف..." class="form-input">
-    </div>
-    <button type="submit" class="btn btn-primary">بحث</button>
-    <a href="/medical/patients" class="btn btn-secondary">إعادة تعيين</a>
-  </form>
-</div>
-
-<div class="card">
-  <table class="table">
-    <thead>
-      <tr><th>اسم المريض</th><th>رقم الملف</th><th>الجنس</th><th>تاريخ الميلاد</th><th>الهاتف</th><th>آخر زيارة</th><th>الإجراءات</th></tr>
-    </thead>
-    <tbody>
-      {% for p in patients %}
-      <tr>
-        <td><strong style="color:#38bdf8;">{{ p.full_name }}</strong>
-          {% if p.blood_type %}<br><small style="color:#ef4444;">فصيلة الدم: {{ p.blood_type }}</small>{% endif %}
-        </td>
-        <td style="color:#94a3b8;font-family:monospace;">{{ p.file_number }}</td>
-        <td>{{ '♂ ذكر' if p.gender == 'male' else '♀ أنثى' if p.gender == 'female' else '—' }}</td>
-        <td>{{ p.date_of_birth or '—' }}</td>
-        <td>{{ p.phone or '—' }}</td>
-        <td style="color:#64748b;font-size:.82rem;">{{ p.last_visit[:10] if p.last_visit else '—' }}</td>
-        <td>
-          <a href="/medical/appointments?patient_id={{ p.id }}" class="btn btn-secondary" style="padding:4px 10px;font-size:.8rem;">مواعيد</a>
-          <a href="/medical/prescriptions/{{ p.id }}" class="btn btn-secondary" style="padding:4px 10px;font-size:.8rem;">وصفات</a>
-        </td>
-      </tr>
-      {% else %}
-      <tr><td colspan="7" style="text-align:center;color:#64748b;padding:40px;">لا يوجد مرضى مسجلون</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% endblock %}

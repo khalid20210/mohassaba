@@ -1,21 +1,21 @@
-{% extends "base.html" %}
-{% block title %}المشاريع{% endblock %}
-{% block page_title %}🏗️ قائمة المشاريع{% endblock %}
+﻿{% extends "base.html" %}
+{% block title %}ط§ظ„ظ…ط´ط§ط±ظٹط¹{% endblock %}
+{% block page_title %}ًںڈ—ï¸ڈ ظ‚ط§ط¦ظ…ط© ط§ظ„ظ…ط´ط§ط±ظٹط¹{% endblock %}
 
 {% block content %}
 <div class="page-header">
-  <div><p class="page-subtitle">{{ projects|length }} مشروع</p></div>
+  <div><p class="page-subtitle">{{ projects|length }} ظ…ط´ط±ظˆط¹</p></div>
   <div style="display:flex;gap:10px;">
-    <a href="/projects/equipment" class="btn btn-secondary">🛞 المعدات</a>
-    <button class="btn btn-primary" onclick="document.getElementById('newProjectModal').classList.add('show')">+ مشروع جديد</button>
+    <a href="/projects/equipment" class="btn btn-secondary">ًں›‍ ط§ظ„ظ…ط¹ط¯ط§طھ</a>
+    <button class="btn btn-primary" onclick="document.getElementById('newProjectModal').classList.add('show')">+ ظ…ط´ط±ظˆط¹ ط¬ط¯ظٹط¯</button>
   </div>
 </div>
 
-{% for status_label, status_key, color in [('جارية','in_progress','#38bdf8'),('مُخططة','planned','#a78bfa'),('مكتملة','completed','#22c55e'),('مؤجلة','on_hold','#f59e0b'),('ملغية','cancelled','#ef4444')] %}
+{% for status_label, status_key, color in [('ط¬ط§ط±ظٹط©','in_progress','#38bdf8'),('ظ…ظڈط®ط·ط·ط©','planned','#a78bfa'),('ظ…ظƒطھظ…ظ„ط©','completed','#22c55e'),('ظ…ط¤ط¬ظ„ط©','on_hold','#f59e0b'),('ظ…ظ„ط؛ظٹط©','cancelled','#ef4444')] %}
 {% set group = projects | selectattr('status','eq', status_key) | list %}
 {% if group %}
 <div style="margin-bottom:20px;">
-  <h3 style="color:{{ color }};margin-bottom:12px;font-size:.95rem;">● {{ status_label }} ({{ group|length }})</h3>
+  <h3 style="color:{{ color }};margin-bottom:12px;font-size:.95rem;">â—ڈ {{ status_label }} ({{ group|length }})</h3>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
     {% for p in group %}
     <a href="/projects/{{ p.id }}" style="text-decoration:none;" class="card">
@@ -23,12 +23,12 @@
         <h4 style="margin:0;color:#e2e8f0;">{{ p.project_name or p.name }}</h4>
         <span style="background:rgba(255,255,255,.06);padding:2px 8px;border-radius:20px;font-size:.75rem;color:{{ color }};">{{ status_label }}</span>
       </div>
-      <p style="color:#94a3b8;font-size:.83rem;margin:0 0 12px;">📍 {{ p.project_location or p.location or 'موقع غير محدد' }}</p>
+      <p style="color:#94a3b8;font-size:.83rem;margin:0 0 12px;">ًں“چ {{ p.project_location or p.location or 'ظ…ظˆظ‚ط¹ ط؛ظٹط± ظ…ط­ط¯ط¯' }}</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.82rem;">
-        <div style="color:#64748b;">الميزانية</div>
-        <div style="color:#38bdf8;font-weight:700;">{{ "{:,.0f}".format(p.budget or 0) }} ر.س</div>
-        <div style="color:#64748b;">البدء</div>
-        <div style="color:#94a3b8;">{{ p.planned_start_date or p.start_date or '—' }}</div>
+        <div style="color:#64748b;">ط§ظ„ظ…ظٹط²ط§ظ†ظٹط©</div>
+        <div style="color:#38bdf8;font-weight:700;">{{ "{:,.0f}".format(p.budget or 0) }} ط±.ط³</div>
+        <div style="color:#64748b;">ط§ظ„ط¨ط¯ط،</div>
+        <div style="color:#94a3b8;">{{ p.planned_start_date or p.start_date or 'â€”' }}</div>
       </div>
       {% if p.budget and p.budget > 0 %}
       <div style="margin-top:12px;background:rgba(255,255,255,.06);border-radius:20px;height:6px;overflow:hidden;">
@@ -44,114 +44,64 @@
 
 {% if not projects %}
 <div class="card" style="text-align:center;padding:60px;">
-  <div style="font-size:3rem;margin-bottom:16px;">🏗️</div>
-  <h3>لا توجد مشاريع</h3>
-  <button class="btn btn-primary" style="margin-top:16px;" onclick="document.getElementById('newProjectModal').classList.add('show')">إضافة مشروع أول</button>
+  <div style="font-size:3rem;margin-bottom:16px;">ًںڈ—ï¸ڈ</div>
+  <h3>ظ„ط§ طھظˆط¬ط¯ ظ…ط´ط§ط±ظٹط¹</h3>
+  <button class="btn btn-primary" style="margin-top:16px;" onclick="document.getElementById('newProjectModal').classList.add('show')">ط¥ط¶ط§ظپط© ظ…ط´ط±ظˆط¹ ط£ظˆظ„</button>
 </div>
 {% endif %}
 
-<!-- Modal: مشروع جديد -->
+<!-- Modal: ظ…ط´ط±ظˆط¹ ط¬ط¯ظٹط¯ -->
 <div class="modal-overlay" id="newProjectModal">
   <div class="modal-box" style="max-width:560px;">
     <div class="modal-header">
-      <h3 class="modal-title">🏗️ مشروع جديد</h3>
-      <button class="modal-close" onclick="document.getElementById('newProjectModal').classList.remove('show')">✕</button>
+      <h3 class="modal-title">ًںڈ—ï¸ڈ ظ…ط´ط±ظˆط¹ ط¬ط¯ظٹط¯</h3>
+      <button class="modal-close" onclick="document.getElementById('newProjectModal').classList.remove('show')">âœ•</button>
     </div>
     <form method="post" action="/projects/new">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="form-group" style="grid-column:1/-1;">
-          <label class="form-label">اسم المشروع *</label>
-          <input name="name" class="form-input" placeholder="مشروع إنشاء مبنى..." required>
+          <label class="form-label">ط§ط³ظ… ط§ظ„ظ…ط´ط±ظˆط¹ *</label>
+          <input name="name" class="form-input" placeholder="ظ…ط´ط±ظˆط¹ ط¥ظ†ط´ط§ط، ظ…ط¨ظ†ظ‰..." required>
         </div>
         <div class="form-group">
-          <label class="form-label">الموقع</label>
-          <input name="location" class="form-input" placeholder="الرياض، العليا">
+          <label class="form-label">ط§ظ„ظ…ظˆظ‚ط¹</label>
+          <input name="location" class="form-input" placeholder="ط§ظ„ط±ظٹط§ط¶طŒ ط§ظ„ط¹ظ„ظٹط§">
         </div>
         <div class="form-group">
-          <label class="form-label">العميل</label>
-          <input name="client" class="form-input" placeholder="اسم العميل">
+          <label class="form-label">ط§ظ„ط¹ظ…ظٹظ„</label>
+          <input name="client" class="form-input" placeholder="ط§ط³ظ… ط§ظ„ط¹ظ…ظٹظ„">
         </div>
         <div class="form-group">
-          <label class="form-label">الميزانية (ر.س)</label>
+          <label class="form-label">ط§ظ„ظ…ظٹط²ط§ظ†ظٹط© (ط±.ط³)</label>
           <input name="budget" class="form-input" type="number" step="0.01" placeholder="0.00">
         </div>
         <div class="form-group">
-          <label class="form-label">الحالة</label>
+          <label class="form-label">ط§ظ„ط­ط§ظ„ط©</label>
           <select name="status" class="form-input">
-            <option value="planned">مُخطط</option>
-            <option value="in_progress">جارٍ</option>
-            <option value="on_hold">مؤجل</option>
+            <option value="planned">ظ…ظڈط®ط·ط·</option>
+            <option value="in_progress">ط¬ط§ط±ظچ</option>
+            <option value="on_hold">ظ…ط¤ط¬ظ„</option>
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">تاريخ البدء</label>
+          <label class="form-label">طھط§ط±ظٹط® ط§ظ„ط¨ط¯ط،</label>
           <input name="start_date" type="date" class="form-input">
         </div>
         <div class="form-group">
-          <label class="form-label">تاريخ الانتهاء المتوقع</label>
+          <label class="form-label">طھط§ط±ظٹط® ط§ظ„ط§ظ†طھظ‡ط§ط، ط§ظ„ظ…طھظˆظ‚ط¹</label>
           <input name="end_date" type="date" class="form-input">
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">وصف المشروع</label>
-        <textarea name="description" class="form-input" rows="3" placeholder="تفاصيل المشروع..."></textarea>
+        <label class="form-label">ظˆطµظپ ط§ظ„ظ…ط´ط±ظˆط¹</label>
+        <textarea name="description" class="form-input" rows="3" placeholder="طھظپط§طµظٹظ„ ط§ظ„ظ…ط´ط±ظˆط¹..."></textarea>
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
-        <button type="button" class="btn btn-secondary" onclick="document.getElementById('newProjectModal').classList.remove('show')">إلغاء</button>
-        <button type="submit" class="btn btn-primary">✅ إنشاء المشروع</button>
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('newProjectModal').classList.remove('show')">ط¥ظ„ط؛ط§ط،</button>
+        <button type="submit" class="btn btn-primary">âœ… ط¥ظ†ط´ط§ط، ط§ظ„ظ…ط´ط±ظˆط¹</button>
       </div>
     </form>
   </div>
 </div>
 {% endblock %}
 
-
-{% block content %}
-<div class="page-header">
-  <div>
-    <h1 class="page-title">🏗️ المشاريع</h1>
-  </div>
-  <a href="/projects/new" class="btn btn-primary">+ مشروع جديد</a>
-</div>
-
-{% for status_label, status_key, color in [('جارية','in_progress','#38bdf8'),('مكتملة','completed','#22c55e'),('مؤجلة','on_hold','#f59e0b')] %}
-{% set group = projects | selectattr('status','eq', status_key) | list %}
-{% if group %}
-<div style="margin-bottom:20px;">
-  <h3 style="color:{{ color }};margin-bottom:12px;font-size:.95rem;">● {{ status_label }} ({{ group|length }})</h3>
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
-    {% for p in group %}
-    <a href="/projects/{{ p.id }}" style="text-decoration:none;" class="card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
-        <h4 style="margin:0;color:#e2e8f0;">{{ p.name }}</h4>
-        <span style="background:rgba(255,255,255,.06);padding:2px 8px;border-radius:20px;font-size:.75rem;color:{{ color }};">
-          {{ status_label }}
-        </span>
-      </div>
-      <p style="color:#94a3b8;font-size:.83rem;margin:0 0 12px;">{{ p.client_name or 'بدون عميل' }}</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.82rem;">
-        <div style="color:#64748b;">الميزانية</div>
-        <div style="color:#38bdf8;font-weight:600;">{{ "{:,.0f}".format(p.budget or 0) }} ر.س</div>
-        <div style="color:#64748b;">المُصرف</div>
-        <div style="color:#f59e0b;">{{ "{:,.0f}".format(p.spent or 0) }} ر.س</div>
-      </div>
-      {% if p.budget and p.budget > 0 %}
-      <div style="margin-top:12px;background:rgba(255,255,255,.06);border-radius:20px;height:6px;overflow:hidden;">
-        <div style="height:100%;width:{{ [((p.spent or 0)/p.budget*100)|int, 100]|min }}%;background:{{ '#ef4444' if (p.spent or 0) > p.budget else '#38bdf8' }};border-radius:20px;"></div>
-      </div>
-      {% endif %}
-    </a>
-    {% endfor %}
-  </div>
-</div>
-{% endif %}
-{% endfor %}
-
-{% if not projects %}
-<div class="card" style="text-align:center;padding:60px;">
-  <div style="font-size:3rem;margin-bottom:16px;">🏗️</div>
-  <h3>لا توجد مشاريع</h3>
-  <a href="/projects/new" class="btn btn-primary" style="margin-top:16px;">إضافة مشروع أول</a>
-</div>
-{% endif %}
-{% endblock %}

@@ -6,6 +6,7 @@ Medical Sector: Patients, Appointments, Prescriptions, Visits
 from datetime import datetime
 from flask import Blueprint, render_template, request, jsonify, g, redirect, flash
 from functools import wraps
+import json
 
 bp = Blueprint("medical", __name__, url_prefix="/medical")
 
@@ -17,6 +18,11 @@ def require_perm(*perms):
             if not g.user or not g.business:
                 return redirect("/login")
             user_perms = g.user.get("permissions", {})
+            if isinstance(user_perms, str):
+                try:
+                    user_perms = json.loads(user_perms or "{}")
+                except Exception:
+                    user_perms = {}
             if user_perms.get("all"):
                 return f(*args, **kwargs)
             for perm in perms:
@@ -142,8 +148,8 @@ def manage_appointment(appointment_id):
         db.execute("""
             INSERT INTO patient_visits (
                 business_id, patient_id, visit_date, doctor_id,
-                diagnosis, treatment, notes, created_at
-            ) VALUES (?, ?, datetime('now'), ?, ?, ?, ?, datetime('now'))
+                diagnosis, treatment, notes
+            ) VALUES (?, ?, datetime('now'), ?, ?, ?, ?)
         """, (
             business_id,
             data.get("patient_id"),

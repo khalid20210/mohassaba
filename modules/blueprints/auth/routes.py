@@ -14,6 +14,7 @@ from modules.extensions import (
 )
 from modules.middleware import write_audit_log
 from modules.terminology import get_terms
+from modules.unit_localization import ensure_unit_localization_defaults
 
 bp = Blueprint("auth", __name__)
 
@@ -417,6 +418,9 @@ def auth_register():
                     (biz_id, cp["default_tax_rate"],
                      cp.get("tax_label_ar", "ضريبة"))
                 )
+
+            # تهيئة سياسة الوحدات العالمية من لحظة إنشاء المنشأة.
+            ensure_unit_localization_defaults(db, int(biz_id), country_code=country_code)
             db.commit()
         except Exception:
             pass  # الضريبة غير معيقة للتسجيل

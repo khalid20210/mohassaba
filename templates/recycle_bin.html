@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}سلة المهملات{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">🗑️ سلة المهملات</h2>
+    <p class="page-subtitle">السجلات المحذوفة — يمكن الاسترجاع أو الحذف النهائي</p>
+  </div>
+</div>
+
+<!-- فلتر النوع -->
+<div class="card" style="margin-bottom:16px">
+  <div style="padding:14px 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <span style="font-weight:600;font-size:.85rem">التصفية:</span>
+    <button onclick="loadItems('')"     class="btn btn-sm btn-outline filter-btn active" data-type="">الكل</button>
+    <button onclick="loadItems('invoice')"  class="btn btn-sm btn-outline filter-btn" data-type="invoice">فواتير</button>
+    <button onclick="loadItems('product')"  class="btn btn-sm btn-outline filter-btn" data-type="product">منتجات</button>
+    <button onclick="loadItems('contact')"  class="btn btn-sm btn-outline filter-btn" data-type="contact">جهات الاتصال</button>
+    <button onclick="loadItems('journal_entry')" class="btn btn-sm btn-outline filter-btn" data-type="journal_entry">قيود محاسبية</button>
+    <span id="totalCount" style="margin-right:auto;font-size:.8rem;color:var(--text-muted)"></span>
+  </div>
+</div>
+
+<!-- الجدول -->
+<div class="card">
+  <div id="loadingState" style="padding:40px;text-align:center;color:var(--text-muted)">
+    <div style="font-size:2rem">⏳</div>
+    <p>جارٍ التحميل...</p>
+  </div>
+  <table id="itemsTable" class="data-table" style="display:none">
+    <thead>
+      <tr>
+        <th>النوع</th>
+        <th>التسمية / المعرّف</th>
+        <th>حُذف بواسطة</th>
+        <th>تاريخ الحذف</th>
+        <th>سبب الحذف</th>
+        <th>الحالة</th>
+        <th>إجراءات</th>
+      </tr>
+    </thead>
+    <tbody id="itemsBody"></tbody>
+  </table>
+  <div id="emptyState" style="display:none;padding:60px;text-align:center">
+    <div style="font-size:3rem">✨</div>
+    <p style="color:var(--text-muted);margin-top:8px">سلة المهملات فارغة</p>
+  </div>
+</div>
+
+<!-- نافذة عرض تفاصيل السجل -->
+<div id="detailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;padding:20px;overflow:auto">
+  <div style="background:var(--card-bg);border-radius:16px;max-width:700px;margin:40px auto;padding:28px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h3 style="margin:0">📋 تفاصيل السجل المحذوف</h3>
+      <button onclick="closeDetail()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted)">✕</button>
+    </div>
+    <pre id="detailContent" style="background:var(--bg);border-radius:10px;padding:16px;
+         font-size:.78rem;overflow:auto;max-height:400px;direction:ltr;text-align:left;
+         white-space:pre-wrap;word-break:break-word;color:var(--text)"></pre>
+  </div>
+</div>
+
+<style>
+.filter-btn.active { background:var(--primary);color:#fff;border-color:var(--primary); }
+.type-badge {
+  padding:2px 8px;border-radius:20px;font-size:.75rem;font-weight:600;
+}
+</style>
+
+<script>
+const TYPE_LABELS = {
+  'invoice':       ['🧾','فاتورة',      '#dbeafe','#1d4ed8'],
+  'product':       ['📦','منتج',        '#dcfce7','#15803d'],
+  'contact':       ['👤','جهة اتصال',   '#fef9c3','#854d0e'],
+  'journal_entry': ['📒','قيد محاسبي', '#f3e8ff','#7e22ce'],
+};
+const DEFAULT_TYPE = ['🗂️','سجل','#f1f5f9','#475569'];
+
+let currentType = '';
+
+function loadItems(type='') {
+  currentType = type;
+  // تحديث الأزرار
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.type === type);
+  });
+  document.getElementById('loadingState').style.display = 'block';
+  document.getElementById('itemsTable').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'none';
+
+  fetch(`/api/v1/recycle-bin?type=${type}&page=1`)
+    .then(r => r.json())
+    .then(data => {
+      const body = document.getElementById('itemsBody');
+      body.innerHTML = '';
+      document.getElementById('totalCount').textContent = `إجمالي: ${data.total} سجل`;
+      document.getElementById('loadingState').style.display = 'none';
+
+      if (!data.items || data.items.length === 0) {
+        document.getElementById('emptyState').style.display = 'block';
+        return;
+      }
+      document.getElementById('itemsTable').style.display = 'table';
+
+      data.items.forEach(item => {
+        const [icon, label, bg, color] = TYPE_LABELS[item.entity_type] || DEFAULT_TYPE;
+        const isRestored = !!item.restored_at;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>
+            <span class="type-badge" style="background:${bg};color:${color}">
+              ${icon} ${label}
+            </span>
+          </td>
+          <td><strong>${item.entity_label || '#' + item.entity_id}</strong></td>
+          <td>${item.deleted_by_name || '—'}</td>
+          <td style="font-size:.8rem;color:var(--text-muted)">${(item.deleted_at||'').slice(0,16)}</td>
+          <td style="font-size:.8rem;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis" title="${item.delete_reason||''}">
+            ${item.delete_reason || '—'}
+          </td>
+          <td>
+            ${isRestored
+              ? `<span style="color:#10b981;font-size:.8rem">✓ مُسترجَع (${(item.restored_at||'').slice(0,10)})</span>`
+              : `<span style="color:#f59e0b;font-size:.8rem">في السلة</span>`
+            }
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button onclick='showDetail(${JSON.stringify(item.entity_data)})' class="btn btn-sm btn-outline">👁️ عرض</button>
+              ${!isRestored ? `
+              <button onclick="restoreItem(${item.id})" class="btn btn-sm" style="background:#10b981;color:#fff">↩️ استرجاع</button>
+              <button onclick="deletePermanent(${item.id})" class="btn btn-sm btn-danger">🗑️ حذف نهائي</button>
+              ` : ''}
+            </div>
+          </td>
+        `;
+        body.appendChild(tr);
+      });
+    })
+    .catch(() => {
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('emptyState').style.display = 'block';
+    });
+}
+
+function showDetail(dataStr) {
+  try {
+    const obj = typeof dataStr === 'string' ? JSON.parse(dataStr) : dataStr;
+    document.getElementById('detailContent').textContent = JSON.stringify(obj, null, 2);
+  } catch {
+    document.getElementById('detailContent').textContent = dataStr || '—';
+  }
+  document.getElementById('detailModal').style.display = 'block';
+}
+
+function closeDetail() {
+  document.getElementById('detailModal').style.display = 'none';
+}
+
+function restoreItem(id) {
+  if (!confirm('هل تريد استرجاع هذا السجل من سلة المهملات؟')) return;
+  fetch(`/api/v1/recycle-bin/${id}/restore`, {method:'POST',
+    headers:{'X-CSRFToken': document.querySelector('[name=csrf_token]')?.value||''}})
+    .then(r=>r.json()).then(d=>{
+      if(d.success) { alert('✅ ' + (d.message||'تم الاسترجاع')); loadItems(currentType); }
+      else alert('❌ ' + (d.error||'خطأ'));
+    });
+}
+
+function deletePermanent(id) {
+  if (!confirm('تحذير: هذا الحذف نهائي ولا يمكن التراجع عنه. هل أنت متأكد؟')) return;
+  fetch(`/api/v1/recycle-bin/${id}`, {method:'DELETE',
+    headers:{'X-CSRFToken': document.querySelector('[name=csrf_token]')?.value||''}})
+    .then(r=>r.json()).then(d=>{
+      if(d.success) { loadItems(currentType); }
+      else alert('❌ ' + (d.error||'خطأ'));
+    });
+}
+
+loadItems('');
+</script>
+
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+{% endblock %}

@@ -23,7 +23,6 @@
             <td><strong style="font-size:1.4rem;color:{% if (customer.balance or 0) > 0 %}#ef4444{% elif (customer.balance or 0) < 0 %}#22c55e{% else %}#94a3b8{% endif %};">
               {{ "{:,.2f}".format(customer.balance or 0) }} ر.س
             </strong></td></tr>
-        <tr><td style="color:#94a3b8;">حد الائتمان</td><td>{{ "{:,.0f}".format(customer.credit_limit or 0) }} ر.س</td></tr>
         <tr><td style="color:#94a3b8;">الهاتف</td><td>{{ customer.phone or '—' }}</td></tr>
         <tr><td style="color:#94a3b8;">البريد</td><td>{{ customer.email or '—' }}</td></tr>
         <tr><td style="color:#94a3b8;">العنوان</td><td>{{ customer.address or '—' }}</td></tr>

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}عروض الأسعار{% endblock %}
+{% block page_title %}عروض الأسعار{% endblock %}
+
+{% block content %}
+<style>
+  .card { background:white; border-radius:8px; padding:20px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { background:#f5f5f5; padding:10px; text-align:right; font-weight:bold; border-bottom:2px solid #ddd; }
+  td { padding:10px; border-bottom:1px solid #eee; vertical-align:middle; }
+  .badge { padding:3px 10px; border-radius:12px; font-size:12px; font-weight:bold; }
+  .badge-draft     { background:#f3f4f6; color:#6b7280; }
+  .badge-converted { background:#d1fae5; color:#065f46; }
+  .badge-cancelled { background:#fee2e2; color:#991b1b; }
+</style>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+  <div>
+    <a href="?status=" style="padding:6px 14px;border-radius:6px;text-decoration:none;font-size:13px;{% if not status_filter %}background:#3b82f6;color:white{% else %}background:#f3f4f6;color:#374151{% endif %}">الكل</a>
+    <a href="?status=draft" style="padding:6px 14px;border-radius:6px;text-decoration:none;font-size:13px;{% if status_filter=='draft' %}background:#3b82f6;color:white{% else %}background:#f3f4f6;color:#374151{% endif %}">مسودة</a>
+    <a href="?status=converted" style="padding:6px 14px;border-radius:6px;text-decoration:none;font-size:13px;{% if status_filter=='converted' %}background:#3b82f6;color:white{% else %}background:#f3f4f6;color:#374151{% endif %}">محوّل</a>
+  </div>
+  <a href="/wholesale/quotes/new" style="background:#10b981;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold">+ عرض سعر جديد</a>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>رقم العرض</th>
+        <th>العميل</th>
+        <th>تاريخ الإنشاء</th>
+        <th>تاريخ الانتهاء</th>
+        <th>الإجمالي</th>
+        <th>الحالة</th>
+        <th>إجراءات</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for q in quotes %}
+      <tr>
+        <td><a href="/wholesale/quotes/{{ q.id }}" style="color:#3b82f6;font-weight:bold">{{ q.quote_number }}</a></td>
+        <td>{{ q.customer_name or q.cname or '—' }}</td>
+        <td>{{ q.quote_date }}</td>
+        <td>{{ q.expiry_date or '—' }}</td>
+        <td style="font-weight:bold">{{ "{:,.2f}".format(q.total_amount) }} ر.س</td>
+        <td>
+          {% if q.status == 'converted' %}
+            <span class="badge badge-converted">محوّل لطلب</span>
+          {% elif q.status == 'cancelled' %}
+            <span class="badge badge-cancelled">ملغى</span>
+          {% else %}
+            <span class="badge badge-draft">مسودة</span>
+          {% endif %}
+        </td>
+        <td style="display:flex;gap:6px">
+          <a href="/wholesale/quotes/{{ q.id }}" style="background:#3b82f6;color:white;padding:4px 10px;border-radius:4px;text-decoration:none;font-size:12px">عرض</a>
+          {% if q.status == 'draft' %}
+          <form method="post" action="/wholesale/quotes/{{ q.id }}/to-order" style="display:inline">
+            <button style="background:#10b981;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">تحويل لطلب</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" style="text-align:center;color:#999;padding:30px">لا توجد عروض أسعار بعد</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

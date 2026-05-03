@@ -9,7 +9,17 @@
   </div>
 </div>
 
-<form method="POST" action="{{ url_for('settings') }}" enctype="multipart/form-data">
+{% if not can_edit_business %}
+<div class="alert alert-warning" style="background:#fff8e1;border:1px solid #f59e0b;border-radius:10px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;gap:10px">
+  <span style="font-size:1.3rem">🔒</span>
+  <div>
+    <strong>وضع القراءة فقط</strong><br>
+    <span style="font-size:.85rem;color:#6b7280">ليس لديك صلاحية تعديل بيانات المنشأة. تواصل مع المدير لمنحك الصلاحية.</span>
+  </div>
+</div>
+{% endif %}
+
+<form method="POST" action="{{ url_for('core.settings') }}" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
   <!-- ═══════════════ هوية المنشأة ═══════════════ -->
@@ -34,7 +44,8 @@
         <label class="form-label">شعار المنشأة (اختياري)</label>
         <input type="file" name="logo" id="logoInput" class="form-control"
                accept=".png,.jpg,.jpeg,.svg,.webp,.gif"
-               onchange="previewLogo(this)">
+               onchange="previewLogo(this)"
+               {% if not can_edit_business %}disabled{% endif %}>
         <p style="font-size:.75rem;color:var(--text-muted);margin-top:6px">
           PNG, JPG, SVG — يظهر في ترويسة كل فاتورة
         </p>
@@ -45,24 +56,27 @@
       <div class="form-group">
         <label class="form-label">الاسم التجاري <span class="required">*</span></label>
         <input type="text" name="business_name" class="form-control"
-               value="{{ biz.name or '' }}" required placeholder="اسم المنشأة كما هو في السجل">
+               value="{{ biz.name or '' }}" required placeholder="اسم المنشأة كما هو في السجل"
+               {% if not can_edit_business %}disabled{% endif %}>
       </div>
       <div class="form-group">
         <label class="form-label">الرقم الضريبي (VAT)</label>
         <input type="text" name="tax_number" class="form-control" dir="ltr"
                value="{{ biz.tax_number or '' }}"
                placeholder="300XXXXXXXXXX003 — 15 رقماً"
-               maxlength="20">
+               maxlength="20"
+               {% if not can_edit_business %}disabled{% endif %}>
         <p class="field-hint">يدخل تلقائياً في رمز ZATCA</p>
       </div>
       <div class="form-group">
         <label class="form-label">رقم السجل التجاري</label>
         <input type="text" name="cr_number" class="form-control" dir="ltr"
-               value="{{ biz.cr_number or '' }}" placeholder="10XXXXXXXX">
+               value="{{ biz.cr_number or '' }}" placeholder="10XXXXXXXX"
+               {% if not can_edit_business %}disabled{% endif %}>
       </div>
       <div class="form-group">
         <label class="form-label">العملة</label>
-        <select name="currency" class="form-control">
+        <select name="currency" class="form-control" {% if not can_edit_business %}disabled{% endif %}>
           {% for code, label in [('SAR','ريال سعودي — SAR'),('AED','درهم إماراتي — AED'),('USD','دولار أمريكي — USD'),('KWD','دينار كويتي — KWD'),('BHD','دينار بحريني — BHD'),('QAR','ريال قطري — QAR'),('OMR','ريال عُماني — OMR')] %}
           <option value="{{ code }}" {% if biz.currency == code %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
@@ -80,22 +94,26 @@
       <div class="form-group">
         <label class="form-label">رقم الجوال / الهاتف</label>
         <input type="tel" name="phone" class="form-control" dir="ltr"
-               value="{{ biz.phone or '' }}" placeholder="+966XXXXXXXXX">
+               value="{{ biz.phone or '' }}" placeholder="+966XXXXXXXXX"
+               {% if not can_edit_business %}disabled{% endif %}>
       </div>
       <div class="form-group">
         <label class="form-label">البريد الإلكتروني</label>
         <input type="email" name="email" class="form-control" dir="ltr"
-               value="{{ biz.email or '' }}" placeholder="info@example.com">
+               value="{{ biz.email or '' }}" placeholder="info@example.com"
+               {% if not can_edit_business %}disabled{% endif %}>
       </div>
       <div class="form-group">
         <label class="form-label">المدينة</label>
         <input type="text" name="city" class="form-control"
-               value="{{ biz.city or '' }}" placeholder="الرياض">
+               value="{{ biz.city or '' }}" placeholder="الرياض"
+               {% if not can_edit_business %}disabled{% endif %}>
       </div>
       <div class="form-group">
         <label class="form-label">العنوان التفصيلي</label>
         <input type="text" name="address" class="form-control"
-               value="{{ biz.address or '' }}" placeholder="حي النزهة، شارع الملك فهد">
+               value="{{ biz.address or '' }}" placeholder="حي النزهة، شارع الملك فهد"
+               {% if not can_edit_business %}disabled{% endif %}>
       </div>
     </div>
   </div>
@@ -109,11 +127,30 @@
       <div class="form-group">
         <label class="form-label">بادئة رقم الفاتورة</label>
         <input type="text" name="invoice_prefix" class="form-control" dir="ltr"
-               value="{{ inv_prefix }}" placeholder="INV" maxlength="10">
+               value="{{ inv_prefix }}" placeholder="INV" maxlength="10"
+               {% if not can_edit_business %}disabled{% endif %}>
         <p class="field-hint">مثال: INV → الفاتورة تكون INV-00001</p>
       </div>
     </div>
   </div>
+
+  <!-- ═══════════════ سبب التعديل ═══════════════ -->
+  {% if can_edit_business %}
+  <div class="card" style="margin-bottom:20px;border:2px solid {% if not can_skip_reason %}#f59e0b{% else %}var(--border){% endif %}">
+    <div class="card-header">
+      <span class="card-title">📝 سبب التعديل {% if not can_skip_reason %}<span style="color:#ef4444">*</span>{% endif %}</span>
+    </div>
+    <div style="padding:16px 20px">
+      <input type="text" name="change_reason" class="form-control"
+             placeholder="{% if not can_skip_reason %}سبب التعديل إلزامي{% else %}اختياري — وصف مختصر للتغيير{% endif %}"
+             {% if not can_skip_reason %}required{% endif %}
+             style="max-width:600px">
+      {% if not can_skip_reason %}
+      <p style="font-size:.78rem;color:#f59e0b;margin-top:6px">⚠️ صلاحيتك تتطلب ذكر سبب التعديل</p>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
 
   <!-- ═══════════════ معاينة رمز QR ═══════════════ -->
   <div class="card" style="margin-bottom:20px">
@@ -136,8 +173,12 @@
   </div>
 
   <div class="form-actions">
+    {% if can_edit_business %}
     <button type="submit" class="btn btn-success btn-lg">💾 حفظ الإعدادات</button>
-    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">إلغاء</a>
+    {% else %}
+    <button type="button" class="btn btn-secondary btn-lg" disabled title="ليس لديك صلاحية تعديل بيانات المنشأة">🔒 تعديل محظور</button>
+    {% endif %}
+    <a href="{{ url_for('core.dashboard') }}" class="btn btn-secondary">إلغاء</a>
   </div>
 </form>
 

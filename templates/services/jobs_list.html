@@ -1,21 +1,21 @@
-{% extends "base.html" %}
-{% block title %}أوامر العمل{% endblock %}
-{% block page_title %}🔧 أوامر العمل{% endblock %}
+﻿{% extends "base.html" %}
+{% block title %}ط£ظˆط§ظ…ط± ط§ظ„ط¹ظ…ظ„{% endblock %}
+{% block page_title %}ًں”§ ط£ظˆط§ظ…ط± ط§ظ„ط¹ظ…ظ„{% endblock %}
 
 {% block content %}
 <div class="page-header">
   <div>
-    <p class="page-subtitle">{{ jobs|length }} أمر عمل</p>
+    <p class="page-subtitle">{{ jobs|length }} ط£ظ…ط± ط¹ظ…ظ„</p>
   </div>
   <div style="display:flex;gap:10px;">
-    <a href="/services/contracts" class="btn btn-secondary">📄 العقود</a>
-    <button class="btn btn-primary" onclick="document.getElementById('newJobModal').classList.add('show')">+ أمر عمل جديد</button>
+    <a href="/services/contracts" class="btn btn-secondary">ًں“„ ط§ظ„ط¹ظ‚ظˆط¯</a>
+    <button class="btn btn-primary" onclick="document.getElementById('newJobModal').classList.add('show')">+ ط£ظ…ط± ط¹ظ…ظ„ ط¬ط¯ظٹط¯</button>
   </div>
 </div>
 
-<!-- فلتر الحالة -->
+<!-- ظپظ„طھط± ط§ظ„ط­ط§ظ„ط© -->
 <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-  {% for s, label in [('','الكل'),('open','مفتوح'),('in_progress','قيد التنفيذ'),('completed','منجز'),('cancelled','ملغي')] %}
+  {% for s, label in [('','ط§ظ„ظƒظ„'),('open','ظ…ظپطھظˆط­'),('in_progress','ظ‚ظٹط¯ ط§ظ„طھظ†ظپظٹط°'),('completed','ظ…ظ†ط¬ط²'),('cancelled','ظ…ظ„ط؛ظٹ')] %}
   <a href="/services/jobs{% if s %}?status={{ s }}{% endif %}"
      style="padding:6px 14px;border-radius:20px;text-decoration:none;font-size:.82rem;border:1px solid rgba(255,255,255,.1);{% if request.args.get('status','')==s %}background:rgba(59,130,246,.15);color:#60a5fa;border-color:#3b82f6;{% else %}color:#64748b;{% endif %}">
     {{ label }}
@@ -23,172 +23,108 @@
   {% endfor %}
 </div>
 
-<!-- إحصائيات -->
+<!-- ط¥ط­طµط§ط¦ظٹط§طھ -->
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
   {% set cnt = {'open':0,'in_progress':0,'completed':0} %}
   {% for j in jobs %}{% if j.job_status in cnt %}{% set _ = cnt.update({j.job_status: cnt[j.job_status]+1}) %}{% endif %}{% endfor %}
-  <div class="card" style="text-align:center;padding:12px;"><div style="font-size:1.4rem;font-weight:800;">{{ jobs|length }}</div><div style="font-size:.78rem;color:#94a3b8;">الإجمالي</div></div>
-  <div class="card" style="text-align:center;padding:12px;"><div style="font-size:1.4rem;font-weight:800;color:#38bdf8;">{{ cnt.open }}</div><div style="font-size:.78rem;color:#94a3b8;">مفتوح</div></div>
-  <div class="card" style="text-align:center;padding:12px;"><div style="font-size:1.4rem;font-weight:800;color:#f59e0b;">{{ cnt.in_progress }}</div><div style="font-size:.78rem;color:#94a3b8;">قيد التنفيذ</div></div>
-  <div class="card" style="text-align:center;padding:12px;"><div style="font-size:1.4rem;font-weight:800;color:#22c55e;">{{ cnt.completed }}</div><div style="font-size:.78rem;color:#94a3b8;">منجز</div></div>
+  <div class="card" style="text-align:center;padding:12px;"><div style="font-size:1.4rem;font-weight:800;">{{ jobs|length }}</div><div style="font-size:.78rem;color:#94a3b8;">ط§ظ„ط¥ط¬ظ…ط§ظ„ظٹ</div></div>
+  <div class="card" style="text-align:center;padding:12px;"><div style="font-size:1.4rem;font-weight:800;color:#38bdf8;">{{ cnt.open }}</div><div style="font-size:.78rem;color:#94a3b8;">ظ…ظپطھظˆط­</div></div>
+  <div class="card" style="text-align:center;padding:12px;"><div style="font-size:1.4rem;font-weight:800;color:#f59e0b;">{{ cnt.in_progress }}</div><div style="font-size:.78rem;color:#94a3b8;">ظ‚ظٹط¯ ط§ظ„طھظ†ظپظٹط°</div></div>
+  <div class="card" style="text-align:center;padding:12px;"><div style="font-size:1.4rem;font-weight:800;color:#22c55e;">{{ cnt.completed }}</div><div style="font-size:.78rem;color:#94a3b8;">ظ…ظ†ط¬ط²</div></div>
 </div>
 
 <div class="card">
   <table class="table">
     <thead>
       <tr>
-        <th>#</th><th>العميل</th><th>نوع الخدمة</th><th>الموقع</th>
-        <th>الفني</th><th>الأولوية</th><th>الحالة</th><th>الجدولة</th><th></th>
+        <th>#</th><th>ط§ظ„ط¹ظ…ظٹظ„</th><th>ظ†ظˆط¹ ط§ظ„ط®ط¯ظ…ط©</th><th>ط§ظ„ظ…ظˆظ‚ط¹</th>
+        <th>ط§ظ„ظپظ†ظٹ</th><th>ط§ظ„ط£ظˆظ„ظˆظٹط©</th><th>ط§ظ„ط­ط§ظ„ط©</th><th>ط§ظ„ط¬ط¯ظˆظ„ط©</th><th></th>
       </tr>
     </thead>
     <tbody>
       {% for j in jobs %}
       <tr>
         <td style="color:#64748b;font-size:.82rem;">{{ j.id }}</td>
-        <td><strong>{{ j.client_id or '—' }}</strong></td>
-        <td>{{ j.job_type or '—' }}</td>
-        <td style="color:#64748b;font-size:.82rem;">{{ j.location or '—' }}</td>
-        <td>{{ j.technician_id or '—' }}</td>
+        <td><strong>{{ j.client_id or 'â€”' }}</strong></td>
+        <td>{{ j.job_type or 'â€”' }}</td>
+        <td style="color:#64748b;font-size:.82rem;">{{ j.location or 'â€”' }}</td>
+        <td>{{ j.technician_id or 'â€”' }}</td>
         <td>
-          {% if j.priority=='urgent' %}<span style="color:#ef4444;font-weight:700;">🔴 عاجل</span>
-          {% elif j.priority=='high' %}<span style="color:#f59e0b;font-weight:700;">🟠 عالٍ</span>
-          {% else %}<span style="color:#22c55e;">🟢 عادي</span>{% endif %}
+          {% if j.priority=='urgent' %}<span style="color:#ef4444;font-weight:700;">ًں”´ ط¹ط§ط¬ظ„</span>
+          {% elif j.priority=='high' %}<span style="color:#f59e0b;font-weight:700;">ًںں  ط¹ط§ظ„ظچ</span>
+          {% else %}<span style="color:#22c55e;">ًںں¢ ط¹ط§ط¯ظٹ</span>{% endif %}
         </td>
         <td>
-          {% if j.job_status=='open' %}<span style="background:#1e3a5f;color:#93c5fd;padding:2px 10px;border-radius:20px;font-size:.78rem;">◎ مفتوح</span>
-          {% elif j.job_status=='in_progress' %}<span style="background:#78350f;color:#fcd34d;padding:2px 10px;border-radius:20px;font-size:.78rem;">⏳ جارٍ</span>
-          {% elif j.job_status=='completed' %}<span style="background:#14532d;color:#86efac;padding:2px 10px;border-radius:20px;font-size:.78rem;">✓ منجز</span>
-          {% elif j.job_status=='cancelled' %}<span style="background:#7f1d1d;color:#fca5a5;padding:2px 10px;border-radius:20px;font-size:.78rem;">✕ ملغي</span>
+          {% if j.job_status=='open' %}<span style="background:#1e3a5f;color:#93c5fd;padding:2px 10px;border-radius:20px;font-size:.78rem;">â—ژ ظ…ظپطھظˆط­</span>
+          {% elif j.job_status=='in_progress' %}<span style="background:#78350f;color:#fcd34d;padding:2px 10px;border-radius:20px;font-size:.78rem;">âڈ³ ط¬ط§ط±ظچ</span>
+          {% elif j.job_status=='completed' %}<span style="background:#14532d;color:#86efac;padding:2px 10px;border-radius:20px;font-size:.78rem;">âœ“ ظ…ظ†ط¬ط²</span>
+          {% elif j.job_status=='cancelled' %}<span style="background:#7f1d1d;color:#fca5a5;padding:2px 10px;border-radius:20px;font-size:.78rem;">âœ• ظ…ظ„ط؛ظٹ</span>
           {% else %}<span style="color:#94a3b8;">{{ j.job_status or 'pending' }}</span>{% endif %}
         </td>
-        <td style="color:#64748b;font-size:.82rem;">{{ j.scheduled_date or (j.created_at[:10] if j.created_at else '—') }}</td>
-        <td><a href="/services/jobs/{{ j.id }}" class="btn btn-secondary" style="padding:4px 12px;font-size:.8rem;">إدارة</a></td>
+        <td style="color:#64748b;font-size:.82rem;">{{ j.scheduled_date or (j.created_at[:10] if j.created_at else 'â€”') }}</td>
+        <td><a href="/services/jobs/{{ j.id }}" class="btn btn-secondary" style="padding:4px 12px;font-size:.8rem;">ط¥ط¯ط§ط±ط©</a></td>
       </tr>
       {% else %}
-      <tr><td colspan="9" style="text-align:center;color:#64748b;padding:40px;">لا توجد أوامر عمل</td></tr>
+      <tr><td colspan="9" style="text-align:center;color:#64748b;padding:40px;">ظ„ط§ طھظˆط¬ط¯ ط£ظˆط§ظ…ط± ط¹ظ…ظ„</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 
-<!-- Modal: أمر عمل جديد -->
+<!-- Modal: ط£ظ…ط± ط¹ظ…ظ„ ط¬ط¯ظٹط¯ -->
 <div class="modal-overlay" id="newJobModal">
   <div class="modal-box" style="max-width:540px;">
     <div class="modal-header">
-      <h3 class="modal-title">🔧 أمر عمل جديد</h3>
-      <button class="modal-close" onclick="document.getElementById('newJobModal').classList.remove('show')">✕</button>
+      <h3 class="modal-title">ًں”§ ط£ظ…ط± ط¹ظ…ظ„ ط¬ط¯ظٹط¯</h3>
+      <button class="modal-close" onclick="document.getElementById('newJobModal').classList.remove('show')">âœ•</button>
     </div>
     <form method="post" action="/services/jobs/new">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="form-group">
-          <label class="form-label">رقم الأمر</label>
+          <label class="form-label">ط±ظ‚ظ… ط§ظ„ط£ظ…ط±</label>
           <input name="job_number" class="form-input" placeholder="JOB-001">
         </div>
         <div class="form-group">
-          <label class="form-label">نوع الخدمة *</label>
-          <input name="type" class="form-input" placeholder="صيانة / تركيب ...">
+          <label class="form-label">ظ†ظˆط¹ ط§ظ„ط®ط¯ظ…ط© *</label>
+          <input name="type" class="form-input" placeholder="طµظٹط§ظ†ط© / طھط±ظƒظٹط¨ ...">
         </div>
         <div class="form-group">
-          <label class="form-label">معرف العميل</label>
-          <input name="client_id" class="form-input" type="number" placeholder="رقم العميل">
+          <label class="form-label">ظ…ط¹ط±ظپ ط§ظ„ط¹ظ…ظٹظ„</label>
+          <input name="client_id" class="form-input" type="number" placeholder="ط±ظ‚ظ… ط§ظ„ط¹ظ…ظٹظ„">
         </div>
         <div class="form-group">
-          <label class="form-label">الفني (معرف)</label>
-          <input name="technician_id" class="form-input" placeholder="رقم الفني">
+          <label class="form-label">ط§ظ„ظپظ†ظٹ (ظ…ط¹ط±ظپ)</label>
+          <input name="technician_id" class="form-input" placeholder="ط±ظ‚ظ… ط§ظ„ظپظ†ظٹ">
         </div>
         <div class="form-group">
-          <label class="form-label">تاريخ الجدولة</label>
+          <label class="form-label">طھط§ط±ظٹط® ط§ظ„ط¬ط¯ظˆظ„ط©</label>
           <input name="scheduled_date" type="date" class="form-input">
         </div>
         <div class="form-group">
-          <label class="form-label">الأولوية</label>
+          <label class="form-label">ط§ظ„ط£ظˆظ„ظˆظٹط©</label>
           <select name="priority" class="form-input">
-            <option value="normal">عادي</option>
-            <option value="high">عالٍ</option>
-            <option value="urgent">عاجل</option>
+            <option value="normal">ط¹ط§ط¯ظٹ</option>
+            <option value="high">ط¹ط§ظ„ظچ</option>
+            <option value="urgent">ط¹ط§ط¬ظ„</option>
           </select>
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">الموقع / العنوان</label>
-        <input name="location" class="form-input" placeholder="عنوان الخدمة">
+        <label class="form-label">ط§ظ„ظ…ظˆظ‚ط¹ / ط§ظ„ط¹ظ†ظˆط§ظ†</label>
+        <input name="location" class="form-input" placeholder="ط¹ظ†ظˆط§ظ† ط§ظ„ط®ط¯ظ…ط©">
       </div>
       <div class="form-group">
-        <label class="form-label">وصف المشكلة</label>
-        <textarea name="description" class="form-input" rows="3" placeholder="اكتب وصف المشكلة..."></textarea>
+        <label class="form-label">ظˆطµظپ ط§ظ„ظ…ط´ظƒظ„ط©</label>
+        <textarea name="description" class="form-input" rows="3" placeholder="ط§ظƒطھط¨ ظˆطµظپ ط§ظ„ظ…ط´ظƒظ„ط©..."></textarea>
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
-        <button type="button" class="btn btn-secondary" onclick="document.getElementById('newJobModal').classList.remove('show')">إلغاء</button>
-        <button type="submit" class="btn btn-primary">✅ إنشاء الأمر</button>
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('newJobModal').classList.remove('show')">ط¥ظ„ط؛ط§ط،</button>
+        <button type="submit" class="btn btn-primary">âœ… ط¥ظ†ط´ط§ط، ط§ظ„ط£ظ…ط±</button>
       </div>
     </form>
   </div>
 </div>
 {% endblock %}
 
-{% block title %}أوامر العمل{% endblock %}
-{% block page_title %}📋 أوامر العمل{% endblock %}
 
-{% block content %}
-<div class="page-header">
-  <div>
-    <h1 class="page-title">📋 أوامر العمل</h1>
-    <p class="page-subtitle">{{ jobs|length }} أمر عمل</p>
-  </div>
-  <div style="display:flex;gap:10px;">
-    <a href="/services/contracts" class="btn btn-secondary">📄 العقود</a>
-    <a href="/services/jobs/new" class="btn btn-primary">+ أمر عمل جديد</a>
-  </div>
-</div>
 
-<!-- فلتر الحالة -->
-<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-  {% for s, label, color in [('','الكل','#94a3b8'),('open','مفتوح','#38bdf8'),('in_progress','قيد التنفيذ','#f59e0b'),('completed','منجز','#22c55e'),('cancelled','ملغي','#ef4444')] %}
-  <a href="/services/jobs{% if s %}?status={{ s }}{% endif %}"
-     style="padding:6px 14px;border-radius:20px;text-decoration:none;font-size:.82rem;
-            border:1px solid rgba(255,255,255,.1);
-            {% if request.args.get('status','')==s %}background:rgba(255,255,255,.1);color:{{ color }};{% else %}color:#64748b;{% endif %}">
-    {{ label }}
-  </a>
-  {% endfor %}
-</div>
-
-<div class="card">
-  <table class="table">
-    <thead>
-      <tr><th>العميل</th><th>الخدمة</th><th>الفني</th><th>الأولوية</th><th>الحالة</th><th>تاريخ الإنشاء</th><th>الإجراء</th></tr>
-    </thead>
-    <tbody>
-      {% for j in jobs %}
-      <tr>
-        <td>
-          <strong>{{ j.customer_name }}</strong>
-          {% if j.customer_phone %}<br><small style="color:#64748b;">{{ j.customer_phone }}</small>{% endif %}
-        </td>
-        <td>{{ j.service_type or '—' }}</td>
-        <td>{{ j.technician_name or 'غير محدد' }}</td>
-        <td>
-          {% if j.priority == 'urgent' %}<span style="color:#ef4444;font-weight:600;">🔴 عاجل</span>
-          {% elif j.priority == 'high' %}<span style="color:#f59e0b;">🟠 عالي</span>
-          {% elif j.priority == 'normal' %}<span style="color:#22c55e;">🟢 عادي</span>
-          {% else %}<span style="color:#94a3b8;">{{ j.priority or '—' }}</span>{% endif %}
-        </td>
-        <td>
-          {% if j.status == 'open' %}<span style="background:#1e3a5f;color:#93c5fd;padding:2px 8px;border-radius:20px;font-size:.78rem;">● مفتوح</span>
-          {% elif j.status == 'in_progress' %}<span style="background:#78350f;color:#fcd34d;padding:2px 8px;border-radius:20px;font-size:.78rem;">⚙ جارٍ</span>
-          {% elif j.status == 'completed' %}<span style="background:#14532d;color:#86efac;padding:2px 8px;border-radius:20px;font-size:.78rem;">✓ منجز</span>
-          {% elif j.status == 'cancelled' %}<span style="background:#7f1d1d;color:#fca5a5;padding:2px 8px;border-radius:20px;font-size:.78rem;">✕ ملغي</span>
-          {% else %}{{ j.status }}{% endif %}
-        </td>
-        <td style="color:#64748b;font-size:.82rem;">{{ j.created_at[:10] if j.created_at else '—' }}</td>
-        <td>
-          <a href="/services/jobs/{{ j.id }}" class="btn btn-secondary" style="padding:4px 12px;font-size:.8rem;">إدارة</a>
-        </td>
-      </tr>
-      {% else %}
-      <tr><td colspan="7" style="text-align:center;color:#64748b;padding:40px;">لا توجد أوامر عمل</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% endblock %}

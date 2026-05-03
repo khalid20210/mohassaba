@@ -2,13 +2,26 @@
 modules/middleware.py — RBAC، ديكوراتورات الحماية، before/after request
 """
 import json
+import secrets
+from collections import deque
 from datetime import datetime
 from functools import wraps
+from threading import Lock
+from time import monotonic
 
-from flask import g, redirect, session, url_for, flash, request
+from flask import g, redirect, session, url_for, flash, request, jsonify
 
 from .config import SIDEBAR_CONFIG, SIDEBAR_PERM, get_sidebar_key
 from .extensions import get_db, generate_csrf_token
+from .config import RATE_LIMIT_WINDOW_SEC, RATE_LIMIT_MAX_REQUEST
+from .runtime_services import (
+    should_use_distributed_rate_limit,
+    check_rate_limit_distributed,
+)
+
+
+_rate_limit_state: dict[str, deque] = {}
+_rate_lock = Lock()
 
 
 # ─── التحقق من الصلاحية ───────────────────────────────────────────────────────
@@ -128,6 +141,9 @@ def load_user():
             (user_id,)
         ).fetchone()
 
+        if g.user:
+            g.user = dict(g.user)
+
         # ── RLS Guard: تحقق أن business_id في الجلسة يطابق قاعدة البيانات ──────
         # يمنع تلاعب المستخدم بالجلسة للوصول لبيانات منشأة أخرى
         if g.user and session.get("business_id"):
@@ -156,6 +172,9 @@ def load_user():
             ).fetchone()
 
             if g.business:
+                g.business = dict(g.business)
+
+            if g.business:
                 itype       = g.business["industry_type"] or "retail_other"
                 sidebar_key = get_sidebar_key(itype)
                 common      = SIDEBAR_CONFIG.get("_common", [])
@@ -180,6 +199,70 @@ def load_user():
             except Exception:
                 g.country_profile = None
 
+        # ── حماية المسارات حسب نوع النشاط ─────────────────────────────────
+        if g.business and not g.user_perms.get("all"):
+            from .config import INDUSTRY_ROUTE_GUARDS
+            path = request.path or ""
+            if not path.startswith(("/static", "/api", "/auth", "/healthz", "/readyz")):
+                itype = g.business.get("industry_type") or ""
+                for prefix, allowed_set in INDUSTRY_ROUTE_GUARDS.items():
+                    if path.startswith(prefix):
+                        if itype not in allowed_set:
+                            flash("هذا القسم غير متاح لنشاطك التجاري", "error")
+                            return redirect(url_for("core.dashboard"))
+                        break
+
+
+def platform_guard():
+    """حماية أساسية: request id + rate limit بسيط على مستوى التطبيق."""
+    g.request_id = request.headers.get("X-Request-ID") or secrets.token_hex(12)
+
+    path = request.path or ""
+    if path.startswith("/static") or path == "/sw.js":
+        return None
+
+    # استثناءات صحة المنصة والصفحة الهابطة
+    if path in ("/healthz", "/readyz", "/offline"):
+        return None
+
+    key = request.headers.get("X-Forwarded-For", "").split(",")[0].strip() or request.remote_addr or "unknown"
+    now = monotonic()
+
+    # Rate limit موزع (Redis) عند تفعيله
+    if should_use_distributed_rate_limit():
+        allowed, current_count, backend = check_rate_limit_distributed(key)
+        if not allowed:
+            return jsonify({
+                "success": False,
+                "error": "too_many_requests",
+                "message": "تم تجاوز حد الطلبات المؤقت",
+                "backend": backend,
+                "current_count": current_count,
+                "request_id": g.request_id,
+            }), 429
+        return None
+
+    with _rate_lock:
+        q = _rate_limit_state.get(key)
+        if q is None:
+            q = deque()
+            _rate_limit_state[key] = q
+
+        cutoff = now - RATE_LIMIT_WINDOW_SEC
+        while q and q[0] < cutoff:
+            q.popleft()
+
+        if len(q) >= RATE_LIMIT_MAX_REQUEST:
+            return jsonify({
+                "success": False,
+                "error": "too_many_requests",
+                "message": "تم تجاوز حد الطلبات المؤقت",
+                "request_id": g.request_id,
+            }), 429
+
+        q.append(now)
+    return None
+
 
 def inject_globals():
     """Context processor: يُضاف لكل القوالب"""
@@ -192,10 +275,54 @@ def inject_globals():
         "industry_types":   INDUSTRY_TYPES,
         "request":          request,
         "now_date":         datetime.now().strftime("%Y-%m-%d"),
-        "csrf_token":       generate_csrf_token(),
+        "csrf_token":       generate_csrf_token,
         "user_has_perm":    user_has_perm,
         "country_profile":  g.country_profile,
     }
+
+
+def enforce_global_csrf():
+    """
+    حماية CSRF عالمية: تُطبَّق تلقائياً على جميع طلبات POST غير-API.
+    استثناءات:
+      - طلبات JSON (Content-Type: application/json) — تحمي CORS عوضاً
+      - مسارات /auth/** — تتضمن CSRF token في الـ form مباشرة
+      - مسارات /api/** — مؤمنة بـ API key + session
+      - Webhooks خارجية — محددة صراحةً
+    """
+    if request.method not in ("POST", "PUT", "PATCH", "DELETE"):
+        return None
+
+    path = request.path or ""
+
+    # استثنِ الـ static files وصحة المنصة
+    if path.startswith("/static") or path in ("/healthz", "/readyz", "/sw.js"):
+        return None
+
+    # استثنِ JSON API (محمية بـ CORS + session)
+    if request.is_json:
+        return None
+
+    # استثنِ Webhooks المُعلنة صراحةً
+    webhook_prefixes = ("/api/v1/webhook", "/api/webhook")
+    if any(path.startswith(p) for p in webhook_prefixes):
+        return None
+
+    # تحقق من CSRF token
+    from .extensions import validate_csrf
+    if not validate_csrf():
+        # طلب من مستخدم مُسجَّل دخول: أعد توجيهه مع رسالة خطأ
+        if session.get("user_id"):
+            from flask import flash, redirect
+            flash("انتهت صلاحية الجلسة، يرجى المحاولة مجدداً", "error")
+            return redirect(request.referrer or "/")
+        # طلب غير مُصادق: أعد خطأ JSON
+        return jsonify({
+            "success": False,
+            "error":   "csrf_invalid",
+            "message": "CSRF token مفقود أو غير صالح",
+        }), 403
+    return None
 
 
 def add_security_headers(response):
@@ -212,4 +339,7 @@ def add_security_headers(response):
         "img-src 'self' data: blob:; "
         "connect-src 'self';"
     )
+    if request.is_secure:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["X-Request-ID"] = getattr(g, "request_id", "")
     return response

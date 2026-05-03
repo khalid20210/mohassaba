@@ -21,7 +21,7 @@
         <option value="purchase" {% if request.args.get('type')=='purchase' %}selected{% endif %}>شراء</option>
         <option value="sale" {% if request.args.get('type')=='sale' %}selected{% endif %}>بيع</option>
         <option value="adjustment" {% if request.args.get('type')=='adjustment' %}selected{% endif %}>تعديل</option>
-        <option value="return_in" {% if request.args.get('type')=='return_in' %}selected{% endif %}>مرتجع</option>
+        <option value="return" {% if request.args.get('type') in ['return','return_in'] %}selected{% endif %}>مرتجع</option>
         <option value="damage" {% if request.args.get('type')=='damage' %}selected{% endif %}>تلف</option>
       </select>
     </div>
@@ -53,7 +53,7 @@
           {% if m.movement_type == 'purchase' %}<span style="color:#22c55e;">🟢 شراء</span>
           {% elif m.movement_type == 'sale' %}<span style="color:#ef4444;">🔴 بيع</span>
           {% elif m.movement_type == 'adjustment' %}<span style="color:#38bdf8;">🔵 تعديل</span>
-          {% elif m.movement_type == 'return_in' %}<span style="color:#f59e0b;">🟡 مرتجع</span>
+          {% elif m.movement_type == 'return' %}<span style="color:#f59e0b;">🟡 مرتجع</span>
           {% elif m.movement_type == 'damage' %}<span style="color:#6b7280;">⚫ تلف</span>
           {% else %}{{ m.movement_type }}{% endif %}
         </td>
@@ -64,7 +64,7 @@
         <td>{{ m.qty_after }}</td>
         <td style="color:#64748b;font-size:.82rem;">{{ m.reference or '—' }}</td>
         <td style="color:#64748b;font-size:.82rem;">{{ m.created_at[:16] if m.created_at else '—' }}</td>
-        <td style="color:#94a3b8;font-size:.82rem;">{{ m.notes or '—' }}</td>
+        <td style="color:#94a3b8;font-size:.82rem;">{{ m.reason or m.notes or '—' }}</td>
       </tr>
       {% else %}
       <tr><td colspan="8" style="text-align:center;color:#64748b;padding:40px;">لا توجد حركات</td></tr>

@@ -14,21 +14,20 @@
 <div class="card">
   <table class="table">
     <thead>
-      <tr><th>الاسم</th><th>الشركة</th><th>الهاتف</th><th>الرصيد</th><th>الإجراءات</th></tr>
+      <tr><th>الاسم</th><th>الهاتف</th><th>الرصيد</th><th>الإجراءات</th></tr>
     </thead>
     <tbody>
       {% for s in suppliers %}
       <tr>
         <td>
-          <a href="/contacts/customers/{{ s.id }}" style="color:#38bdf8;font-weight:500;">{{ s.name }}</a>
+          <a href="/contacts/suppliers/{{ s.id }}" style="color:#38bdf8;font-weight:500;">{{ s.name }}</a>
         </td>
-        <td>{{ s.company_name or '—' }}</td>
         <td>{{ s.phone or '—' }}</td>
         <td style="color:{% if (s.balance or 0) > 0 %}#ef4444{% elif (s.balance or 0) < 0 %}#22c55e{% else %}#94a3b8{% endif %};">
           {{ "{:,.2f}".format(s.balance or 0) }}
         </td>
         <td>
-          <a href="/contacts/customers/{{ s.id }}" class="btn btn-secondary" style="padding:4px 12px;font-size:.8rem;">تفاصيل</a>
+          <a href="/contacts/suppliers/{{ s.id }}" class="btn btn-secondary" style="padding:4px 12px;font-size:.8rem;">تفاصيل</a>
         </td>
       </tr>
       {% else %}

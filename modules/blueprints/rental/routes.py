@@ -5,6 +5,7 @@ Car Rental: Fleet, Contracts, Maintenance
 
 from flask import Blueprint, render_template, request, jsonify, g, redirect, flash
 from functools import wraps
+import json
 
 bp = Blueprint("rental", __name__, url_prefix="/rental")
 
@@ -16,6 +17,11 @@ def require_perm(*perms):
             if not g.user or not g.business:
                 return redirect("/login")
             user_perms = g.user.get("permissions", {})
+            if isinstance(user_perms, str):
+                try:
+                    user_perms = json.loads(user_perms or "{}")
+                except Exception:
+                    user_perms = {}
             if user_perms.get("all"):
                 return f(*args, **kwargs)
             for perm in perms:
@@ -178,7 +184,7 @@ def close_contract(contract_id):
     ).fetchone()
     if contract:
         db.execute(
-            "UPDATE rental_contracts SET status='closed', actual_return_date=date('now') WHERE id=?",
+            "UPDATE rental_contracts SET status='closed', rental_end_date=date('now') WHERE id=?",
             (contract_id,)
         )
         db.execute(

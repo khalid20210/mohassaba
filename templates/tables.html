@@ -161,6 +161,8 @@
 /* ─── بيانات السيرفر ─────────────────────────────────────── */
 const ALL_PRODUCTS = {{ products | tojson }};
 const CURRENCY     = '{{ (current_business.currency if current_business else "ر.ي") | e }}';
+const CAN_EDIT_INVOICE = {{ 'true' if can_edit_invoice else 'false' }};
+const CAN_SKIP_REASON = {{ 'true' if can_skip_reason else 'false' }};
 
 /* ─── حالة النافذة ──────────────────────────────────────── */
 let currentInvoiceId = null;
@@ -240,7 +242,7 @@ function renderModalActions(status) {
   const stateMap = {
     opening:  { label: 'جارٍ الفتح...',  cls: 'tbl-badge-draft',   add: false, kitchen: false, checkout: false },
     draft:    { label: '📝 قيد الطلب',   cls: 'tbl-badge-draft',   add: true,  kitchen: true,  checkout: true  },
-    partial:  { label: '👨‍🍳 في المطبخ', cls: 'tbl-badge-partial', add: true,  kitchen: false, checkout: true  },
+    partial:  { label: '👨‍🍳 في المطبخ', cls: 'tbl-badge-partial', add: CAN_EDIT_INVOICE,  kitchen: false, checkout: true  },
     issued:   { label: '✅ جاهز للتقديم',cls: 'tbl-badge-issued',  add: false, kitchen: false, checkout: true  },
   };
   const s = stateMap[status] || stateMap['draft'];
@@ -270,7 +272,7 @@ function renderLines(lines, total) {
   tableEl.style.display = 'table';
 
   tbody.innerHTML = lines.map(l => {
-    const canDel = (currentStatus === 'draft');
+    const canDel = (currentStatus === 'draft') || (currentStatus === 'partial' && CAN_EDIT_INVOICE);
     const delBtn = canDel
       ? `<button class="btn-icon-close" onclick="removeItem(${l.id})">🗑</button>`
       : '';
@@ -316,10 +318,26 @@ async function selectProduct(productId) {
   document.getElementById('productDropdown').style.display = 'none';
   document.getElementById('productSearch').value = '';
 
+  let reason = '';
+  if (currentStatus !== 'draft') {
+    if (!CAN_EDIT_INVOICE) {
+      showError('غير مسموح: التعديل بعد الحفظ للمدير فقط');
+      return;
+    }
+    if (!CAN_SKIP_REASON) {
+      reason = prompt('سبب التعديل (إجباري):', 'تصحيح خطأ إدخال');
+      if (!reason || !reason.trim()) {
+        showError('تم إلغاء العملية: سبب التعديل مطلوب');
+        return;
+      }
+    }
+  }
+
   const res = await apiPost('/api/tables/add-item', {
     invoice_id: currentInvoiceId,
     product_id: productId,
     quantity:   1,
+    reason: reason,
   });
 
   if (res.success) await refreshLines();
@@ -330,9 +348,25 @@ async function selectProduct(productId) {
    حذف صنف
 ════════════════════════════════════════════════════════ */
 async function removeItem(lineId) {
+  let reason = '';
+  if (currentStatus !== 'draft') {
+    if (!CAN_EDIT_INVOICE) {
+      showError('غير مسموح: التعديل بعد الحفظ للمدير فقط');
+      return;
+    }
+    if (!CAN_SKIP_REASON) {
+      reason = prompt('سبب التعديل (إجباري):', 'تصحيح خطأ إدخال');
+      if (!reason || !reason.trim()) {
+        showError('تم إلغاء العملية: سبب التعديل مطلوب');
+        return;
+      }
+    }
+  }
+
   const res = await apiPost('/api/tables/remove-item', {
     invoice_id: currentInvoiceId,
     line_id:    lineId,
+    reason: reason,
   });
   if (res.success) await refreshLines();
   else showError(res.error);

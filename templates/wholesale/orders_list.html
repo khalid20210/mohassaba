@@ -1,171 +1,47 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}طلبات الجملة{% endblock %}
-{% block page_title %}📦 طلبات الجملة{% endblock %}
+{% block page_title %}طلبات الجملة{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <div><p class="page-subtitle">{{ orders|length }} طلب — الإجمالي: {{ "{:,.2f}".format(total or 0) }} ر.س</p></div>
-  <div style="display:flex;gap:10px;">
-    <a href="/wholesale/pricing" class="btn btn-secondary">💲 قوائم الأسعار</a>
-    <button class="btn btn-primary" onclick="document.getElementById('newOrderModal').classList.add('show')">+ طلب جديد</button>
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+  <div><p class="page-subtitle">{{ orders|length }} طلب</p></div>
+  <div style="display:flex;gap:8px;">
+    <a href="/wholesale/pricing" class="btn btn-secondary">قوائم الأسعار</a>
+    <a href="/wholesale/reports/aging" class="btn btn-secondary">تقرير أعمار الديون</a>
   </div>
-</div>
-
-<!-- إحصائيات -->
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
-  <div class="card" style="text-align:center;padding:16px;"><div style="font-size:1.4rem;font-weight:800;color:#38bdf8;">{{ orders|length }}</div><div style="color:#64748b;font-size:.82rem;">إجمالي الطلبات</div></div>
-  <div class="card" style="text-align:center;padding:16px;"><div style="font-size:1.4rem;font-weight:800;color:#f59e0b;">{{ orders|selectattr('status','equalto','pending')|list|length }}</div><div style="color:#64748b;font-size:.82rem;">معلقة</div></div>
-  <div class="card" style="text-align:center;padding:16px;"><div style="font-size:1.4rem;font-weight:800;color:#22c55e;">{{ orders|selectattr('status','equalto','delivered')|list|length }}</div><div style="color:#64748b;font-size:.82rem;">مُسلّمة</div></div>
-  <div class="card" style="text-align:center;padding:16px;"><div style="font-size:1.4rem;font-weight:800;color:#ef4444;">{{ orders|selectattr('status','equalto','cancelled')|list|length }}</div><div style="color:#64748b;font-size:.82rem;">ملغية</div></div>
-</div>
-
-<!-- فلتر -->
-<div style="display:flex;gap:8px;margin-bottom:16px;">
-  {% for s, label in [('','الكل'),('pending','معلق'),('confirmed','مؤكد'),('delivered','مُسلّم'),('cancelled','ملغي')] %}
-  <a href="/wholesale/orders{% if s %}?status={{ s }}{% endif %}"
-     style="padding:6px 14px;border-radius:20px;text-decoration:none;font-size:.82rem;border:1px solid rgba(255,255,255,.1);{% if request.args.get('status','')==s %}background:rgba(59,130,246,.15);color:#60a5fa;border-color:#3b82f6;{% else %}color:#64748b;{% endif %}">{{ label }}</a>
-  {% endfor %}
 </div>
 
 <div class="card">
   <table class="table">
     <thead>
-      <tr><th>#</th><th>العميل</th><th>تاريخ الطلب</th><th>المبلغ</th><th>قائمة الأسعار</th><th>الحالة</th><th></th></tr>
+      <tr>
+        <th>رقم الطلب</th>
+        <th>العميل</th>
+        <th>التاريخ</th>
+        <th>الإجمالي</th>
+        <th>الحالة</th>
+        <th>إجراء</th>
+      </tr>
     </thead>
     <tbody>
       {% for o in orders %}
       <tr>
-        <td style="color:#38bdf8;font-weight:700;font-family:monospace;">{{ o.order_number or '#'~o.id }}</td>
-        <td><strong>{{ o.client_id or '—' }}</strong></td>
-        <td style="color:#94a3b8;font-size:.82rem;">{{ o.order_date or (o.created_at[:10] if o.created_at else '—') }}</td>
-        <td style="color:#22c55e;font-weight:700;">{{ "{:,.2f}".format(o.total_amount or 0) }} ر.س</td>
-        <td style="color:#94a3b8;font-size:.82rem;">{{ o.pricing_list_id or '—' }}</td>
+        <td>{{ o.order_number or ('#' ~ o.id) }}</td>
         <td>
-          {% if o.status=='pending' %}<span style="background:rgba(255,255,255,.06);color:#94a3b8;padding:2px 10px;border-radius:20px;font-size:.78rem;">⏳ معلق</span>
-          {% elif o.status=='confirmed' %}<span style="background:#1e3a5f;color:#93c5fd;padding:2px 10px;border-radius:20px;font-size:.78rem;">✓ مؤكد</span>
-          {% elif o.status=='delivered' %}<span style="background:#14532d;color:#86efac;padding:2px 10px;border-radius:20px;font-size:.78rem;">✅ مُسلّم</span>
-          {% elif o.status=='cancelled' %}<span style="background:#7f1d1d;color:#fca5a5;padding:2px 10px;border-radius:20px;font-size:.78rem;">✕ ملغي</span>
-          {% else %}<span style="color:#94a3b8;">{{ o.status }}</span>{% endif %}
+          {% if o.customer_id %}
+            <div>{{ o.customer_name or ('#' ~ o.customer_id) }}</div>
+            <a href="/wholesale/customers/{{ o.customer_id }}/statement" style="font-size:.78rem;color:#60a5fa;">كشف الحساب</a>
+          {% else %}
+            —
+          {% endif %}
         </td>
-        <td>
-          <div style="display:flex;gap:4px;">
-            <a href="/wholesale/orders/{{ o.id }}" class="btn btn-secondary" style="padding:4px 10px;font-size:.78rem;">تفاصيل</a>
-            {% if o.status=='pending' %}
-            <form method="post" action="/wholesale/orders/{{ o.id }}/confirm" style="display:inline;">
-              <button type="submit" class="btn" style="padding:4px 10px;font-size:.78rem;background:#1e3a5f;color:#93c5fd;border:none;">تأكيد</button>
-            </form>
-            {% endif %}
-          </div>
-        </td>
+        <td>{{ o.order_date or (o.created_at[:10] if o.created_at else '—') }}</td>
+        <td>{{ "{:,.2f}".format(o.total_amount or 0) }}</td>
+        <td>{{ o.order_status or o.status or 'pending' }}</td>
+        <td><a href="/wholesale/orders/{{ o.id }}" class="btn btn-secondary">تفاصيل</a></td>
       </tr>
       {% else %}
-      <tr><td colspan="7" style="text-align:center;color:#64748b;padding:40px;">لا توجد طلبات</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-<!-- Modal: طلب جديد -->
-<div class="modal-overlay" id="newOrderModal">
-  <div class="modal-box" style="max-width:500px;">
-    <div class="modal-header">
-      <h3 class="modal-title">📦 طلب جملة جديد</h3>
-      <button class="modal-close" onclick="document.getElementById('newOrderModal').classList.remove('show')">✕</button>
-    </div>
-    <form method="post" action="/wholesale/orders/new">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="form-group">
-          <label class="form-label">رقم الطلب</label>
-          <input name="number" class="form-input" placeholder="WH-001">
-        </div>
-        <div class="form-group">
-          <label class="form-label">معرف العميل *</label>
-          <input name="client_id" class="form-input" type="number" placeholder="رقم العميل" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">تاريخ الطلب</label>
-          <input name="date" type="date" class="form-input">
-        </div>
-        <div class="form-group">
-          <label class="form-label">تاريخ التسليم المتوقع</label>
-          <input name="delivery_date" type="date" class="form-input">
-        </div>
-        <div class="form-group">
-          <label class="form-label">معرف قائمة الأسعار</label>
-          <input name="pricing_list_id" class="form-input" type="number" placeholder="اختياري">
-        </div>
-        <div class="form-group">
-          <label class="form-label">نسبة الخصم (%)</label>
-          <input name="discount" class="form-input" type="number" step="0.01" min="0" max="100" placeholder="0">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">الأصناف (اسم:كمية:سعر — سطر لكل صنف)</label>
-        <textarea name="items_text" class="form-input" rows="4" placeholder="زيت زيتون:10:85&#10;طحين:50:20"></textarea>
-      </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
-        <button type="button" class="btn btn-secondary" onclick="document.getElementById('newOrderModal').classList.remove('show')">إلغاء</button>
-        <button type="submit" class="btn btn-primary">✅ إنشاء الطلب</button>
-      </div>
-    </form>
-  </div>
-</div>
-{% endblock %}
-
-
-{% block content %}
-<div class="page-header">
-  <div>
-    <h1 class="page-title">📦 طلبات الجملة</h1>
-    <p class="page-subtitle">{{ orders|length }} طلب — الإجمالي: {{ "{:,.2f}".format(total or 0) }} ر.س</p>
-  </div>
-  <div style="display:flex;gap:10px;">
-    <a href="/wholesale/pricing-lists" class="btn btn-secondary">💲 قوائم الأسعار</a>
-    <a href="/wholesale/orders/new" class="btn btn-primary">+ طلب جديد</a>
-  </div>
-</div>
-
-<!-- إحصائيات سريعة -->
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
-  {% for label, count, color in [
-    ('إجمالي الطلبات', orders|length, '#38bdf8'),
-    ('قيد المعالجة', orders|selectattr('status','equalto','processing')|list|length, '#f59e0b'),
-    ('مكتملة', orders|selectattr('status','equalto','completed')|list|length, '#22c55e'),
-    ('ملغية', orders|selectattr('status','equalto','cancelled')|list|length, '#ef4444')
-  ] %}
-  <div class="card" style="text-align:center;padding:16px;">
-    <div style="font-size:1.6rem;font-weight:700;color:{{ color }};">{{ count }}</div>
-    <div style="color:#64748b;font-size:.82rem;margin-top:4px;">{{ label }}</div>
-  </div>
-  {% endfor %}
-</div>
-
-<div class="card">
-  <table class="table">
-    <thead>
-      <tr><th>رقم الطلب</th><th>العميل</th><th>تاريخ الطلب</th><th>المبلغ الإجمالي</th><th>نوع السعر</th><th>الحالة</th></tr>
-    </thead>
-    <tbody>
-      {% for o in orders %}
-      <tr>
-        <td style="font-family:monospace;color:#38bdf8;">#{{ o.id }}</td>
-        <td>
-          <strong>{{ o.customer_name }}</strong>
-          {% if o.customer_type %}<br><small style="color:#64748b;">{{ o.customer_type }}</small>{% endif %}
-        </td>
-        <td style="color:#94a3b8;font-size:.82rem;">{{ o.order_date or o.created_at[:10] if o.created_at else '—' }}</td>
-        <td style="color:#22c55e;font-weight:600;">{{ "{:,.2f}".format(o.total_amount or 0) }} ر.س</td>
-        <td>{{ o.pricing_tier or 'عادي' }}</td>
-        <td>
-          {% if o.status == 'pending' %}<span style="background:rgba(255,255,255,.06);color:#94a3b8;padding:2px 8px;border-radius:20px;font-size:.78rem;">⏳ معلق</span>
-          {% elif o.status == 'processing' %}<span style="background:#78350f;color:#fcd34d;padding:2px 8px;border-radius:20px;font-size:.78rem;">⚙ معالجة</span>
-          {% elif o.status == 'completed' %}<span style="background:#14532d;color:#86efac;padding:2px 8px;border-radius:20px;font-size:.78rem;">✓ مكتمل</span>
-          {% elif o.status == 'cancelled' %}<span style="background:#7f1d1d;color:#fca5a5;padding:2px 8px;border-radius:20px;font-size:.78rem;">✕ ملغي</span>
-          {% else %}{{ o.status }}{% endif %}
-        </td>
-      </tr>
-      {% else %}
-      <tr><td colspan="6" style="text-align:center;color:#64748b;padding:40px;">لا توجد طلبات جملة</td></tr>
+      <tr><td colspan="6" style="text-align:center;">لا توجد طلبات</td></tr>
       {% endfor %}
     </tbody>
   </table>

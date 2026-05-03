@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}سياسة الخصوصية — Jinan Biz{% endblock %}
+
+{% block head %}
+<style>
+.legal-wrap {
+  max-width: 920px;
+  margin: 36px auto;
+  padding: 0 16px 28px;
+  color: #dbeafe;
+  direction: rtl;
+}
+.legal-card {
+  background: linear-gradient(180deg, rgba(10,22,50,.95), rgba(8,14,34,.95));
+  border: 1px solid rgba(80,130,220,.16);
+  border-radius: 16px;
+  padding: 22px 18px;
+}
+.legal-title {
+  font-size: 1.35rem;
+  font-weight: 900;
+  margin-bottom: 6px;
+}
+.legal-sub {
+  font-size: .82rem;
+  color: rgba(170,205,255,.65);
+  margin-bottom: 18px;
+}
+.legal-section {
+  margin-bottom: 14px;
+}
+.legal-section h3 {
+  font-size: .92rem;
+  margin-bottom: 6px;
+  color: #bfdbfe;
+}
+.legal-section p {
+  font-size: .82rem;
+  line-height: 1.9;
+  color: rgba(220,234,255,.86);
+}
+.legal-back {
+  display: inline-flex;
+  margin-top: 10px;
+  color: #93c5fd;
+  text-decoration: none;
+  font-weight: 700;
+}
+.legal-back:hover { text-decoration: underline; }
+</style>
+{% endblock %}
+
+{% block auth_content %}
+<div class="legal-wrap">
+  <div class="legal-card">
+    <div class="legal-title">سياسة الخصوصية</div>
+    <div class="legal-sub">آخر تحديث: 2 مايو 2026</div>
+
+    <div class="legal-section">
+      <h3>1) البيانات التي نجمعها</h3>
+      <p>نجمع بيانات الحساب الأساسية (الاسم، البريد، الدولة) وبيانات تشغيل المنصة اللازمة للفوترة، التقارير، والأمان.</p>
+    </div>
+
+    <div class="legal-section">
+      <h3>2) استخدام البيانات</h3>
+      <p>تُستخدم البيانات لتشغيل الخدمات المحاسبية، تحسين الأداء، وإرسال التنبيهات المرتبطة بالحساب فقط.</p>
+    </div>
+
+    <div class="legal-section">
+      <h3>3) الحماية والتخزين</h3>
+      <p>يتم التعامل مع البيانات ضمن ضوابط أمنية مناسبة، مع عزل بيانات كل شركة عن الأخرى ضمن بنية متعددة المستأجرين.</p>
+    </div>
+
+    <div class="legal-section">
+      <h3>4) حقوق المستخدم</h3>
+      <p>يمكنك طلب مراجعة أو تحديث بياناتك من خلال فريق الدعم حسب سياسة تشغيل المنصة.</p>
+    </div>
+
+    <a class="legal-back" href="{{ url_for('auth_register') }}">العودة إلى إنشاء الحساب</a>
+  </div>
+</div>
+{% endblock %}

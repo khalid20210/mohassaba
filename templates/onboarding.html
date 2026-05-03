@@ -41,7 +41,7 @@
 
         <!-- ══ اللوحة 1: نوع البيع ══ -->
         <div id="panel-saletype" class="wizard-panel">
-          <p class="form-label" style="margin-bottom:12px;">ما نوع نشاطك التجاري؟ <span class="required">*</span></p>
+          <p class="form-label" style="margin-bottom:12px;">أولاً: اختر نوع البيع (تجزئة أو جملة) <span class="required">*</span></p>
           <div class="ind-grid ind-grid-4">
             <button type="button" class="ind-card" data-panel="sector" data-sale="retail">
               <span class="ind-icon">🏪</span>
@@ -311,39 +311,70 @@ const A = {
       ["wholesale_fnb_distribution", "🚛", "توزيع مواد غذائية"],
       ["wholesale_fnb_beverages",    "🧃", "مستودعات مياه ومشروبات"],
       ["wholesale_fnb_roaster",      "☕", "محامص وبهارات ومكسرات"],
-      ["wholesale_fnb_general",      "📦", "جملة غذائية عامة"],
-    ],
+      ["wholesale_fnb_general",      "📦", "جملة غذائية عامة"],      ["wholesale_fnb_bakery",       "🥖", "مخابز وحلويات — جملة"],
+      ["wholesale_fnb_butcher",      "🥩", "ملاحم وجزارة — جملة"],
+      ["wholesale_fnb_produce",      "🥦", "خضار وفواكه — جملة"],
+      ["wholesale_fnb_dates",        "🌴", "تمور — جملة"],    ],
     fashion: [
-      ["wholesale_fashion_clothing", "👗", "جملة ملابس"],
-      ["wholesale_fashion_fabric",   "🧵", "جملة أقمشة ومنسوجات"],
-      ["wholesale_fashion_shoes",    "👟", "جملة أحذية"],
-      ["wholesale_fashion_bags",     "👜", "جملة حقائب وإكسسوارات"],
+      ["wholesale_fashion_clothing",   "👗", "جملة ملابس"],
+      ["wholesale_fashion_fabric",     "🧵", "جملة أقمشة ومنسوجات"],
+      ["wholesale_fashion_shoes",      "💟", "جملة أحذية"],
+      ["wholesale_fashion_bags",       "👜", "جملة حقائب وإكسسوارات"],
+      ["wholesale_fashion_clothing_m", "👔", "جملة ملابس رجالي"],
+      ["wholesale_fashion_clothing_f", "👠", "جملة ملابس نسائي"],
+      ["wholesale_fashion_clothing_k", "🧣", "جملة ملابس أطفال"],
+      ["wholesale_fashion_watches",    "⌚", "جملة ساعات ومجوهرات"],
+      ["wholesale_fashion_optics",     "👓", "جملة نظارات وبصريات"],
     ],
     construction: [
-      ["wholesale_construction_materials", "🧱", "جملة مواد بناء"],
-      ["wholesale_construction_timber",    "🪵", "جملة أخشاب"],
-      ["wholesale_construction_plumbing",  "🔧", "جملة سباكة وكهرباء"],
+      ["wholesale_construction_materials",  "🧱", "جملة مواد بناء"],
+      ["wholesale_construction_timber",     "🪵", "جملة أخشاب"],
+      ["wholesale_construction_plumbing",   "🔧", "جملة سباكة وكهرباء"],
+      ["wholesale_construction_electrical", "💡", "جملة كهرباء وإنارة"],
+      ["wholesale_construction_paints",     "🎨", "جملة دهانات وبوادئ"],
+      ["wholesale_construction_flooring",   "🟫", "جملة أرضيات وسيراميك"],
     ],
     electronics: [
-      ["wholesale_electronics_general", "📦", "جملة إلكترونيات"],
-      ["wholesale_electronics_mobile",  "📱", "جملة جوالات وإكسسوارات"],
+      ["wholesale_electronics_general",       "📦", "جملة إلكترونيات"],
+      ["wholesale_electronics_mobile",        "📱", "جملة جوالات وإكسسوارات"],
+      ["wholesale_electronics_computers",     "💻", "جملة كمبيوتر ولابتوب"],
+      ["wholesale_electronics_appliances",    "📺", "جملة أجهزة منزلية"],
+      ["wholesale_electronics_entertainment", "🎮", "جملة إلكترونيات ترفيهية"],
     ],
     health: [
       ["wholesale_health_medical",  "🩺", "جملة مستلزمات طبية"],
       ["wholesale_health_pharmacy", "💊", "توزيع أدوية"],
+      ["wholesale_health_perfume",  "🕌", "جملة عطور وبخور"],
+      ["wholesale_health_cosmetics","💄", "جملة مستحضرات تجميل"],
+      ["wholesale_health_supplements", "🥗", "جملة مكملات غذائية"],
     ],
     auto: [
-      ["wholesale_auto_parts", "🔩", "جملة قطع غيار"],
+      ["wholesale_auto_parts",       "🔩", "جملة قطع غيار"],
+      ["wholesale_auto_tires",       "🛞", "جملة إطارات وبطاريات"],
+      ["wholesale_auto_accessories", "🚘", "جملة زينة وإكسسوارات سيارات"],
+      ["wholesale_auto_workshop",    "🔧", "جملة معدات ورش صيانة"],
     ],
     home: [
       ["wholesale_home_furniture",  "🛋️", "جملة أثاث"],
+      ["wholesale_home_carpet",     "🟫", "جملة سجاد وموكيت"],
+      ["wholesale_home_kitchenware", "🍳", "جملة أواني ولوازم منزلية"],
       ["wholesale_home_stationery", "📚", "جملة قرطاسية ومستلزمات مكتبية"],
+      ["wholesale_home_office",     "🖥️", "جملة تجهيزات مكاتب"],
     ],
     specialized: [
-      ["retail_specialized_tobacco", "💨", "معسلات ومستلزمات تدخين — جملة"],
-      ["retail_specialized_sports",  "⚽", "معدات رياضية — جملة"],
+      ["wholesale_specialized_tobacco", "💨", "جملة معسلات ومستلزمات تدخين"],
+      ["wholesale_specialized_flowers", "🌸", "جملة زهور وتغليف هدايا"],
+      ["wholesale_specialized_toys",    "🧸", "جملة ألعاب أطفال وهدايا"],
+      ["wholesale_specialized_pets",    "🐾", "جملة مستلزمات حيوانات أليفة"],
+      ["wholesale_specialized_sports",  "⚽", "جملة معدات رياضية"],
+      ["wholesale_specialized_camping", "⛺", "جملة لوازم رحلات وصيد"],
     ],
   },
+};
+
+const SECTORS_BY_SALE = {
+  retail:    ["fnb", "fashion", "construction", "electronics", "health", "auto", "home", "specialized"],
+  wholesale: ["fnb", "fashion", "construction", "electronics", "health", "auto", "home", "specialized"],
 };
 
 const SECTOR_LABELS = {
@@ -386,6 +417,14 @@ function updateBC(){
   bc1.textContent = SALE_LABELS[state.sale] || state.sale;
   bc2.textContent = state.sector ? " ← " + SECTOR_LABELS[state.sector] : "";
   bc3.textContent = "";
+}
+
+function syncSectorCards(saleType){
+  const allowed = new Set(SECTORS_BY_SALE[saleType] || []);
+  document.querySelectorAll('#panel-sector .ind-card[data-sector]').forEach((card) => {
+    const sector = card.dataset.sector;
+    card.style.display = allowed.has(sector) ? "flex" : "none";
+  });
 }
 
 function setFinal(code, label){
@@ -450,6 +489,10 @@ document.getElementById("industry-wizard").addEventListener("click", function(e)
   // ─ اختيار نوع البيع ─
   if(sale){
     state.sale = sale;
+    state.sector = null;
+    finalInput.value = "";
+    optionalBlock.style.display = "none";
+    syncSectorCards(sale);
     document.getElementById("sector-label").textContent =
       "قطاع " + SALE_LABELS[sale] + " — اختر القطاع";
     updateBC();

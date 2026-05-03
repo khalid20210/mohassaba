@@ -923,7 +923,7 @@ def api_v1_customer_history(agent_id: int, contact_id: int):
     invoices = db.execute(
         """SELECT id, invoice_number, invoice_date, total, status, invoice_type
            FROM invoices
-           WHERE business_id=? AND contact_id=?
+           WHERE business_id=? AND party_id=?
            ORDER BY id DESC LIMIT 20""",
         (biz_id, contact_id),
     ).fetchall()
@@ -931,7 +931,7 @@ def api_v1_customer_history(agent_id: int, contact_id: int):
     last_inv = invoices[0] if invoices else None
     total_spend = db.execute(
         """SELECT COALESCE(SUM(total),0) AS s FROM invoices
-           WHERE business_id=? AND contact_id=? AND status IN ('paid','partial')""",
+           WHERE business_id=? AND party_id=? AND status IN ('paid','partial')""",
         (biz_id, contact_id),
     ).fetchone()["s"]
 
@@ -996,11 +996,11 @@ def api_v1_agent_create_invoice(agent_id: int):
         # إنشاء الفاتورة
         db.execute(
             """INSERT INTO invoices
-               (business_id, contact_id, invoice_number, invoice_date, invoice_type,
-                subtotal, tax_rate, tax_amount, total, status, notes)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+               (business_id, party_id, invoice_number, invoice_date, invoice_type,
+                subtotal, tax_amount, total, status, notes)
+               VALUES (?,?,?,?,?,?,?,?,?,?)""",
             (biz_id, payload.get("contact_id"), inv_number, today, "sale",
-             round(total, 2), tax_rate, tax_amount, grand_total,
+             round(total, 2), tax_amount, grand_total,
              "draft", payload.get("notes", f"فاتورة مندوب #{agent_id}")),
         )
         inv_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
@@ -1013,7 +1013,7 @@ def api_v1_agent_create_invoice(agent_id: int):
             line_total = round(qty * price, 2)
 
             db.execute(
-                """INSERT INTO invoice_lines (invoice_id, product_id, description, quantity, unit_price, line_total)
+                """INSERT INTO invoice_lines (invoice_id, product_id, description, quantity, unit_price, total)
                    VALUES (?,?,?,?,?,?)""",
                 (inv_id, product_id, item.get("description", ""), qty, price, line_total),
             )
@@ -1021,13 +1021,13 @@ def api_v1_agent_create_invoice(agent_id: int):
             # خصم من المخزون إذا كان المنتج مرتبطاً
             if product_id:
                 db.execute(
-                    """UPDATE products SET stock_qty = MAX(0, stock_qty - ?)
-                       WHERE id=? AND business_id=?""",
+                    """UPDATE stock SET quantity = MAX(0, quantity - ?)
+                       WHERE product_id=? AND business_id=?""",
                     (qty, product_id, biz_id),
                 )
                 db.execute(
                     """INSERT INTO inventory_movements
-                       (business_id, product_id, movement_type, quantity, reference_type, reference_id, notes)
+                       (business_id, product_id, movement_type, quantity, reference_type, reference_id, reason)
                        VALUES (?,?,?,?,?,?,?)""",
                     (biz_id, product_id, "out", qty, "invoice", inv_id,
                      f"مبيعات مندوب #{agent_id}"),
@@ -1145,12 +1145,12 @@ def api_v1_agent_sync(agent_id: int):
                 db.execute(
                     """INSERT INTO invoices
                        (business_id, invoice_number, invoice_date, due_date, status,
-                        contact_id, notes, subtotal, tax_amount, total_amount, created_by_type, created_by_id)
-                       VALUES (?,?,date('now'),date('now','+30 days'),'unpaid',?,?,?,0,?,'agent',?)""",
+                        party_id, notes, subtotal, tax_amount, total, invoice_type)
+                       VALUES (?,?,date('now'),date('now','+30 days'),'unpaid',?,?,?,0,?,'sale')""",
                     (biz_id, inv_num,
                      p.get("contact_id") or None,
                      (p.get("client_name","") + " - " + p.get("notes","")).strip(" -") or None,
-                     grand, grand, agent_id),
+                     grand, grand),
                 )
                 inv_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
 
@@ -1158,21 +1158,21 @@ def api_v1_agent_sync(agent_id: int):
                     qty   = float(i.get("qty",1))
                     price = float(i.get("unit_price",0))
                     db.execute(
-                        """INSERT INTO invoice_items (invoice_id, product_id, description, qty, unit_price, total)
+                        """INSERT INTO invoice_lines (invoice_id, product_id, description, quantity, unit_price, total)
                            VALUES (?,?,?,?,?,?)""",
                         (inv_id, i.get("product_id"), i.get("description","").strip() or None,
                          qty, price, round(qty*price,2)),
                     )
                     if i.get("product_id"):
                         db.execute(
-                            """UPDATE products SET stock_qty = MAX(0, stock_qty - ?)
-                               WHERE id=? AND business_id=?""",
+                            """UPDATE stock SET quantity = MAX(0, quantity - ?)
+                               WHERE product_id=? AND business_id=?""",
                             (qty, i["product_id"], biz_id),
                         )
                         db.execute(
                             """INSERT INTO inventory_movements
-                               (business_id, product_id, movement_type, quantity, reference_type, reference_id, notes)
-                               VALUES (?,?,'out',?,?,'invoice',?,?)""",
+                               (business_id, product_id, movement_type, quantity, reference_type, reference_id, reason)
+                               VALUES (?,?,'sale',?,?,'invoice',?)""",
                             (biz_id, i["product_id"], qty, "invoice", inv_id,
                              f"مبيعات مندوب #{agent_id} — أوفلاين"),
                         )
@@ -1340,13 +1340,13 @@ def api_v1_agent_products(agent_id: int):
     if not biz_id:
         return jsonify({"success": False, "error": "unauthorized"}), 401
     rows = db.execute(
-        """SELECT p.id, p.name, p.sku, p.sale_price, p.stock_qty,
-                  pc.name AS category_name,
-                  p.image_url
+        """SELECT p.id, p.name, p.barcode, p.sale_price,
+                  p.category_name,
+                  COALESCE(s.quantity, 0) AS stock_qty
            FROM products p
-           LEFT JOIN product_categories pc ON pc.id=p.category_id
+           LEFT JOIN stock s ON s.product_id=p.id AND s.business_id=p.business_id
            WHERE p.business_id=? AND p.is_active=1
-           ORDER BY pc.name, p.name""",
+           ORDER BY p.category_name, p.name""",
         (biz_id,),
     ).fetchall()
     return jsonify({
@@ -1958,3 +1958,57 @@ def api_agent_my_settings():
         "reminder_days":     ext_d.get("agent_reminder_days", 30),
         "permissions": perms,
     })
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  مزامنة الإعصار — Sync Storm Endpoints (v2 — لامتزامن)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@bp.route("/api/v2/agents/<int:agent_id>/sync/batch", methods=["POST"])
+def api_v2_agent_sync_batch(agent_id: int):
+    """
+    يقبل حزمة من الطلبات المعلقة أوفلاين ويضعها في الطابور فوراً (202 Accepted).
+    لا يعالج أي شيء — العالج هو الـ Worker الخلفي.
+
+    Body: { "queue": [ { "local_id": "x", "action_type": "create_invoice",
+                          "payload": {...} }, ... ] }
+    Response: { "accepted": N, "rejected_dup": M, "queue_tip": id }
+    """
+    from modules.sync_engine import enqueue_batch
+
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+
+    payload = request.get_json(force=True, silent=True) or {}
+    items   = payload.get("queue", [])
+
+    if not items:
+        return jsonify({"success": True, "accepted": 0, "rejected_dup": 0, "queue_tip": 0})
+
+    result = enqueue_batch(db, biz_id, agent_id, items)
+
+    if result.get("error") == "rate_limit":
+        return jsonify({
+            "success":     False,
+            "error":       "rate_limit",
+            "retry_after": result.get("retry_after", 30),
+            "message":     "تجاوزت الحد المسموح من طلبات المزامنة. أعد المحاولة بعد 30 ثانية.",
+        }), 429
+
+    return jsonify({"success": True, **result}), 202
+
+
+@bp.route("/api/v2/agents/<int:agent_id>/sync/status", methods=["GET"])
+def api_v2_agent_sync_status(agent_id: int):
+    """
+    حالة الطابور للمندوب — يُستخدم لـ polling من التطبيق.
+    Response: { pending, processing, done, failed, conflicts, conflict_details }
+    """
+    from modules.sync_engine import get_queue_status
+
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+
+    return jsonify({"success": True, **get_queue_status(db, biz_id, agent_id)})

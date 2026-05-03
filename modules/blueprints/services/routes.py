@@ -5,6 +5,7 @@ Services: Jobs, Contracts
 
 from flask import Blueprint, render_template, request, jsonify, g, redirect, flash
 from functools import wraps
+import json
 
 bp = Blueprint("services", __name__, url_prefix="/services")
 
@@ -16,6 +17,11 @@ def require_perm(*perms):
             if not g.user or not g.business:
                 return redirect("/login")
             user_perms = g.user.get("permissions", {})
+            if isinstance(user_perms, str):
+                try:
+                    user_perms = json.loads(user_perms or "{}")
+                except Exception:
+                    user_perms = {}
             if user_perms.get("all"):
                 return f(*args, **kwargs)
             for perm in perms:
@@ -187,7 +193,7 @@ def start_job(job_id):
     from modules.extensions import get_db
     db = get_db()
     db.execute(
-        "UPDATE jobs SET job_status='in_progress', started_at=datetime('now') WHERE id=? AND business_id=?",
+        "UPDATE jobs SET job_status='in_progress' WHERE id=? AND business_id=?",
         (job_id, g.business["id"])
     )
     db.commit()
@@ -204,7 +210,7 @@ def complete_job(job_id):
     actual_cost = request.form.get("actual_cost", 0)
     notes = request.form.get("notes", "")
     db.execute(
-        "UPDATE jobs SET job_status='completed', completed_at=datetime('now'), actual_cost=?, notes=? WHERE id=? AND business_id=?",
+        "UPDATE jobs SET job_status='completed', actual_cost=?, notes=? WHERE id=? AND business_id=?",
         (float(actual_cost), notes, job_id, g.business["id"])
     )
     db.commit()

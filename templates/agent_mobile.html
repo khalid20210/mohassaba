@@ -97,7 +97,7 @@ select.inp option{background:var(--bg2)}
 .reminder-item{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.25);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
 .reminder-days{font-size:1.1rem;font-weight:900;color:var(--red)}
 .spinner{text-align:center;color:var(--muted);padding:20px;font-size:.82rem}
-@media(min-width:481px){#app{border-left:1px solid var(--border);border-right:1px solid var(--border)}}
+@media(min-width:481px){ #app{border-left:1px solid var(--border);border-right:1px solid var(--border)} }
 </style>
 </head>
 <body>
@@ -891,7 +891,7 @@ async function loadVisits(){
         </div>
         <div class="list-item-right">
           <span class="visit-outcome outcome-${v.outcome}">
-            ${{sale:'بيع ✅',interested:'مهتم 👍',rejected:'رفض ❌',neutral:'محايد 😐'}[v.outcome]||v.outcome}
+            ${({sale:'بيع ✅',interested:'مهتم 👍',rejected:'رفض ❌',neutral:'محايد 😐'}[v.outcome]||v.outcome)}
           </span>
         </div>
       </div>`).join('')
@@ -1248,7 +1248,7 @@ async function loadVisits(){
   document.getElementById('visitsList').innerHTML=r.visits.map(v=>`
     <div class="list-item">
       <div class="list-item-info"><div class="list-item-title">${v.contact_name?esc(v.contact_name):esc(v.notes||'زيارة')}</div><div class="list-item-sub">${esc((v.visited_at||'').slice(0,16))}</div>${v.notes?`<div style="font-size:.72rem;color:var(--muted);margin-top:3px">${esc(v.notes)}</div>`:''}</div>
-      <div class="list-item-right"><span class="visit-outcome outcome-${v.outcome}">${{sale:'بيع ✅',interested:'مهتم 👍',rejected:'رفض ❌',neutral:'محايد 😐'}[v.outcome]||v.outcome}</span></div>
+      <div class="list-item-right"><span class="visit-outcome outcome-${v.outcome}">${({sale:'بيع ✅',interested:'مهتم 👍',rejected:'رفض ❌',neutral:'محايد 😐'}[v.outcome]||v.outcome)}</span></div>
     </div>`).join('');
 }
 

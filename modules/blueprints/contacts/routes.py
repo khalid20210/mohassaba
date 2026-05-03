@@ -11,6 +11,14 @@ from functools import wraps
 bp = Blueprint("contacts", __name__, url_prefix="/contacts")
 
 
+def _column_exists(db, table: str, column: str) -> bool:
+    try:
+        rows = db.execute(f"PRAGMA table_info({table})").fetchall()
+        return any((r[1] if not isinstance(r, dict) else r.get("name")) == column for r in rows)
+    except Exception:
+        return False
+
+
 def require_perm(*perms):
     """التحقق من الصلاحيات"""
     def decorator(f):
@@ -20,6 +28,11 @@ def require_perm(*perms):
                 return redirect("/login")
             
             user_perms = g.user.get("permissions", {})
+            if isinstance(user_perms, str):
+                try:
+                    user_perms = json.loads(user_perms or "{}")
+                except Exception:
+                    user_perms = {}
             if user_perms.get("all"):
                 return f(*args, **kwargs)
             
@@ -42,15 +55,15 @@ def log_activity(module, action, entity_id=None, changes=None):
     
     db = get_db()
     db.execute("""
-        INSERT INTO activity_log (business_id, module, action, entity_id, changes_json, user_id, ip_address, created_at)
+        INSERT INTO audit_logs (business_id, user_id, action, entity_type, entity_id, new_value, ip_address, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
     """, (
         g.business["id"],
-        module,
+        g.user.get("id"),
         action,
+        module,
         entity_id,
         json.dumps(changes) if changes else None,
-        g.user.get("id"),
         request.remote_addr
     ))
     db.commit()
@@ -69,30 +82,38 @@ def dashboard():
     db = get_db()
     business_id = g.business["id"]
     
-    # إحصائيات
+    # إحصائيات — الرصيد الحالي = آخر balance_after في المعاملات، أو opening_balance
     stats = db.execute("""
-        SELECT 
-            (SELECT COUNT(*) FROM contacts WHERE business_id = ? AND contact_type = 'customer') as total_customers,
-            (SELECT COUNT(*) FROM contacts WHERE business_id = ? AND contact_type = 'supplier') as total_suppliers,
-            (SELECT COALESCE(SUM(current_balance), 0) FROM contacts WHERE business_id = ? AND contact_type = 'customer') as customer_debts,
-            (SELECT COALESCE(SUM(current_balance), 0) FROM contacts WHERE business_id = ? AND contact_type = 'supplier') as supplier_credits
+        SELECT
+            (SELECT COUNT(*) FROM contacts WHERE business_id = ? AND contact_type = 'customer' AND is_active = 1) as total_customers,
+            (SELECT COUNT(*) FROM contacts WHERE business_id = ? AND contact_type = 'supplier' AND is_active = 1) as total_suppliers,
+            (SELECT COALESCE(SUM(
+                COALESCE((SELECT balance_after FROM customer_transactions WHERE contact_id = c.id ORDER BY id DESC LIMIT 1), c.opening_balance, 0)
+            ), 0) FROM contacts c WHERE c.business_id = ? AND c.contact_type = 'customer') as total_receivables,
+            (SELECT COALESCE(SUM(
+                COALESCE((SELECT balance_after FROM customer_transactions WHERE contact_id = c.id ORDER BY id DESC LIMIT 1), c.opening_balance, 0)
+            ), 0) FROM contacts c WHERE c.business_id = ? AND c.contact_type = 'supplier') as total_payables
     """, (business_id, business_id, business_id, business_id)).fetchone()
-    
-    # العملاء المميزين (VIP)
+
+    # العملاء بأعلى رصيد (كبار العملاء)
     vip_customers = db.execute("""
-        SELECT id, name, phone, current_balance, category
-        FROM contacts
-        WHERE business_id = ? AND contact_type = 'customer' AND category = 'vip'
-        ORDER BY current_balance DESC
+        SELECT c.id, c.name, c.phone,
+            COALESCE((SELECT balance_after FROM customer_transactions WHERE contact_id = c.id ORDER BY id DESC LIMIT 1), c.opening_balance, 0) as balance
+        FROM contacts c
+        WHERE c.business_id = ? AND c.contact_type = 'customer' AND c.is_active = 1
+        ORDER BY balance DESC
         LIMIT 5
     """, (business_id,)).fetchall()
-    
-    # العملاء بأعلى دين
+
+    # العملاء بأعلى دين مستحق
     top_debtors = db.execute("""
-        SELECT id, name, phone, current_balance
-        FROM contacts
-        WHERE business_id = ? AND contact_type = 'customer' AND current_balance > 0
-        ORDER BY current_balance DESC
+        SELECT c.id, c.name, c.phone,
+            COALESCE((SELECT balance_after FROM customer_transactions WHERE contact_id = c.id ORDER BY id DESC LIMIT 1), c.opening_balance, 0) as balance,
+            0 as credit_limit
+        FROM contacts c
+        WHERE c.business_id = ? AND c.contact_type = 'customer' AND c.is_active = 1
+            AND COALESCE((SELECT balance_after FROM customer_transactions WHERE contact_id = c.id ORDER BY id DESC LIMIT 1), c.opening_balance, 0) > 0
+        ORDER BY balance DESC
         LIMIT 5
     """, (business_id,)).fetchall()
     
@@ -132,24 +153,22 @@ def list_customers():
     page = int(request.args.get("page", 1))
     per_page = 20
     
-    query = "SELECT * FROM contacts WHERE business_id = ? AND contact_type = 'customer'"
+    query = """SELECT c.*,
+        COALESCE((SELECT balance_after FROM customer_transactions WHERE contact_id = c.id ORDER BY id DESC LIMIT 1), c.opening_balance, 0) as balance
+        FROM contacts c WHERE c.business_id = ? AND c.contact_type = 'customer' AND c.is_active = 1"""
     params = [business_id]
     
     if search:
-        query += " AND (name LIKE ? OR phone LIKE ?)"
+        query += " AND (c.name LIKE ? OR c.phone LIKE ?)"
         search_term = f"%{search}%"
         params.extend([search_term, search_term])
     
-    if category and category != "all":
-        query += " AND category = ?"
-        params.append(category)
-    
-    query += " ORDER BY name ASC LIMIT ? OFFSET ?"
+    query += " ORDER BY c.name ASC LIMIT ? OFFSET ?"
     params.extend([per_page, (page - 1) * per_page])
     
     customers = db.execute(query, params).fetchall()
     total = db.execute(
-        "SELECT COUNT(*) FROM contacts WHERE business_id = ? AND contact_type = 'customer'",
+        "SELECT COUNT(*) FROM contacts WHERE business_id = ? AND contact_type = 'customer' AND is_active = 1",
         (business_id,)
     ).fetchone()[0]
     
@@ -173,8 +192,10 @@ def view_customer(customer_id):
     business_id = g.business["id"]
     
     customer = db.execute("""
-        SELECT * FROM contacts
-        WHERE id = ? AND business_id = ? AND contact_type = 'customer'
+        SELECT c.*,
+            COALESCE((SELECT balance_after FROM customer_transactions WHERE contact_id = c.id ORDER BY id DESC LIMIT 1), c.opening_balance, 0) as balance
+        FROM contacts c
+        WHERE c.id = ? AND c.business_id = ? AND c.contact_type = 'customer'
     """, (customer_id, business_id)).fetchone()
     
     if not customer:
@@ -191,9 +212,9 @@ def view_customer(customer_id):
     
     # الفواتير
     invoices = db.execute("""
-        SELECT id, number, total, created_at
+        SELECT id, invoice_number, total, created_at
         FROM invoices
-        WHERE business_id = ? AND customer_id = ?
+        WHERE business_id = ? AND party_id = ? AND invoice_type IN ('sale', 'sale_return')
         ORDER BY created_at DESC
         LIMIT 10
     """, (business_id, customer_id)).fetchall()
@@ -217,28 +238,40 @@ def add_customer():
         
         data = request.form
         
-        db.execute("""
-            INSERT INTO contacts (
-                business_id, contact_type, name, company_name, phone, email,
-                address, city, country, tax_id, credit_limit, category,
-                notes, is_active, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-        """, (
-            business_id,
-            "customer",
-            data.get("name"),
-            data.get("company_name"),
-            data.get("phone"),
-            data.get("email"),
-            data.get("address"),
-            data.get("city"),
-            data.get("country"),
-            data.get("tax_id"),
-            float(data.get("credit_limit", 0)),
-            data.get("category", "regular"),
-            data.get("notes"),
-            1,
-        ))
+        has_credit_limit = _column_exists(db, "contacts", "credit_limit")
+        if has_credit_limit:
+            db.execute("""
+                INSERT INTO contacts (
+                    business_id, contact_type, name, name_en, phone, email,
+                    address, tax_number, opening_balance, credit_limit, is_active, created_at
+                ) VALUES (?, 'customer', ?, ?, ?, ?, ?, ?, ?, ?, 1, datetime('now'))
+            """, (
+                business_id,
+                data.get("name"),
+                data.get("name_en", ""),
+                data.get("phone", ""),
+                data.get("email", ""),
+                data.get("address", ""),
+                data.get("tax_number", ""),
+                float(data.get("opening_balance") or 0),
+                float(data.get("credit_limit") or 0),
+            ))
+        else:
+            db.execute("""
+                INSERT INTO contacts (
+                    business_id, contact_type, name, name_en, phone, email,
+                    address, tax_number, opening_balance, is_active, created_at
+                ) VALUES (?, 'customer', ?, ?, ?, ?, ?, ?, ?, 1, datetime('now'))
+            """, (
+                business_id,
+                data.get("name"),
+                data.get("name_en", ""),
+                data.get("phone", ""),
+                data.get("email", ""),
+                data.get("address", ""),
+                data.get("tax_number", ""),
+                float(data.get("opening_balance") or 0),
+            ))
         db.commit()
         
         log_activity("contacts", "add_customer", None, {"name": data.get("name")})
@@ -259,26 +292,38 @@ def edit_customer(customer_id):
     
     data = request.form
     
-    db.execute("""
-        UPDATE contacts SET
-            name = ?, company_name = ?, email = ?, address = ?,
-            city = ?, country = ?, tax_id = ?, credit_limit = ?,
-            category = ?, notes = ?, updated_at = datetime('now')
-        WHERE id = ? AND business_id = ? AND contact_type = 'customer'
-    """, (
-        data.get("name"),
-        data.get("company_name"),
-        data.get("email"),
-        data.get("address"),
-        data.get("city"),
-        data.get("country"),
-        data.get("tax_id"),
-        float(data.get("credit_limit", 0)),
-        data.get("category", "regular"),
-        data.get("notes"),
-        customer_id,
-        business_id,
-    ))
+    has_credit_input = data.get("credit_limit") not in (None, "")
+    if _column_exists(db, "contacts", "credit_limit") and has_credit_input:
+        db.execute("""
+            UPDATE contacts SET
+                name = ?, name_en = ?, phone = ?, email = ?, address = ?, tax_number = ?, credit_limit = ?
+            WHERE id = ? AND business_id = ? AND contact_type = 'customer'
+        """, (
+            data.get("name"),
+            data.get("name_en", ""),
+            data.get("phone", ""),
+            data.get("email", ""),
+            data.get("address", ""),
+            data.get("tax_number", ""),
+            float(data.get("credit_limit") or 0),
+            customer_id,
+            business_id,
+        ))
+    else:
+        db.execute("""
+            UPDATE contacts SET
+                name = ?, name_en = ?, phone = ?, email = ?, address = ?, tax_number = ?
+            WHERE id = ? AND business_id = ? AND contact_type = 'customer'
+        """, (
+            data.get("name"),
+            data.get("name_en", ""),
+            data.get("phone", ""),
+            data.get("email", ""),
+            data.get("address", ""),
+            data.get("tax_number", ""),
+            customer_id,
+            business_id,
+        ))
     db.commit()
     
     log_activity("contacts", "edit_customer", customer_id)
@@ -303,15 +348,17 @@ def list_suppliers():
     page = int(request.args.get("page", 1))
     per_page = 20
     
-    query = "SELECT * FROM contacts WHERE business_id = ? AND contact_type = 'supplier'"
+    query = """SELECT c.*,
+        COALESCE((SELECT balance_after FROM customer_transactions WHERE contact_id = c.id ORDER BY id DESC LIMIT 1), c.opening_balance, 0) as balance
+        FROM contacts c WHERE c.business_id = ? AND c.contact_type = 'supplier' AND c.is_active = 1"""
     params = [business_id]
     
     if search:
-        query += " AND (name LIKE ? OR phone LIKE ?)"
+        query += " AND (c.name LIKE ? OR c.phone LIKE ?)"
         search_term = f"%{search}%"
         params.extend([search_term, search_term])
     
-    query += " ORDER BY name ASC LIMIT ? OFFSET ?"
+    query += " ORDER BY c.name ASC LIMIT ? OFFSET ?"
     params.extend([per_page, (page - 1) * per_page])
     
     suppliers = db.execute(query, params).fetchall()
@@ -343,24 +390,18 @@ def add_supplier():
         
         db.execute("""
             INSERT INTO contacts (
-                business_id, contact_type, name, company_name, phone, email,
-                address, city, country, tax_id, iban, notes, is_active,
-                created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+                business_id, contact_type, name, name_en, phone, email,
+                address, tax_number, opening_balance, is_active, created_at
+            ) VALUES (?, 'supplier', ?, ?, ?, ?, ?, ?, ?, 1, datetime('now'))
         """, (
             business_id,
-            "supplier",
             data.get("name"),
-            data.get("company_name"),
-            data.get("phone"),
-            data.get("email"),
-            data.get("address"),
-            data.get("city"),
-            data.get("country"),
-            data.get("tax_id"),
-            data.get("iban"),
-            data.get("notes"),
-            1,
+            data.get("name_en", ""),
+            data.get("phone", ""),
+            data.get("email", ""),
+            data.get("address", ""),
+            data.get("tax_number", ""),
+            float(data.get("opening_balance") or 0),
         ))
         db.commit()
         
@@ -369,6 +410,48 @@ def add_supplier():
         return redirect("/contacts/suppliers")
     
     return render_template("contacts/supplier_form.html")
+
+
+@bp.route("/suppliers/<int:supplier_id>")
+@require_perm("contacts")
+def view_supplier(supplier_id):
+    """عرض تفاصيل المورد"""
+    from modules.extensions import get_db
+
+    db = get_db()
+    business_id = g.business["id"]
+
+    supplier = db.execute("""
+        SELECT c.*,
+            COALESCE((SELECT balance_after FROM customer_transactions WHERE contact_id = c.id ORDER BY id DESC LIMIT 1), c.opening_balance, 0) as balance
+        FROM contacts c
+        WHERE c.id = ? AND c.business_id = ? AND c.contact_type = 'supplier'
+    """, (supplier_id, business_id)).fetchone()
+
+    if not supplier:
+        flash("المورد غير موجود", "error")
+        return redirect("/contacts/suppliers")
+
+    transactions = db.execute("""
+        SELECT * FROM customer_transactions
+        WHERE contact_id = ?
+        ORDER BY created_at DESC
+        LIMIT 50
+    """, (supplier_id,)).fetchall()
+
+    invoices = db.execute("""
+        SELECT id, invoice_number, total, created_at
+        FROM invoices
+        WHERE business_id = ? AND party_id = ? AND invoice_type IN ('purchase', 'purchase_return')
+        ORDER BY created_at DESC
+        LIMIT 10
+    """, (business_id, supplier_id)).fetchall()
+
+    return render_template("contacts/customer_detail.html", **{
+        "customer": supplier,
+        "transactions": transactions,
+        "invoices": invoices,
+    })
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -429,7 +512,7 @@ def add_transaction():
     contact_id = int(data.get("contact_id"))
     
     contact = db.execute(
-        "SELECT current_balance FROM contacts WHERE id = ? AND business_id = ?",
+        "SELECT id FROM contacts WHERE id = ? AND business_id = ?",
         (contact_id, business_id)
     ).fetchone()
     
@@ -439,14 +522,22 @@ def add_transaction():
     amount = float(data.get("amount"))
     transaction_type = data.get("transaction_type")  # payment, credit_note, etc.
     
-    old_balance = contact["current_balance"]
+    # احسب الرصيد الحالي من آخر معاملة
+    last_tx = db.execute(
+        "SELECT balance_after FROM customer_transactions WHERE contact_id = ? ORDER BY id DESC LIMIT 1",
+        (contact_id,)
+    ).fetchone()
     
-    if transaction_type == "payment":
-        new_balance = old_balance - amount
-    elif transaction_type == "credit_note":
+    opening = db.execute(
+        "SELECT opening_balance FROM contacts WHERE id = ?", (contact_id,)
+    ).fetchone()
+    
+    old_balance = last_tx["balance_after"] if last_tx else (opening["opening_balance"] or 0)
+    
+    if transaction_type in ("payment", "credit_note"):
         new_balance = old_balance - amount
     else:
-        new_balance = old_balance
+        new_balance = old_balance + amount
     
     # تسجيل المعاملة
     db.execute("""
@@ -463,12 +554,6 @@ def add_transaction():
         new_balance,
         data.get("notes"),
     ))
-    
-    # تحديث الرصيد
-    db.execute(
-        "UPDATE contacts SET current_balance = ? WHERE id = ?",
-        (new_balance, contact_id)
-    )
     
     db.commit()
     
@@ -492,7 +577,7 @@ def api_search():
     
     search_term = f"%{query}%"
     
-    sql = "SELECT id, name, phone, category FROM contacts WHERE business_id = ? AND (name LIKE ? OR phone LIKE ?)"
+    sql = "SELECT id, name, phone FROM contacts WHERE business_id = ? AND (name LIKE ? OR phone LIKE ?)"
     params = [business_id, search_term, search_term]
     
     if contact_type != "all":
@@ -514,16 +599,29 @@ def api_balance(customer_id):
     db = get_db()
     business_id = g.business["id"]
     
-    contact = db.execute(
-        "SELECT current_balance, credit_limit FROM contacts WHERE id = ? AND business_id = ?",
-        (customer_id, business_id)
+    last_tx = db.execute(
+        "SELECT balance_after FROM customer_transactions WHERE contact_id = ? ORDER BY id DESC LIMIT 1",
+        (customer_id,)
     ).fetchone()
+    if _column_exists(db, "contacts", "credit_limit"):
+        opening = db.execute(
+            "SELECT opening_balance, COALESCE(credit_limit, 0) AS credit_limit FROM contacts WHERE id = ? AND business_id = ?",
+            (customer_id, business_id)
+        ).fetchone()
+    else:
+        opening = db.execute(
+            "SELECT opening_balance, 0 AS credit_limit FROM contacts WHERE id = ? AND business_id = ?",
+            (customer_id, business_id)
+        ).fetchone()
     
-    if contact:
+    if opening:
+        current_balance = last_tx["balance_after"] if last_tx else (opening["opening_balance"] or 0)
+        credit_limit = opening["credit_limit"] or 0
+        available_credit = max((credit_limit or 0) - (current_balance or 0), 0)
         return jsonify({
-            "current_balance": contact["current_balance"],
-            "credit_limit": contact["credit_limit"],
-            "available_credit": contact["credit_limit"] - contact["current_balance"],
+            "current_balance": current_balance,
+            "credit_limit": credit_limit,
+            "available_credit": available_credit,
         })
     
     return jsonify({"error": "Contact not found"}), 404

@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}تحليل هامش الربح{% endblock %}
+{% block page_title %}تحليل هامش الربح للمنتجات{% endblock %}
+
+{% block content %}
+<style>
+  .card { background:white; border-radius:8px; padding:20px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { background:#f5f5f5; padding:10px; text-align:right; font-weight:bold; border-bottom:2px solid #ddd; }
+  td { padding:9px 10px; border-bottom:1px solid #eee; }
+  tr:hover { background:#fafafa; }
+  .stat-box { text-align:center; padding:20px; border-radius:8px; color:white; }
+  .margin-bar { height:8px; border-radius:4px; background:#e5e7eb; overflow:hidden; }
+  .margin-fill { height:8px; border-radius:4px; }
+</style>
+
+<!-- فلتر الفترة -->
+<div class="card" style="padding:12px 20px">
+  <form method="get" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+    <label style="font-weight:bold">الفترة الزمنية:</label>
+    {% for d, lbl in [(7,'أسبوع'),(30,'30 يوم'),(60,'60 يوم'),(90,'90 يوم'),(180,'6 أشهر'),(365,'سنة')] %}
+    <a href="?days={{ d }}"
+       style="padding:6px 14px;border-radius:6px;text-decoration:none;font-size:14px;
+              {% if days == d %}background:#3b82f6;color:white{% else %}background:#f3f4f6;color:#374151{% endif %}">
+      {{ lbl }}
+    </a>
+    {% endfor %}
+  </form>
+</div>
+
+<!-- بطاقات الإجمالي -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:20px">
+  <div class="stat-box" style="background:linear-gradient(135deg,#3b82f6,#2563eb)">
+    <div style="font-size:12px;opacity:.8">إجمالي الإيرادات</div>
+    <div style="font-size:1.8rem;font-weight:900;margin:6px 0">{{ "{:,.2f}".format(total_revenue) }}</div>
+    <div style="font-size:12px;opacity:.8">ريال سعودي</div>
+  </div>
+  <div class="stat-box" style="background:linear-gradient(135deg,#ef4444,#dc2626)">
+    <div style="font-size:12px;opacity:.8">تكلفة البضاعة المباعة (COGS)</div>
+    <div style="font-size:1.8rem;font-weight:900;margin:6px 0">{{ "{:,.2f}".format(total_cogs) }}</div>
+    <div style="font-size:12px;opacity:.8">ريال سعودي</div>
+  </div>
+  <div class="stat-box" style="background:linear-gradient(135deg,#10b981,#059669)">
+    <div style="font-size:12px;opacity:.8">إجمالي الربح الخام</div>
+    <div style="font-size:1.8rem;font-weight:900;margin:6px 0">{{ "{:,.2f}".format(total_profit) }}</div>
+    <div style="font-size:12px;opacity:.8">ريال سعودي</div>
+  </div>
+  <div class="stat-box" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed)">
+    <div style="font-size:12px;opacity:.8">متوسط هامش الربح</div>
+    <div style="font-size:1.8rem;font-weight:900;margin:6px 0">{{ avg_margin }}%</div>
+    <div style="font-size:12px;opacity:.8">نسبة مئوية</div>
+  </div>
+</div>
+
+<!-- أعلى هامش -->
+<div class="card">
+  <div style="font-size:17px;font-weight:bold;margin-bottom:14px">🏆 أعلى 10 أصناف هامشاً</div>
+  <table>
+    <thead>
+      <tr><th>الصنف</th><th>سعر التكلفة</th><th>سعر البيع</th><th>الربح لكل وحدة</th><th>هامش الربح %</th><th>إجمالي الربح</th></tr>
+    </thead>
+    <tbody>
+      {% for p in top_margin %}
+      <tr>
+        <td><strong>{{ p.product_name }}</strong><br><span style="font-size:11px;color:#999">{{ p.sku }}</span></td>
+        <td>{{ "{:,.2f}".format(p.unit_cost) }}</td>
+        <td>{{ "{:,.2f}".format(p.sale_price) }}</td>
+        <td style="color:#059669;font-weight:bold">{{ "{:,.2f}".format(p.gross_profit_per_unit) }}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="margin-bar" style="flex:1;max-width:80px">
+              <div class="margin-fill" style="width:{{ [p.margin_pct, 100]|min }}%;background:{% if p.margin_pct >= 30 %}#10b981{% elif p.margin_pct >= 15 %}#f59e0b{% else %}#ef4444{% endif %}"></div>
+            </div>
+            <span style="font-weight:bold;color:{% if p.margin_pct >= 30 %}#059669{% elif p.margin_pct >= 15 %}#d97706{% else %}#dc2626{% endif %}">
+              {{ p.margin_pct }}%
+            </span>
+          </div>
+        </td>
+        <td style="font-weight:bold;color:#059669">{{ "{:,.2f}".format(p.gross_profit) }} ر.س</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- أدنى هامش / خسارة -->
+{% if low_margin %}
+<div class="card">
+  <div style="font-size:17px;font-weight:bold;margin-bottom:14px;color:#dc2626">⚠️ أصناف بهامش منخفض (أقل من 20%)</div>
+  <table>
+    <thead>
+      <tr><th>الصنف</th><th>سعر التكلفة</th><th>سعر البيع</th><th>هامش الربح %</th><th>إجمالي الربح</th></tr>
+    </thead>
+    <tbody>
+      {% for p in low_margin %}
+      <tr>
+        <td>
+          <strong>{{ p.product_name }}</strong>
+          {% if p.margin_pct < 0 %}<span style="background:#fef2f2;color:#dc2626;padding:2px 6px;border-radius:4px;font-size:11px;margin-right:6px">خسارة</span>{% endif %}
+        </td>
+        <td>{{ "{:,.2f}".format(p.unit_cost) }}</td>
+        <td>{{ "{:,.2f}".format(p.sale_price) }}</td>
+        <td style="color:#dc2626;font-weight:bold">{{ p.margin_pct }}%</td>
+        <td style="color:{% if p.gross_profit >= 0 %}#d97706{% else %}#dc2626{% endif %};font-weight:bold">{{ "{:,.2f}".format(p.gross_profit) }} ر.س</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- كل الأصناف -->
+<div class="card">
+  <div style="font-size:17px;font-weight:bold;margin-bottom:14px">📊 جميع الأصناف</div>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>SKU</th>
+        <th>اسم الصنف</th>
+        <th>تكلفة</th>
+        <th>سعر بيع</th>
+        <th>هامش %</th>
+        <th>مبيعات (كمية)</th>
+        <th>إيرادات</th>
+        <th>ربح خام</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in margins %}
+      <tr>
+        <td style="color:#999">{{ loop.index }}</td>
+        <td style="font-size:12px;color:#666">{{ p.sku }}</td>
+        <td><strong>{{ p.product_name }}</strong></td>
+        <td>{{ "{:,.2f}".format(p.unit_cost) }}</td>
+        <td>{{ "{:,.2f}".format(p.sale_price) }}</td>
+        <td>
+          <span style="font-weight:bold;color:{% if p.margin_pct >= 30 %}#059669{% elif p.margin_pct >= 15 %}#d97706{% else %}#dc2626{% endif %}">
+            {{ p.margin_pct }}%
+          </span>
+        </td>
+        <td>{{ "{:,.2f}".format(p.units_sold) }}</td>
+        <td>{{ "{:,.2f}".format(p.revenue) }}</td>
+        <td style="font-weight:bold;color:{% if p.gross_profit >= 0 %}#059669{% else %}#dc2626{% endif %}">
+          {{ "{:,.2f}".format(p.gross_profit) }} ر.س
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="9" style="text-align:center;color:#999;padding:30px">لا توجد بيانات متاحة</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

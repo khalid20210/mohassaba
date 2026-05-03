@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}إنشاء سند قبض{% endblock %}
+{% block page_title %}سند قبض جديد{% endblock %}
+
+{% block content %}
+<style>
+  .card { background:white; border-radius:8px; padding:24px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+  label { display:block; font-size:13px; color:#555; margin-bottom:4px; font-weight:500; }
+  input, select, textarea { width:100%; padding:9px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; box-sizing:border-box; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+</style>
+
+<form method="post" action="/wholesale/receipts/new">
+<div class="card">
+  <h3 style="margin:0 0 20px;font-size:16px">بيانات السند</h3>
+  <div class="grid2">
+    <div>
+      <label>العميل</label>
+      <select name="contact_id">
+        <option value="">— اختر عميلاً —</option>
+        {% for c in customers %}
+        <option value="{{ c.id }}">{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>تاريخ السند</label>
+      <input type="date" name="receipt_date" value="{{ today or '' }}">
+    </div>
+    <div>
+      <label>المبلغ (ريال)</label>
+      <input type="number" name="amount" min="0.01" step="0.01" required placeholder="0.00">
+    </div>
+    <div>
+      <label>طريقة الدفع</label>
+      <select name="payment_method" id="pmSelect" onchange="toggleCheque()">
+        <option value="cash">💵 كاش</option>
+        <option value="cheque">🏦 شيك</option>
+        <option value="transfer">📱 حوالة بنكية</option>
+      </select>
+    </div>
+  </div>
+  <div class="grid2" id="chequeSection" style="display:none">
+    <div>
+      <label>رقم الشيك</label>
+      <input type="text" name="cheque_number" placeholder="رقم الشيك...">
+    </div>
+    <div>
+      <label>البنك</label>
+      <input type="text" name="bank_name" placeholder="اسم البنك...">
+    </div>
+  </div>
+  <div>
+    <label>ملاحظات</label>
+    <textarea name="notes" rows="2" placeholder="ملاحظات اختيارية..."></textarea>
+  </div>
+</div>
+
+<div style="display:flex;gap:10px">
+  <button type="submit" style="background:#10b981;color:white;border:none;padding:12px 28px;border-radius:6px;cursor:pointer;font-size:15px;font-weight:bold">💾 حفظ السند</button>
+  <a href="/wholesale/receipts" style="background:#6b7280;color:white;padding:12px 20px;border-radius:6px;text-decoration:none;font-size:15px">إلغاء</a>
+</div>
+</form>
+
+<script>
+function toggleCheque() {
+  const val = document.getElementById('pmSelect').value;
+  document.getElementById('chequeSection').style.display = (val === 'cheque') ? 'grid' : 'none';
+}
+</script>
+{% endblock %}

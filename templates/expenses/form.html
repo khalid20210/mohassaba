@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}مصروف جديد{% endblock %}
+{% block page_title %}تسجيل مصروف جديد{% endblock %}
+
+{% block content %}
+<style>
+  .card { background:white; border-radius:8px; padding:24px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+  label { display:block; font-size:13px; color:#555; margin-bottom:4px; font-weight:500; }
+  input, select, textarea { width:100%; padding:9px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; box-sizing:border-box; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+</style>
+
+<form method="post" action="/expenses/new">
+<div class="card">
+  <h3 style="margin:0 0 20px;font-size:16px">تفاصيل المصروف</h3>
+  <div class="grid2">
+    <div>
+      <label>الفئة *</label>
+      <select name="category" required>
+        <option value="">— اختر الفئة —</option>
+        {% for cat in categories %}
+        <option value="{{ cat }}">{{ cat }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>تاريخ المصروف *</label>
+      <input type="date" name="expense_date" required>
+    </div>
+    <div>
+      <label>المبلغ (ريال) *</label>
+      <input type="number" name="amount" min="0.01" step="0.01" required placeholder="0.00">
+    </div>
+    <div>
+      <label>طريقة الدفع</label>
+      <select name="payment_method">
+        <option value="cash">💵 كاش</option>
+        <option value="transfer">📱 حوالة بنكية</option>
+        <option value="cheque">🏦 شيك</option>
+      </select>
+    </div>
+    <div>
+      <label>اسم المورد / الجهة</label>
+      <input type="text" name="vendor_name" placeholder="مثال: شركة الكهرباء...">
+    </div>
+    <div>
+      <label>رقم المرجع / الفاتورة</label>
+      <input type="text" name="reference" placeholder="رقم الفاتورة أو الوصل...">
+    </div>
+  </div>
+  <div>
+    <label>الوصف</label>
+    <textarea name="description" rows="2" placeholder="تفاصيل إضافية..."></textarea>
+  </div>
+</div>
+
+<div style="display:flex;gap:10px">
+  <button type="submit" style="background:#10b981;color:white;border:none;padding:12px 28px;border-radius:6px;cursor:pointer;font-size:15px;font-weight:bold">💾 حفظ المصروف</button>
+  <a href="/expenses" style="background:#6b7280;color:white;padding:12px 20px;border-radius:6px;text-decoration:none;font-size:15px">إلغاء</a>
+</div>
+</form>
+{% endblock %}

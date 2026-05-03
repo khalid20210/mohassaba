@@ -1,401 +1,470 @@
-﻿{% extends "base.html" %}
-{% block title %}إنشاء حساب — جنان بيز{% endblock %}
+{% extends "base.html" %}
+{% block title %}إنشاء حساب — Jenan Biz{% endblock %}
 
 {% block head %}
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Manrope:wght@500;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Manrope:wght@400;600;700;800&family=Sora:wght@600;700;800&family=Space+Grotesk:wght@600;700&family=Changa:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,500,0,0&display=swap');
 
-:root {
-  --jb-bg: #eef5ff;
-  --jb-border: rgba(148,163,184,.28);
-  --jb-primary: #0a2f57;
-  --jb-teal: #0c8a86;
-  --jb-gold: #ad7b18;
-}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { overflow: hidden !important; height: 100% !important; min-height: unset !important; }
+body { font-family: 'Plus Jakarta Sans', 'Cairo', 'Segoe UI', sans-serif; background: #04091a; color: #e2ebff; direction: rtl; }
 
-html, body { height: 100%; margin: 0; overflow: hidden; }
-
-body {
-  min-height: 100dvh;
-  background: #070f1c;
-  color: #e8f0ff;
-}
-
-.jb-auth-root {
-  height: 100dvh;
-  min-height: 100dvh;
+/* ── هيدر الشعار داخل الفورم ── */
+/* ── الجذر ثابت يملأ الشاشة ── */
+.reg-root {
+  position: fixed; inset: 0;
   display: grid;
-  grid-template-columns: 1.3fr .7fr;
-  position: relative;
+  grid-template-columns: 420px 1fr;
   overflow: hidden;
-  font-family: 'Cairo', 'Segoe UI', sans-serif;
+  direction: ltr;
 }
 
-/* ── Theater (right) ── */
-.jb-theater {
-  position: relative; z-index: 1;
-  height: 100dvh; box-sizing: border-box;
-  padding: 22px 28px 18px;
-  display: flex; flex-direction: column; gap: 10px;
-  background:
-    radial-gradient(ellipse at 18% 12%, rgba(200,130,20,.13), transparent 45%),
-    radial-gradient(ellipse at 82% 85%, rgba(160,90,10,.10), transparent 42%),
-    radial-gradient(ellipse at 50% 50%, rgba(40,25,5,.30), transparent 65%),
-    linear-gradient(148deg, #0b0d12 0%, #111820 35%, #151c2a 65%, #0c0f16 100%);
-  border-left: 1px solid rgba(200,150,40,.12);
-}
+.reg-left, .reg-right { direction: rtl; }
 
-.jb-theater-top {
-  margin-top: 4px; display: flex;
-  align-items: center; justify-content: space-between;
-  gap: 12px; flex-wrap: wrap;
-}
-
-.jb-pill-row { display: flex; gap: 8px; flex-wrap: wrap; }
-
-.jb-pill {
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.09);
-  color: rgba(190,215,255,.82);
-  border-radius: 999px;
-  padding: 5px 11px; font-size: .72rem;
-}
-
-.jb-activity-counter { color: rgba(140,175,230,.60); font-size: .76rem; font-family: 'Manrope', sans-serif; }
-
-.jb-stage {
-  margin-top: 6px;
-  background: rgba(255,255,255,.035);
-  border: 1px solid rgba(80,140,220,.12);
-  border-radius: 20px; padding: 16px;
-  position: relative; overflow: hidden;
-  flex: 1; min-height: 0; display: flex;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 30px 60px rgba(3,8,20,.30);
-}
-
-.jb-stage::before {
-  content: ""; position: absolute; top: -80px; left: -80px;
-  width: 220px; height: 220px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(29,120,240,.08), transparent 70%);
-  pointer-events: none;
-}
-
-.jb-stage::after {
-  content: ""; position: absolute; bottom: -80px; right: -80px;
-  width: 200px; height: 200px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(10,50,120,.20), transparent 68%);
-  pointer-events: none;
-}
-
-.jb-showcase { position: relative; z-index: 1; display: flex; flex-direction: column; width: 100%; height: 100%; }
-
-.jb-hero { display: grid; grid-template-columns: 1.15fr .85fr; gap: 12px; align-items: stretch; }
-
-.jb-hero-main {
-  border: 1px solid rgba(151,204,255,.18); border-radius: 18px; padding: 14px;
-  background: linear-gradient(135deg, rgba(250,252,255,.92), rgba(224,238,255,.72));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.45);
-}
-
-.jb-hero-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-
-.jb-hero-icon {
-  width: 50px; height: 50px; border-radius: 14px;
-  border: 1px solid var(--jb-border);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.45rem; background: rgba(255,255,255,.75);
-}
-
-.jb-hero-title { margin: 0; font-size: 1.26rem; color: var(--jb-primary); font-weight: 800; }
-.jb-hero-sub   { margin: 3px 0 0; font-size: .8rem; color: #5d7088; }
-
-.jb-mode-badge {
-  display: inline-flex; margin-top: 7px;
-  background: rgba(255,255,255,.68);
-  border: 1px solid rgba(148,163,184,.24);
-  border-radius: 999px; padding: 4px 10px;
-  font-size: .72rem; color: #23364b; font-family: 'Manrope', sans-serif;
-}
-
-.jb-features { margin-top: 9px; display: grid; gap: 6px; }
-
-.jb-feature {
-  background: rgba(255,255,255,.66); border: 1px solid rgba(255,255,255,.5);
-  border-radius: 12px; padding: 8px 10px; color: #223347; font-size: .77rem;
-  box-shadow: 0 12px 24px rgba(10,26,46,.08);
-}
-
-.jb-feature strong { display: block; color: #0f172a; font-size: .74rem; margin-bottom: 1px; }
-
-.jb-metric-column { display: grid; gap: 8px; }
-
-.jb-metric-card {
-  border: 1px solid rgba(126,191,255,.14); border-radius: 16px;
-  background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.08));
-  padding: 12px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 12px 28px rgba(3,8,18,.16);
-}
-
-.jb-metric-label { color: rgba(222,236,255,.74); font-size: .76rem; }
-.jb-metric-value { margin-top: 4px; font-size: 1.24rem; font-weight: 800; color: #f6fbff; font-family: 'Manrope', sans-serif; }
-.jb-metric-value.teal { color: #58d4df; }
-.jb-metric-value.gold { color: #f2c35c; }
-.jb-metric-chart { margin-top: 5px; height: 26px; }
-.jb-metric-chart svg { width: 100%; height: 100%; }
-
-.jb-activity-strip {
-  margin-top: 10px;
-  border: 1px solid rgba(144,199,255,.18);
-  background: linear-gradient(90deg, rgba(255,255,255,.14), rgba(20,78,140,.18), rgba(0,0,0,.22));
-  border-radius: 14px; padding: 8px 10px; backdrop-filter: blur(10px);
-}
-
-.jb-activity-strip-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 6px; }
-.jb-activity-strip-head strong { color: #f3f8ff; font-size: .86rem; }
-.jb-activity-strip-head span   { color: rgba(214,228,248,.72); font-size: .74rem; }
-
-.jb-upcoming { display: flex; gap: 6px; flex-wrap: wrap; }
-
-.jb-upcoming-item {
-  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.16);
-  border-radius: 999px; padding: 4px 8px; color: #e8f1ff; font-size: .69rem;
-}
-
-.jb-global-kpis { margin-top: 10px; display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
-
-.jb-global-kpi {
-  border-radius: 16px; padding: 10px 8px; text-align: center;
-  position: relative; overflow: hidden;
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-}
-
-.jb-global-kpi.c-amber  { background: linear-gradient(135deg,rgba(245,158,11,.18),rgba(245,158,11,.06)); border: 1px solid rgba(245,158,11,.40); box-shadow: 0 4px 20px rgba(245,158,11,.12), inset 0 1px 0 rgba(255,220,100,.10); }
-.jb-global-kpi.c-cyan   { background: linear-gradient(135deg,rgba(6,182,212,.18),rgba(6,182,212,.06));  border: 1px solid rgba(6,182,212,.40);  box-shadow: 0 4px 20px rgba(6,182,212,.12),  inset 0 1px 0 rgba(100,240,255,.10); }
-.jb-global-kpi.c-blue   { background: linear-gradient(135deg,rgba(59,130,246,.18),rgba(59,130,246,.06)); border: 1px solid rgba(59,130,246,.40); box-shadow: 0 4px 20px rgba(59,130,246,.12), inset 0 1px 0 rgba(150,200,255,.10); }
-.jb-global-kpi.c-emerald{ background: linear-gradient(135deg,rgba(16,185,129,.18),rgba(16,185,129,.06)); border: 1px solid rgba(16,185,129,.40); box-shadow: 0 4px 20px rgba(16,185,129,.12), inset 0 1px 0 rgba(100,255,200,.10); }
-
-.jb-kpi-icon { font-size: 1.15rem; line-height: 1; margin-bottom: 2px; }
-.jb-global-kpi.c-amber   .jb-global-kpi-num { color: #fbbf24; }
-.jb-global-kpi.c-cyan    .jb-global-kpi-num { color: #22d3ee; }
-.jb-global-kpi.c-blue    .jb-global-kpi-num { color: #60a5fa; }
-.jb-global-kpi.c-emerald .jb-global-kpi-num { color: #34d399; }
-.jb-global-kpi-num  { font-family: 'Manrope', sans-serif; font-size: 1.14rem; font-weight: 800; letter-spacing: -.5px; }
-.jb-global-kpi-text { color: rgba(160,200,255,.46); font-size: .62rem; margin-top: 1px; }
-
-.jb-controls { margin-top: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.jb-progress { flex: 1; height: 6px; border-radius: 999px; background: rgba(255,255,255,.12); overflow: hidden; }
-.jb-progress-bar { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg,#76c8ff,#1d9bf0,#07111f); transition: width .35s ease; }
-.jb-nav { display: flex; gap: 8px; }
-.jb-nav button { border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.12); color: #eff6ff; border-radius: 10px; padding: 7px 11px; cursor: pointer; }
-.jb-nav button:hover { background: rgba(255,255,255,.18); }
-
-/* ── Form panel (left) ── */
-.jb-form-panel {
-  z-index: 1;
-  background:
-    radial-gradient(ellipse at 40% 0%,   rgba(26,86,200,.09), transparent 55%),
-    radial-gradient(ellipse at 80% 100%, rgba(10,40,100,.14),  transparent 50%),
-    linear-gradient(155deg, #0a1628 0%, #0d1f40 42%, #091422 75%, #0b1a32 100%);
-  border-right: 1px solid rgba(20,60,120,.22);
+/* ── لوحة اليسار: الفورم ── */
+.reg-left {
   display: flex; flex-direction: column; justify-content: center;
-  height: 100dvh; box-sizing: border-box;
-  padding: 18px 22px; position: relative; overflow: hidden;
+  padding: 28px 32px;
+  background: linear-gradient(170deg, #070f22 0%, #0a1530 42%, #081226 100%);
+  border-right: 1px solid rgba(60,100,200,.14);
+  position: relative; overflow: hidden;
+  z-index: 1;
+}
+.reg-left::before {
+  content: '';
+  position: absolute; top: -120px; right: -120px;
+  width: 320px; height: 320px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(29,100,240,.10), transparent 70%);
+  pointer-events: none;
+}
+.reg-left::after {
+  content: '';
+  position: absolute; bottom: -80px; left: -80px;
+  width: 220px; height: 220px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(6,182,212,.07), transparent 70%);
+  pointer-events: none;
 }
 
-.jb-form-wrap { max-width: 380px; width: 100%; margin: 0 auto; }
-
-/* شعار فوق الفورم */
-.jb-form-header { display: flex; align-items: center; gap: 13px; margin-bottom: 20px; }
-
-.jb-form-logo-img {
-  width: 85px; height: 85px; flex-shrink: 0;
-  background: transparent; border: none; box-shadow: none; outline: none; overflow: hidden;
+/* ── لوحة اليمين: البراندينج ── */
+.reg-right {
+  position: relative; overflow: hidden;
+  background:
+    radial-gradient(circle at 75% 18%, rgba(34,211,238,.12), transparent 34%),
+    radial-gradient(circle at 24% 82%, rgba(56,189,248,.10), transparent 36%),
+    linear-gradient(138deg, #050d22 0%, #071738 45%, #051128 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 40px;
+}
+.reg-right::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(29,100,240,.18) 0%, transparent 45%),
+    radial-gradient(circle at 80% 70%, rgba(6,182,212,.16) 0%, transparent 45%);
+  pointer-events: none;
+}
+.reg-right::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: radial-gradient(rgba(80,140,255,.10) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
 }
 
-.jb-form-logo-img img {
-  width: 100%; height: 100%; object-fit: contain;
-  mix-blend-mode: screen;
-  filter: invert(1) hue-rotate(180deg) brightness(1.3) saturate(1.2);
+.reg-brand { position: relative; z-index: 1; width: 100%; display: flex; flex-direction: column; align-items: center; text-align: center; }
+
+/* شعار مدمج في الزاوية العليا اليمنى */
+.reg-logo-corner {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 250px;
+  height: 150px;
+  background: transparent;
+  overflow: hidden;
+  z-index: 10;
+  pointer-events: none;
+}
+.reg-logo-corner img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 0 10px rgba(56,189,248,.22));
 }
 
-.jb-form-title-block strong { display: block; font-size: 1.28rem; font-weight: 800; color: #d6eaff; line-height: 1.15; letter-spacing: -.3px; }
-.jb-form-title-block span   { font-size: .69rem; color: rgba(120,165,228,.48); font-family: 'Manrope', sans-serif; }
+.reg-brand-name {
+  font-size: 1.45rem;
+  font-weight: 800;
+  font-family: 'Space Grotesk', 'Sora', sans-serif;
+  color: #eaf4ff;
+  letter-spacing: -.35px;
+  margin-bottom: 8px;
+  text-shadow: 0 0 16px rgba(56,189,248,.26);
+}
 
-.jb-form-section-title { font-size: 1.1rem; font-weight: 800; color: #c8deff; margin-bottom: 4px; }
-.jb-form-section-sub   { font-size: .76rem; color: rgba(140,180,230,.45); margin-bottom: 14px; }
+.reg-brand-tagline {
+  display: inline-block;
+  font-size: 1.0rem; color: #eef7ff; margin-bottom: 24px;
+  font-family: 'Changa', 'Cairo', sans-serif; font-weight: 700;
+  background: rgba(8,29,68,.74);
+  border: 1px solid rgba(103,232,249,.34); border-radius: 999px;
+  padding: 6px 16px;
+  text-shadow: 0 0 14px rgba(103,232,249,.35);
+  margin-top: 0;
+}
 
-.jb-alert { padding: 8px 10px; border-radius: 10px; font-size: .78rem; margin-bottom: 8px; border: 1px solid; }
-.jb-alert.error   { background: rgba(220,38,38,.14);  border-color: rgba(220,38,38,.3);  color: #fca5a5; }
-.jb-alert.success { background: rgba(22,163,74,.14);   border-color: rgba(22,163,74,.3);   color: #86efac; }
+/* بطاقات متدرجة مائلة */
+.reg-features { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.reg-feature {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255,255,255,.042);
+  border: 1px solid rgba(80,130,220,.16); border-radius: 14px;
+  backdrop-filter: blur(6px); transition: background .2s, transform .2s, box-shadow .2s;
+  /* التدرج نحو اليمين بالخاصية nth-child */
+}
+.reg-feature:nth-child(1) { transform: translateX(0px)  rotate(-.6deg); }
+.reg-feature:nth-child(2) { transform: translateX(14px) rotate(-.4deg); }
+.reg-feature:nth-child(3) { transform: translateX(26px) rotate(-.2deg); }
+.reg-feature:nth-child(4) { transform: translateX(38px) rotate(  0deg); }
+.reg-feature:hover {
+  background: rgba(255,255,255,.08);
+  transform: translateX(calc(var(--tx,0px) + 4px)) rotate(0deg) !important;
+  box-shadow: 0 6px 28px rgba(34,211,238,.14);
+}
+.reg-feature:nth-child(1) { --tx: 0px; }
+.reg-feature:nth-child(2) { --tx: 14px; }
+.reg-feature:nth-child(3) { --tx: 26px; }
+.reg-feature:nth-child(4) { --tx: 38px; }
+.reg-feature-icon {
+  width: 42px; height: 42px; flex-shrink: 0; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  color: #67e8f9; background: rgba(8,30,62,.62);
+  border: 1px solid rgba(103,232,249,.38);
+  box-shadow: 0 0 12px rgba(34,211,238,.22);
+}
+.reg-feature-icon .mi {
+  font-family: 'Material Symbols Outlined'; font-size: 22px; line-height: 1;
+  font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+.reg-feature-text strong { display: block; font-size: .80rem; font-weight: 700; color: #dbeeff; margin-bottom: 1px; }
+.reg-feature-text span { font-size: .70rem; color: rgba(150,190,240,.50); }
 
-.jb-field { margin-bottom: 8px; }
+/* شارة أسفل */
+.reg-trust {
+  position: relative; z-index: 1; margin-top: 32px;
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(80,130,220,.12);
+  border-radius: 999px; padding: 7px 16px;
+  font-size: .72rem; color: rgba(160,200,255,.55); font-family: 'Manrope', sans-serif;
+}
+.reg-trust-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; flex-shrink: 0; box-shadow: 0 0 6px rgba(34,197,94,.7); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
 
-.jb-label { display: block; color: rgba(190,218,255,.86); margin-bottom: 4px; font-size: .75rem; font-weight: 700; }
-.jb-label .req { color: #f87171; margin-right: 2px; }
-
-.jb-input {
-  width: 100%; box-sizing: border-box;
-  border: 1px solid rgba(80,140,210,.22); border-radius: 10px;
-  background: rgba(255,255,255,.07); padding: 9px 12px;
-  font-size: .85rem; color: #e4f0ff; outline: none;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+/* ── الفورم ── */
+.reg-title { font-size: 1.45rem; font-weight: 900; color: #ffffff; letter-spacing: -.5px; margin-bottom: 4px; }
+.reg-subtitle { font-size: .78rem; color: rgba(150,190,240,.55); margin-bottom: 20px; }
+.reg-alert { padding: 8px 12px; border-radius: 9px; font-size: .73rem; margin-bottom: 14px; border: 1px solid; }
+.reg-alert.error   { background: rgba(220,38,38,.12); border-color: rgba(220,38,38,.28); color: #fca5a5; }
+.reg-alert.success { background: rgba(22,163,74,.12);  border-color: rgba(22,163,74,.28);  color: #86efac; }
+.reg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; margin-bottom: 12px; }
+.reg-grid .span2 { grid-column: 1 / -1; }
+.reg-field { display: flex; flex-direction: column; gap: 6px; }
+.reg-label { font-size: .69rem; font-weight: 700; color: rgba(190,218,255,.80); }
+.reg-label .req { color: #f87171; margin-right: 2px; }
+.reg-input {
+  width: 100%; border: 1px solid rgba(80,130,210,.20); border-radius: 9px;
+  background: rgba(255,255,255,.05); padding: 14px 15px;
+  font-size: .83rem; color: #e0edff; outline: none;
   font-family: inherit; direction: rtl;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+}
+.reg-input::placeholder { color: rgba(140,185,230,.28); }
+.reg-input:focus { border-color: rgba(34,211,238,.62); background: rgba(255,255,255,.09); box-shadow: 0 0 0 3px rgba(34,211,238,.14); }
+.reg-hint { font-size: .60rem; color: rgba(110,155,220,.38); }
+.reg-btn {
+  width: 100%; border: none; border-radius: 10px; cursor: pointer;
+  background: linear-gradient(135deg, #1a4fa0 0%, #1570d4 50%, #0ea5e9 100%);
+  color: #fff; font-size: .86rem; font-weight: 800; padding: 11px; margin-top: 4px;
+  box-shadow: 0 10px 28px rgba(14,165,233,.25), inset 0 1px 0 rgba(255,255,255,.12);
+  transition: transform .12s, box-shadow .15s, filter .15s; font-family: inherit; letter-spacing: .2px;
+}
+.reg-btn:hover { transform: translateY(-1px); box-shadow: 0 14px 32px rgba(14,165,233,.38); filter: brightness(1.06); }
+.reg-btn:active { transform: translateY(0); }
+.reg-login-link { text-align: center; margin-top: 14px; font-size: .72rem; color: rgba(160,200,255,.50); }
+.reg-login-link a { color: #60a5fa; text-decoration: none; font-weight: 700; }
+.reg-login-link a:hover { text-decoration: underline; }
+.reg-legal { margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; font-size: .64rem; color: rgba(148,186,238,.48); }
+.reg-legal a { color: rgba(147,197,253,.82); text-decoration: none; font-weight: 700; }
+.reg-legal a:hover { text-decoration: underline; color: #bfdbfe; }
+.reg-legal .sep { opacity: .35; }
+
+/* ── موبايل ── */
+@media (max-width: 820px) {
+  html, body { overflow: auto !important; height: auto !important; }
+  .reg-root { position: relative; inset: auto; min-height: 100dvh; grid-template-columns: 1fr; overflow: visible; }
+  .reg-right { order: 1; padding: 28px 18px 18px; }
+  .reg-left  { order: 2; padding: 22px 16px 26px; justify-content: flex-start; overflow: visible; min-height: auto; }
+  .reg-grid { grid-template-columns: 1fr; gap: 10px; }
+  .sv-stage { max-width: 100%; }
 }
 
-.jb-input::placeholder { color: rgba(160,195,240,.40); }
-.jb-input:focus { border-color: rgba(29,155,240,.55); background: rgba(255,255,255,.10); box-shadow: 0 0 0 3px rgba(29,155,240,.13); }
+/* ═══════════════════════════════════════════════════════════
+   الختم السيادي — Sovereign Seal (reg-right panel)
+   ═══════════════════════════════════════════════════════════ */
 
-.jb-hint { font-size: .70rem; color: rgba(120,165,228,.38); margin-top: 3px; }
-
-.jb-btn {
-  width: 100%; border: none; border-radius: 10px;
-  background: linear-gradient(135deg, #0d1b2d, #10365f 48%, #1d9bf0 100%);
-  color: #fff; font-size: .88rem; font-weight: 800;
-  padding: 10px; cursor: pointer; margin-top: 6px;
-  transition: transform .12s ease, box-shadow .12s ease; font-family: inherit;
+.reg-right {
+  position: relative; overflow: hidden;
+  background: linear-gradient(160deg, #060d1e 0%, #0a1a3a 40%, #071428 75%, #050c1c 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 22px 28px 18px;
+  gap: 0;
 }
 
-.jb-btn:hover { transform: translateY(-1px); box-shadow: 0 14px 26px rgba(14,42,78,.24); }
-
-.jb-reg-link { text-align: center; color: rgba(185,215,255,.66); font-size: .78rem; margin-top: 10px; }
-.jb-reg-link a { color: #62b8f6; text-decoration: none; font-weight: 700; }
-.jb-reg-link a:hover { text-decoration: underline; }
-
-@media (max-width: 1100px) {
-  .jb-hero { grid-template-columns: 1fr; }
-  .jb-global-kpis { grid-template-columns: repeat(2,1fr); }
+/* نجوم خلفية */
+.reg-right::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 15% 20%, rgba(0,229,255,.35) 0%, transparent 100%),
+    radial-gradient(1px 1px at 38%  8%, rgba(255,255,255,.22) 0%, transparent 100%),
+    radial-gradient(1px 1px at 72% 15%, rgba(0,229,255,.28) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 35%, rgba(255,255,255,.18) 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 88%, rgba(0,229,255,.20) 0%, transparent 100%),
+    radial-gradient(1px 1px at 25% 75%, rgba(255,255,255,.15) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 80% 70%, rgba(0,229,255,.30) 0%, transparent 100%);
+  pointer-events: none; z-index: 0;
+}
+/* شبكة */
+.reg-right::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,229,255,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none; z-index: 0;
 }
 
-@media (max-width: 980px) {
-  html, body { overflow: hidden; }
-  .jb-auth-root { grid-template-columns: 1fr; }
-  .jb-theater { display: none; }
-  .jb-form-panel { border-right: none; border-left: none; padding: 24px 16px; }
-  .jb-form-wrap { max-width: 360px; }
+/* ── الشعار ── */
+.sv-logo-zone {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 10px 6px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  z-index: 24;
+  flex-shrink: 0;
+}
+.sv-logo-zone::before {
+  content: none;
+}
+.sv-logo-zone::after {
+  content: none;
+}
+.sv-glow-ring {
+  position: relative;
+  width: auto;
+  height: auto;
+  display: flex; align-items: center; justify-content: center;
+}
+.sv-glow-ring::before {
+  content: none;
+}
+.sv-glow-ring::after {
+  content: none;
+}
+.sv-logo-wrap {
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  overflow: visible;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  position: relative;
+  z-index: 1;
+}
+.sv-logo-img {
+  width: 122px;
+  height: auto;
+  object-fit: contain;
+  mix-blend-mode: normal;
+  filter: drop-shadow(0 0 12px rgba(0,229,255,.45)) drop-shadow(0 0 28px rgba(0,229,255,.20));
+}
+.sv-pct-badge {
+  font-family: 'Manrope', sans-serif; font-size: .58rem; font-weight: 800;
+  color: rgba(156,243,255,.92); letter-spacing: 1.2px;
+  background: transparent; border: none;
+  border-radius: 0; padding: 0; margin-top: 1px;
+  text-shadow: 0 0 12px rgba(0,229,255,.55);
+}
+
+/* ── العنوان ── */
+.sv-title-zone {
+  text-align: center; z-index: 2; margin-top: 10px;
+  flex-shrink: 0; padding: 0 12px;
+}
+.sv-headline {
+  margin: 0; font-size: 1.28rem; font-weight: 900; color: #ffffff;
+  line-height: 1.15;
+  text-shadow: 0 0 28px rgba(0,229,255,.40), 0 2px 12px rgba(0,0,0,.6);
+  font-family: 'Cairo', 'Tajawal', sans-serif; transition: text-shadow .4s ease;
+}
+.sv-headline.sv-bright {
+  text-shadow: 0 0 55px rgba(0,229,255,.85), 0 0 100px rgba(0,229,255,.40), 0 2px 12px rgba(0,0,0,.6);
+}
+.sv-sub {
+  margin: 5px 0 0; font-size: .77rem; color: rgba(160,210,255,.60);
+  font-weight: 300; line-height: 1.5; font-family: 'Cairo', sans-serif;
+}
+
+/* ── منصة العرض الدوّار (Carousel) ── */
+.sv-stage {
+  position: relative; z-index: 2;
+  width: 100%; max-width: 380px;
+  min-height: 168px;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 24px;
+}
+.sv-slide {
+  text-align: center; width: 100%;
+  opacity: 0; transform: translateY(20px);
+  transition: opacity .38s ease, transform .38s ease;
+  padding: 20px 24px 22px;
+  background: rgba(0,229,255,.07);
+  border: 1px solid rgba(0,229,255,.28);
+  border-radius: 18px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 26px rgba(0,229,255,.14);
+}
+.sv-slide.sv-in  { opacity: 1; transform: translateY(0); }
+.sv-slide.sv-out { opacity: 0; transform: translateY(-20px); }
+.sv-slide-num {
+  font-family: 'Manrope', sans-serif; font-size: .62rem; font-weight: 800;
+  color: rgba(0,229,255,.66); letter-spacing: 2.2px; margin-bottom: 8px;
+}
+.sv-slide-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: 12px;
+  margin-bottom: 10px;
+  background: rgba(0,229,255,.11);
+  border: 1px solid rgba(0,229,255,.32);
+  color: #8ef6ff;
+  box-shadow: 0 0 22px rgba(0,229,255,.26);
+  font-family: 'Material Symbols Outlined';
+  font-size: 24px; line-height: 1;
+  font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+.sv-slide-title {
+  font-size: 1.46rem; font-weight: 900; color: #ffffff;
+  font-family: 'Cairo', sans-serif; line-height: 1.2; margin-bottom: 10px;
+  text-shadow: 0 0 30px rgba(0,229,255,.56);
+}
+.sv-slide-desc {
+  font-size: .88rem; color: rgba(207,231,255,.86);
+  font-family: 'Cairo', sans-serif; line-height: 1.75;
+}
+
+/* ── ختام السيادة ── */
+.sv-finale {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 52px 38px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .75s ease; z-index: 20; gap: 20px;
+}
+.sv-finale.sv-show { opacity: 1; pointer-events: auto; }
+.sv-fin-headline {
+  margin: 0; font-size: 1.48rem; font-weight: 900; color: #ffffff;
+  font-family: 'Cairo', sans-serif; line-height: 1.3;
+  text-shadow: 0 0 42px rgba(0,229,255,.68), 0 0 84px rgba(0,229,255,.32);
+}
+.sv-fin-sub {
+  margin: 0; font-size: .86rem; color: rgba(172,218,255,.75);
+  font-family: 'Cairo', sans-serif; line-height: 1.75; max-width: 340px;
+}
+.sv-cta-btn {
+  display: inline-block; margin-top: 8px;
+  background: linear-gradient(135deg, rgba(0,229,255,.18), rgba(0,229,255,.06));
+  border: 1.5px solid rgba(0,229,255,.68); border-radius: 14px;
+  color: #00e5ff; font-family: 'Cairo', sans-serif;
+  font-size: .95rem; font-weight: 900;
+  padding: 15px 32px; text-decoration: none; cursor: default;
+  box-shadow: 0 0 30px rgba(0,229,255,.30), 0 0 60px rgba(0,229,255,.12);
+  animation: sv-cta-glow 2s ease-in-out infinite;
+}
+@keyframes sv-cta-glow {
+  0%,100% { box-shadow: 0 0 30px rgba(0,229,255,.30), 0 0 60px rgba(0,229,255,.12); }
+  50%     { box-shadow: 0 0 55px rgba(0,229,255,.58), 0 0 110px rgba(0,229,255,.26); }
+}
+
+@media (max-width: 820px) {
+  .sv-logo-zone {
+    top: 0;
+    right: 0;
+    padding: 8px 8px 7px 10px;
+  }
+  .sv-glow-ring {
+    width: auto;
+    height: auto;
+  }
+  .sv-logo-wrap {
+    width: auto;
+    height: auto;
+    border-radius: 0;
+  }
+  .sv-logo-img {
+    width: 98px;
+  }
+  .sv-pct-badge {
+    font-size: .54rem;
+    padding: 1px 7px;
+  }
 }
 </style>
 {% endblock %}
 
 {% block auth_content %}
-<div class="jb-auth-root">
 
-  <!-- مسرح يمين -->
-  <div class="jb-theater">
-    <div class="jb-theater-top">
-      <div class="jb-pill-row">
-        <span class="jb-pill">🔐 بنية آمنة</span>
-        <span class="jb-pill">🧾 OCR + Excel Import</span>
-        <span class="jb-pill">📊 KPIs حسب النشاط</span>
-      </div>
-      <div class="jb-activity-counter" id="activityCounter">1 / 73 نشاط</div>
-    </div>
+<div class="reg-root">
 
-    <div class="jb-stage">
-      <div class="jb-showcase">
-        <div class="jb-hero">
-          <div class="jb-hero-main" id="heroMain">
-            <div class="jb-hero-head">
-              <div class="jb-hero-icon" id="heroIcon">🏪</div>
-              <div>
-                <h3 class="jb-hero-title" id="heroTitle">نشاط تجاري مدعوم بجنان بيز</h3>
-                <p class="jb-hero-sub" id="heroSub">تجربة تشغيل موحدة توضح قيمة النظام لكل نشاط.</p>
-              </div>
-            </div>
-            <span class="jb-mode-badge" id="heroMode">mode: standard</span>
-            <div class="jb-features" id="featureList">
-              <div class="jb-feature"><strong>تحميل المزايا</strong>جارٍ تجهيز عرض النشاط الحالي...</div>
-            </div>
-          </div>
-          <div class="jb-metric-column">
-            <div class="jb-metric-card">
-              <div class="jb-metric-label" id="metric1Label">المؤشر الأول</div>
-              <div class="jb-metric-value" id="metric1Value">0</div>
-              <div class="jb-metric-chart">
-                <svg viewBox="0 0 100 30" preserveAspectRatio="none">
-                  <polyline id="metric1Chart" points="0,24 14,22 28,18 42,16 56,13 70,10 84,9 100,7" fill="none" stroke="#0b3a63" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-              </div>
-            </div>
-            <div class="jb-metric-card">
-              <div class="jb-metric-label" id="metric2Label">المؤشر الثاني</div>
-              <div class="jb-metric-value teal" id="metric2Value">0</div>
-              <div class="jb-metric-chart">
-                <svg viewBox="0 0 100 30" preserveAspectRatio="none">
-                  <polyline id="metric2Chart" points="0,26 14,24 28,23 42,19 56,17 70,15 84,11 100,8" fill="none" stroke="#0f766e" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-              </div>
-            </div>
-          </div>
+  <!-- لوحة اليسار: الفورم -->
+  <div class="reg-left">
+
+    <div class="reg-title">إنشاء حساب</div>
+    <div class="reg-subtitle">انضم الآن وابدأ رحلتك المحاسبية</div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="reg-alert {{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('auth_register') }}" autocomplete="off">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="reg-grid">
+        <div class="reg-field">
+          <label class="reg-label">الاسم الكامل <span class="req">*</span></label>
+          <input type="text" name="full_name" class="reg-input" placeholder="اسمك الكامل" required value="{{ request.form.get('full_name', '') }}">
         </div>
-
-        <div class="jb-activity-strip">
-          <div class="jb-activity-strip-head">
-            <strong>أنشطة تتحول معها هوية النظام</strong>
-            <span id="stripHint">يتبدل العرض تلقائياً كل 6 ثوانٍ</span>
-          </div>
-          <div class="jb-upcoming" id="upcomingActivities">
-            <span class="jb-upcoming-item">جاري التحميل...</span>
-          </div>
+        <div class="reg-field">
+          <label class="reg-label">اسم المستخدم <span class="req">*</span></label>
+          <input type="text" name="username" class="reg-input" placeholder="ahmed2025" required value="{{ request.form.get('username', '') }}">
+          <div class="reg-hint">لتسجيل الدخول — لا يتغير</div>
         </div>
-
-        <div class="jb-global-kpis">
-          <div class="jb-global-kpi c-amber"><div class="jb-kpi-icon">🧾</div><div class="jb-global-kpi-num" id="cntInv">0</div><div class="jb-global-kpi-text">فاتورة معالجة</div></div>
-          <div class="jb-global-kpi c-cyan" ><div class="jb-kpi-icon">🤖</div><div class="jb-global-kpi-num" id="aiAccuracy">99.9%</div><div class="jb-global-kpi-text">دقة الذكاء</div></div>
-          <div class="jb-global-kpi c-blue" ><div class="jb-kpi-icon">📊</div><div class="jb-global-kpi-num" id="profilesCount">73</div><div class="jb-global-kpi-text">نشاط برمجي</div></div>
-          <div class="jb-global-kpi c-emerald"><div class="jb-kpi-icon">🏢</div><div class="jb-global-kpi-num" id="businessesCount">0</div><div class="jb-global-kpi-text">منشأة نشطة</div></div>
-        </div>
-
-        <div class="jb-controls">
-          <div class="jb-progress"><div class="jb-progress-bar" id="showcaseProgress"></div></div>
-          <div class="jb-nav">
-            <button type="button" onclick="prevActivity()">السابق</button>
-            <button type="button" onclick="nextActivity()">التالي</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- فورم يسار -->
-  <div class="jb-form-panel">
-    <div class="jb-form-wrap">
-
-      <div class="jb-form-header">
-        <div class="jb-form-logo-img">
-          <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Jinan Biz">
-        </div>
-        <div class="jb-form-title-block">
-          <strong>جنان بيز</strong>
-          <span>Jinan Biz • Enterprise ERP</span>
-        </div>
-      </div>
-
-      <div class="jb-form-section-title">إنشاء حساب جديد</div>
-      <div class="jb-form-section-sub">أنشئ حسابك وابدأ رحلتك المحاسبية</div>
-
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% for cat, msg in messages %}
-          <div class="jb-alert {{ cat }}">{{ msg }}</div>
-        {% endfor %}
-      {% endwith %}
-
-      <form method="POST" action="{{ url_for('auth_register') }}" autocomplete="off">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-
-        <div class="jb-field">
-          <label class="jb-label">الاسم الكامل <span class="req">*</span></label>
-          <input type="text" name="full_name" class="jb-input" placeholder="اسمك الكامل" required value="{{ request.form.get('full_name', '') }}">
-        </div>
-
-        <div class="jb-field">
-          <label class="jb-label">اسم المستخدم <span class="req">*</span></label>
-          <input type="text" name="username" class="jb-input" placeholder="مثال: ahmed2025" required value="{{ request.form.get('username', '') }}">
-          <div class="jb-hint">يُستخدم لتسجيل الدخول — لا يمكن تغييره لاحقاً</div>
-        </div>
-
-        <div class="jb-field">
-          <label class="jb-label">الدولة <span class="req">*</span></label>
-          <select name="country_code" id="countrySelect" class="jb-input" onchange="updateCountryHint(this)">
+        <div class="reg-field span2">
+          <label class="reg-label">الدولة <span class="req">*</span></label>
+          <select name="country_code" id="countrySelect" class="reg-input" onchange="updateCountryHint(this)">
             {% for c in countries %}
             <option value="{{ c.country_code }}"
               data-tax="{{ c.default_tax_rate }}"
@@ -406,143 +475,183 @@ body {
             </option>
             {% endfor %}
           </select>
-          <div class="jb-hint" id="countryHint">يحدد العملة ونسبة الضريبة الافتراضية تلقائياً</div>
+          <div class="reg-hint" id="countryHint">يحدد العملة ونسبة الضريبة الافتراضية تلقائياً</div>
         </div>
-
-        <div class="jb-field">
-          <label class="jb-label">البريد الإلكتروني</label>
-          <input type="email" name="email" class="jb-input" placeholder="email@example.com" value="{{ request.form.get('email', '') }}">
+        <div class="reg-field span2">
+          <label class="reg-label">البريد الإلكتروني</label>
+          <input type="email" name="email" class="reg-input" placeholder="email@example.com" value="{{ request.form.get('email', '') }}">
         </div>
-
-        <div class="jb-field">
-          <label class="jb-label">كلمة المرور <span class="req">*</span></label>
-          <input type="password" name="password" class="jb-input" placeholder="8 أحرف على الأقل" required minlength="8">
+        <div class="reg-field">
+          <label class="reg-label">كلمة المرور <span class="req">*</span></label>
+          <input type="password" name="password" class="reg-input" placeholder="8 أحرف+" required minlength="8">
         </div>
-
-        <div class="jb-field">
-          <label class="jb-label">تأكيد كلمة المرور <span class="req">*</span></label>
-          <input type="password" name="confirm_password" class="jb-input" placeholder="أعد إدخال كلمة المرور" required>
+        <div class="reg-field">
+          <label class="reg-label">تأكيد المرور <span class="req">*</span></label>
+          <input type="password" name="confirm_password" class="reg-input" placeholder="أعد الإدخال" required>
         </div>
-
-        <button type="submit" class="jb-btn">إنشاء الحساب</button>
-      </form>
-
-      <div class="jb-reg-link">
-        لديك حساب بالفعل؟
-        <a href="{{ url_for('auth_login') }}">سجّل دخولك</a>
       </div>
+      <button type="submit" class="reg-btn">إنشاء الحساب ←</button>
+    </form>
 
+    <div class="reg-login-link">لديك حساب؟ <a href="{{ url_for('auth_login') }}">سجّل دخولك</a></div>
+    <div class="reg-legal">
+      <a href="/privacy-policy">سياسة الخصوصية</a>
+      <span class="sep">•</span>
+      <a href="/terms-of-use">شروط الاستخدام</a>
     </div>
   </div>
+
+  <!-- ═══ لوحة اليمين: العرض السيادي ═══ -->
+  <div class="reg-right">
+
+    <!-- الشعار + العداد -->
+    <div class="sv-logo-zone">
+      <div class="sv-glow-ring" id="svGlowRing">
+        <div class="sv-logo-wrap" id="svLogoWrap">
+          <img src="{{ url_for('static', filename='images/logo-transparent-white-jenan.png') }}" alt="Jinan Biz" class="sv-logo-img">
+        </div>
+      </div>
+      <div class="sv-pct-badge" id="svPct">1%</div>
+    </div>
+
+    <!-- منصة العرض: رصاصة واحدة في كل مرة -->
+    <div class="sv-stage" id="svStage">
+      <div class="sv-slide" id="svSlide"></div>
+    </div>
+
+    <!-- ختام السيادة — يظهر عند 100% -->
+    <div class="sv-finale" id="svFinale">
+      <p class="sv-fin-headline">جنان بيز v2.0: القوة الآن بين يديك.</p>
+      <p class="sv-fin-sub">لسنا مجرد برنامج محاسبي؛ نحن محركك السيادي للسيطرة المطلقة على تجارتك.</p>
+      <span class="sv-cta-btn">إنشاء حسابك السيادي الآن</span>
+    </div>
+
+  </div>
+
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+/* ── hint الدولة ──────────────────────────────────── */
 function updateCountryHint(sel) {
-  const opt = sel.options[sel.selectedIndex];
-  const tax = parseFloat(opt.dataset.tax || 0);
-  const sym = opt.dataset.currency || '';
-  const sys = opt.dataset.taxSys || 'none';
-  const hint = document.getElementById('countryHint');
+  var opt = sel.options[sel.selectedIndex];
+  var tax = parseFloat(opt.dataset.tax || 0);
+  var sym = opt.dataset.currency || '';
+  var sys = opt.dataset.taxSys || 'none';
+  var hint = document.getElementById('countryHint');
   if (!hint) return;
   if (tax > 0) {
-    const sysLabel = sys === 'zatca' ? ' (ZATCA)' : sys === 'vat' ? ' (VAT)' : '';
-    hint.textContent = `العملة: ${sym} | ضريبة افتراضية: ${tax}%${sysLabel}`;
+    var sysLabel = sys === 'zatca' ? ' (ZATCA)' : sys === 'vat' ? ' (VAT)' : '';
+    hint.textContent = 'العملة: ' + sym + ' | ضريبة افتراضية: ' + tax + '%' + sysLabel;
   } else {
-    hint.textContent = `العملة: ${sym} | بدون ضريبة`;
+    hint.textContent = 'العملة: ' + sym + ' | بدون ضريبة';
   }
 }
-// تحديث عند تحميل الصفحة
-window.addEventListener('DOMContentLoaded', () => {
-  const sel = document.getElementById('countrySelect');
+
+/* ═══════════════════════════════════════════════════
+   العرض السيادي — Sovereign Carousel
+   رصاصة واحدة كل 10% ← ثم ختام سينمائي عند 100%
+   ═══════════════════════════════════════════════════ */
+var SV_BULLETS = [
+  { icon: 'verified_user', title: 'رقابة سيادية',    desc: 'أمان عملك ومتابعته بين يديك وعن بُعد لحظياً؛ انتهى زمن التلاعب.' },
+  { icon: 'sync_alt',      title: 'بيع بلا توقف',    desc: 'Online & Offline — مزامنة المخزون آلياً فور عودة الاتصال.' },
+  { icon: 'auto_awesome',  title: 'أتمتة ذكية',      desc: 'ارفع فواتيرك والنظام يسجلها بدقة محاسبية؛ وداعاً للإدخال اليدوي.' },
+  { icon: 'local_shipping',title: 'قيادة الأسطول',   desc: 'تتبع حي للمناديب والسيارات لضبط حركة التوزيع والتحصيل.' },
+  { icon: 'draw',          title: 'تصميم حصري',      desc: 'نظام يتشكل خصيصاً لنشاطك وحسب متطلباتك الفريدة حصرياً.' },
+  { icon: 'rocket_launch', title: 'جاهزية التشغيل',  desc: 'منتجاتك مدمجة بنشاطك مسبقاً؛ ابدأ العمل الفعلي في أقل من 60 ثانية.' },
+  { icon: 'upload_file',   title: 'استيراد ذكي',     desc: 'انقل آلاف الأصناف والبيانات بضغطة زر واحدة دون عناء تقني.' },
+  { icon: 'groups',        title: 'إنتاجية الموظف',  desc: 'صفحة مخصصة لكل مندوب لإدارة عملائه وتحقيق مستهدفاته.' },
+  { icon: 'gavel',         title: 'صفر غرامات',      desc: 'تنبيهات ذكية لالتزاماتك الحكومية لضمان امتثال قانوني كامل.' },
+  { icon: 'encrypted',     title: 'عزل سيادي',       desc: 'بياناتك مشفرة ومحمية بنسخ احتياطي ثلاثي بخصوصية مطلقة.' },
+];
+
+var svHideTimer = null;
+
+function svShowSlide(index) {
+  var slide = document.getElementById('svSlide');
+  if (!slide) return;
+  var b = SV_BULLETS[index];
+  var n = index + 1;
+  slide.innerHTML =
+    '<div class="sv-slide-num">' + (n < 10 ? '0' : '') + n + ' / 10</div>' +
+    '<span class="sv-slide-icon">' + b.icon + '</span>' +
+    '<div class="sv-slide-title">' + b.title + '</div>' +
+    '<div class="sv-slide-desc">' + b.desc + '</div>';
+  slide.classList.remove('sv-out');
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() { slide.classList.add('sv-in'); });
+  });
+}
+
+function svHideSlide() {
+  var slide = document.getElementById('svSlide');
+  if (!slide) return;
+  slide.classList.remove('sv-in');
+  slide.classList.add('sv-out');
+}
+
+function runSovereignCounter() {
+  var pctEl    = document.getElementById('svPct');
+  var glowEl   = document.getElementById('svGlowRing');
+  var logoEl   = document.getElementById('svLogoWrap');
+  var stageEl  = document.getElementById('svStage');
+  var finaleEl = document.getElementById('svFinale');
+
+  var totalMs = 10800, interval = 80;
+  var steps = Math.floor(totalMs / interval);
+  var step = 0, shownMilestones = {};
+
+  var tick = setInterval(function() {
+    step++;
+    var progress = Math.min(step / steps, 1);
+    /* easeInOutCubic */
+    var ease = progress < .5
+      ? 4 * progress * progress * progress
+      : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+    var pct = Math.round(ease * 100);
+
+    if (pctEl) pctEl.textContent = pct + '%';
+
+    /* توهج يتصاعد مع التقدم */
+    if (glowEl) {
+      glowEl.style.setProperty('--glow-op',    (0.08 + ease * 0.52).toFixed(3));
+      glowEl.style.setProperty('--glow-outer', (0.03 + ease * 0.22).toFixed(3));
+    }
+
+    /* ── رصاصة واحدة عند كل 10% ── */
+    var milestone = Math.floor(pct / 10) * 10;
+    if (milestone > 0 && milestone < 100 && !shownMilestones[milestone]) {
+      shownMilestones[milestone] = true;
+      svShowSlide(milestone / 10 - 1);   /* 10%→0, 20%→1 ... 90%→8 */
+      if (svHideTimer) clearTimeout(svHideTimer);
+      svHideTimer = setTimeout(svHideSlide, 1320);
+    }
+
+    /* ── اكتمال 100% ── */
+    if (pct >= 100) {
+      clearInterval(tick);
+      /* الرصاصة العاشرة تظهر لحظة */
+      svShowSlide(9);
+      setTimeout(function() {
+        svHideSlide();
+        /* إخفاء العداد والمنصة */
+        if (pctEl)   { pctEl.style.transition   = 'opacity .45s'; pctEl.style.opacity   = '0'; }
+        if (stageEl) { stageEl.style.transition = 'opacity .45s'; stageEl.style.opacity = '0'; }
+        /* ظهور الختام السينمائي */
+        setTimeout(function() {
+          if (finaleEl) finaleEl.classList.add('sv-show');
+        }, 530);
+      }, 900);
+    }
+  }, interval);
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  var sel = document.getElementById('countrySelect');
   if (sel) updateCountryHint(sel);
+  runSovereignCounter();
 });
-
-let showcaseItems = [], showcaseIndex = 0, showcaseTimer = null;
-const showcaseDelay = 6000;
-
-function fmtNumber(value, suffix='') {
-  const num = Number(value||0);
-  return num.toLocaleString('ar-SA',{maximumFractionDigits:1,minimumFractionDigits:Number.isInteger(num)?0:1})+(suffix||'');
-}
-
-function makeChartPoints(seed) {
-  const base = Math.max(6,Math.min(26,26-(seed%11)));
-  return [0,14,28,42,56,70,84,100].map((x,i)=>{
-    const y=Math.max(6,Math.min(26,base-i*2+((seed+i*3)%5)));
-    return x+','+y;
-  }).join(' ');
-}
-
-function applyActivity(index) {
-  if (!showcaseItems.length) return;
-  showcaseIndex = (index+showcaseItems.length)%showcaseItems.length;
-  const item = showcaseItems[showcaseIndex];
-  const accent = item.accent||{};
-  const metrics = item.metrics||[];
-
-  document.getElementById('activityCounter').textContent=(showcaseIndex+1).toLocaleString('ar-SA')+' / '+showcaseItems.length.toLocaleString('ar-SA')+' نشاط';
-  document.getElementById('heroIcon').textContent=item.icon||'🏪';
-  document.getElementById('heroTitle').textContent=item.headline||item.title||'نشاط تجاري';
-  document.getElementById('heroSub').textContent=item.subheadline||'';
-  document.getElementById('heroMode').textContent='mode: '+(item.pos_mode||'standard');
-
-  const heroMain=document.getElementById('heroMain');
-  heroMain.style.background='linear-gradient(135deg,'+(accent.from||'#eff6ff')+', rgba(255,255,255,.94))';
-  heroMain.style.borderColor=accent.border||'#dbeafe';
-  document.getElementById('heroTitle').style.color=accent.text||'#0b3a63';
-  document.getElementById('heroIcon').style.background='linear-gradient(135deg,'+(accent.from||'#eff6ff')+','+(accent.to||'#ecfeff')+')';
-
-  document.getElementById('featureList').innerHTML=(item.features||[]).map((f,i)=>'<div class="jb-feature"><strong>ميزة '+(i+1).toLocaleString('ar-SA')+'</strong>'+f+'</div>').join('');
-
-  const m1=metrics[0]||{label:'المؤشر الأول',value:0,color:'primary'};
-  const m2=metrics[1]||{label:'المؤشر الثاني',value:0,color:'teal'};
-  document.getElementById('metric1Label').textContent=m1.label;
-  document.getElementById('metric2Label').textContent=m2.label;
-  const mv1=document.getElementById('metric1Value');
-  const mv2=document.getElementById('metric2Value');
-  mv1.textContent=fmtNumber(m1.value,m1.suffix||'');
-  mv2.textContent=fmtNumber(m2.value,m2.suffix||'');
-  mv1.className='jb-metric-value '+(m1.color==='gold'?'gold':m1.color==='teal'?'teal':'');
-  mv2.className='jb-metric-value '+(m2.color==='gold'?'gold':m2.color==='teal'?'teal':'');
-  document.getElementById('metric1Chart').setAttribute('points',makeChartPoints(Number(m1.value||0)));
-  document.getElementById('metric2Chart').setAttribute('points',makeChartPoints(Number(m2.value||0)+7));
-  document.getElementById('metric1Chart').setAttribute('stroke',accent.text||'#0b3a63');
-  document.getElementById('metric2Chart').setAttribute('stroke',m2.color==='gold'?'#a16207':'#0f766e');
-
-  const upcoming=[];
-  for(let i=1;i<=5;i++){
-    const ni=showcaseItems[(showcaseIndex+i)%showcaseItems.length];
-    upcoming.push('<span class="jb-upcoming-item">'+(ni.icon||'🏪')+' '+ni.title+'</span>');
-  }
-  document.getElementById('upcomingActivities').innerHTML=upcoming.join('');
-  document.getElementById('showcaseProgress').style.width=(((showcaseIndex+1)/showcaseItems.length)*100).toFixed(2)+'%';
-}
-
-function nextActivity(){ applyActivity(showcaseIndex+1); restartRotation(); }
-function prevActivity(){ applyActivity(showcaseIndex-1); restartRotation(); }
-
-function restartRotation(){
-  if(showcaseTimer) clearInterval(showcaseTimer);
-  showcaseTimer=setInterval(()=>applyActivity(showcaseIndex+1),showcaseDelay);
-}
-
-async function loadRealLandingMetrics(){
-  try{
-    const res=await fetch('/auth/landing-metrics');
-    const data=await res.json();
-    if(!data.success) return;
-    const g=data.global||{};
-    showcaseItems=Array.isArray(data.showcase)?data.showcase:[];
-    document.getElementById('cntInv').textContent='+'+fmtNumber(g.total_invoices||0);
-    document.getElementById('aiAccuracy').textContent=fmtNumber(g.ai_accuracy||99.9,'%');
-    document.getElementById('profilesCount').textContent=fmtNumber(g.profiles_count||showcaseItems.length||73);
-    document.getElementById('businessesCount').textContent=fmtNumber(g.businesses_count||0);
-    if(showcaseItems.length){ applyActivity(0); restartRotation(); }
-  }catch(e){}
-}
-
-window.addEventListener('load',loadRealLandingMetrics);
 </script>
 {% endblock %}
+

@@ -149,12 +149,18 @@
           <th class="num-col">المدفوع</th>
           <th>طريقة الدفع</th>
           <th>الحالة</th>
+          {% if can_view_invoice_controls %}<th>الرقابة</th>{% endif %}
         </tr>
       </thead>
       <tbody>
         {% for inv in invoices %}
         <tr>
-          <td><span class="ord-num-badge">{{ inv.invoice_number }}</span></td>
+          <td>
+            <span class="ord-num-badge">{{ inv.invoice_number }}</span>
+            {% if inv.has_modifications %}
+            <span title="تم تعديل/إلغاء هذه الفاتورة" style="color:#f59e0b;font-weight:700;margin-inline-start:6px">⚠️</span>
+            {% endif %}
+          </td>
           <td class="muted-cell">{{ inv.invoice_date }}</td>
           <td>{{ inv.party_name or '—' }}</td>
           <td class="num-col">{{ '%.2f' | format(inv.subtotal) }}</td>
@@ -176,6 +182,17 @@
               {% else %}ملغي{% endif %}
             </span>
           </td>
+          {% if can_view_invoice_controls %}
+          <td>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="showInvoiceChanges({{ inv.id }})">📊 مقارنة</button>
+            {% if can_cancel_invoice and inv.status != 'cancelled' %}
+            <button type="button" class="btn btn-danger btn-sm" onclick="cancelInvoice({{ inv.id }}, '{{ inv.invoice_number }}')">⛔ إلغاء</button>
+            {% endif %}
+            {% if can_delete_invoice and inv.status == 'draft' %}
+            <button type="button" class="btn btn-danger btn-sm" onclick="deleteInvoice({{ inv.id }}, '{{ inv.invoice_number }}')">🗑 حذف</button>
+            {% endif %}
+          </td>
+          {% endif %}
         </tr>
         {% endfor %}
       </tbody>
@@ -203,6 +220,29 @@
   </div>
   {% endif %}
 </div>
+
+<div id="changeModal" class="tbl-modal-overlay" style="display:none" onclick="closeChangeModalOutside(event)">
+  <div class="tbl-modal-box" style="max-width:760px">
+    <div class="tbl-modal-head">
+      <div class="tbl-modal-title-group">
+        <h3>⚠️ مقارنة التعديل</h3>
+      </div>
+      <button class="btn-icon-close" onclick="closeChangeModal()">✕</button>
+    </div>
+    <div class="tbl-modal-body">
+      <div id="changeMeta" class="muted-cell" style="margin-bottom:10px"></div>
+      <table class="data-table">
+        <thead>
+          <tr><th>الحقل</th><th>القيمة السابقة</th><th>القيمة الحالية</th></tr>
+        </thead>
+        <tbody id="changeBody"></tbody>
+      </table>
+    </div>
+    <div class="tbl-modal-foot">
+      <button class="btn btn-secondary" onclick="closeChangeModal()">إغلاق</button>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -210,6 +250,10 @@
 /* ─── بيانات المنتجات من السيرفر ─────────────────────────────── */
 const PRODUCTS = {{ products | tojson }};
 const CURRENCY = '{{ (current_business.currency if current_business else "ر.ي") | e }}';
+const CAN_VIEW_INVOICE_CONTROLS = {{ 'true' if can_view_invoice_controls else 'false' }};
+const CAN_CANCEL_INVOICE = {{ 'true' if can_cancel_invoice else 'false' }};
+const CAN_DELETE_INVOICE = {{ 'true' if can_delete_invoice else 'false' }};
+const CAN_SKIP_REASON = {{ 'true' if can_skip_reason else 'false' }};
 
 /* ─── مؤشر عدد الصفوف ─────────────────────────────────────────── */
 let lineCount = 0;
@@ -343,6 +387,103 @@ function setText(id, val) {
 function updateSaveBtn() {
   const hasLines = document.getElementById('linesBody').querySelectorAll('tr').length > 0;
   document.getElementById('saveBtn').disabled = !hasLines;
+}
+
+async function cancelInvoice(invoiceId, invoiceNumber) {
+  if (!CAN_CANCEL_INVOICE) return;
+  let reason = '';
+  if (!CAN_SKIP_REASON) {
+    reason = prompt(`سبب إلغاء الفاتورة ${invoiceNumber}:`, 'إلغاء إداري موثق');
+    if (!reason || !reason.trim()) {
+      alert('سبب الإلغاء إلزامي');
+      return;
+    }
+  }
+  const res = await fetch(`/api/orders/${invoiceId}/cancel`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ reason: (reason || '').trim() })
+  });
+  const data = await res.json();
+  if (!data.success) {
+    alert('⚠️ ' + (data.error || 'فشل الإلغاء'));
+    return;
+  }
+  alert('✓ تم الإلغاء مع حفظ السجل');
+  location.reload();
+}
+
+async function deleteInvoice(invoiceId, invoiceNumber) {
+  if (!CAN_DELETE_INVOICE) return;
+  let reason = '';
+  if (!CAN_SKIP_REASON) {
+    reason = prompt(`سبب حذف الفاتورة ${invoiceNumber}:`, 'حذف مسودة خاطئة');
+    if (!reason || !reason.trim()) {
+      alert('سبب الحذف إلزامي');
+      return;
+    }
+  }
+  const res = await fetch(`/api/orders/${invoiceId}/delete`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ reason: (reason || '').trim() })
+  });
+  const data = await res.json();
+  if (!data.success) {
+    alert('⚠️ ' + (data.error || 'فشل الحذف'));
+    return;
+  }
+  alert('✓ تم حذف المسودة وتسجيل العملية');
+  location.reload();
+}
+
+async function showInvoiceChanges(invoiceId) {
+  if (!CAN_VIEW_INVOICE_CONTROLS) return;
+  const res = await fetch(`/api/orders/${invoiceId}/changes`);
+  const data = await res.json();
+  if (!data.success) {
+    alert('⚠️ ' + (data.error || 'تعذر جلب التغييرات'));
+    return;
+  }
+  if (!data.changes || data.changes.length === 0) {
+    alert('لا توجد تعديلات مسجلة على هذه الفاتورة');
+    return;
+  }
+
+  const latest = data.changes[0];
+  const oldInv = (latest.old && latest.old.invoice) ? latest.old.invoice : {};
+  const newInv = (latest.new && latest.new.invoice) ? latest.new.invoice : {};
+
+  const rows = [
+    ['الحالة', oldInv.status || '—', newInv.status || '—'],
+    ['الإجمالي', `${Number(oldInv.total || 0).toFixed(2)} ${CURRENCY}`, `${Number(newInv.total || 0).toFixed(2)} ${CURRENCY}`],
+    ['الضريبة', `${Number(oldInv.tax_amount || 0).toFixed(2)} ${CURRENCY}`, `${Number(newInv.tax_amount || 0).toFixed(2)} ${CURRENCY}`],
+    ['المدفوع', `${Number(oldInv.paid_amount || 0).toFixed(2)} ${CURRENCY}`, `${Number(newInv.paid_amount || 0).toFixed(2)} ${CURRENCY}`]
+  ];
+
+  document.getElementById('changeMeta').textContent =
+    `المُعدِّل: ${latest.actor_name || '—'} (${latest.actor_role || '—'}) | الوقت: ${latest.created_at || '—'} | السبب: ${latest.reason || '—'}`;
+
+  document.getElementById('changeBody').innerHTML = rows.map(([label, oldV, newV]) => {
+    const changed = String(oldV) !== String(newV);
+    const oldStyle = changed ? 'color:#b91c1c;font-weight:700' : '';
+    const newStyle = changed ? 'color:#166534;font-weight:700' : '';
+    return `<tr>
+      <td>${escHtml(label)}</td>
+      <td style="${oldStyle}">${escHtml(oldV)}</td>
+      <td style="${newStyle}">${escHtml(newV)}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('changeModal').style.display = 'flex';
+}
+
+function closeChangeModal() {
+  document.getElementById('changeModal').style.display = 'none';
+}
+
+function closeChangeModalOutside(e) {
+  if (e.target.id === 'changeModal') closeChangeModal();
 }
 
 /* ─── HTML escaping ─────────────────────────────────────────────── */
