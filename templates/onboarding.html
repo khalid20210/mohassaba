@@ -1,528 +1,1169 @@
-﻿{% extends "base.html" %}
-{% block title %}تهيئة منشأتك{% endblock %}
+{% extends "base.html" %}
+{% block title %}تهيئة منشأتك — جنان بيز{% endblock %}
 
-{% block auth_content %}
-<div class="onboarding-page">
-  <div class="onboarding-card">
-
-    <h2>🏢 أهلاً! لنبدأ بتهيئة منشأتك</h2>
-    <p class="subtitle">أجب على بعض الأسئلة السريعة لنخصّص النظام لاحتياجاتك</p>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for cat, msg in messages %}
-        <div class="alert alert-{{ cat }}">{{ msg }}</div>
-      {% endfor %}
-    {% endwith %}
-
-    <form method="POST" action="{{ url_for('onboarding') }}" id="onboarding-form">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-
-      <!-- اسم المنشأة -->
-      <div class="form-group">
-        <label class="form-label">اسم المنشأة <span class="required">*</span></label>
-        <input type="text" name="business_name" class="form-control"
-               placeholder="مثال: متجر الأمانة، مطعم البيت..."
-               required autofocus
-               value="{{ request.form.get('business_name', '') }}"
-               style="font-size:1.05rem;">
-      </div>
-
-      <!-- ──────────── اختيار النشاط — wizard ثلاثي ──────────── -->
-      <input type="hidden" name="industry_type" id="finalIndustryType" value="">
-
-      <div id="industry-wizard" style="margin-top:24px;">
-
-        <!-- breadcrumb المسار المختار -->
-        <div id="industry-breadcrumb" class="ob-breadcrumb" style="display:none;">
-          <span id="bc1"></span>
-          <span id="bc2" style="color:#64748b;"></span>
-          <span id="bc3" style="color:#64748b;"></span>
-        </div>
-
-        <!-- ══ اللوحة 1: نوع البيع ══ -->
-        <div id="panel-saletype" class="wizard-panel">
-          <p class="form-label" style="margin-bottom:12px;">أولاً: اختر نوع البيع (تجزئة أو جملة) <span class="required">*</span></p>
-          <div class="ind-grid ind-grid-4">
-            <button type="button" class="ind-card" data-panel="sector" data-sale="retail">
-              <span class="ind-icon">🏪</span>
-              <span class="ind-name">بيع تجزئة</span>
-              <span class="ind-desc">مباشر للمستهلك</span>
-            </button>
-            <button type="button" class="ind-card" data-panel="sector" data-sale="wholesale">
-              <span class="ind-icon">📦</span>
-              <span class="ind-name">بيع جملة</span>
-              <span class="ind-desc">بكميات للتجار</span>
-            </button>
-            <button type="button" class="ind-card" data-panel="foodtype" data-sale="food">
-              <span class="ind-icon">🍽️</span>
-              <span class="ind-name">تقديم طعام</span>
-              <span class="ind-desc">مطاعم وكافيهات</span>
-            </button>
-            <button type="button" class="ind-card ind-card-final" data-final="construction">
-              <span class="ind-icon">🏗️</span>
-              <span class="ind-name">مقاولات</span>
-            </button>
-            <button type="button" class="ind-card ind-card-final" data-final="car_rental">
-              <span class="ind-icon">🚗</span>
-              <span class="ind-name">تأجير سيارات</span>
-            </button>
-            <button type="button" class="ind-card ind-card-final" data-final="medical">
-              <span class="ind-icon">🏥</span>
-              <span class="ind-name">خدمات صحية</span>
-            </button>
-            <button type="button" class="ind-card ind-card-final" data-final="services">
-              <span class="ind-icon">🔧</span>
-              <span class="ind-name">خدمات عامة</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- ══ اللوحة 2: القطاع (8 قطاعات — لكليهما) ══ -->
-        <div id="panel-sector" class="wizard-panel" style="display:none;">
-          <div class="wizard-back"><button type="button" class="btn-back" data-goto="saletype">← رجوع</button></div>
-          <p class="form-label" style="margin-bottom:12px;" id="sector-label">اختر قطاع النشاط</p>
-          <div class="ind-grid ind-grid-4">
-            <button type="button" class="ind-card" data-panel="activity" data-sector="fnb">
-              <span class="ind-icon">🥬</span>
-              <span class="ind-name">غذاء وتموين</span>
-            </button>
-            <button type="button" class="ind-card" data-panel="activity" data-sector="fashion">
-              <span class="ind-icon">👗</span>
-              <span class="ind-name">موضة وملبوسات</span>
-            </button>
-            <button type="button" class="ind-card" data-panel="activity" data-sector="construction">
-              <span class="ind-icon">🧱</span>
-              <span class="ind-name">مواد بناء وأدوات</span>
-            </button>
-            <button type="button" class="ind-card" data-panel="activity" data-sector="electronics">
-              <span class="ind-icon">📱</span>
-              <span class="ind-name">إلكترونيات وتقنية</span>
-            </button>
-            <button type="button" class="ind-card" data-panel="activity" data-sector="health">
-              <span class="ind-icon">💊</span>
-              <span class="ind-name">صحة وعناية</span>
-            </button>
-            <button type="button" class="ind-card" data-panel="activity" data-sector="auto">
-              <span class="ind-icon">🚗</span>
-              <span class="ind-name">سيارات ومعدات</span>
-            </button>
-            <button type="button" class="ind-card" data-panel="activity" data-sector="home">
-              <span class="ind-icon">🛋️</span>
-              <span class="ind-name">منزل ومكتب</span>
-            </button>
-            <button type="button" class="ind-card" data-panel="activity" data-sector="specialized">
-              <span class="ind-icon">⭐</span>
-              <span class="ind-name">أنشطة متخصصة</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- ══ اللوحة 3: النشاط التفصيلي ══ -->
-        <div id="panel-activity" class="wizard-panel" style="display:none;">
-          <div class="wizard-back"><button type="button" class="btn-back" data-goto="sector">← رجوع</button></div>
-          <p class="form-label" style="margin-bottom:12px;" id="activity-label">اختر نشاطك</p>
-          <div class="ind-grid" id="activity-grid"></div>
-        </div>
-
-        <!-- ══ اللوحة 3b: تقديم الطعام ══ -->
-        <div id="panel-foodtype" class="wizard-panel" style="display:none;">
-          <div class="wizard-back"><button type="button" class="btn-back" data-goto="saletype">← رجوع</button></div>
-          <p class="form-label" style="margin-bottom:12px;">اختر نوع المنشأة</p>
-          <div class="ind-grid ind-grid-3">
-            <button type="button" class="ind-card ind-card-lg ind-card-final" data-final="food_restaurant">
-              <span class="ind-icon">🍽️</span><span class="ind-name">مطعم</span>
-            </button>
-            <button type="button" class="ind-card ind-card-lg ind-card-final" data-final="food_cafe">
-              <span class="ind-icon">☕</span><span class="ind-name">كافيه</span>
-            </button>
-            <button type="button" class="ind-card ind-card-lg ind-card-final" data-final="food_coffeeshop">
-              <span class="ind-icon">☕🍰</span><span class="ind-name">مقهى</span>
-            </button>
-          </div>
-        </div>
-
-      </div><!-- #industry-wizard -->
-
-      <!-- قسم "معلومات إضافية + ابدأ الآن" — يظهر بعد اكتمال الاختيار -->
-      <div id="optional-fields" style="display:none; border-top:1px solid #e2e8f0;
-           padding-top:20px; margin-top:20px;">
-        <p style="font-size:.8rem; color:#64748b; margin-bottom:16px;">معلومات إضافية (اختياري)</p>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
-          <div class="form-group">
-            <label class="form-label">الرقم الضريبي</label>
-            <input type="text" name="tax_number" class="form-control"
-                   placeholder="0000000000"
-                   value="{{ request.form.get('tax_number', '') }}">
-          </div>
-          <div class="form-group">
-            <label class="form-label">المدينة</label>
-            <input type="text" name="city" class="form-control"
-                   placeholder="الرياض، جدة..."
-                   value="{{ request.form.get('city', '') }}">
-          </div>
-        </div>
-        <button type="submit" class="btn btn-primary btn-block btn-lg"
-                style="margin-top:16px;">ابدأ الآن ←</button>
-      </div>
-
-    </form>
-  </div>
-</div>
-
+{% block ob_content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-/* ─── Wizard Layout ──────────────────────────────────────── */
-.ind-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+/* ═══════════════════════════════════════════════════════
+   متغيرات — لؤلؤي فاتح + أيقونات سماوية متدرجة
+═══════════════════════════════════════════════════════ */
+:root{
+  --ob-bg1:#eef5ff;
+  --ob-bg2:#f7f9ff;
+  --ob-bg3:#e8f0fe;
+  --ob-card:#ffffff;
+  --ob-accent:#2563eb;
+  --ob-accent2:#38bdf8;
+  --ob-accent3:#6366f1;
+  --ob-text:#1e293b;
+  --ob-mid:#334155;
+  --ob-dim:#64748b;
+  --ob-muted:#94a3b8;
+  --ob-border:#e2e8f0;
+  --ob-border2:rgba(37,99,235,.15);
+  --ob-shadow:0 4px 32px rgba(37,99,235,.09);
+  --ob-shadow-lg:0 12px 48px rgba(37,99,235,.14);
+  --ob-success:#059669;
+  --ob-danger:#dc2626;
+  --ob-icon-grad:linear-gradient(135deg,#38bdf8,#2563eb);
+  --ob-icon-grad2:linear-gradient(135deg,#6366f1,#38bdf8);
+  --ob-icon-grad3:linear-gradient(135deg,#0ea5e9,#2563eb,#4f46e5);
 }
-.ind-grid-3 { grid-template-columns: repeat(3, 1fr); }
-.ind-grid-4 { grid-template-columns: repeat(4, 1fr); }
 
-@media (max-width: 560px) {
-  .ind-grid, .ind-grid-4 { grid-template-columns: repeat(2, 1fr); }
-  .ind-grid-3             { grid-template-columns: repeat(3, 1fr); }
+*{box-sizing:border-box;margin:0;padding:0;}
+
+/* ─── الجذر ─── */
+#ob-root{
+  font-family:'Cairo',sans-serif;
+  min-height:100vh;
+  background:linear-gradient(150deg,var(--ob-bg1) 0%,var(--ob-bg2) 50%,var(--ob-bg3) 100%);
+  color:var(--ob-text);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:fixed;inset:0;z-index:9999;
+  overflow:hidden;
 }
 
-/* ─── Cards ──────────────────────────────────────────────── */
-.ind-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 4px;
-  padding: 12px 6px 10px;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  background: #fff;
-  cursor: pointer;
-  transition: border-color .15s, background .15s, transform .12s;
-  text-align: center;
-  font-family: inherit;
-  min-height: 80px;
+/* ─── طبقات الخلفية اللؤلؤية ─── */
+.ob-pearl-layer{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%,rgba(56,189,248,.08) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 80% at 80% 80%,rgba(99,102,241,.07) 0%,transparent 55%),
+    radial-gradient(ellipse 50% 50% at 50% 50%,rgba(37,99,235,.04) 0%,transparent 70%);
 }
-.ind-card:hover  { border-color:#93c5fd; background:#eff6ff; transform:translateY(-2px); }
-.ind-card.selected { border-color:#2563eb; background:#dbeafe; }
-.ind-card-lg { min-height:100px; padding:18px 8px; }
-.ind-icon { font-size:1.6rem; line-height:1; }
-.ind-name { font-size:.8rem; font-weight:700; color:#1e293b; line-height:1.25; }
-.ind-desc { font-size:.7rem; color:#64748b; }
-
-/* ─── Breadcrumb ─────────────────────────────────────────── */
-.ob-breadcrumb {
-  background:#f1f5f9; border-radius:8px;
-  padding:7px 12px; font-size:.8rem;
-  color:#475569; margin-bottom:12px;
-  display:flex; align-items:center; gap:4px; flex-wrap:wrap;
+/* نقاط عائمة ناعمة */
+.ob-dot-layer{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:radial-gradient(rgba(37,99,235,.12) 1.5px,transparent 1.5px);
+  background-size:36px 36px;
+  opacity:.45;
 }
-.ob-breadcrumb #bc1 { color:#2563eb; font-weight:700; }
-
-/* ─── Navigation ─────────────────────────────────────────── */
-.wizard-back { margin-bottom:10px; }
-.btn-back {
-  background:none; border:none; color:#2563eb;
-  cursor:pointer; font-size:.85rem;
-  font-family:inherit; padding:4px 0;
+/* دوائر كبيرة ديكورية */
+.ob-circle{
+  position:fixed;border-radius:50%;pointer-events:none;z-index:0;
+  border:1.5px solid rgba(37,99,235,.07);
 }
-.btn-back:hover { text-decoration:underline; }
 
-/* ─── Fade ───────────────────────────────────────────────── */
-.wizard-panel { animation: fadeUp .2s ease; }
-@keyframes fadeUp {
-  from { opacity:0; transform:translateY(8px); }
-  to   { opacity:1; transform:translateY(0);   }
+/* ─── حاوية المسرح ─── */
+.ob-wrap{
+  position:relative;z-index:10;
+  width:min(1080px,98vw);
+  padding:10px 16px;
+}
+
+/* ─── شريط التقدم ─── */
+.ob-progress{
+  display:flex;align-items:center;justify-content:center;
+  gap:8px;margin-bottom:28px;
+}
+.ob-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:rgba(37,99,235,.15);
+  transition:all .4s cubic-bezier(.22,1,.36,1);
+}
+.ob-dot.done{background:var(--ob-success);}
+.ob-dot.cur{background:var(--ob-accent);width:28px;border-radius:5px;}
+
+/* ─── المشاهد ─── */
+.ob-scene{
+  display:none;
+  background:var(--ob-card);
+  border:1px solid var(--ob-border);
+  border-radius:24px;
+  box-shadow:var(--ob-shadow-lg);
+  padding:50px 60px;
+  position:relative;overflow:hidden;
+  animation:sceneIn .45s cubic-bezier(.16,1,.3,1);
+}
+.ob-scene.active{display:block;}
+@keyframes sceneIn{
+  from{opacity:0;transform:translateY(20px) scale(.985)}
+  to  {opacity:1;transform:translateY(0)   scale(1)}
+}
+/* خط علوي ملون لكل مشهد */
+.ob-scene::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--ob-icon-grad3);
+  border-radius:24px 24px 0 0;
+}
+
+/* علامة مائية */
+.ob-watermark{
+  position:absolute;bottom:14px;left:20px;
+  display:flex;align-items:center;gap:7px;
+  opacity:.18;pointer-events:none;
+}
+.ob-watermark img{width:28px;height:28px;border-radius:6px;object-fit:contain;}
+.ob-watermark span{font-size:.67rem;font-weight:700;color:var(--ob-accent);}
+
+/* ══════════════════════════════════════════════════
+   أيقونة متدرجة سماوية — الأساس
+══════════════════════════════════════════════════ */
+.grad-icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:16px;
+  background:var(--ob-icon-grad);
+  box-shadow:0 6px 20px rgba(37,99,235,.22);
+  color:#fff;flex-shrink:0;
+}
+.grad-icon.sm{width:42px;height:42px;font-size:1.15rem;border-radius:11px;}
+.grad-icon.md{width:54px;height:54px;font-size:1.4rem;border-radius:14px;}
+.grad-icon.lg{width:72px;height:72px;font-size:2rem;border-radius:18px;}
+.grad-icon.alt{background:var(--ob-icon-grad2);}
+.grad-icon.alt3{background:var(--ob-icon-grad3);}
+
+/* ══════════════════════════════════════════════════
+   SCENE A — الهوية الإدارية (full-width 3 cols)
+══════════════════════════════════════════════════ */
+.sc-a-top{
+  display:flex;align-items:center;gap:28px;
+  margin-bottom:40px;
+  padding-bottom:32px;
+  border-bottom:1.5px solid var(--ob-border);
+}
+.sc-a-logo-box{
+  position:relative;flex-shrink:0;
+  width:80px;height:80px;
+  display:flex;align-items:center;justify-content:center;
+}
+.sc-a-logo-box .grad-icon{width:80px;height:80px;font-size:2.4rem;border-radius:22px;background:var(--ob-icon-grad3);}
+.sc-a-logo-ring{
+  position:absolute;inset:-8px;border-radius:30px;
+  border:2px solid rgba(37,99,235,.18);
+  animation:ringPulse 3s ease-in-out infinite;
+}
+@keyframes ringPulse{
+  0%{transform:scale(.88);opacity:.7}
+  70%{transform:scale(1.12);opacity:.05}
+  100%{transform:scale(.88);opacity:.7}
+}
+.sc-a-texts{}
+.sc-a-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(37,99,235,.07);border:1px solid var(--ob-border2);
+  border-radius:20px;padding:3px 12px;
+  font-size:.7rem;font-weight:700;letter-spacing:.08em;
+  color:var(--ob-accent);margin-bottom:8px;
+}
+.sc-a-title{
+  font-size:2rem;font-weight:900;line-height:1.2;
+  background:linear-gradient(135deg,#1e3a8a,#2563eb,#0ea5e9);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:5px;
+}
+.sc-a-sub{font-size:.88rem;color:var(--ob-dim);line-height:1.6;}
+
+/* شبكة المزايا 3×2 */
+.feat-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+  margin-bottom:30px;
+}
+.feat-card{
+  display:flex;align-items:flex-start;gap:14px;
+  background:linear-gradient(135deg,#f8fbff,#f0f6ff);
+  border:1px solid var(--ob-border);
+  border-radius:16px;
+  padding:18px 16px;
+  transition:all .22s cubic-bezier(.22,1,.36,1);
+  animation:featSlide .55s cubic-bezier(.16,1,.3,1) both;
+}
+.feat-card:nth-child(1){animation-delay:.05s}
+.feat-card:nth-child(2){animation-delay:.11s}
+.feat-card:nth-child(3){animation-delay:.17s}
+.feat-card:nth-child(4){animation-delay:.23s}
+.feat-card:nth-child(5){animation-delay:.29s}
+.feat-card:nth-child(6){animation-delay:.35s}
+@keyframes featSlide{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.feat-card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 8px 28px rgba(37,99,235,.12);
+  border-color:var(--ob-border2);
+}
+.feat-body{}
+.feat-title{font-size:.82rem;font-weight:800;color:var(--ob-text);margin-bottom:3px;}
+.feat-desc{font-size:.72rem;color:var(--ob-dim);line-height:1.5;}
+
+/* شريط التقدم */
+.sc-a-progress-row{display:flex;align-items:center;gap:12px;}
+.sc-a-bar-wrap{flex:1;height:5px;background:rgba(37,99,235,.1);border-radius:5px;overflow:hidden;}
+.sc-a-bar-fill{
+  height:100%;width:0;
+  background:var(--ob-icon-grad3);
+  border-radius:5px;transition:width .05s linear;
+}
+.sc-a-hint{font-size:.72rem;color:var(--ob-muted);white-space:nowrap;}
+
+/* ══════════════════════════════════════════════════
+   SCENE B — اختيار القطاع (full-width 4 cols)
+══════════════════════════════════════════════════ */
+.sc-b-header{text-align:center;margin-bottom:32px;}
+.sc-b-eyebrow{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(37,99,235,.07);border:1px solid var(--ob-border2);
+  border-radius:20px;padding:4px 14px;
+  font-size:.72rem;font-weight:700;letter-spacing:.08em;
+  color:var(--ob-accent);margin-bottom:12px;
+}
+.sc-b-title{
+  font-size:1.9rem;font-weight:900;
+  background:linear-gradient(135deg,#1e3a8a,#2563eb);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:6px;
+}
+.sc-b-sub{font-size:.9rem;color:var(--ob-dim);}
+
+.sector-grid-8{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+  margin-bottom:24px;
+}
+.sec-card{
+  background:#fff;
+  border:2px solid var(--ob-border);
+  border-radius:16px;
+  padding:26px 14px 20px;
+  cursor:pointer;text-align:center;
+  transition:all .22s cubic-bezier(.22,1,.36,1);
+  animation:secIn .5s cubic-bezier(.16,1,.3,1) both;
+}
+.sec-card:nth-child(1){animation-delay:.04s}
+.sec-card:nth-child(2){animation-delay:.09s}
+.sec-card:nth-child(3){animation-delay:.14s}
+.sec-card:nth-child(4){animation-delay:.19s}
+.sec-card:nth-child(5){animation-delay:.24s}
+.sec-card:nth-child(6){animation-delay:.29s}
+.sec-card:nth-child(7){animation-delay:.34s}
+.sec-card:nth-child(8){animation-delay:.39s}
+@keyframes secIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+.sec-card:hover{
+  border-color:var(--ob-accent);
+  transform:translateY(-4px);
+  box-shadow:0 10px 32px rgba(37,99,235,.14);
+}
+.sec-card.selected{
+  border-color:var(--ob-accent);
+  background:linear-gradient(150deg,#f0f6ff,#e8f0fe);
+  box-shadow:0 0 0 4px rgba(37,99,235,.12),0 10px 32px rgba(37,99,235,.16);
+}
+.sec-icon-wrap{
+  width:56px;height:56px;border-radius:16px;
+  background:var(--ob-icon-grad);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.7rem;margin:0 auto 12px;
+  box-shadow:0 6px 18px rgba(37,99,235,.2);
+  transition:all .22s;
+}
+.sec-card:hover .sec-icon-wrap{box-shadow:0 8px 24px rgba(37,99,235,.3);}
+.sec-card.selected .sec-icon-wrap{background:var(--ob-icon-grad3);}
+.sec-name{font-size:.82rem;font-weight:800;color:var(--ob-text);line-height:1.3;}
+
+/* ══════════════════════════════════════════════════
+   SCENE C — الأنشطة الفرعية
+══════════════════════════════════════════════════ */
+.sc-c-top{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:20px;gap:16px;
+}
+.sc-c-back{
+  display:inline-flex;align-items:center;gap:5px;
+  background:#fff;border:1.5px solid var(--ob-border);border-radius:9px;
+  color:var(--ob-dim);font-size:.78rem;font-family:'Cairo',sans-serif;
+  padding:5px 12px;cursor:pointer;
+  transition:all .18s;white-space:nowrap;
+}
+.sc-c-back:hover{border-color:var(--ob-accent);color:var(--ob-accent);}
+.sc-c-titles{}
+.sc-c-title{font-size:1.35rem;font-weight:900;color:var(--ob-text);margin-bottom:3px;}
+.sc-c-sub{
+  font-size:.8rem;font-weight:700;
+  background:var(--ob-icon-grad);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+
+.ob-tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px;}
+.ob-tab{
+  padding:5px 14px;border-radius:8px;
+  border:1.5px solid var(--ob-border);
+  background:#fff;color:var(--ob-dim);
+  font-size:.75rem;font-weight:700;cursor:pointer;
+  transition:all .18s;font-family:'Cairo',sans-serif;
+}
+.ob-tab:hover{border-color:var(--ob-accent);color:var(--ob-accent);}
+.ob-tab.active{
+  background:var(--ob-icon-grad);color:#fff;
+  border-color:transparent;
+  box-shadow:0 3px 12px rgba(37,99,235,.25);
+}
+
+.ob-acts{
+  display:grid;grid-template-columns:repeat(5,1fr);
+  gap:9px;max-height:240px;overflow-y:auto;
+  padding-left:3px;margin-bottom:18px;
+}
+.ob-acts::-webkit-scrollbar{width:4px;}
+.ob-acts::-webkit-scrollbar-thumb{background:rgba(37,99,235,.2);border-radius:4px;}
+.ob-act{
+  background:#fff;border:2px solid var(--ob-border);
+  border-radius:12px;padding:10px 6px;
+  cursor:pointer;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  transition:all .18s;min-height:72px;
+}
+.ob-act:hover{border-color:var(--ob-accent);box-shadow:0 4px 14px rgba(37,99,235,.12);}
+.ob-act.selected{
+  border-color:var(--ob-accent);
+  background:linear-gradient(135deg,#f0f6ff,#e8f0fe);
+  box-shadow:0 4px 14px rgba(37,99,235,.18);
+}
+.ob-act-icon-wrap{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--ob-icon-grad);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;
+  box-shadow:0 3px 10px rgba(37,99,235,.18);
+}
+.ob-act.selected .ob-act-icon-wrap{background:var(--ob-icon-grad3);}
+.ob-act-name{font-size:.64rem;font-weight:700;color:var(--ob-mid);line-height:1.3;}
+
+.ob-badge{
+  display:none;align-items:center;gap:8px;
+  background:rgba(5,150,105,.07);border:1.5px solid rgba(5,150,105,.2);
+  border-radius:10px;padding:8px 14px;
+  font-size:.78rem;color:var(--ob-success);
+  margin-bottom:16px;
+}
+.ob-badge.show{display:flex;}
+.ob-badge i{flex-shrink:0;}
+
+.ob-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px;}
+.ob-field-full{grid-column:1/-1;}
+.ob-label{font-size:.77rem;font-weight:700;color:var(--ob-mid);margin-bottom:5px;display:block;}
+.ob-label span{color:var(--ob-danger);}
+.ob-input{
+  width:100%;padding:10px 14px;
+  background:#fff;
+  border:2px solid var(--ob-border);border-radius:10px;
+  color:var(--ob-text);font-family:'Cairo',sans-serif;
+  font-size:.9rem;outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.ob-input:focus{
+  border-color:var(--ob-accent);
+  box-shadow:0 0 0 3px rgba(37,99,235,.1);
+}
+.ob-input::placeholder{color:var(--ob-muted);}
+
+/* ══════════════════════════════════════════════════
+   SCENE D — التهيئة الذكية
+══════════════════════════════════════════════════ */
+.sc-d-heading{
+  text-align:center;margin-bottom:28px;
+}
+.sc-d-heading p{
+  font-size:.82rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  background:var(--ob-icon-grad3);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+
+.sc-d-inner{display:flex;gap:32px;align-items:stretch;}
+
+/* المزايا (يمين) */
+.sc-d-feats{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start;}
+.sc-d-feat{
+  display:flex;align-items:center;gap:12px;
+  background:#fff;
+  border:1.5px solid var(--ob-border);border-radius:14px;
+  padding:14px 16px;
+  opacity:0;transform:translateY(10px);
+  transition:opacity .4s ease,transform .4s ease,border-color .3s,box-shadow .3s;
+}
+.sc-d-feat.show{opacity:1;transform:translateY(0);}
+.sc-d-feat.lit{
+  border-color:var(--ob-border2);
+  box-shadow:0 4px 18px rgba(37,99,235,.1);
+}
+.sc-d-feat-text strong{display:block;font-size:.8rem;font-weight:800;color:var(--ob-text);}
+.sc-d-feat-text span{font-size:.7rem;color:var(--ob-dim);}
+
+/* العداد (يسار) */
+.sc-d-engine{
+  width:200px;flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;
+  background:linear-gradient(150deg,#f0f6ff,#e8f0fe);
+  border:1.5px solid var(--ob-border);border-radius:18px;
+  padding:24px 16px;
+}
+.sc-d-spinner-wrap{
+  position:relative;width:88px;height:88px;
+  margin-bottom:12px;
+}
+.sc-d-ring-outer{
+  width:88px;height:88px;border-radius:50%;
+  border:3px solid rgba(37,99,235,.1);
+  border-top-color:var(--ob-accent);
+  animation:spin 1.2s linear infinite;
+  position:absolute;top:0;left:0;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sc-d-ring-inner{
+  position:absolute;top:10px;left:10px;right:10px;bottom:10px;
+  border-radius:50%;
+  border:2px solid rgba(56,189,248,.3);
+  border-bottom-color:#38bdf8;
+  animation:spin 2s linear infinite reverse;
+}
+.sc-d-shield-center{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+}
+.sc-d-shield-center .grad-icon{width:52px;height:52px;font-size:1.4rem;}
+.sc-d-count{
+  font-size:2.8rem;font-weight:900;
+  background:var(--ob-icon-grad3);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:8px;font-variant-numeric:tabular-nums;
+}
+.sc-d-log{
+  width:100%;background:#fff;border-radius:10px;
+  border:1px solid var(--ob-border);
+  padding:10px;font-size:.62rem;
+  font-family:monospace;color:var(--ob-accent);
+  max-height:110px;overflow-y:auto;
+  line-height:1.8;text-align:right;flex:1;
+}
+.sc-d-log::-webkit-scrollbar{width:2px;}
+.sc-d-log::-webkit-scrollbar-thumb{background:rgba(37,99,235,.2);}
+.sc-d-log-line{opacity:0;animation:logFade .3s forwards;}
+@keyframes logFade{to{opacity:1}}
+.sc-d-bar-wrap{width:100%;height:5px;background:rgba(37,99,235,.1);border-radius:5px;margin-top:12px;overflow:hidden;}
+.sc-d-bar{height:100%;width:0;background:var(--ob-icon-grad3);border-radius:5px;transition:width .6s ease;}
+
+/* ══════════════════════════════════════════════════
+   SCENE E — النهاية
+══════════════════════════════════════════════════ */
+.sc-e-wrap{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;}
+.sc-e-left{text-align:center;}
+.sc-e-emblem{
+  position:relative;width:110px;height:110px;
+  margin:0 auto 22px;
+  display:flex;align-items:center;justify-content:center;
+}
+.sc-e-emblem .grad-icon{width:110px;height:110px;font-size:3rem;border-radius:28px;background:var(--ob-icon-grad3);}
+.sc-e-check{
+  position:absolute;bottom:-5px;right:-5px;
+  width:30px;height:30px;border-radius:50%;
+  background:var(--ob-success);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.8rem;color:#fff;
+  box-shadow:0 4px 12px rgba(5,150,105,.3);
+  animation:popIn .4s .2s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}
+.sc-e-trust{
+  font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  background:var(--ob-icon-grad);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:10px;
+}
+.sc-e-title{
+  font-size:2rem;font-weight:900;
+  background:linear-gradient(135deg,#065f46,#059669,#10b981);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:5px;line-height:1.2;
+}
+.sc-e-slogan{font-size:1rem;font-weight:800;color:var(--ob-text);margin-bottom:6px;}
+.sc-e-sub{font-size:.82rem;color:var(--ob-dim);line-height:1.6;}
+
+.sc-e-right{}
+.sc-e-messages{display:flex;flex-direction:column;gap:10px;margin-bottom:24px;}
+.sc-e-msg{
+  display:flex;align-items:center;gap:10px;
+  background:#fff;border:1.5px solid var(--ob-border);border-radius:12px;
+  padding:12px 16px;font-size:.82rem;color:var(--ob-mid);
+  opacity:0;transform:translateX(-12px);
+  transition:opacity .4s ease,transform .4s ease;
+}
+.sc-e-msg.show{opacity:1;transform:translateX(0);}
+.sc-e-msg .grad-icon{width:32px;height:32px;font-size:.8rem;border-radius:9px;flex-shrink:0;}
+
+/* Brand name + taglines في Scene E */
+.sc-e-brand-name{
+  font-size:2.8rem;font-weight:900;line-height:1.1;margin:12px 0 4px;
+  background:var(--ob-icon-grad3);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.sc-e-brand-tag{
+  font-size:1.1rem;font-weight:800;color:var(--ob-mid);margin-bottom:18px;
+}
+.sc-e-taglines{display:flex;flex-direction:column;gap:8px;margin-bottom:4px;}
+.sc-e-tagline{
+  display:flex;align-items:center;gap:8px;
+  font-size:.87rem;font-weight:700;color:var(--ob-text);
+  opacity:0;transform:translateY(8px);
+  transition:opacity .4s ease,transform .4s ease;
+}
+.sc-e-tagline.show{opacity:1;transform:translateY(0);}
+.sc-e-tagline i{
+  background:var(--ob-icon-grad);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  font-size:.9rem;width:16px;
+}
+
+/* ══════════════════════════════════════════════════
+   أزرار
+══════════════════════════════════════════════════ */
+.ob-btn{
+  width:100%;padding:14px;border:none;border-radius:12px;
+  background:var(--ob-icon-grad3);
+  color:#fff;font-size:.97rem;font-weight:800;
+  font-family:'Cairo',sans-serif;cursor:pointer;
+  transition:all .22s;
+  box-shadow:0 4px 20px rgba(37,99,235,.22);
+}
+.ob-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(37,99,235,.3);}
+.ob-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
+
+.ob-btn-success{
+  background:linear-gradient(135deg,#059669,#10b981);
+  display:block;text-align:center;text-decoration:none;
+  padding:15px;border-radius:12px;
+  color:#fff;font-size:1rem;font-weight:800;
+  font-family:'Cairo',sans-serif;
+  box-shadow:0 4px 20px rgba(5,150,105,.25);
+  transition:all .22s;
+}
+.ob-btn-success:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 32px rgba(5,150,105,.32);
+  text-decoration:none;
+}
+
+/* ══════════════════════════════════════════════════
+   موبايل
+══════════════════════════════════════════════════ */
+@media(max-width:700px){
+  .ob-scene{padding:28px 18px;}
+  .sc-a-top{flex-direction:column;gap:16px;}
+  .feat-grid{grid-template-columns:repeat(2,1fr);}
+  .sector-grid-8{grid-template-columns:repeat(2,1fr);}
+  .ob-acts{grid-template-columns:repeat(3,1fr);}
+  .sc-d-inner{flex-direction:column;}
+  .sc-d-engine{width:100%;}
+  .sc-d-feats{grid-template-columns:1fr;}
+  .sc-e-wrap{grid-template-columns:1fr;}
+  .ob-fields{grid-template-columns:1fr;}
 }
 </style>
 
+<div id="ob-root">
+  <!-- خلفية لؤلؤية -->
+  <div class="ob-pearl-layer"></div>
+  <div class="ob-dot-layer"></div>
+  <div class="ob-circle" style="width:600px;height:600px;top:-200px;right:-180px;"></div>
+  <div class="ob-circle" style="width:400px;height:400px;bottom:-140px;left:-120px;"></div>
+
+  <div class="ob-wrap">
+
+    <!-- مؤشر الخطوات -->
+    <div class="ob-progress" id="obProgress">
+      <div class="ob-dot cur" id="dot0"></div>
+      <div class="ob-dot"    id="dot1"></div>
+      <div class="ob-dot"    id="dot2"></div>
+      <div class="ob-dot"    id="dot3"></div>
+      <div class="ob-dot"    id="dot4"></div>
+    </div>
+
+    <!-- ═══ SCENE A — الهوية الإدارية ═══ -->
+    <div class="ob-scene active" id="scA">
+
+      <div class="sc-a-top">
+        <div class="sc-a-logo-box">
+          <div class="grad-icon alt3" style="width:80px;height:80px;font-size:2.4rem;border-radius:22px;">
+            <i class="fas fa-shield-halved"></i>
+          </div>
+          <div class="sc-a-logo-ring"></div>
+        </div>
+        <div class="sc-a-texts">
+          <div class="sc-a-badge"><i class="fas fa-circle-dot" style="font-size:.55rem;"></i> منصة محاسبة سعودية احترافية</div>
+          <h1 class="sc-a-title">جنان بيز — هويتك الإدارية السيادية</h1>
+          <p class="sc-a-sub">نظام محاسبي متكامل بُنيَ للسوق السعودي. دقيق، آمن، وجاهز من اليوم الأول.</p>
+        </div>
+      </div>
+
+      <div class="feat-grid">
+        <div class="feat-card">
+          <div class="grad-icon sm"><i class="fas fa-chart-pie"></i></div>
+          <div class="feat-body">
+            <div class="feat-title">تقارير مالية فورية</div>
+            <div class="feat-desc">أرباح وخسائر، ميزانية عمومية، تدفق نقدي — بضغطة واحدة</div>
+          </div>
+        </div>
+        <div class="feat-card">
+          <div class="grad-icon sm alt"><i class="fas fa-shield-halved"></i></div>
+          <div class="feat-body">
+            <div class="feat-title">أمان وصلاحيات محكمة</div>
+            <div class="feat-desc">تشفير كامل للبيانات مع نظام صلاحيات متعدد المستويات</div>
+          </div>
+        </div>
+        <div class="feat-card">
+          <div class="grad-icon sm alt3"><i class="fas fa-bolt"></i></div>
+          <div class="feat-body">
+            <div class="feat-title">نقطة بيع سريعة</div>
+            <div class="feat-desc">باركود، فواتير ضريبية، ومدفوعات متعددة في ثوانٍ</div>
+          </div>
+        </div>
+        <div class="feat-card">
+          <div class="grad-icon sm"><i class="fas fa-mosque"></i></div>
+          <div class="feat-body">
+            <div class="feat-title">زكاة وضريبة VAT</div>
+            <div class="feat-desc">احتساب تلقائي وفق متطلبات هيئة الزكاة والدخل</div>
+          </div>
+        </div>
+        <div class="feat-card">
+          <div class="grad-icon sm alt"><i class="fas fa-wifi"></i></div>
+          <div class="feat-body">
+            <div class="feat-title">عمل بلا إنترنت</div>
+            <div class="feat-desc">استمر في البيع أوفلاين — التزامن تلقائي عند الاتصال</div>
+          </div>
+        </div>
+        <div class="feat-card">
+          <div class="grad-icon sm alt3"><i class="fas fa-boxes-stacked"></i></div>
+          <div class="feat-body">
+            <div class="feat-title">مخزون ذكي</div>
+            <div class="feat-desc">تتبع دقيق، تنبيهات نقص المخزون، تقارير الأصناف</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sc-a-progress-row">
+        <div class="sc-a-bar-wrap">
+          <div class="sc-a-bar-fill" id="scABar"></div>
+        </div>
+        <span class="sc-a-hint">جارٍ التحضير...</span>
+      </div>
+
+      <div class="ob-watermark">
+        <img src="/static/images/شعار جنان بيز.jpg" alt="" onerror="this.style.display='none'">
+        <span>جنان بيز</span>
+      </div>
+    </div>
+
+    <!-- ═══ SCENE B — اختيار القطاع ═══ -->
+    <div class="ob-scene" id="scB">
+      <div class="sc-b-header">
+        <div class="sc-b-eyebrow"><i class="fas fa-building" style="font-size:.65rem;"></i> الخطوة الأولى</div>
+        <h2 class="sc-b-title">نتمنى اختيار نشاط تجارتك</h2>
+        <p class="sc-b-sub">حدد القطاع الذي تنتمي إليه منشأتك لتبدأ التهيئة الذكية</p>
+      </div>
+
+      <div class="sector-grid-8">
+        <div class="sec-card" id="sec-wholesale"     onclick="pickSector('wholesale')">
+          <div class="sec-icon-wrap">📦</div><div class="sec-name">بيع جملة</div>
+        </div>
+        <div class="sec-card" id="sec-retail"        onclick="pickSector('retail')">
+          <div class="sec-icon-wrap">🏪</div><div class="sec-name">بيع تجزئة</div>
+        </div>
+        <div class="sec-card" id="sec-services"      onclick="pickSector('services')">
+          <div class="sec-icon-wrap">🏢</div><div class="sec-name">خدمات وتعليم</div>
+        </div>
+        <div class="sec-card" id="sec-contracting"   onclick="pickSector('contracting')">
+          <div class="sec-icon-wrap">🏗️</div><div class="sec-name">مقاولات وإنشاءات</div>
+        </div>
+        <div class="sec-card" id="sec-manufacturing" onclick="pickSector('manufacturing')">
+          <div class="sec-icon-wrap">🏭</div><div class="sec-name">صناعة وإنتاج</div>
+        </div>
+        <div class="sec-card" id="sec-hospitality"   onclick="pickSector('hospitality')">
+          <div class="sec-icon-wrap">🍽️</div><div class="sec-name">ضيافة ومطاعم</div>
+        </div>
+        <div class="sec-card" id="sec-healthcare"    onclick="pickSector('healthcare')">
+          <div class="sec-icon-wrap">🏥</div><div class="sec-name">رعاية صحية</div>
+        </div>
+        <div class="sec-card" id="sec-logistics"     onclick="pickSector('logistics')">
+          <div class="sec-icon-wrap">🚛</div><div class="sec-name">لوجستيات ونقل</div>
+        </div>
+      </div>
+
+      <button class="ob-btn" id="btnBNext" disabled onclick="goToC()">
+        <i class="fas fa-arrow-left"></i> التالي — اختر نشاطك التفصيلي
+      </button>
+
+      <div class="ob-watermark">
+        <img src="/static/images/شعار جنان بيز.jpg" alt="" onerror="this.style.display='none'">
+        <span>جنان بيز</span>
+      </div>
+    </div>
+
+    <!-- ═══ SCENE C — الأنشطة الفرعية ═══ -->
+    <div class="ob-scene" id="scC">
+      <div class="sc-c-top">
+        <div class="sc-c-titles">
+          <h2 class="sc-c-title" id="scCTitle">اختر نشاطك</h2>
+          <p class="sc-c-sub">ليتم تهيئة عملك بالكامل بلا تعقيد</p>
+        </div>
+        <button class="sc-c-back" onclick="goScene('B')">
+          <i class="fas fa-arrow-right"></i> رجوع
+        </button>
+      </div>
+
+      <div class="ob-tabs" id="obTabs"></div>
+      <div class="ob-acts" id="obActs"></div>
+
+      <div class="ob-badge" id="obBadge">
+        <i class="fas fa-check-circle"></i>
+        <span id="obBadgeLabel">تم اختيار النشاط</span>
+      </div>
+
+      <div class="ob-fields">
+        <div class="ob-field-full">
+          <label class="ob-label">اسم المنشأة <span>*</span></label>
+          <input class="ob-input" id="bizName" type="text"
+                 placeholder="مثال: مؤسسة الأمانة للتجارة، شركة الوفاء..."
+                 value="{{ request.form.get('business_name','') }}">
+        </div>
+        <div>
+          <label class="ob-label">الرقم الضريبي <span style="color:var(--ob-muted);font-weight:400;">(اختياري)</span></label>
+          <input class="ob-input" id="taxNum" type="text" placeholder="0000000000"
+                 value="{{ request.form.get('tax_number','') }}">
+        </div>
+        <div>
+          <label class="ob-label">المدينة <span style="color:var(--ob-muted);font-weight:400;">(اختياري)</span></label>
+          <input class="ob-input" id="cityIn" type="text" placeholder="الرياض، جدة، الدمام..."
+                 value="{{ request.form.get('city','') }}">
+        </div>
+      </div>
+
+      <button class="ob-btn" id="btnLaunch" disabled onclick="launchSetup()">
+        <i class="fas fa-rocket"></i> ابدأ التهيئة الذكية
+      </button>
+
+      <div class="ob-watermark">
+        <img src="/static/images/شعار جنان بيز.jpg" alt="" onerror="this.style.display='none'">
+        <span>جنان بيز</span>
+      </div>
+    </div>
+
+    <!-- ═══ SCENE D — التهيئة الذكية ═══ -->
+    <div class="ob-scene" id="scD">
+      <div class="sc-d-heading">
+        <p>⚙ تهيئة ذكية جارية — يرجى الانتظار</p>
+      </div>
+
+      <div class="sc-d-inner">
+
+        <!-- المزايا 2×2+1 -->
+        <div class="sc-d-feats">
+          <div class="sc-d-feat" id="df0">
+            <div class="grad-icon sm"><i class="fas fa-chart-pie"></i></div>
+            <div class="sc-d-feat-text">
+              <strong>تقارير مالية ذكية</strong>
+              <span>ميزانية، أرباح، تدفق نقدي</span>
+            </div>
+          </div>
+          <div class="sc-d-feat" id="df1">
+            <div class="grad-icon sm alt"><i class="fas fa-wifi"></i></div>
+            <div class="sc-d-feat-text">
+              <strong>عمل بلا إنترنت</strong>
+              <span>بيع مستمر، تزامن لاحقاً</span>
+            </div>
+          </div>
+          <div class="sc-d-feat" id="df2">
+            <div class="grad-icon sm alt3"><i class="fas fa-mosque"></i></div>
+            <div class="sc-d-feat-text">
+              <strong>زكاة وضريبة VAT</strong>
+              <span>احتساب تلقائي وفق الهيئة</span>
+            </div>
+          </div>
+          <div class="sc-d-feat" id="df3">
+            <div class="grad-icon sm"><i class="fas fa-bolt"></i></div>
+            <div class="sc-d-feat-text">
+              <strong>نقطة بيع فورية</strong>
+              <span>باركود، فواتير، مدفوعات</span>
+            </div>
+          </div>
+          <div class="sc-d-feat" id="df4" style="grid-column:1/-1;">
+            <div class="grad-icon sm alt"><i class="fas fa-boxes-stacked"></i></div>
+            <div class="sc-d-feat-text">
+              <strong>مخزون ذكي + تنبيهات</strong>
+              <span>تتبع كامل، تقارير الأصناف، حد الطلب التلقائي</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- العداد -->
+        <div class="sc-d-engine">
+          <div class="sc-d-spinner-wrap">
+            <div class="sc-d-ring-outer"></div>
+            <div class="sc-d-ring-inner"></div>
+            <div class="sc-d-shield-center">
+              <div class="grad-icon alt3" style="width:52px;height:52px;font-size:1.4rem;border-radius:14px;">
+                <i class="fas fa-shield-halved"></i>
+              </div>
+            </div>
+          </div>
+          <div class="sc-d-count" id="scDCount">20</div>
+          <div class="sc-d-log"   id="scDLog"></div>
+          <div class="sc-d-bar-wrap"><div class="sc-d-bar" id="scDBar"></div></div>
+        </div>
+
+      </div>
+
+      <form method="POST" action="{{ url_for('core.onboarding') }}" id="obForm" style="display:none;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="industry_type" id="h_industry">
+        <input type="hidden" name="business_name" id="h_name">
+        <input type="hidden" name="tax_number"    id="h_tax">
+        <input type="hidden" name="city"          id="h_city">
+      </form>
+
+      <div class="ob-watermark">
+        <img src="/static/images/شعار جنان بيز.jpg" alt="" onerror="this.style.display='none'">
+        <span>جنان بيز</span>
+      </div>
+    </div>
+
+    <!-- ═══ SCENE E — النهاية الراقية ═══ -->
+    <div class="ob-scene" id="scE">
+      <div class="sc-e-wrap">
+
+        <div class="sc-e-left">
+          <div class="sc-e-emblem">
+            <div class="grad-icon alt3" style="width:110px;height:110px;font-size:3rem;border-radius:28px;animation:popIn .5s cubic-bezier(.22,1,.36,1);">
+              <i class="fas fa-shield-halved"></i>
+            </div>
+            <div class="sc-e-check"><i class="fas fa-check"></i></div>
+          </div>
+
+          <h1 class="sc-e-brand-name">جنان بيز</h1>
+          <p class="sc-e-brand-tag">منصة حلول أعمالك</p>
+
+          <div class="sc-e-taglines">
+            <div class="sc-e-tagline"><i class="fas fa-bolt"></i> تابع عملك باحترافية</div>
+            <div class="sc-e-tagline"><i class="fas fa-wifi"></i> تابع عن بُعد في أي وقت</div>
+            <div class="sc-e-tagline"><i class="fas fa-eye"></i> أعمالك تحت نظرك دائماً</div>
+            <div class="sc-e-tagline"><i class="fas fa-layer-group"></i> إدارة متكاملة من أول يوم</div>
+          </div>
+        </div>
+
+        <div class="sc-e-right">
+          <div class="sc-e-messages">
+            <div class="sc-e-msg" id="em0">
+              <div class="grad-icon sm" style="flex-shrink:0;"><i class="fas fa-check"></i></div>
+              <span>دليل الحسابات جاهز وفق نشاطك التجاري</span>
+            </div>
+            <div class="sc-e-msg" id="em1">
+              <div class="grad-icon sm alt" style="flex-shrink:0;"><i class="fas fa-check"></i></div>
+              <span>المستودع والأصناف مُهيَّأة بالكامل</span>
+            </div>
+            <div class="sc-e-msg" id="em2">
+              <div class="grad-icon sm alt3" style="flex-shrink:0;"><i class="fas fa-check"></i></div>
+              <span>الضريبة والزكاة مُفعَّلة وجاهزة للاحتساب</span>
+            </div>
+            <div class="sc-e-msg" id="em3">
+              <div class="grad-icon sm" style="flex-shrink:0;"><i class="fas fa-check"></i></div>
+              <span>لوحة التحكم والتقارير جاهزة للاستخدام</span>
+            </div>
+          </div>
+
+          <button id="btnEnterDash" onclick="document.getElementById('obForm').submit()" class="ob-btn-success" style="opacity:0;transition:opacity .5s;border:none;cursor:pointer;">
+            <i class="fas fa-arrow-left"></i> ابدأ الآن — ادخل إلى لوحة التحكم
+          </button>
+        </div>
+
+      </div>
+
+      <div class="ob-watermark">
+        <img src="/static/images/شعار جنان بيز.jpg" alt="" onerror="this.style.display='none'">
+        <span>جنان بيز</span>
+      </div>
+    </div>
+
+  </div><!-- .ob-wrap -->
+</div><!-- #ob-root -->
+
 <script>
+/* ══════════════════════════════════════════════════
+   بيانات الأنشطة — 8 قطاعات، 195 نشاط
+══════════════════════════════════════════════════ */
+const ACTS = {
+  retail:{
+    fnb:[["retail_fnb_supermarket","🏪","سوبر ماركت"],["retail_fnb_grocery","🛒","تموينات وبقالة"],["retail_fnb_produce","🥦","خضار وفواكه"],["retail_fnb_butcher","🥩","ملحمة ودواجن"],["retail_fnb_roaster","☕","محمصة وتمور"],["retail_fnb_beverages","🧃","مياه ومشروبات"]],
+    health:[["retail_health_pharmacy","💊","صيدلية"],["retail_health_medical","🩺","مستلزمات طبية"],["retail_health_supplements","🥗","مكملات غذائية"]],
+    fashion:[["retail_fashion_clothing_m","👔","ملابس رجالية"],["retail_fashion_clothing_f","👗","ملابس نسائية"],["retail_fashion_clothing_k","👶","ملابس أطفال"],["retail_fashion_shoes","👟","أحذية وجلود"],["retail_fashion_accessories","🎀","إكسسوارات"],["retail_fashion_uniforms","🦺","زي موحد"]],
+    electronics:[["retail_electronics_mobile","📱","جوالات وملحقات"],["retail_electronics_computers","💻","كمبيوتر ولابتوب"],["retail_electronics_appliances","🔌","أجهزة منزلية"],["retail_electronics_gaming","🎮","ألعاب فيديو"],["retail_electronics_cameras","📷","كاميرات"]],
+    bakery:[["retail_bakery_bread","🍞","مخبز آلي ويدوي"],["retail_bakery_sweets","🍰","حلويات ومعجنات"],["retail_bakery_chocolate","🍫","شوكولاتة وهدايا"],["retail_bakery_icecream","🍦","آيس كريم"]],
+    home:[["retail_home_furniture","🛋️","أثاث منزلي"],["retail_home_kitchenware","🍳","أواني منزلية"],["retail_home_carpet","🟫","مفروشات وسجاد"],["retail_home_decor","🪴","ديكورات"]],
+    optics:[["retail_optics_eyewear","👓","نظارات وبصريات"],["retail_optics_watches","⌚","ساعات"],["retail_optics_jewelry","💎","مجوهرات وذهب"]],
+    stationery:[["retail_stationery_books","📚","مكتبة وقرطاسية"],["retail_stationery_toys","🧸","ألعاب أطفال"],["retail_stationery_gifts","🎁","هدايا وتحف"]],
+    cosmetics:[["retail_cosmetics_perfume","🕌","عطور شرقية"],["retail_cosmetics_makeup","💄","مستحضرات تجميل"],["retail_cosmetics_personal","🧴","عناية شخصية"]],
+    flowers:[["retail_flowers_shop","🌸","محل زهور"],["retail_flowers_events","🎊","لوازم حفلات"]],
+    hardware:[["retail_hardware_plumbing","🔧","سباكة وكهرباء"],["retail_hardware_paints","🎨","دهانات"],["retail_hardware_materials","🧱","مواد بناء"]],
+    pets:[["retail_pets_animals","🐦","طيور وحيوانات"],["retail_pets_supplies","🐾","أغذية ومستلزمات"]],
+  },
+  wholesale:{
+    fnb:[["wholesale_fnb_general","🛒","تموينات عامة"],["wholesale_fnb_meat","🥩","لحوم ودواجن"],["wholesale_fnb_produce","🥦","فواكه وخضروات"],["wholesale_fnb_beverages","🧃","مشروبات"],["wholesale_fnb_sweets","🍬","حلويات ومكسرات"],["wholesale_fnb_dairy","🥛","ألبان وأجبان"],["wholesale_fnb_coffee","☕","بن وبهارات"]],
+    construction:[["wholesale_construction_steel","🔩","حديد ومعادن"],["wholesale_construction_cement","🧱","أسمنت وخرسانة"],["wholesale_construction_timber","🪵","أخشاب"],["wholesale_construction_paints","🎨","دهانات"],["wholesale_construction_plumbing","🔧","أدوات صحية"],["wholesale_construction_ceramics","🟫","سيراميك ورخام"],["wholesale_construction_glass","🪟","زجاج وألمنيوم"]],
+    electronics:[["wholesale_electronics_appliances","🫙","أجهزة منزلية"],["wholesale_electronics_mobile","📱","جوالات"],["wholesale_electronics_computers","💻","حاسب وطابعات"],["wholesale_electronics_security","📷","أنظمة مراقبة"],["wholesale_electronics_consumer","🎮","إلكترونيات استهلاكية"]],
+    auto:[["wholesale_auto_car_parts","🔩","قطع سيارات"],["wholesale_auto_truck_parts","🚛","قطع شاحنات"],["wholesale_auto_tires","🛞","إطارات وبطاريات"],["wholesale_auto_oils","🛢️","زيوت محركات"],["wholesale_auto_industrial","⚙️","معدات صناعية"]],
+    health:[["wholesale_health_pharma","💊","أدوية"],["wholesale_health_devices","🩺","أجهزة طبية"],["wholesale_health_supplies","🏥","مستلزمات طبية"],["wholesale_health_supplements","🥗","مكملات"]],
+    fashion:[["wholesale_fashion_fabrics","🧵","أقمشة"],["wholesale_fashion_clothing","👗","ملابس جاهزة"],["wholesale_fashion_shoes","👟","أحذية وجلود"],["wholesale_fashion_carpet","🟫","سجاد"],["wholesale_fashion_sewing","✂️","مستلزمات خياطة"]],
+    chemicals:[["wholesale_chemicals_cleaning","🧴","منظفات"],["wholesale_chemicals_plastic","📦","بلاستيك وورق"],["wholesale_chemicals_fertilizers","🌱","أسمدة"],["wholesale_chemicals_industrial","⚗️","كيماويات صناعية"]],
+    furniture:[["wholesale_furniture_office","🖥️","أثاث مكتبي"],["wholesale_furniture_home","🛋️","أثاث منزلي"],["wholesale_furniture_perfume","🕌","عطور"],["wholesale_furniture_watches","⌚","ساعات"],["wholesale_furniture_kitchenware","🍳","أواني"]],
+    stationery:[["wholesale_stationery_school","📚","أدوات مدرسية"],["wholesale_stationery_paper","🖨️","ورق وطباعة"],["wholesale_stationery_gifts","🎁","هدايا وألعاب"]],
+  },
+  services:{
+    education:[["svc_edu_university","🎓","جامعة أهلية"],["svc_edu_college","🏛️","كلية تخصصية"],["svc_edu_aviation","✈️","أكاديمية طيران"],["svc_edu_sports","⚽","أكاديمية رياضية"],["svc_edu_tech","💻","أكاديمية تقنية"],["svc_edu_intl_school","🌍","مدرسة عالمية"],["svc_edu_local_school","📖","مدرسة أهلية"],["svc_edu_language","🗣️","معهد لغات"],["svc_edu_computer","🖥️","معهد حاسب"],["svc_edu_vocational","🔧","تدريب مهني"],["svc_edu_driving","🚗","تعليم قيادة"],["svc_edu_tutoring","📝","تقوية دراسية"],["svc_edu_nursery","🧸","حضانة ورياض"]],
+    professional:[["svc_pro_legal","⚖️","محاماة"],["svc_pro_accounting","📊","محاسبة"],["svc_pro_tax","🧾","استشارات ضريبية"],["svc_pro_engineering","📐","هندسة وتصميم"],["svc_pro_realestate_val","🏠","تقييم عقاري"],["svc_pro_translation","📜","ترجمة"],["svc_pro_recruitment","👥","استقدام"],["svc_pro_management","💼","استشارات إدارية"],["svc_pro_feasibility","📈","دراسات جدوى"],["svc_pro_insurance","🛡️","وساطة تأمين"]],
+    personal:[["svc_per_barber","💈","حلاقة رجالي"],["svc_per_spa","💅","سبا نسائي"],["svc_per_laundry_auto","👕","مغسلة"],["svc_per_laundry_carpet","🛋️","غسيل سجاد"],["svc_per_tailor_m","👔","خياطة رجالية"],["svc_per_tailor_f","👗","خياطة نسائية"],["svc_per_studio","📸","استديو تصوير"],["svc_per_gym_m","🏋️","نادي رجالي"],["svc_per_gym_f","🤸","نادي نسائي"],["svc_per_cleaning","🧹","تنظيف منازل"],["svc_per_pestcontrol","🪲","مكافحة حشرات"]],
+    maintenance:[["svc_mnt_auto","🔧","صيانة سيارات"],["svc_mnt_detailing","🚘","عناية سيارات"],["svc_mnt_mobile","📱","صيانة جوالات"],["svc_mnt_computers","💻","صيانة حواسب"],["svc_mnt_appliances","🔌","أجهزة منزلية"],["svc_mnt_elevators","🛗","مصاعد"],["svc_mnt_hvac","❄️","تكييف"],["svc_mnt_home","🏠","سباكة وكهرباء"],["svc_mnt_garden","🌿","حدائق"],["svc_mnt_vehicle_insp","🔍","فحص مركبات"]],
+    media:[["svc_med_digital_mkt","📣","تسويق رقمي"],["svc_med_advertising","🎯","دعاية وإعلان"],["svc_med_printing","🖨️","مطبعة"],["svc_med_events","🎪","فعاليات"],["svc_med_production","🎬","إنتاج فني"],["svc_med_calligraphy","✍️","خطاط"],["svc_med_weddings","💒","أفراح ومناسبات"]],
+    travel:[["svc_trv_agency","✈️","سفر وسياحة"],["svc_trv_hajj","🕌","حج وعمرة"],["svc_trv_car_rental","🚗","تأجير سيارات"],["svc_trv_luxury_rental","🏎️","سيارات فارهة"],["svc_trv_hotels","🏨","فنادق"],["svc_trv_realestate_mkt","🏢","تسويق عقاري"],["svc_trv_property_mgmt","🗝️","إدارة أملاك"],["svc_trv_owners_assoc","🏘️","اتحاد ملاك"],["svc_trv_security","🛡️","أمن وحراسة"]],
+  },
+  contracting:{
+    works:[["con_general","🏗️","مقاولات عامة"],["con_plumbing","🔧","سباكة"],["con_electric","⚡","كهرباء"],["con_painting","🎨","دهانات وديكور"],["con_elevator","🛗","مصاعد"],["con_hvac","❄️","تكييف HVAC"],["con_fire","🧯","حريق وسلامة"],["con_cctv","📷","كاميرات وأمن"],["con_landscape","🌿","حدائق وري"],["con_insulation","🏠","عزل أسطح"],["con_earthwork","🚜","حفر وردم"],["con_equipment","🏗️","معدات ثقيلة"],["con_marble","✨","رخام وسيراميك"],["con_carpentry","🪵","نجارة"],["con_ironwork","⚙️","حدادة"]],
+  },
+  manufacturing:{
+    factory:[["mfg_plastic","🏭","مصنع بلاستيك"],["mfg_carton","📦","كرتون وتغليف"],["mfg_beverages","🥤","مياه وعصائر"],["mfg_dates","🌴","تعبئة تمور"],["mfg_sweets","🍬","حلويات صناعية"],["mfg_carpentry","🪚","نجارة أوتوماتيك"],["mfg_metalwork","🔩","حدادة وخراطة"],["mfg_aluminum","🪟","ألمنيوم"],["mfg_textile","🧵","خياطة وملابس"],["mfg_mill","⚙️","مطحنة"],["mfg_cleaning","🧴","مواد تنظيف"],["mfg_furniture","🪑","أثاث معدني"]],
+  },
+  hospitality:{
+    venues:[["hos_fastfood","🍔","وجبات سريعة"],["hos_traditional","🍲","بخاري وشعبي"],["hos_cloud","☁️","مطبخ سحابي"],["hos_cafe","☕","كافيه"],["hos_hotel","🏨","فندق"],["hos_apartments","🛋️","شقق مفروشة"],["hos_events","🎉","قاعة أفراح"],["hos_resort","🌴","منتجع"],["hos_buffet","🍽️","بوفيه"],["hos_truck","🚐","عربة طعام"]],
+  },
+  healthcare:{
+    clinics:[["hlt_clinic","🏥","مستوصف/مجمع طبي"],["hlt_lab","🔬","مختبر تحاليل"],["hlt_physio","🩺","علاج طبيعي"],["hlt_eye","👁️","عيون وبصريات"],["hlt_dental","🦷","أسنان"],["hlt_radiology","🔭","أشعة"],["hlt_cupping","💉","حجامة"],["hlt_pharmacy","💊","صيدلية طبية"]],
+  },
+  logistics:{
+    transport:[["lgx_fleet","🚛","شحن بري"],["lgx_warehouse","🏭","مستودع"],["lgx_courier","📦","توصيل طرود"],["lgx_customs","📋","تخليص جمركي"],["lgx_trucks","🚚","تأجير شاحنات"],["lgx_cold","❄️","نقل مبرد"],["lgx_freight","✈️","شحن دولي"]],
+  },
+};
+
+const TABS_MAP = {
+  retail:{fnb:"غذاء",health:"صحة",fashion:"موضة",electronics:"إلكترونيات",bakery:"حلويات",home:"منزل",optics:"بصريات",stationery:"قرطاسية",cosmetics:"تجميل",flowers:"زهور",hardware:"بناء",pets:"حيوانات"},
+  wholesale:{fnb:"غذاء",construction:"بناء",electronics:"إلكترونيات",auto:"سيارات",health:"صحة",fashion:"موضة",chemicals:"كيماويات",furniture:"أثاث",stationery:"قرطاسية"},
+  services:{education:"تعليم",professional:"مهني",personal:"شخصي",maintenance:"صيانة",media:"إعلام",travel:"سياحة"},
+  contracting:{works:"مقاولات"},
+  manufacturing:{factory:"صناعة"},
+  hospitality:{venues:"ضيافة"},
+  healthcare:{clinics:"صحة"},
+  logistics:{transport:"لوجستيات"},
+};
+
+const SECTOR_TITLES = {
+  wholesale:"اختر نشاط الجملة",retail:"اختر نشاط التجزئة",
+  services:"اختر نشاطك الخدمي",contracting:"اختر نشاط المقاولات",
+  manufacturing:"اختر النشاط الصناعي",hospitality:"اختر نشاط الضيافة",
+  healthcare:"اختر النشاط الصحي",logistics:"اختر نشاط اللوجستيات",
+};
+
+const LOG_MSGS = [
+  "[SYS] تحليل خصائص النشاط التجاري...",
+  "[DB] بناء هيكل دليل الحسابات...",
+  "[TAX] تكوين قواعد الضريبة والزكاة...",
+  "[INV] إنشاء نماذج الفواتير...",
+  "[CAT] تصنيف فئات المنتجات...",
+  "[WH] تهيئة المستودع الرئيسي...",
+  "[SEC] تطبيق بروتوكولات الأمان...",
+  "[RPT] بناء لوحة التحكم...",
+  "[POS] تفعيل نقطة البيع...",
+  "[USR] ضبط صلاحيات المستخدمين...",
+  "[SYNC] مزامنة الإعدادات...",
+  "[HASH] التحقق من سلامة البيانات...",
+  "[OK] اكتملت التهيئة بنجاح.",
+];
+
+/* ═══════ حالة التطبيق ═══════ */
+let selSector = null, selAct = null, selActName = '';
+
+/* ═══════ جزيئات الخلفية ═══════ */
 (function(){
-/* ════════════════════════════════════════════════════════
-   بيانات الأنشطة: [code, icon, label]
-   ════════════════════════════════════════════════════════ */
-const A = {
-  retail: {
-    fnb: [
-      ["retail_fnb_supermarket", "🏪", "سوبر ماركت / هايبر ماركت"],
-      ["retail_fnb_grocery",     "🛒", "تموينات وبقالات"],
-      ["retail_fnb_roaster",     "☕", "محامص (قهوة، بهارات، مكسرات)"],
-      ["retail_fnb_bakery",      "🍞", "مخابز وحلويات"],
-      ["retail_fnb_butcher",     "🥩", "ملاحم وجزارة"],
-      ["retail_fnb_produce",     "🥦", "خضار وفواكه"],
-      ["retail_fnb_dates",       "🌴", "تجار التمور"],
-      ["retail_fnb_beverages",   "🧃", "مياه ومشروبات"],
-    ],
-    fashion: [
-      ["retail_fashion_clothing_m",  "👔", "ملابس رجالي"],
-      ["retail_fashion_clothing_f",  "👗", "ملابس نسائي"],
-      ["retail_fashion_clothing_k",  "👶", "ملابس أطفال"],
-      ["retail_fashion_shoes",       "👟", "أحذية ومنتجات جلدية"],
-      ["retail_fashion_bags",        "👜", "حقائب وإكسسوارات"],
-      ["retail_fashion_watches",     "⌚", "ساعات ومجوهرات"],
-      ["retail_fashion_optics",      "👓", "نظارات وبصريات"],
-      ["retail_fashion_fabric",      "🧵", "أقمشة ومنسوجات"],
-      ["retail_fashion_tailoring",   "✂️", "مستلزمات خياطة"],
-    ],
-    construction: [
-      ["retail_construction_materials",  "🧱", "مواد بناء — إسمنت وحديد"],
-      ["retail_construction_plumbing",   "🔧", "سباكة وأدوات صحية"],
-      ["retail_construction_electrical", "💡", "كهرباء وإنارة"],
-      ["retail_construction_paints",     "🎨", "دهانات وبوادئ"],
-      ["retail_construction_flooring",   "🪨", "أرضيات وسيراميك ورخام"],
-      ["retail_construction_hardware",   "🔩", "عدد وآلات (Hardware)"],
-    ],
-    electronics: [
-      ["retail_electronics_mobile",        "📱", "جوالات وإكسسوارات"],
-      ["retail_electronics_computers",     "💻", "كمبيوتر ولابتوب وشبكات"],
-      ["retail_electronics_appliances",    "🫙", "أجهزة منزلية كبيرة"],
-      ["retail_electronics_entertainment", "🎮", "إلكترونيات ترفيهية وألعاب"],
-      ["retail_electronics_security",      "📷", "كاميرات مراقبة وأمنيات"],
-    ],
-    health: [
-      ["retail_health_pharmacy",    "💊", "صيدلية"],
-      ["retail_health_perfume",     "🕌", "عطور وبخور وعود"],
-      ["retail_health_cosmetics",   "💄", "مستحضرات تجميل"],
-      ["retail_health_medical",     "🩺", "مستلزمات طبية"],
-      ["retail_health_supplements", "🥗", "أغذية صحية ومكملات"],
-    ],
-    auto: [
-      ["retail_auto_parts",       "🔩", "قطع غيار سيارات"],
-      ["retail_auto_tires",       "🛞", "إطارات وبطاريات"],
-      ["retail_auto_accessories", "🚘", "زينة وإكسسوارات سيارات"],
-      ["retail_auto_workshop",    "🔧", "معدات ورش صيانة"],
-    ],
-    home: [
-      ["retail_home_furniture",   "🛋️", "أثاث ومفروشات"],
-      ["retail_home_carpet",      "🟫", "سجاد وموكيت"],
-      ["retail_home_kitchenware", "🍳", "أواني ولوازم منزلية"],
-      ["retail_home_stationery",  "📚", "مكتبات وقرطاسية"],
-      ["retail_home_office",      "🖥️", "تجهيزات مكاتب"],
-    ],
-    specialized: [
-      ["retail_specialized_tobacco", "💨", "معسلات ومستلزمات تدخين"],
-      ["retail_specialized_flowers", "🌸", "زهور وتغليف هدايا"],
-      ["retail_specialized_toys",    "🧸", "ألعاب أطفال وهدايا"],
-      ["retail_specialized_pets",    "🐾", "مستلزمات حيوانات أليفة"],
-      ["retail_specialized_sports",  "⚽", "معدات رياضية"],
-      ["retail_specialized_camping", "⛺", "لوازم رحلات وصيد"],
-    ],
-  },
-  wholesale: {
-    fnb: [
-      ["wholesale_fnb_distribution", "🚛", "توزيع مواد غذائية"],
-      ["wholesale_fnb_beverages",    "🧃", "مستودعات مياه ومشروبات"],
-      ["wholesale_fnb_roaster",      "☕", "محامص وبهارات ومكسرات"],
-      ["wholesale_fnb_general",      "📦", "جملة غذائية عامة"],      ["wholesale_fnb_bakery",       "🥖", "مخابز وحلويات — جملة"],
-      ["wholesale_fnb_butcher",      "🥩", "ملاحم وجزارة — جملة"],
-      ["wholesale_fnb_produce",      "🥦", "خضار وفواكه — جملة"],
-      ["wholesale_fnb_dates",        "🌴", "تمور — جملة"],    ],
-    fashion: [
-      ["wholesale_fashion_clothing",   "👗", "جملة ملابس"],
-      ["wholesale_fashion_fabric",     "🧵", "جملة أقمشة ومنسوجات"],
-      ["wholesale_fashion_shoes",      "💟", "جملة أحذية"],
-      ["wholesale_fashion_bags",       "👜", "جملة حقائب وإكسسوارات"],
-      ["wholesale_fashion_clothing_m", "👔", "جملة ملابس رجالي"],
-      ["wholesale_fashion_clothing_f", "👠", "جملة ملابس نسائي"],
-      ["wholesale_fashion_clothing_k", "🧣", "جملة ملابس أطفال"],
-      ["wholesale_fashion_watches",    "⌚", "جملة ساعات ومجوهرات"],
-      ["wholesale_fashion_optics",     "👓", "جملة نظارات وبصريات"],
-    ],
-    construction: [
-      ["wholesale_construction_materials",  "🧱", "جملة مواد بناء"],
-      ["wholesale_construction_timber",     "🪵", "جملة أخشاب"],
-      ["wholesale_construction_plumbing",   "🔧", "جملة سباكة وكهرباء"],
-      ["wholesale_construction_electrical", "💡", "جملة كهرباء وإنارة"],
-      ["wholesale_construction_paints",     "🎨", "جملة دهانات وبوادئ"],
-      ["wholesale_construction_flooring",   "🟫", "جملة أرضيات وسيراميك"],
-    ],
-    electronics: [
-      ["wholesale_electronics_general",       "📦", "جملة إلكترونيات"],
-      ["wholesale_electronics_mobile",        "📱", "جملة جوالات وإكسسوارات"],
-      ["wholesale_electronics_computers",     "💻", "جملة كمبيوتر ولابتوب"],
-      ["wholesale_electronics_appliances",    "📺", "جملة أجهزة منزلية"],
-      ["wholesale_electronics_entertainment", "🎮", "جملة إلكترونيات ترفيهية"],
-    ],
-    health: [
-      ["wholesale_health_medical",  "🩺", "جملة مستلزمات طبية"],
-      ["wholesale_health_pharmacy", "💊", "توزيع أدوية"],
-      ["wholesale_health_perfume",  "🕌", "جملة عطور وبخور"],
-      ["wholesale_health_cosmetics","💄", "جملة مستحضرات تجميل"],
-      ["wholesale_health_supplements", "🥗", "جملة مكملات غذائية"],
-    ],
-    auto: [
-      ["wholesale_auto_parts",       "🔩", "جملة قطع غيار"],
-      ["wholesale_auto_tires",       "🛞", "جملة إطارات وبطاريات"],
-      ["wholesale_auto_accessories", "🚘", "جملة زينة وإكسسوارات سيارات"],
-      ["wholesale_auto_workshop",    "🔧", "جملة معدات ورش صيانة"],
-    ],
-    home: [
-      ["wholesale_home_furniture",  "🛋️", "جملة أثاث"],
-      ["wholesale_home_carpet",     "🟫", "جملة سجاد وموكيت"],
-      ["wholesale_home_kitchenware", "🍳", "جملة أواني ولوازم منزلية"],
-      ["wholesale_home_stationery", "📚", "جملة قرطاسية ومستلزمات مكتبية"],
-      ["wholesale_home_office",     "🖥️", "جملة تجهيزات مكاتب"],
-    ],
-    specialized: [
-      ["wholesale_specialized_tobacco", "💨", "جملة معسلات ومستلزمات تدخين"],
-      ["wholesale_specialized_flowers", "🌸", "جملة زهور وتغليف هدايا"],
-      ["wholesale_specialized_toys",    "🧸", "جملة ألعاب أطفال وهدايا"],
-      ["wholesale_specialized_pets",    "🐾", "جملة مستلزمات حيوانات أليفة"],
-      ["wholesale_specialized_sports",  "⚽", "جملة معدات رياضية"],
-      ["wholesale_specialized_camping", "⛺", "جملة لوازم رحلات وصيد"],
-    ],
-  },
-};
-
-const SECTORS_BY_SALE = {
-  retail:    ["fnb", "fashion", "construction", "electronics", "health", "auto", "home", "specialized"],
-  wholesale: ["fnb", "fashion", "construction", "electronics", "health", "auto", "home", "specialized"],
-};
-
-const SECTOR_LABELS = {
-  fnb:"غذاء وتموين", fashion:"موضة وملبوسات",
-  construction:"مواد بناء وأدوات", electronics:"إلكترونيات وتقنية",
-  health:"صحة وعناية", auto:"سيارات ومعدات",
-  home:"منزل ومكتب", specialized:"أنشطة متخصصة",
-};
-const SALE_LABELS = {
-  retail:"بيع تجزئة", wholesale:"بيع جملة",
-  food:"تقديم طعام", construction:"مقاولات",
-  car_rental:"تأجير سيارات", medical:"خدمات صحية", services:"خدمات عامة",
-};
-
-/* ════ الحالة ════ */
-let state = { sale: null, sector: null };
-
-const panels = {
-  saletype:  document.getElementById("panel-saletype"),
-  sector:    document.getElementById("panel-sector"),
-  activity:  document.getElementById("panel-activity"),
-  foodtype:  document.getElementById("panel-foodtype"),
-};
-const finalInput    = document.getElementById("finalIndustryType");
-const optionalBlock = document.getElementById("optional-fields");
-const breadcrumb    = document.getElementById("industry-breadcrumb");
-const bc1 = document.getElementById("bc1");
-const bc2 = document.getElementById("bc2");
-const bc3 = document.getElementById("bc3");
-
-/* ════ مساعدات ════ */
-function showPanel(name){
-  Object.values(panels).forEach(p => p.style.display = "none");
-  panels[name].style.display = "block";
-}
-
-function updateBC(){
-  if(!state.sale){ breadcrumb.style.display="none"; return; }
-  breadcrumb.style.display = "flex";
-  bc1.textContent = SALE_LABELS[state.sale] || state.sale;
-  bc2.textContent = state.sector ? " ← " + SECTOR_LABELS[state.sector] : "";
-  bc3.textContent = "";
-}
-
-function syncSectorCards(saleType){
-  const allowed = new Set(SECTORS_BY_SALE[saleType] || []);
-  document.querySelectorAll('#panel-sector .ind-card[data-sector]').forEach((card) => {
-    const sector = card.dataset.sector;
-    card.style.display = allowed.has(sector) ? "flex" : "none";
-  });
-}
-
-function setFinal(code, label){
-  finalInput.value = code;
-  optionalBlock.style.display = "block";
-  // تمييز بصري للكارت المختار
-  document.querySelectorAll(".ind-card").forEach(c => c.classList.remove("selected"));
-  const active = document.querySelector(`.ind-card[data-final="${code}"]`) ||
-                 document.querySelector(`#activity-grid .ind-card[data-code="${code}"]`);
-  if(active) active.classList.add("selected");
-  // تحديث breadcrumb
-  bc3.textContent = label ? " ← " + label : "";
-}
-
-function buildActivity(saleType, sector){
-  const grid  = document.getElementById("activity-grid");
-  const lbl   = document.getElementById("activity-label");
-  const items = (A[saleType] || {})[sector] || [];
-  lbl.textContent = SALE_LABELS[saleType] + " — " + SECTOR_LABELS[sector];
-  grid.innerHTML  = "";
-  items.forEach(([code, icon, name]) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "ind-card";
-    btn.dataset.code  = code;
-    btn.dataset.final = code;   // للتمييز البصري
-    btn.innerHTML = `<span class="ind-icon">${icon}</span><span class="ind-name">${name}</span>`;
-    btn.addEventListener("click", () => setFinal(code, name));
-    grid.appendChild(btn);
-  });
-}
-
-/* ════ تفويض الأحداث — اللوحات ════ */
-document.getElementById("industry-wizard").addEventListener("click", function(e){
-  // ─ زر الرجوع ─
-  const backBtn = e.target.closest(".btn-back");
-  if(backBtn){
-    const goto = backBtn.dataset.goto;
-    if(goto === "saletype"){ state.sale=null; state.sector=null; finalInput.value=""; optionalBlock.style.display="none"; }
-    if(goto === "sector")  { state.sector=null; finalInput.value=""; optionalBlock.style.display="none"; }
-    updateBC();
-    showPanel(goto);
-    return;
+  const c = document.getElementById('obParticles');
+  for(let i=0;i<60;i++){
+    const p = document.createElement('div');
+    p.className='ob-particle';
+    const sz = Math.random()*2.5+1;
+    const blue = Math.random()>.5;
+    p.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;background:${blue?'rgba(59,130,246,.5)':'rgba(255,255,255,.4)'};animation-delay:${Math.random()*4}s;animation-duration:${3+Math.random()*4}s;`;
+    c.appendChild(p);
   }
-
-  const btn = e.target.closest("[data-panel],[data-final]");
-  if(!btn) return;
-
-  // ─ اختيار مباشر (نهائي) ─
-  if(btn.dataset.final && !btn.dataset.panel){
-    const code = btn.dataset.final;
-    state.sale = code; state.sector = null;
-    updateBC();
-    setFinal(code, SALE_LABELS[code] || code);
-    return;
-  }
-
-  const nextPanel = btn.dataset.panel;
-  const sale      = btn.dataset.sale;
-  const sector    = btn.dataset.sector;
-
-  // ─ اختيار نوع البيع ─
-  if(sale){
-    state.sale = sale;
-    state.sector = null;
-    finalInput.value = "";
-    optionalBlock.style.display = "none";
-    syncSectorCards(sale);
-    document.getElementById("sector-label").textContent =
-      "قطاع " + SALE_LABELS[sale] + " — اختر القطاع";
-    updateBC();
-    showPanel(nextPanel);
-    return;
-  }
-
-  // ─ اختيار القطاع ─
-  if(sector){
-    state.sector = sector;
-    finalInput.value = "";
-    optionalBlock.style.display = "none";
-    updateBC();
-    buildActivity(state.sale, sector);
-    showPanel("activity");
-    return;
-  }
-
-  // ─ الانتقال لأي لوحة أخرى ─
-  showPanel(nextPanel);
-});
-
-/* ════ تحقق قبل الإرسال ════ */
-document.getElementById("onboarding-form").addEventListener("submit", function(e){
-  if(!finalInput.value){
-    e.preventDefault();
-    alert("الرجاء اختيار نوع النشاط التجاري أولاً");
-    document.getElementById("industry-wizard").scrollIntoView({behavior:"smooth"});
-  }
-});
 })();
+
+/* ═══════ تبديل المشاهد ═══════ */
+function goScene(id){
+  document.querySelectorAll('.ob-scene').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sc'+id).classList.add('active');
+  updateDots(id);
+}
+function updateDots(id){
+  const map={A:0,B:1,C:2,D:3,E:4};
+  const cur=map[id]??0;
+  for(let i=0;i<5;i++){
+    const d=document.getElementById('dot'+i);
+    d.classList.remove('cur','done');
+    if(i<cur) d.classList.add('done');
+    else if(i===cur) d.classList.add('cur');
+  }
+}
+
+/* ═══════ SCENE A — شريط الاستعراض ═══════ */
+(function(){
+  const bar=document.getElementById('scABar');
+  const DUR=5500;
+  let start=null;
+  function ani(ts){
+    if(!start) start=ts;
+    const pct=Math.min((ts-start)/DUR*100,100);
+    bar.style.width=pct+'%';
+    if(pct<100) requestAnimationFrame(ani);
+    else goScene('B');
+  }
+  requestAnimationFrame(ani);
+})();
+
+/* ═══════ SCENE B — اختيار القطاع ═══════ */
+function pickSector(s){
+  selSector=s; selAct=null; selActName='';
+  document.querySelectorAll('.sec-card').forEach(c=>c.classList.toggle('selected',c.id==='sec-'+s));
+  document.getElementById('btnBNext').disabled=false;
+}
+function goToC(){
+  if(!selSector) return;
+  buildActScene(selSector);
+  goScene('C');
+}
+
+/* ═══════ SCENE C — بناء التبويبات والأنشطة ═══════ */
+function buildActScene(sector){
+  document.getElementById('scCTitle').textContent=SECTOR_TITLES[sector]||'اختر نشاطك';
+  const tabs=TABS_MAP[sector]||{};
+  const tabEl=document.getElementById('obTabs');
+  tabEl.innerHTML='';
+  Object.keys(tabs).forEach((k,i)=>{
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='ob-tab'+(i===0?' active':'');
+    b.textContent=tabs[k];
+    b.dataset.key=k;
+    b.onclick=()=>showTab(sector,k);
+    tabEl.appendChild(b);
+  });
+  const firstKey=Object.keys(tabs)[0];
+  if(firstKey) showTab(sector,firstKey);
+}
+function showTab(sector,key){
+  document.querySelectorAll('.ob-tab').forEach(t=>t.classList.toggle('active',t.dataset.key===key));
+  const grid=document.getElementById('obActs');
+  grid.innerHTML='';
+  (ACTS[sector]?.[key]||[]).forEach(([code,icon,name])=>{
+    const d=document.createElement('div');
+    d.className='ob-act'+(code===selAct?' selected':'');
+    d.innerHTML=`<div class="ob-act-icon">${icon}</div><div class="ob-act-name">${name}</div>`;
+    d.onclick=()=>{
+      selAct=code; selActName=name;
+      document.querySelectorAll('.ob-act').forEach(c=>c.classList.remove('selected'));
+      d.classList.add('selected');
+      const badge=document.getElementById('obBadge');
+      badge.classList.add('show');
+      document.getElementById('obBadgeLabel').textContent='تم اختيار: '+name;
+      checkLaunch();
+    };
+    grid.appendChild(d);
+  });
+}
+function checkLaunch(){
+  const ok=!!selAct && document.getElementById('bizName').value.trim().length>0;
+  document.getElementById('btnLaunch').disabled=!ok;
+}
+document.getElementById('bizName').addEventListener('input',checkLaunch);
+
+/* ═══════ SCENE D — التهيئة الذكية ═══════ */
+function launchSetup(){
+  if(!selAct||!document.getElementById('bizName').value.trim()) return;
+  document.getElementById('h_industry').value=selAct;
+  document.getElementById('h_name').value=document.getElementById('bizName').value.trim();
+  document.getElementById('h_tax').value=document.getElementById('taxNum').value.trim();
+  document.getElementById('h_city').value=document.getElementById('cityIn').value.trim();
+  goScene('D');
+  runEngine();
+}
+function runEngine(){
+  const countEl=document.getElementById('scDCount');
+  const logEl=document.getElementById('scDLog');
+  const barEl=document.getElementById('scDBar');
+  let sec=20, logI=0;
+  const TOTAL=20;
+
+  [0,1,2,3,4].forEach(i=>{
+    setTimeout(()=>{
+      const el=document.getElementById('df'+i);
+      if(el){el.classList.add('show');setTimeout(()=>el.classList.add('lit'),400);}
+    },i*2000+500);
+  });
+
+  const timer=setInterval(()=>{
+    sec--;
+    countEl.textContent=sec;
+    barEl.style.width=((TOTAL-sec)/TOTAL*100)+'%';
+    if(logI<LOG_MSGS.length){
+      const line=document.createElement('div');
+      line.className='sc-d-log-line';
+      line.textContent=LOG_MSGS[logI++];
+      logEl.appendChild(line);
+      logEl.scrollTop=logEl.scrollHeight;
+    }
+    if(sec<=0){
+      clearInterval(timer);
+      goScene('E');
+      startSceneE();
+    }
+  },1000);
+}
+
+function startSceneE(){
+  /* ظهور رسائل التحقق واحدة تلو الأخرى */
+  [0,1,2,3].forEach(i=>{
+    setTimeout(()=>{
+      const el=document.getElementById('em'+i);
+      if(el) el.classList.add('show');
+    }, i*600 + 400);
+  });
+  /* ظهور taglines */
+  document.querySelectorAll('.sc-e-tagline').forEach((el,i)=>{
+    setTimeout(()=>el.classList.add('show'), i*400 + 300);
+  });
+  /* ظهور الزر بعد الرسائل */
+  setTimeout(()=>{
+    const btn=document.getElementById('btnEnterDash');
+    if(btn) btn.style.opacity='1';
+  }, 3200);
+  /* إرسال النموذج تلقائياً بعد 5 ثواني من ظهور المشهد */
+  setTimeout(()=>{
+    document.getElementById('obForm').submit();
+  }, 5000);
+}
 </script>
 {% endblock %}

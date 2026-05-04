@@ -219,6 +219,20 @@
   <span class="term-chip">سوق {{ ui_config.country_code }}</span>
 </div>
 {% endif %}
+{% if ui_config.unit_examples or ui_config.variant_examples %}
+<div class="pos-wholesale-terms">
+  {% if ui_config.unit_examples %}
+    {% for u in ui_config.unit_examples %}
+    <span class="term-chip">{{ u }}</span>
+    {% endfor %}
+  {% endif %}
+  {% if ui_config.variant_examples %}
+    {% for s in ui_config.variant_examples %}
+    <span class="term-chip">مقاس {{ s }}</span>
+    {% endfor %}
+  {% endif %}
+</div>
+{% endif %}
 <div class="pos-premium-strip">
   <span class="pos-premium-badge">🔒✨ متعدد الكاشير (خطة مدفوعة)</span>
   <span class="pos-premium-badge">🔒✨ الفروع (خطة مدفوعة)</span>
@@ -408,6 +422,9 @@ const CUR      = {{ (current_business.currency if current_business else 'ر.س')
 const UI_CFG   = {{ ui_config | tojson }};
 const BARCODE_ONLY = Boolean(UI_CFG.enforce_barcode_only);
 const VAT      = 15;
+const QTY_STEP = parseFloat(UI_CFG.qty_step || 1);
+const QTY_MIN  = parseFloat(UI_CFG.qty_min || QTY_STEP || 1);
+const QTY_DECIMALS = Number.isFinite(parseInt(UI_CFG.qty_decimals, 10)) ? parseInt(UI_CFG.qty_decimals, 10) : 0;
 
 let cart      = [];
 let payMode   = 'cash';
@@ -508,25 +525,39 @@ function addToCartById(p) {
   const price = parseFloat(p.sale_price) || 0;
   if (price <= 0) { alert('سعر هذا المنتج غير محدد'); return; }
   const weightedQty = parseFloat(p.weighted_qty || 0);
-  const addQty = weightedQty > 0 ? weightedQty : 1;
+  const addQty = weightedQty > 0 ? weightedQty : QTY_STEP;
   const ex = cart.find(x => x.product_id === p.id);
-  if (ex) ex.quantity += addQty;
-  else cart.push({ product_id:p.id, name:p.name, barcode:p.barcode||'', unit_price:price, quantity:addQty });
+  if (ex) ex.quantity = normalizeQty(ex.quantity + addQty);
+  else cart.push({ product_id:p.id, name:p.name, barcode:p.barcode||'', unit_price:price, quantity:normalizeQty(addQty) });
   renderCart();
   $search.focus();
 }
 
 function changeQty(i, d) {
-  cart[i].quantity += d;
+  cart[i].quantity = normalizeQty(cart[i].quantity + (d * QTY_STEP));
   if (cart[i].quantity <= 0) cart.splice(i, 1);
   renderCart();
 }
 function setQty(i, v) {
-  const q = parseFloat(v);
+  const q = normalizeQty(parseFloat(v));
   if (!q || q <= 0) cart.splice(i, 1); else cart[i].quantity = q;
   renderCart();
 }
 function removeItem(i) { cart.splice(i, 1); renderCart(); }
+
+function normalizeQty(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  const stepped = Math.round(n / QTY_STEP) * QTY_STEP;
+  const fixed = Number(stepped.toFixed(QTY_DECIMALS));
+  return fixed < QTY_MIN ? QTY_MIN : fixed;
+}
+
+function fmtQty(v) {
+  const n = Number(v || 0);
+  if (QTY_DECIMALS <= 0) return String(Math.round(n));
+  return n.toFixed(QTY_DECIMALS).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+}
 
 function renderCart() {
   const empty = !cart.length;
@@ -537,11 +568,11 @@ function renderCart() {
     return `<div class="cart-item">
       <div class="ci-info">
         <div class="ci-name" title="${_h(item.name)}">${_h(item.name)}</div>
-        <div class="ci-price">${item.unit_price.toFixed(2)} ${CUR} × ${item.quantity}</div>
+        <div class="ci-price">${item.unit_price.toFixed(2)} ${CUR} × ${fmtQty(item.quantity)}</div>
       </div>
       <div class="ci-ctrl">
         <button class="ci-qbtn dec" onclick="changeQty(${i},-1)">−</button>
-        <input class="ci-qty" type="number" value="${item.quantity}" min="0.5" step="0.5"
+        <input class="ci-qty" type="number" value="${fmtQty(item.quantity)}" min="${QTY_MIN}" step="${QTY_STEP}"
                onchange="setQty(${i},this.value)" onblur="setQty(${i},this.value||'0')">
         <button class="ci-qbtn" onclick="changeQty(${i},1)">+</button>
       </div>

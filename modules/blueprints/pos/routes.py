@@ -286,6 +286,50 @@ _POS_MODE_CONFIG = {
 }
 
 
+def _resolve_quantity_policy(industry_type: str, pos_mode: str) -> dict:
+    """سياسة الكمية في POS حسب نوع النشاط لتقليل الأخطاء والتعقيد."""
+    if industry_type.startswith("wholesale_") or pos_mode == "wholesale":
+        policy = {
+            "qty_step": 1,
+            "qty_min": 1,
+            "qty_decimals": 0,
+            "unit_examples": ["كرتون", "صندوق", "باليت", "دستة", "ربطة"],
+            "variant_examples": [],
+        }
+        if industry_type.startswith("wholesale_fashion_"):
+            policy["variant_examples"] = ["S", "M", "L", "XL", "XXL"]
+        return policy
+
+    if (
+        industry_type.startswith("retail_fnb_")
+        or industry_type in {"retail_fnb_supermarket", "retail_fnb_butcher", "retail_fnb_produce", "retail_fnb_roaster"}
+    ):
+        return {
+            "qty_step": 0.25,
+            "qty_min": 0.25,
+            "qty_decimals": 3,
+            "unit_examples": ["كيلو", "نصف كيلو", "ربع كيلو", "جرام"],
+            "variant_examples": [],
+        }
+
+    if industry_type.startswith("retail_fashion_") or pos_mode == "fashion":
+        return {
+            "qty_step": 1,
+            "qty_min": 1,
+            "qty_decimals": 0,
+            "unit_examples": ["قطعة", "طقم", "زوج"],
+            "variant_examples": ["XS", "S", "M", "L", "XL", "XXL"],
+        }
+
+    return {
+        "qty_step": 1,
+        "qty_min": 1,
+        "qty_decimals": 0,
+        "unit_examples": ["قطعة", "علبة", "عبوة"],
+        "variant_examples": [],
+    }
+
+
 @bp.route("/pos")
 @require_perm("pos")
 def pos():
@@ -315,6 +359,7 @@ def pos():
     )
     terms         = get_terms(industry_type)
     pos_mode      = terms.get("pos_mode", "standard")
+    qty_policy    = _resolve_quantity_policy(industry_type, pos_mode)
     country_code  = ((g.country_profile or {}).get("country_code") or "SA").upper()
     wholesale_packaging_terms = (
         get_market_packaging_terms(country_code, language="ar")
@@ -334,6 +379,11 @@ def pos():
         "pos_quick_label": terms.get("pos_quick_label", "بيع سريع"),
         "enforce_barcode_only": barcode_only_flow,
         "wholesale_packaging_terms": wholesale_packaging_terms,
+        "qty_step":        qty_policy["qty_step"],
+        "qty_min":         qty_policy["qty_min"],
+        "qty_decimals":    qty_policy["qty_decimals"],
+        "unit_examples":   qty_policy["unit_examples"],
+        "variant_examples":qty_policy["variant_examples"],
         "T_product":       terms.get("product", "منتج"),
         "T_customer":      terms.get("customer", "عميل"),
         "T_seller":        terms.get("seller", "بائع"),
@@ -371,6 +421,7 @@ def api_pos_config():
     )
     terms         = get_terms(industry_type)
     pos_mode      = terms.get("pos_mode", "standard")
+    qty_policy    = _resolve_quantity_policy(industry_type, pos_mode)
     country_code  = ((g.country_profile or {}).get("country_code") or "SA").upper()
     wholesale_packaging_terms = (
         get_market_packaging_terms(country_code, language="ar")
@@ -392,6 +443,11 @@ def api_pos_config():
         "pos_quick_label": terms.get("pos_quick_label", "بيع سريع"),
         "enforce_barcode_only": barcode_only_flow,
         "wholesale_packaging_terms": wholesale_packaging_terms,
+        "qty_step":        qty_policy["qty_step"],
+        "qty_min":         qty_policy["qty_min"],
+        "qty_decimals":    qty_policy["qty_decimals"],
+        "unit_examples":   qty_policy["unit_examples"],
+        "variant_examples":qty_policy["variant_examples"],
         "labels": {
             "product":    terms.get("product", "منتج"),
             "customer":   terms.get("customer", "عميل"),

@@ -83,7 +83,7 @@
 </div>
 
 <script>
-const CSRF = '{{ csrf_token() }}';
+const CSRF = '{{ csrf_token }}';
 
 function saveSalary(empId){
   const val = document.getElementById('salary-'+empId).value;

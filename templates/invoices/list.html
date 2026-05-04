@@ -64,6 +64,14 @@
       إدارة شاملة لجميع الفواتير (مبيعات + مشتريات)
     </p>
   </div>
+  <div style="margin-right:auto; display:flex; gap:.5rem; flex-wrap:wrap;">
+    <a href="{{ url_for('invoices.new_invoice') }}" class="btn-sm" style="background:#16a34a;color:#fff;border-color:#16a34a;padding:.55rem .95rem;">
+      + إصدار فاتورة جديدة
+    </a>
+    <a href="{{ url_for('core.settings') }}" class="btn-sm" style="background:#eef2ff;color:#3730a3;border-color:#c7d2fe;padding:.55rem .95rem;">
+      ⚙️ إعدادات المنشأة (الشعار/الضريبي)
+    </a>
+  </div>
 </div>
 
 <!-- إحصائيات سريعة -->

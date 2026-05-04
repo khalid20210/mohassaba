@@ -125,6 +125,21 @@ def list_invoices():
     )
 
 
+@bp.route("/new")
+@require_perm("sales")
+def new_invoice():
+    """مسار موحد لإصدار فاتورة جديدة حسب نوع النشاط."""
+    industry_type = (g.business["industry_type"] if g.business else "") or ""
+
+    if industry_type.startswith("wholesale"):
+        return redirect(url_for("wholesale.list_orders"))
+
+    if industry_type.startswith("food_"):
+        return redirect(url_for("pos.pos"))
+
+    return redirect(url_for("restaurant.orders"))
+
+
 @bp.route("/<int:inv_id>")
 @require_perm("sales")
 def view_invoice(inv_id: int):

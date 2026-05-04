@@ -47,7 +47,7 @@
   <div class="ak-card">
     <h3 style="margin:0 0 14px;color:#dbeafe;font-size:.95rem;font-weight:800">توليد مفتاح API جديد</h3>
     <form method="POST" action="{{ url_for('owner.create_api_key') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div class="ak-form-grid">
         <div>
           <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:5px">اسم التطبيق / المنصة</label>

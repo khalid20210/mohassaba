@@ -96,12 +96,12 @@ input:checked+.toggle-slider::before{transform:translateX(-20px)}
     <div class="mode-strip">
       <span class="mode-badge">وضع العرض:</span>
       <form method="POST" action="{{ url_for('owner.toggle_display_mode') }}" style="display:inline">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="hidden" name="mode" value="basic">
         <button class="mode-btn mode-basic" type="submit">بسيط</button>
       </form>
       <form method="POST" action="{{ url_for('owner.toggle_display_mode') }}" style="display:inline">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="hidden" name="mode" value="pro">
         <button class="mode-btn mode-pro" type="submit">احترافي</button>
       </form>
@@ -207,7 +207,7 @@ input:checked+.toggle-slider::before{transform:translateX(-20px)}
     <div class="ow-card">
       <h3 class="ow-card-title">🎛 لوحة الرقابة</h3>
       <form method="POST" action="{{ url_for('owner.update_control_panel') }}" id="ctrlForm">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
         <div class="ctrl-toggle-row">
           <div>

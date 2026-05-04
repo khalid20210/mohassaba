@@ -500,6 +500,54 @@ tbody tr:hover { background: #f8fafc; }
 
 
 /* ════════════════════════════════════════════════════════════
+   DARK MODE — الوضع الليلي
+   يُفعَّل بـ  data-theme="dark"  على عنصر <html>
+════════════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  --bg:            #0f172a;
+  --card-bg:       #1e293b;
+  --border:        #334155;
+  --text:          #e2e8f0;
+  --text-muted:    #94a3b8;
+  --primary-light: rgba(37,99,235,.18);
+  --shadow:        0 1px 3px rgba(0,0,0,.35), 0 1px 2px rgba(0,0,0,.25);
+  --shadow-lg:     0 4px 24px rgba(0,0,0,.45);
+}
+[data-theme="dark"] body        { background: var(--bg); color: var(--text); }
+[data-theme="dark"] .topbar     { background: #1e293b; border-color: #334155; }
+[data-theme="dark"] .topbar-biz-badge { background: rgba(37,99,235,.2); color: #93c5fd; }
+[data-theme="dark"] .card       { background: var(--card-bg); border-color: var(--border); }
+[data-theme="dark"] .stat-card  { background: var(--card-bg); border-color: var(--border); }
+[data-theme="dark"] .stat-icon.blue   { background: rgba(59,130,246,.15); }
+[data-theme="dark"] .stat-icon.green  { background: rgba(22,163,74,.15); }
+[data-theme="dark"] .stat-icon.orange { background: rgba(234,88,12,.15); }
+[data-theme="dark"] .stat-icon.purple { background: rgba(124,58,237,.15); }
+[data-theme="dark"] .stat-icon.red    { background: rgba(220,38,38,.15); }
+[data-theme="dark"] .form-control    { background: #0f172a; border-color: #334155; color: var(--text); }
+[data-theme="dark"] .form-control:focus { border-color: var(--primary); }
+[data-theme="dark"] thead th    { background: #1e293b; color: #94a3b8; border-color: #334155; }
+[data-theme="dark"] tbody td    { border-color: #334155; }
+[data-theme="dark"] tbody tr:hover  { background: #1e3a5f; }
+[data-theme="dark"] .table-wrapper  { border-color: #334155; }
+[data-theme="dark"] .badge-primary  { background: rgba(37,99,235,.2); color: #93c5fd; }
+[data-theme="dark"] .badge-success  { background: rgba(22,163,74,.2); color: #86efac; }
+[data-theme="dark"] .badge-warning  { background: rgba(217,119,6,.2); color: #fcd34d; }
+[data-theme="dark"] .badge-danger   { background: rgba(220,38,38,.2); color: #fca5a5; }
+[data-theme="dark"] .alert-success  { background: rgba(22,163,74,.12); color: #86efac; border-color: rgba(22,163,74,.3); }
+[data-theme="dark"] .alert-error    { background: rgba(220,38,38,.12); color: #fca5a5; border-color: rgba(220,38,38,.3); }
+[data-theme="dark"] .alert-info     { background: rgba(8,145,178,.12); color: #67e8f9; border-color: rgba(8,145,178,.3); }
+[data-theme="dark"] .alert-warning  { background: rgba(217,119,6,.12); color: #fcd34d; border-color: rgba(217,119,6,.3); }
+[data-theme="dark"] .btn-outline    { border-color: #334155; color: var(--text); }
+[data-theme="dark"] .btn-outline:hover { background: #1e293b; }
+[data-theme="dark"] .page-content  { background: var(--bg); }
+[data-theme="dark"] select,
+[data-theme="dark"] textarea        { background: #0f172a; border-color: #334155; color: var(--text); }
+[data-theme="dark"] .pos-products-panel,
+[data-theme="dark"] .pos-cart-panel { background: #1e293b; border-color: #334155; }
+[data-theme="dark"] .topbar-right span { color: #94a3b8; }
+
+
+/* ════════════════════════════════════════════════════════════
    POS — نقاط البيع
 ════════════════════════════════════════════════════════════ */
 

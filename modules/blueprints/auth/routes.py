@@ -329,8 +329,22 @@ def auth_login():
 
         db.execute("UPDATE users SET last_login=datetime('now') WHERE id=?", (user["id"],))
         db.commit()
+
+        onboarding_row = db.execute(
+            "SELECT value FROM settings WHERE business_id=? AND key='onboarding_complete' LIMIT 1",
+            (biz_id_val,),
+        ).fetchone()
+        needs_onboarding = not (onboarding_row and str(onboarding_row["value"]) == "1")
+        session["needs_onboarding"] = bool(needs_onboarding)
+
         # تسجيل دخول ناجح
         write_audit_log(db, biz_id_val, "login", entity_type="user", entity_id=user["id"])
+        if needs_onboarding:
+            flash(
+                "نتمنى منك اختيار نشاطك التجاري لنقوم بتهيئة البرنامج بما يتناسب مع تجارتك، لتبدأ العمل بسهولة واحترافية.",
+                "info",
+            )
+            return redirect(url_for("core.onboarding"))
         return redirect(url_for("core.dashboard"))
 
     return render_template("auth/login.html")
@@ -426,10 +440,8 @@ def auth_register():
             pass  # الضريبة غير معيقة للتسجيل
 
         session.clear()
-        session["user_id"]          = user_id
-        session["business_id"]      = biz_id
-        session["needs_onboarding"] = True
-        return redirect(url_for("core.onboarding"))
+        flash("تم إنشاء الحساب بنجاح. سجّل الدخول للمتابعة وإكمال تهيئة النشاط.", "success")
+        return redirect(url_for("auth.auth_login"))
 
     # GET: جلب قائمة الدول للقالب
     try:

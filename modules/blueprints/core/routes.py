@@ -322,11 +322,12 @@ def _get_industry_kpis(db, biz_id: int, industry_type: str, since30: str) -> dic
         """, (biz_id,)).fetchall()
         # أصناف منخفضة المخزون للموزعين
         low_stock_wholesale = db.execute("""
-            SELECT sku, ROUND(current_qty, 3) AS current_qty, ROUND(min_qty, 3) AS min_qty,
-                   ROUND(max_qty, 3) AS max_qty, product_name
-            FROM product_inventory
-            WHERE business_id=? AND current_qty <= min_qty * 1.5
-            ORDER BY (min_qty - current_qty) DESC LIMIT 8
+            SELECT pi.sku, ROUND(pi.current_qty, 3) AS current_qty, ROUND(pi.min_qty, 3) AS min_qty,
+                   ROUND(pi.max_qty, 3) AS max_qty, p.name AS product_name
+            FROM product_inventory pi
+            LEFT JOIN products p ON p.id = pi.product_id AND p.business_id = pi.business_id
+            WHERE pi.business_id=? AND pi.current_qty <= pi.min_qty * 1.5
+            ORDER BY (pi.min_qty - pi.current_qty) DESC LIMIT 8
         """, (biz_id,)).fetchall()
         kpis["top_distributors"]    = [dict(r) for r in top_distributors]
         kpis["pending_purchase_cnt"]= int(pending_purchases["cnt"] or 0)
@@ -626,7 +627,31 @@ def onboarding():
 
         valid_types = [t[0] for t in INDUSTRY_TYPES]
         if industry_type not in valid_types:
-            industry_type = "retail_other"
+            # تطبيع أكواد الـ onboarding الجديدة إلى أنواع صالحة
+            if industry_type.startswith("svc_"):
+                industry_type = "services"
+            elif industry_type.startswith("con_"):
+                industry_type = "construction"
+            elif industry_type.startswith("mfg_"):
+                industry_type = "services"
+            elif industry_type.startswith("hos_cafe"):
+                industry_type = "food_cafe"
+            elif industry_type.startswith("hos_"):
+                industry_type = "food_restaurant"
+            elif industry_type.startswith("hlt_"):
+                industry_type = "medical"
+            elif industry_type.startswith("lgx_"):
+                industry_type = "services"
+            elif industry_type.startswith("retail_"):
+                industry_type = "retail"
+            elif industry_type.startswith("wholesale_"):
+                industry_type = "wholesale"
+            else:
+                flash("الرجاء اختيار نشاط صحيح من القائمة لإتمام التهيئة.", "error")
+                return render_template("onboarding.html")
+
+        industry_labels = {k: v for k, v in INDUSTRY_TYPES}
+        industry_label = industry_labels.get(industry_type, industry_type)
 
         db     = get_db()
         biz_id = session["business_id"]
@@ -646,7 +671,7 @@ def onboarding():
                 (biz_id, "المستودع الرئيسي")
             )
             seed_business_accounts(db, biz_id)
-            seed_industry_defaults(db, biz_id, industry_type)
+            seed_summary = seed_industry_defaults(db, biz_id, industry_type)
             ensure_unit_localization_defaults(db, int(biz_id), country_code=country_code)
             db.execute(
                 "INSERT OR IGNORE INTO settings (business_id, key, value) VALUES (?,?,?)",
@@ -658,6 +683,14 @@ def onboarding():
             flash("حدث خطأ أثناء إنشاء المنشأة — يرجى المحاولة مرة أخرى", "error")
             return render_template("onboarding.html")
         session.pop("needs_onboarding", None)
+        flash(
+            (
+                f"تم تهيئة نشاط «{industry_label}» بنجاح: "
+                f"{seed_summary.get('categories_inserted', 0)} تصنيف جديد، "
+                f"{seed_summary.get('products_inserted', 0)} منتج جديد."
+            ),
+            "success",
+        )
         flash(f"مرحباً! تم إنشاء منشأة «{biz_name}» بنجاح ✓", "success")
         return redirect(url_for("core.dashboard"))
 

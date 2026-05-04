@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,11 +13,18 @@
   <meta name="apple-mobile-web-app-title" content="محاسبة">
   <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <!-- تطبيق الثيم قبل رسم الصفحة لتجنب الوميض -->
+  <script>
+    (function(){
+      var t = localStorage.getItem('jenan_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
   {% block head %}{% endblock %}
 </head>
 <body>
 
-{% if current_user and current_business %}
+{% if current_user and current_business and request.endpoint != 'core.onboarding' %}
 <!-- ═══════════════════════════════════════════════════════════
      LAYOUT: Sidebar + Main
      ═══════════════════════════════════════════════════════════ -->
@@ -82,6 +89,12 @@
         <span class="topbar-title">{% block page_title %}{% endblock %}</span>
       </div>
       <div class="topbar-right">
+        <!-- زر تبديل الوضع الليلي/النهاري -->
+        <button id="themeToggleBtn" onclick="toggleTheme()" title="تبديل الوضع" style="
+          background:none;border:1px solid var(--border);border-radius:8px;
+          padding:5px 10px;cursor:pointer;font-size:.9rem;
+          color:var(--text-muted);transition:all .2s;line-height:1;
+        ">☀️</button>
         <!-- زر تثبيت التطبيق PWA -->
         <button id="pwaInstallBtn" onclick="triggerPwaInstall()" title="تثبيت التطبيق على جهازك" style="
           display:none; align-items:center; gap:5px;
@@ -123,7 +136,11 @@
 </div><!-- /app-layout -->
 
 {% else %}
-  <!-- صفحات Auth بدون sidebar -->
+  <!-- صفحات Auth والتهيئة بدون sidebar -->
+  {% if current_user and current_business %}
+    <!-- onboarding: اعرض الصفحة بدون تخطيط -->
+    {% block ob_content %}{% endblock %}
+  {% endif %}
   {% with messages = get_flashed_messages(with_categories=true) %}{% endwith %}
   {% block auth_content %}{% endblock %}
 {% endif %}
@@ -198,6 +215,23 @@ function setOnlineStatus() {
 window.addEventListener('online',  setOnlineStatus);
 window.addEventListener('offline', setOnlineStatus);
 setOnlineStatus();
+
+// ── Dark / Light Mode ────────────────────────────────────────────
+function toggleTheme(){
+  var html = document.documentElement;
+  var current = html.getAttribute('data-theme') || 'light';
+  var next = current === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('jenan_theme', next);
+  var btn = document.getElementById('themeToggleBtn');
+  if(btn) btn.textContent = next === 'dark' ? '☀️' : '🌙';
+}
+// تحديث أيقونة الزر عند التحميل
+(function(){
+  var t = document.documentElement.getAttribute('data-theme') || 'light';
+  var btn = document.getElementById('themeToggleBtn');
+  if(btn) btn.textContent = t === 'dark' ? '☀️' : '🌙';
+})();
 </script>
 </body>
 </html>

@@ -11,8 +11,132 @@ modules/industry_seeds.py — بذور البيانات الأولية حسب ن
 from __future__ import annotations
 import sqlite3
 import logging
+import copy
 
 logger = logging.getLogger(__name__)
+
+
+def _detect_activity_family(industry_type: str) -> str:
+    """تصنيف النشاط لتطبيق قواعد وحدات وخدمات متسقة."""
+    if industry_type.startswith("wholesale_") or industry_type == "wholesale":
+        if industry_type.startswith("wholesale_fashion_"):
+            return "wholesale_fashion"
+        if industry_type.startswith("wholesale_fnb_"):
+            return "wholesale_food"
+        return "wholesale_general"
+
+    if industry_type.startswith("retail_fnb_"):
+        return "retail_food"
+    if industry_type.startswith("retail_fashion_"):
+        return "retail_fashion"
+    if industry_type.startswith("retail_") or industry_type == "retail":
+        return "retail_general"
+    return "general"
+
+
+def _activity_profile_settings(industry_type: str) -> dict:
+    """إعدادات تشغيل دقيقة لكل عائلة نشاط لتقليل التعقيد ومنع الخلط."""
+    family = _detect_activity_family(industry_type)
+
+    if family in {"wholesale_general", "wholesale_food", "wholesale_fashion"}:
+        return {
+            "activity_profile": "wholesale",
+            "quantity_step": "1",
+            "quantity_min": "1",
+            "quantity_decimals": "0",
+            "allow_fractional_qty": "0",
+            "unit_examples": "كرتون,صندوق,باليت,دستة,ربطة",
+            "size_matrix_enabled": "1" if family == "wholesale_fashion" else "0",
+        }
+
+    if family == "retail_food":
+        return {
+            "activity_profile": "retail_food",
+            "quantity_step": "0.25",
+            "quantity_min": "0.25",
+            "quantity_decimals": "3",
+            "allow_fractional_qty": "1",
+            "unit_examples": "كيلو,نصف كيلو,ربع كيلو,جرام",
+            "size_matrix_enabled": "0",
+        }
+
+    if family == "retail_fashion":
+        return {
+            "activity_profile": "retail_fashion",
+            "quantity_step": "1",
+            "quantity_min": "1",
+            "quantity_decimals": "0",
+            "allow_fractional_qty": "0",
+            "unit_examples": "قطعة,طقم,زوج",
+            "size_matrix_enabled": "1",
+            "size_matrix_values": "XS,S,M,L,XL,XXL",
+        }
+
+    return {
+        "activity_profile": "retail_general",
+        "quantity_step": "1",
+        "quantity_min": "1",
+        "quantity_decimals": "0",
+        "allow_fractional_qty": "0",
+        "unit_examples": "قطعة,علبة,عبوة",
+        "size_matrix_enabled": "0",
+    }
+
+
+def _shared_service_templates() -> list[dict]:
+    """خدمات مشتركة لكل الأنشطة بدون استثناء."""
+    return [
+        {"name": "خدمة توصيل", "category": "خدمات مشتركة", "price": 20.0, "unit": "طلب", "product_type": "service"},
+        {"name": "خدمة دعم فني", "category": "خدمات مشتركة", "price": 35.0, "unit": "جلسة", "product_type": "service"},
+    ]
+
+
+def _activity_service_templates(industry_type: str) -> list[dict]:
+    """خدمات مخصصة للجملة/التجزئة فقط، مع خدمات مشتركة للجميع."""
+    family = _detect_activity_family(industry_type)
+    services = list(_shared_service_templates())
+
+    if family == "retail_food":
+        services.extend([
+            {"name": "خدمة توصيل محلي", "category": "خدمات المتجر", "price": 12.0, "unit": "طلب", "product_type": "service"},
+            {"name": "تجهيز طلب مسبق", "category": "خدمات المتجر", "price": 6.0, "unit": "طلب", "product_type": "service"},
+        ])
+        return services
+
+    if family == "retail_fashion":
+        services.extend([
+            {"name": "تعديل مقاس", "category": "خدمات المتجر", "price": 25.0, "unit": "قطعة", "product_type": "service"},
+            {"name": "تغليف هدية", "category": "خدمات المتجر", "price": 8.0, "unit": "طلب", "product_type": "service"},
+        ])
+        return services
+
+    if family in {"wholesale_general", "wholesale_food", "wholesale_fashion"}:
+        services.extend([
+            {"name": "خدمة شحن طلبيات", "category": "خدمات الجملة", "price": 150.0, "unit": "شحنة", "product_type": "service"},
+            {"name": "تحميل وتنزيل", "category": "خدمات الجملة", "price": 75.0, "unit": "طلب", "product_type": "service"},
+        ])
+        return services
+
+    return services
+
+
+def _prepare_seed_for_activity(seed: dict, industry_type: str) -> dict:
+    """يبني نسخة فعالة من البذور مع خدمات وإعدادات النشاط بشكل حتمي."""
+    prepared = copy.deepcopy(seed)
+    prepared.setdefault("categories", [])
+    prepared.setdefault("products", [])
+    prepared.setdefault("settings", {})
+
+    # خدمات النشاط
+    for service_item in _activity_service_templates(industry_type):
+        category = service_item.get("category") or "خدمات"
+        if category not in prepared["categories"]:
+            prepared["categories"].append(category)
+        prepared["products"].append(service_item)
+
+    # إعدادات النشاط الدقيقة
+    prepared["settings"].update(_activity_profile_settings(industry_type))
+    return prepared
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 1. قاعدة بيانات البذور — كل نشاط لوحده
@@ -1316,39 +1440,62 @@ def seed_industry_defaults(
     db: sqlite3.Connection,
     biz_id: int,
     industry_type: str,
-) -> None:
+) -> dict:
     """
     تُهيّئ البيانات الأولية للمنشأة حسب نوع نشاطها:
       - تصنيفات المنتجات
       - منتجات/خدمات نموذجية
       - إعدادات النشاط (POS mode، بادئة الفاتورة)
 
-    يُستدعى مرة واحدة فقط عند اكتمال onboarding.
+    يُستدعى مرة واحدة عند اكتمال onboarding، ويعيد ملخصاً بعدد العناصر المُهيأة.
     """
-    try:
-        seed = _get_seed(industry_type)
-        _seed_categories_and_products(db, biz_id, seed)
-        _seed_settings(db, biz_id, seed.get("settings", {}))
-        _seed_trade_mode_settings(db, biz_id, industry_type)
-    except Exception as exc:
-        logger.warning("industry_seeds: فشل التهيئة للنشاط %s — %s", industry_type, exc)
-        # لا نوقف العملية — النظام يعمل بدون بذور أفضل من توقفه
+    seed = _prepare_seed_for_activity(_get_seed(industry_type), industry_type)
+    cp_summary = _seed_categories_and_products(db, biz_id, seed)
+    business_settings_written = _seed_settings(db, biz_id, seed.get("settings", {}))
+    mode_settings_written = _seed_trade_mode_settings(db, biz_id, industry_type)
+
+    return {
+        "categories_inserted": cp_summary.get("categories_inserted", 0),
+        "products_inserted": cp_summary.get("products_inserted", 0),
+        "stock_rows_inserted": cp_summary.get("stock_rows_inserted", 0),
+        "settings_written": int(business_settings_written + mode_settings_written),
+    }
 
 
 def _seed_trade_mode_settings(
     db: sqlite3.Connection,
     biz_id: int,
     industry_type: str,
-) -> None:
+) -> int:
     """إعدادات تشغيلية تمنع تداخل نمط الجملة والتجزئة."""
-    if industry_type.startswith("wholesale_") or industry_type == "wholesale":
+    family = _detect_activity_family(industry_type)
+
+    if family in {"wholesale_general", "wholesale_food", "wholesale_fashion"}:
         mode_settings = {
             "trade_mode": "wholesale",
+            "quantity_decimals": "0",
+            "allow_fractional_qty": "0",
+            "enable_bulk_pricing": "1",
+            "prefer_weight_units": "0",
+            "show_retail_pos": "0",
+        }
+    elif family == "retail_food":
+        mode_settings = {
+            "trade_mode": "retail",
             "quantity_decimals": "3",
             "allow_fractional_qty": "1",
-            "enable_bulk_pricing": "1",
+            "enable_bulk_pricing": "0",
             "prefer_weight_units": "1",
-            "show_retail_pos": "0",
+            "show_retail_pos": "1",
+        }
+    elif family == "retail_fashion":
+        mode_settings = {
+            "trade_mode": "retail",
+            "quantity_decimals": "0",
+            "allow_fractional_qty": "0",
+            "enable_bulk_pricing": "0",
+            "prefer_weight_units": "0",
+            "show_retail_pos": "1",
         }
     elif industry_type.startswith("retail_") or industry_type == "retail":
         mode_settings = {
@@ -1369,20 +1516,24 @@ def _seed_trade_mode_settings(
             "show_retail_pos": "0",
         }
 
-    _seed_settings(db, biz_id, mode_settings)
+    return _seed_settings(db, biz_id, mode_settings)
 
 
 def _seed_categories_and_products(
     db: sqlite3.Connection,
     biz_id: int,
     seed: dict,
-) -> None:
+) -> dict:
     """يُنشئ التصنيفات والمنتجات النموذجية إذا لم تكن موجودة"""
     categories = seed.get("categories", [])
     products   = seed.get("products",   [])
 
     # ── التصنيفات ──────────────────────────────────────────────────────────
     cat_id_map: dict[str, int] = {}  # name → id
+
+    categories_inserted = 0
+    products_inserted = 0
+    stock_rows_inserted = 0
 
     for cat_name in categories:
         existing = db.execute(
@@ -1397,6 +1548,7 @@ def _seed_categories_and_products(
                 (biz_id, cat_name)
             )
             cat_id_map[cat_name] = cur.lastrowid
+            categories_inserted += 1
 
     # ── المنتجات ──────────────────────────────────────────────────────────
     for p in products:
@@ -1432,6 +1584,7 @@ def _seed_categories_and_products(
                 is_pos,
             )
         )
+        products_inserted += 1
 
         # إذا كان منتجاً (وليس خدمة)، أضف رصيد صفري في المستودع الافتراضي
         if product_type == "product":
@@ -1445,22 +1598,35 @@ def _seed_categories_and_products(
                     (biz_id, name)
                 ).fetchone()
                 if product_id:
-                    db.execute(
+                    cur = db.execute(
                         """INSERT OR IGNORE INTO stock
                            (business_id, product_id, warehouse_id, quantity, avg_cost)
                            VALUES (?,?,?,0,0)""",
                         (biz_id, product_id["id"], warehouse["id"])
                     )
+                    if getattr(cur, "rowcount", 0) > 0:
+                        stock_rows_inserted += 1
+
+    return {
+        "categories_inserted": categories_inserted,
+        "products_inserted": products_inserted,
+        "stock_rows_inserted": stock_rows_inserted,
+    }
 
 
 def _seed_settings(
     db: sqlite3.Connection,
     biz_id: int,
     settings: dict,
-) -> None:
+) -> int:
     """يُدرج إعدادات النشاط في جدول settings"""
+    written = 0
     for key, value in settings.items():
         db.execute(
-            "INSERT OR IGNORE INTO settings (business_id, key, value) VALUES (?,?,?)",
+            """INSERT INTO settings (business_id, key, value)
+               VALUES (?,?,?)
+               ON CONFLICT(business_id, key) DO UPDATE SET value=excluded.value""",
             (biz_id, key, str(value))
         )
+        written += 1
+    return written

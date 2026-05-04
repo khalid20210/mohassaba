@@ -24,6 +24,37 @@ _rate_limit_state: dict[str, deque] = {}
 _rate_lock = Lock()
 
 
+def _is_onboarding_complete() -> bool:
+    """التحقق من اكتمال تهيئة المنشأة الحالية."""
+    biz_id = session.get("business_id")
+    if not biz_id:
+        return False
+    try:
+        db = get_db()
+        row = db.execute(
+            "SELECT value FROM settings WHERE business_id=? AND key='onboarding_complete' LIMIT 1",
+            (biz_id,),
+        ).fetchone()
+        return bool(row and str(row["value"]) == "1")
+    except Exception:
+        return False
+
+
+def _needs_onboarding_redirect() -> bool:
+    """هل يجب إعادة توجيه المستخدم إلى /onboarding؟"""
+    if not session.get("user_id") or not session.get("business_id"):
+        return False
+
+    path = request.path or ""
+    exempt_prefixes = ("/auth", "/static", "/onboarding")
+    exempt_paths = ("/healthz", "/readyz", "/sw.js")
+
+    if path.startswith(exempt_prefixes) or path in exempt_paths:
+        return False
+
+    return not _is_onboarding_complete()
+
+
 # ─── التحقق من الصلاحية ───────────────────────────────────────────────────────
 
 def user_has_perm(perm_key: str) -> bool:
@@ -43,6 +74,8 @@ def login_required(f):
     def decorated(*args, **kwargs):
         if "user_id" not in session:
             return redirect(url_for("auth.auth_login"))
+        if _needs_onboarding_redirect():
+            return redirect(url_for("core.onboarding"))
         return f(*args, **kwargs)
     return decorated
 
@@ -53,6 +86,8 @@ def onboarding_required(f):
         if "user_id" not in session:
             return redirect(url_for("auth.auth_login"))
         if not session.get("business_id"):
+            return redirect(url_for("core.onboarding"))
+        if _needs_onboarding_redirect():
             return redirect(url_for("core.onboarding"))
         return f(*args, **kwargs)
     return decorated
@@ -65,6 +100,8 @@ def require_perm(perm_key: str):
             if "user_id" not in session:
                 return redirect(url_for("auth.auth_login"))
             if not session.get("business_id"):
+                return redirect(url_for("core.onboarding"))
+            if _needs_onboarding_redirect():
                 return redirect(url_for("core.onboarding"))
             if not user_has_perm(perm_key):
                 flash("ليس لديك صلاحية للوصول لهذه الصفحة", "error")
@@ -81,6 +118,8 @@ def owner_required(f):
         if "user_id" not in session:
             return redirect(url_for("auth.auth_login"))
         if not session.get("business_id"):
+            return redirect(url_for("core.onboarding"))
+        if _needs_onboarding_redirect():
             return redirect(url_for("core.onboarding"))
         try:
             perms = json.loads(g.user["permissions"] or "{}") if g.user else {}
@@ -275,7 +314,7 @@ def inject_globals():
         "industry_types":   INDUSTRY_TYPES,
         "request":          request,
         "now_date":         datetime.now().strftime("%Y-%m-%d"),
-        "csrf_token":       generate_csrf_token,
+        "csrf_token":       generate_csrf_token(),
         "user_has_perm":    user_has_perm,
         "country_profile":  g.country_profile,
     }
@@ -301,6 +340,14 @@ def enforce_global_csrf():
 
     # استثنِ JSON API (محمية بـ CORS + session)
     if request.is_json:
+        return None
+
+    # استثنِ مسارات /auth/** — تتضمن CSRF token في الـ form مباشرة وتتحقق منه داخلياً
+    if path.startswith("/auth/"):
+        return None
+
+    # استثنِ مسارات /api/** — مؤمنة بـ API key + session
+    if path.startswith("/api/"):
         return None
 
     # استثنِ Webhooks المُعلنة صراحةً
