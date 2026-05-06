@@ -4,16 +4,19 @@ Contacts Management: Customers, Suppliers, Customer Transactions
 """
 
 import json
+import re
 from datetime import datetime
 from flask import Blueprint, render_template, request, jsonify, g, redirect, flash
 from functools import wraps
+from modules.extensions import safe_sql_identifier
 
 bp = Blueprint("contacts", __name__, url_prefix="/contacts")
 
 
 def _column_exists(db, table: str, column: str) -> bool:
     try:
-        rows = db.execute(f"PRAGMA table_info({table})").fetchall()
+        safe_table = safe_sql_identifier(table)
+        rows = db.execute(f"PRAGMA table_info({safe_table})").fetchall()
         return any((r[1] if not isinstance(r, dict) else r.get("name")) == column for r in rows)
     except Exception:
         return False
@@ -67,6 +70,25 @@ def log_activity(module, action, entity_id=None, changes=None):
         request.remote_addr
     ))
     db.commit()
+
+
+def _ensure_supplier_compliance_table(db):
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS supplier_compliance (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            business_id INTEGER NOT NULL,
+            contact_id INTEGER NOT NULL,
+            cr_number TEXT NOT NULL,
+            tax_number TEXT NOT NULL,
+            tax_certificate_ref TEXT NOT NULL,
+            manager_approved_by INTEGER NOT NULL,
+            manager_approved_at TEXT NOT NULL DEFAULT (datetime('now')),
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(business_id, contact_id)
+        )
+        """
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -385,8 +407,36 @@ def add_supplier():
     if request.method == "POST":
         db = get_db()
         business_id = g.business["id"]
+        _ensure_supplier_compliance_table(db)
         
         data = request.form
+        name = (data.get("name") or "").strip()
+        tax_number = (data.get("tax_number") or "").strip()
+        cr_number = (data.get("commercial_reg") or data.get("cr_number") or "").strip()
+        tax_certificate_ref = (data.get("tax_certificate_ref") or data.get("tax_certificate") or "").strip()
+
+        if not name:
+            flash("اسم المورد مطلوب", "error")
+            return render_template("contacts/supplier_form.html")
+        if not re.fullmatch(r"\d{10}", cr_number):
+            flash("رقم السجل التجاري يجب أن يكون 10 أرقام", "error")
+            return render_template("contacts/supplier_form.html")
+        if not tax_number:
+            flash("الرقم الضريبي إلزامي", "error")
+            return render_template("contacts/supplier_form.html")
+        if not tax_certificate_ref:
+            flash("مرجع/رقم شهادة الضريبة إلزامي", "error")
+            return render_template("contacts/supplier_form.html")
+
+        user_perms = g.user.get("permissions", {}) if g.user else {}
+        if isinstance(user_perms, str):
+            try:
+                user_perms = json.loads(user_perms or "{}")
+            except Exception:
+                user_perms = {}
+        if not bool(user_perms.get("all")):
+            flash("إضافة مورد جديد تتطلب اعتماد المدير", "error")
+            return redirect("/contacts/suppliers")
         
         db.execute("""
             INSERT INTO contacts (
@@ -395,17 +445,36 @@ def add_supplier():
             ) VALUES (?, 'supplier', ?, ?, ?, ?, ?, ?, ?, 1, datetime('now'))
         """, (
             business_id,
-            data.get("name"),
+            name,
             data.get("name_en", ""),
             data.get("phone", ""),
             data.get("email", ""),
             data.get("address", ""),
-            data.get("tax_number", ""),
+            tax_number,
             float(data.get("opening_balance") or 0),
         ))
+        supplier_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+        db.execute(
+            """
+            INSERT INTO supplier_compliance
+            (business_id, contact_id, cr_number, tax_number, tax_certificate_ref, manager_approved_by)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (business_id, supplier_id, cr_number, tax_number, tax_certificate_ref, g.user.get("id")),
+        )
         db.commit()
         
-        log_activity("contacts", "add_supplier", None, {"name": data.get("name")})
+        log_activity(
+            "contacts",
+            "add_supplier",
+            supplier_id,
+            {
+                "name": name,
+                "cr_number": cr_number,
+                "tax_number": tax_number,
+                "approved_by": g.user.get("id"),
+            },
+        )
         flash("تم إضافة المورد بنجاح", "success")
         return redirect("/contacts/suppliers")
     

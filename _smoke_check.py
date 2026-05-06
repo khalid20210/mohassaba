@@ -1,4 +1,5 @@
 import re
+import sys
 from modules import create_app
 from modules.extensions import get_db
 
@@ -54,3 +55,5 @@ print(f"CHECKED={checked}")
 print(f"FAILURES={len(failures)}")
 for p, c in failures:
     print(f"{c} {p}")
+
+sys.exit(1 if failures else 0)

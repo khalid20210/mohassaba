@@ -30,6 +30,9 @@ from .config import (
 )
 
 
+_SQL_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
 # ─── قاعدة البيانات ───────────────────────────────────────────────────────────
 
 def get_db() -> sqlite3.Connection:
@@ -55,6 +58,16 @@ def close_db(exc=None):
     db = g.pop("db", None)
     if db is not None:
         db.close()
+
+
+def safe_sql_identifier(name: str, allowed: set | None = None) -> str:
+    """تحقق من اسم معرّف SQL (مثل اسم جدول/عمود) قبل إدخاله في f-string."""
+    candidate = (name or "").strip()
+    if not candidate or not _SQL_IDENTIFIER_RE.match(candidate):
+        raise ValueError("Invalid SQL identifier")
+    if allowed is not None and candidate not in allowed:
+        raise ValueError("SQL identifier not allowed")
+    return candidate
 
 
 # ─── كلمة المرور ──────────────────────────────────────────────────────────────
@@ -358,6 +371,50 @@ def seed_business_accounts(db: sqlite3.Connection, business_id: int):
     db.execute(
         "INSERT OR IGNORE INTO settings (business_id, key, value) VALUES (?,?,?)",
         (business_id, 'invoice_prefix_sale', 'INV')
+    )
+    db.execute(
+        "INSERT OR IGNORE INTO settings (business_id, key, value) VALUES (?,?,?)",
+        (business_id, 'invoice_cancel_paid_requires_evidence', '1')
+    )
+    db.execute(
+        "INSERT OR IGNORE INTO settings (business_id, key, value) VALUES (?,?,?)",
+        (business_id, 'invoice_cancel_paid_grace_minutes', '15')
+    )
+    db.execute(
+        "INSERT OR IGNORE INTO settings (business_id, key, value) VALUES (?,?,?)",
+        (business_id, 'invoice_cancel_request_high_amount', '5000')
+    )
+    db.execute(
+        "INSERT OR IGNORE INTO settings (business_id, key, value) VALUES (?,?,?)",
+        (business_id, 'invoice_cancel_request_critical_amount', '20000')
+    )
+    db.execute(
+        "INSERT OR IGNORE INTO settings (business_id, key, value) VALUES (?,?,?)",
+        (business_id, 'invoice_cancel_request_high_age_hours', '6')
+    )
+    db.execute(
+        "INSERT OR IGNORE INTO settings (business_id, key, value) VALUES (?,?,?)",
+        (business_id, 'invoice_cancel_request_critical_age_hours', '24')
+    )
+    db.execute(
+        "INSERT OR IGNORE INTO settings (business_id, key, value) VALUES (?,?,?)",
+        (business_id, 'invoice_cancel_request_sla_critical_hours', '2')
+    )
+    db.execute(
+        "INSERT OR IGNORE INTO settings (business_id, key, value) VALUES (?,?,?)",
+        (business_id, 'invoice_cancel_request_sla_high_hours', '8')
+    )
+    db.execute(
+        "INSERT OR IGNORE INTO settings (business_id, key, value) VALUES (?,?,?)",
+        (business_id, 'invoice_cancel_request_sla_normal_hours', '24')
+    )
+    db.execute(
+        "INSERT OR IGNORE INTO settings (business_id, key, value) VALUES (?,?,?)",
+        (business_id, 'pos_return_window_hours', '72')
+    )
+    db.execute(
+        "INSERT OR IGNORE INTO settings (business_id, key, value) VALUES (?,?,?)",
+        (business_id, 'pos_return_high_value_threshold', '1000')
     )
 
 

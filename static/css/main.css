@@ -545,6 +545,69 @@ tbody tr:hover { background: #f8fafc; }
 [data-theme="dark"] .pos-products-panel,
 [data-theme="dark"] .pos-cart-panel { background: #1e293b; border-color: #334155; }
 [data-theme="dark"] .topbar-right span { color: #94a3b8; }
+[data-theme="dark"] .sidebar           { background: #0f172a; }
+[data-theme="dark"] .sidebar-logo      { border-color: #1e293b; }
+[data-theme="dark"] .sidebar-divider   { background: #1e293b; }
+[data-theme="dark"] .sidebar-footer    { border-color: #1e293b; }
+[data-theme="dark"] .sidebar-footer .logout-btn { background: #1e293b; color: #94a3b8; }
+[data-theme="dark"] .sidebar-footer .logout-btn:hover { background: #dc2626; color: #fff; }
+[data-theme="dark"] .sidebar-section-title { color: #334155; }
+[data-theme="dark"] .modal-box,
+[data-theme="dark"] .modal-content     { background: #1e293b; border-color: #334155; color: var(--text); }
+[data-theme="dark"] .modal-header      { border-color: #334155; }
+[data-theme="dark"] .modal-footer      { border-color: #334155; }
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="email"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] input[type="number"],
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="search"],
+[data-theme="dark"] input[type="tel"]  { background: #0f172a; border-color: #334155; color: var(--text); }
+[data-theme="dark"] .page-header       { background: var(--card-bg); border-color: var(--border); }
+[data-theme="dark"] .filter-bar        { background: var(--card-bg); border-color: var(--border); }
+[data-theme="dark"] .pagination a,
+[data-theme="dark"] .pagination span   { background: var(--card-bg); border-color: var(--border); color: var(--text); }
+[data-theme="dark"] .pagination a.active { background: var(--primary); color: #fff; }
+[data-theme="dark"] .dropdown-menu     { background: #1e293b; border-color: #334155; }
+[data-theme="dark"] .dropdown-menu a   { color: var(--text); }
+[data-theme="dark"] .dropdown-menu a:hover { background: #334155; }
+[data-theme="dark"] .tab-btn           { color: var(--text-muted); border-color: transparent; }
+[data-theme="dark"] .tab-btn.active    { color: var(--primary); border-color: var(--primary); }
+[data-theme="dark"] .timeline-item     { border-color: #334155; }
+[data-theme="dark"] .empty-state       { color: var(--text-muted); }
+
+/* تحويل سلس عند التبديل */
+html { transition: background-color .25s ease, color .25s ease; }
+body, .sidebar, .topbar, .card, .stat-card, .page-content,
+.modal-box, .modal-content, .filter-bar, .page-header {
+  transition: background-color .25s ease, border-color .2s ease, color .2s ease;
+}
+
+/* ─── زر التبديل الليلي/النهاري ─────────────────────────── */
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 12px 4px 8px;
+  cursor: pointer;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-family: inherit;
+  transition: all .2s ease;
+  line-height: 1;
+}
+.theme-toggle-btn:hover {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.theme-toggle-btn .theme-icon { font-size: 1rem; line-height: 1; }
+[data-theme="dark"] .theme-toggle-btn { border-color: #334155; color: #94a3b8; }
+[data-theme="dark"] .theme-toggle-btn:hover { background: rgba(37,99,235,.15); border-color: #3b82f6; color: #93c5fd; }
 
 
 /* ════════════════════════════════════════════════════════════

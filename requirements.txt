@@ -7,3 +7,4 @@ Flask-Session>=0.8
 redis>=5.0
 rq>=1.16
 psycopg2-binary>=2.9
+authlib>=1.3

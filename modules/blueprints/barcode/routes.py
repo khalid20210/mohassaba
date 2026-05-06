@@ -62,7 +62,13 @@ def dashboard():
         WHERE business_id = ?
     """, (business_id,)).fetchone()
     
-    return render_template("barcode/dashboard.html", stats=stats)
+    # قائمة المنتجات للقائمة المنسدلة
+    all_products = db.execute(
+        "SELECT id, name, barcode FROM products WHERE business_id=? AND is_active=1 ORDER BY name",
+        (business_id,)
+    ).fetchall()
+    
+    return render_template("barcode/dashboard.html", stats=stats, all_products=all_products)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

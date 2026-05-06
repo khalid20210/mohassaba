@@ -128,7 +128,7 @@ class PerformanceTracker:
         """تسجيل خطأ مع context كامل."""
         error_obj = {
             "error_type": error_type,
-            "message": message,
+            "error_message": message,
         }
         if context:
             error_obj.update(context)

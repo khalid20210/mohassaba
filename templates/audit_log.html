@@ -99,6 +99,15 @@ const ACTION_LABELS = {
   delete:       'حذف',
 };
 
+function escHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function badgeClass(action) {
   return 'log-badge badge-' + (document.querySelector('.badge-' + action) ? action : 'default');
 }
@@ -116,7 +125,7 @@ function renderStats(logs) {
   statsEl.innerHTML = Object.entries(counts).slice(0,6).map(([k,v]) => {
     const [bg, fg] = (colors[k] || '#f3f4f6:#6b7280').split(':');
     return `<div style="background:${bg};color:${fg};border-radius:10px;padding:.5rem 1rem;font-size:.82rem;font-weight:600">
-      ${ACTION_LABELS[k]||k}: ${v}
+      ${escHtml(ACTION_LABELS[k]||k)}: ${escHtml(v)}
     </div>`;
   }).join('');
 }
@@ -156,18 +165,18 @@ function renderTable(logs) {
     if (l.new_value) {
       try {
         const obj = JSON.parse(l.new_value);
-        details = Object.entries(obj).slice(0,3).map(([k,v]) => `<span style="color:#6b7280">${k}:</span> ${v}`).join(' &nbsp;|&nbsp; ');
-      } catch { details = String(l.new_value).slice(0,80); }
+        details = Object.entries(obj).slice(0,3).map(([k,v]) => `<span style="color:#6b7280">${escHtml(k)}:</span> ${escHtml(v)}`).join(' &nbsp;|&nbsp; ');
+      } catch { details = escHtml(String(l.new_value).slice(0,80)); }
     }
     const badgeCls = 'log-badge badge-' + (ACTION_LABELS[l.action] ? l.action : 'default');
     return `<tr>
-      <td style="padding:.65rem 1rem;color:#374151;white-space:nowrap">${formatDate(l.created_at)}</td>
-      <td style="padding:.65rem 1rem;font-weight:600;color:#111827">${l.actor_name || '—'}</td>
-      <td style="padding:.65rem 1rem;color:#6b7280">${l.actor_role || '—'}</td>
-      <td style="padding:.65rem 1rem"><span class="${badgeCls}">${ACTION_LABELS[l.action]||l.action}</span></td>
-      <td style="padding:.65rem 1rem;color:#6b7280">${l.entity_type || '—'} ${l.entity_id ? '#'+l.entity_id : ''}</td>
+      <td style="padding:.65rem 1rem;color:#374151;white-space:nowrap">${escHtml(formatDate(l.created_at))}</td>
+      <td style="padding:.65rem 1rem;font-weight:600;color:#111827">${escHtml(l.actor_name || '—')}</td>
+      <td style="padding:.65rem 1rem;color:#6b7280">${escHtml(l.actor_role || '—')}</td>
+      <td style="padding:.65rem 1rem"><span class="${badgeCls}">${escHtml(ACTION_LABELS[l.action]||l.action)}</span></td>
+      <td style="padding:.65rem 1rem;color:#6b7280">${escHtml(l.entity_type || '—')} ${l.entity_id ? '#'+escHtml(l.entity_id) : ''}</td>
       <td style="padding:.65rem 1rem;color:#374151;font-size:.8rem;max-width:260px;overflow:hidden;text-overflow:ellipsis">${details}</td>
-      <td style="padding:.65rem 1rem;color:#9ca3af;font-size:.78rem;direction:ltr">${l.ip_address || '—'}</td>
+      <td style="padding:.65rem 1rem;color:#9ca3af;font-size:.78rem;direction:ltr">${escHtml(l.ip_address || '—')}</td>
     </tr>`;
   }).join('');
 }

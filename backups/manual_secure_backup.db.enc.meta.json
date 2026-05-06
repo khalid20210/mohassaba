@@ -1,0 +1,11 @@
+{
+  "created_at": "2026-05-05T23:33:48Z",
+  "actor": "_platform_ops.py",
+  "source_db": "C:\\Users\\JEN21\\OneDrive\\سطح المكتب\\محاسبه\\database\\accounting_dev.db",
+  "backup_file": "backups/manual_secure_backup.db.enc",
+  "format": "JNBK1",
+  "bytes_plain": 142897152,
+  "bytes_encrypted": 142897152,
+  "sha256_plain": "742ddef90eb0bbcc304a7945b87ed2a76920edfcbfa10d088be9b84d144ac8ef",
+  "sha256_encrypted": "5deb34b0cc900252d7754c435734af93fda975c5ee4ad83294b69aa32ee95317"
+}

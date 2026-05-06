@@ -10,10 +10,27 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, jsonify, redirect, render_template, request, session, url_for, flash
 
-from modules.extensions import get_db
+from modules.extensions import get_db, safe_sql_identifier
 from modules.middleware import owner_required, write_audit_log
 
 bp = Blueprint("owner", __name__, url_prefix="/owner")
+
+
+def _table_exists(db, table_name: str) -> bool:
+    row = db.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+        (table_name,),
+    ).fetchone()
+    return row is not None
+
+
+def _column_exists(db, table_name: str, column_name: str) -> bool:
+    try:
+        safe_table = safe_sql_identifier(table_name)
+        rows = db.execute(f"PRAGMA table_info({safe_table})").fetchall()
+        return any(r[1] == column_name for r in rows)
+    except Exception:
+        return False
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -68,6 +85,129 @@ def owner_dashboard():
            WHERE business_id=? AND shortage_amount > 0""",
         (biz_id,)
     ).fetchone()[0]
+
+    # ── مبيعات اليوم حسب الكاشير ─────────────────────────────────────────────
+    sales_by_cashier_today = []
+    if _table_exists(db, "invoices") and _column_exists(db, "invoices", "created_by"):
+        sales_by_cashier_today = db.execute(
+            """SELECT
+                   COALESCE(u.full_name, 'مستخدم #' || CAST(i.created_by AS TEXT)) AS actor_name,
+                   COUNT(i.id) AS invoices_count,
+                   ROUND(COALESCE(SUM(i.total), 0), 2) AS sales_total
+               FROM invoices i
+               LEFT JOIN users u ON u.id = i.created_by
+               WHERE i.business_id=?
+                 AND i.invoice_type IN ('sale','table')
+                 AND i.status='paid'
+                 AND DATE(COALESCE(i.invoice_date, i.created_at)) = ?
+                 AND i.created_by IS NOT NULL
+               GROUP BY i.created_by
+               ORDER BY sales_total DESC
+               LIMIT 12""",
+            (biz_id, today),
+        ).fetchall()
+
+    # ── مبيعات اليوم حسب المندوب ─────────────────────────────────────────────
+    sales_by_agent_today = []
+    if _table_exists(db, "agent_invoice_links") and _table_exists(db, "agents"):
+        sales_by_agent_today = db.execute(
+            """SELECT
+                   a.full_name AS actor_name,
+                   COUNT(i.id) AS invoices_count,
+                   ROUND(COALESCE(SUM(i.total), 0), 2) AS sales_total
+               FROM agent_invoice_links ail
+               JOIN agents a ON a.id = ail.agent_id AND a.business_id = ail.business_id
+               JOIN invoices i ON i.id = ail.invoice_id AND i.business_id = ail.business_id
+               WHERE ail.business_id=?
+                 AND i.invoice_type IN ('sale','table')
+                 AND i.status='paid'
+                 AND DATE(COALESCE(i.invoice_date, i.created_at)) = ?
+               GROUP BY a.id
+               ORDER BY sales_total DESC
+               LIMIT 12""",
+            (biz_id, today),
+        ).fetchall()
+
+    # ── ملخص المقاولات (مشاريع/مستخلصات) ───────────────────────────────────
+    construction_summary = {
+        "total_projects": 0,
+        "active_projects": 0,
+        "completed_projects": 0,
+        "completed_this_month": 0,
+        "extracts_this_month": 0,
+        "invoiced_extracts_this_month": 0,
+    }
+    if _table_exists(db, "projects"):
+        p = db.execute(
+            """SELECT
+                   COUNT(*) AS total_projects,
+                   SUM(CASE WHEN project_status IN ('in_progress','planning','on_hold') THEN 1 ELSE 0 END) AS active_projects,
+                   SUM(CASE WHEN project_status='completed' THEN 1 ELSE 0 END) AS completed_projects,
+                   SUM(CASE
+                         WHEN project_status='completed'
+                          AND actual_end_date IS NOT NULL
+                          AND strftime('%Y-%m', actual_end_date)=?
+                         THEN 1 ELSE 0 END
+                   ) AS completed_this_month
+               FROM projects
+               WHERE business_id=?""",
+            (month, biz_id),
+        ).fetchone()
+        construction_summary.update({
+            "total_projects": int((p[0] or 0) if p else 0),
+            "active_projects": int((p[1] or 0) if p else 0),
+            "completed_projects": int((p[2] or 0) if p else 0),
+            "completed_this_month": int((p[3] or 0) if p else 0),
+        })
+
+    if _table_exists(db, "project_extracts"):
+        e = db.execute(
+            """SELECT
+                   COUNT(*) AS extracts_this_month,
+                   SUM(CASE WHEN status='invoiced' THEN 1 ELSE 0 END) AS invoiced_extracts_this_month
+               FROM project_extracts
+               WHERE business_id=?
+                 AND strftime('%Y-%m', extract_date)=?""",
+            (biz_id, month),
+        ).fetchone()
+        construction_summary.update({
+            "extracts_this_month": int((e[0] or 0) if e else 0),
+            "invoiced_extracts_this_month": int((e[1] or 0) if e else 0),
+        })
+
+    # ── نبض تشغيلي عام (ملخص سريع من كل الوحدات) ─────────────────────────
+    operational_snapshot = {
+        "invoices_today": 0,
+        "receivables_open": 0.0,
+        "products_count": 0,
+        "contacts_count": 0,
+    }
+    if _table_exists(db, "invoices"):
+        inv_row = db.execute(
+            """SELECT
+                   COUNT(CASE WHEN DATE(COALESCE(invoice_date, created_at))=? THEN 1 END) AS invoices_today,
+                   ROUND(COALESCE(SUM(CASE
+                        WHEN invoice_type IN ('sale','table') AND status IN ('pending','partial')
+                        THEN (COALESCE(total,0) - COALESCE(paid_amount,0))
+                        ELSE 0 END), 0), 2) AS receivables_open
+               FROM invoices
+               WHERE business_id=?""",
+            (today, biz_id),
+        ).fetchone()
+        operational_snapshot.update({
+            "invoices_today": int((inv_row[0] or 0) if inv_row else 0),
+            "receivables_open": float((inv_row[1] or 0) if inv_row else 0),
+        })
+
+    if _table_exists(db, "products"):
+        operational_snapshot["products_count"] = int(
+            db.execute("SELECT COUNT(*) FROM products WHERE business_id=?", (biz_id,)).fetchone()[0] or 0
+        )
+
+    if _table_exists(db, "contacts"):
+        operational_snapshot["contacts_count"] = int(
+            db.execute("SELECT COUNT(*) FROM contacts WHERE business_id=?", (biz_id,)).fetchone()[0] or 0
+        )
 
     # ── آخر 30 يوم: مبيعات يومية ─────────────────────────────────────────────
     daily_sales = db.execute(
@@ -138,6 +278,10 @@ def owner_dashboard():
         daily_sales=[dict(r) for r in daily_sales],
         agent_sales=[dict(r) for r in agent_sales],
         recent_logs=[dict(r) for r in recent_logs],
+        sales_by_cashier_today=[dict(r) for r in sales_by_cashier_today],
+        sales_by_agent_today=[dict(r) for r in sales_by_agent_today],
+        construction_summary=construction_summary,
+        operational_snapshot=operational_snapshot,
         display_mode=display_mode,
     )
 

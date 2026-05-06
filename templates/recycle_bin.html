@@ -79,6 +79,23 @@ const DEFAULT_TYPE = ['🗂️','سجل','#f1f5f9','#475569'];
 
 let currentType = '';
 
+function escHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function encodeDetailPayload(value) {
+  return encodeURIComponent(JSON.stringify(value ?? null));
+}
+
+function showDetailEncoded(payload) {
+  showDetail(decodeURIComponent(payload));
+}
+
 function loadItems(type='') {
   currentType = type;
   // تحديث الأزرار
@@ -113,21 +130,21 @@ function loadItems(type='') {
               ${icon} ${label}
             </span>
           </td>
-          <td><strong>${item.entity_label || '#' + item.entity_id}</strong></td>
-          <td>${item.deleted_by_name || '—'}</td>
-          <td style="font-size:.8rem;color:var(--text-muted)">${(item.deleted_at||'').slice(0,16)}</td>
-          <td style="font-size:.8rem;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis" title="${item.delete_reason||''}">
-            ${item.delete_reason || '—'}
+          <td><strong>${escHtml(item.entity_label || '#' + item.entity_id)}</strong></td>
+          <td>${escHtml(item.deleted_by_name || '—')}</td>
+          <td style="font-size:.8rem;color:var(--text-muted)">${escHtml((item.deleted_at||'').slice(0,16))}</td>
+          <td style="font-size:.8rem;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis" title="${escHtml(item.delete_reason||'')}">
+            ${escHtml(item.delete_reason || '—')}
           </td>
           <td>
             ${isRestored
-              ? `<span style="color:#10b981;font-size:.8rem">✓ مُسترجَع (${(item.restored_at||'').slice(0,10)})</span>`
+              ? `<span style="color:#10b981;font-size:.8rem">✓ مُسترجَع (${escHtml((item.restored_at||'').slice(0,10))})</span>`
               : `<span style="color:#f59e0b;font-size:.8rem">في السلة</span>`
             }
           </td>
           <td>
             <div style="display:flex;gap:6px;flex-wrap:wrap">
-              <button onclick='showDetail(${JSON.stringify(item.entity_data)})' class="btn btn-sm btn-outline">👁️ عرض</button>
+              <button data-detail="${escHtml(encodeDetailPayload(item.entity_data))}" onclick="showDetailEncoded(this.dataset.detail)" class="btn btn-sm btn-outline">👁️ عرض</button>
               ${!isRestored ? `
               <button onclick="restoreItem(${item.id})" class="btn btn-sm" style="background:#10b981;color:#fff">↩️ استرجاع</button>
               <button onclick="deletePermanent(${item.id})" class="btn btn-sm btn-danger">🗑️ حذف نهائي</button>

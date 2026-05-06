@@ -19,6 +19,59 @@
 </div>
 {% endif %}
 
+<!-- ═══════════════ الخدمات المميزة (اشتراكات) ═══════════════ -->
+<div class="card" style="margin-bottom:20px;border:1px solid #d6e4ff;box-shadow:0 10px 25px rgba(2,6,23,.06)">
+  <div class="card-header" style="background:linear-gradient(90deg,#0b132b,#1c2541);color:#fff;border-radius:12px 12px 0 0">
+    <span class="card-title" style="color:#fff">🚀 الخدمات المميزة (Subscription Add-ons)</span>
+  </div>
+
+  <div style="padding:16px 20px 4px;color:var(--text-muted);font-size:.86rem">
+    جميع الخدمات التالية تمثل مصادر دخل مستقلة للمنصة ويمكن تفعيلها/تعطيلها بشكل فوري.
+  </div>
+
+  <div class="premium-grid" id="premiumGrid">
+    {% for addon in premium_addons %}
+      {% set is_enabled = (premium_addons_state.get(addon.code, 0) == 1) %}
+      <button type="button"
+              class="premium-card {% if is_enabled %}is-enabled{% endif %}"
+              data-code="{{ addon.code }}"
+              data-title="{{ addon.title }}"
+              data-tagline="{{ addon.tagline }}"
+              data-description="{{ addon.description }}"
+              data-features='{{ addon.features|tojson }}'>
+        <div class="premium-card-head">
+          <strong>{{ loop.index }}. {{ addon.title }}</strong>
+          <span class="premium-badge {% if is_enabled %}on{% else %}off{% endif %}">
+            {% if is_enabled %}مفعلة{% else %}غير مفعلة{% endif %}
+          </span>
+        </div>
+        <div class="premium-tagline">{{ addon.tagline }}</div>
+      </button>
+    {% endfor %}
+  </div>
+
+  <div class="premium-detail" id="premiumDetail">
+    <div class="premium-detail-title" id="premiumDetailTitle">اختر خدمة مميزة لعرض التفاصيل</div>
+    <div class="premium-detail-tagline" id="premiumDetailTagline"></div>
+    <p class="premium-detail-description" id="premiumDetailDescription"></p>
+    <ul class="premium-feature-list" id="premiumFeatureList"></ul>
+
+    {% if can_manage_premium %}
+    <form method="POST" action="{{ url_for('core.settings') }}" id="premiumToggleForm" style="display:flex;gap:10px;flex-wrap:wrap">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="action" value="toggle_premium_addon">
+      <input type="hidden" name="premium_addon_code" id="premiumAddonCode" value="">
+      <input type="hidden" name="enable" id="premiumEnable" value="1">
+      <button type="button" class="btn btn-success" id="premiumEnableBtn">✅ تفعيل الخدمة</button>
+      <button type="button" class="btn btn-secondary" id="premiumDisableBtn">⛔ تعطيل الخدمة</button>
+      <span id="premiumStatusInline" style="align-self:center;color:var(--text-muted);font-size:.83rem"></span>
+    </form>
+    {% else %}
+    <div style="margin-top:10px;font-size:.82rem;color:#b45309">🔒 التفعيل والإلغاء متاحان للمالك فقط</div>
+    {% endif %}
+  </div>
+</div>
+
 <form method="POST" action="{{ url_for('core.settings') }}" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
@@ -187,13 +240,104 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script>
+const PREMIUM_STATE = {{ premium_addons_state|tojson }};
+
+function initPremiumServices() {
+  const cards = Array.from(document.querySelectorAll('.premium-card'));
+  if (!cards.length) return;
+
+  const titleEl = document.getElementById('premiumDetailTitle');
+  const tagEl   = document.getElementById('premiumDetailTagline');
+  const descEl  = document.getElementById('premiumDetailDescription');
+  const listEl  = document.getElementById('premiumFeatureList');
+  const codeEl  = document.getElementById('premiumAddonCode');
+  const statusInlineEl = document.getElementById('premiumStatusInline');
+
+  function renderCardState() {
+    cards.forEach(card => {
+      const code = card.dataset.code;
+      const enabled = Number(PREMIUM_STATE[code] || 0) === 1;
+      card.classList.toggle('is-enabled', enabled);
+      const badge = card.querySelector('.premium-badge');
+      if (!badge) return;
+      badge.textContent = enabled ? 'مفعلة' : 'غير مفعلة';
+      badge.classList.toggle('on', enabled);
+      badge.classList.toggle('off', !enabled);
+    });
+  }
+
+  function selectCard(card) {
+    cards.forEach(c => c.classList.remove('is-active'));
+    card.classList.add('is-active');
+
+    const code = card.dataset.code;
+    const title = card.dataset.title || '';
+    const tagline = card.dataset.tagline || '';
+    const description = card.dataset.description || '';
+    let features = [];
+    try {
+      features = JSON.parse(card.dataset.features || '[]');
+    } catch (e) {
+      features = [];
+    }
+
+    titleEl.textContent = title;
+    tagEl.textContent = tagline;
+    descEl.textContent = description;
+    listEl.innerHTML = '';
+    features.forEach(f => {
+      const li = document.createElement('li');
+      li.textContent = f;
+      listEl.appendChild(li);
+    });
+
+    if (codeEl) codeEl.value = code;
+    const enabled = Number(PREMIUM_STATE[code] || 0) === 1;
+    if (statusInlineEl) {
+      statusInlineEl.textContent = enabled
+        ? 'الحالة الحالية: مفعلة — يمكنك التعطيل عند الحاجة'
+        : 'الحالة الحالية: غير مفعلة — يمكنك التفعيل الآن';
+    }
+  }
+
+  cards.forEach(card => {
+    card.addEventListener('click', () => selectCard(card));
+  });
+
+  renderCardState();
+  selectCard(cards[0]);
+
+  const form = document.getElementById('premiumToggleForm');
+  const enableHidden = document.getElementById('premiumEnable');
+  const enableBtn = document.getElementById('premiumEnableBtn');
+  const disableBtn = document.getElementById('premiumDisableBtn');
+
+  if (form && enableHidden && enableBtn && disableBtn) {
+    enableBtn.addEventListener('click', () => {
+      if (!codeEl || !codeEl.value) return;
+      enableHidden.value = '1';
+      form.submit();
+    });
+    disableBtn.addEventListener('click', () => {
+      if (!codeEl || !codeEl.value) return;
+      enableHidden.value = '0';
+      form.submit();
+    });
+  }
+}
+
 function previewLogo(input) {
   if (!input.files[0]) return;
   const reader = new FileReader();
   reader.onload = e => {
     const wrap = document.getElementById('logoPreviewWrap');
-    wrap.innerHTML = `<img id="logoPreview" src="${e.target.result}"
-      style="width:100%;height:100%;object-fit:contain">`;
+    const img = document.createElement('img');
+    img.id = 'logoPreview';
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'contain';
+    img.src = String(e.target.result || '');
+    wrap.replaceChildren(img);
   };
   reader.readAsDataURL(input.files[0]);
 }
@@ -223,5 +367,111 @@ function previewLogo(input) {
     correctLevel: QRCode.CorrectLevel.M
   });
 })();
+
+initPremiumServices();
 </script>
+
+<style>
+.premium-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  padding: 12px 20px 4px;
+}
+
+.premium-card {
+  text-align: right;
+  border: 1px solid #dbe7ff;
+  background: linear-gradient(160deg, #f8fbff, #eef4ff);
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  transition: .2s ease;
+}
+
+.premium-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(30,64,175,.14);
+}
+
+.premium-card.is-active {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37,99,235,.16);
+}
+
+.premium-card.is-enabled {
+  background: linear-gradient(160deg, #effcf3, #e8f7ed);
+  border-color: #22c55e;
+}
+
+.premium-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.premium-card-head strong {
+  font-size: .84rem;
+  color: #0f172a;
+  line-height: 1.45;
+}
+
+.premium-badge {
+  font-size: .72rem;
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.premium-badge.on {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.premium-badge.off {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.premium-tagline {
+  margin-top: 6px;
+  font-size: .78rem;
+  color: #475569;
+}
+
+.premium-detail {
+  margin: 12px 20px 18px;
+  border: 1px solid #dbe7ff;
+  border-radius: 12px;
+  background: #fff;
+  padding: 14px;
+}
+
+.premium-detail-title {
+  font-weight: 800;
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.premium-detail-tagline {
+  margin-top: 4px;
+  color: #1d4ed8;
+  font-size: .85rem;
+}
+
+.premium-detail-description {
+  margin: 8px 0;
+  color: #334155;
+  font-size: .85rem;
+}
+
+.premium-feature-list {
+  margin: 0 0 12px;
+  padding-right: 18px;
+  color: #0f172a;
+  font-size: .84rem;
+  line-height: 1.75;
+}
+</style>
 {% endblock %}

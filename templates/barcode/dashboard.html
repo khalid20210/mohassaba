@@ -35,6 +35,9 @@
     <form action="/barcode/generate" method="post" style="padding:8px 0;">
       <select name="product_id" class="form-input" style="margin-bottom:8px;">
         <option value="">اختر منتجاً...</option>
+        {% for p in all_products %}
+        <option value="{{ p.id }}">{{ p.name }}{% if p.barcode %} — {{ p.barcode }}{% endif %}</option>
+        {% endfor %}
       </select>
       <select name="format" class="form-input" style="margin-bottom:8px;">
         <option value="CODE128">CODE128</option>

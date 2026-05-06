@@ -1,1169 +1,599 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}تهيئة منشأتك — جنان بيز{% endblock %}
 
 {% block ob_content %}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css">
 <style>
-/* ═══════════════════════════════════════════════════════
-   متغيرات — لؤلؤي فاتح + أيقونات سماوية متدرجة
-═══════════════════════════════════════════════════════ */
-:root{
-  --ob-bg1:#eef5ff;
-  --ob-bg2:#f7f9ff;
-  --ob-bg3:#e8f0fe;
-  --ob-card:#ffffff;
-  --ob-accent:#2563eb;
-  --ob-accent2:#38bdf8;
-  --ob-accent3:#6366f1;
-  --ob-text:#1e293b;
-  --ob-mid:#334155;
-  --ob-dim:#64748b;
-  --ob-muted:#94a3b8;
-  --ob-border:#e2e8f0;
-  --ob-border2:rgba(37,99,235,.15);
-  --ob-shadow:0 4px 32px rgba(37,99,235,.09);
-  --ob-shadow-lg:0 12px 48px rgba(37,99,235,.14);
-  --ob-success:#059669;
-  --ob-danger:#dc2626;
-  --ob-icon-grad:linear-gradient(135deg,#38bdf8,#2563eb);
-  --ob-icon-grad2:linear-gradient(135deg,#6366f1,#38bdf8);
-  --ob-icon-grad3:linear-gradient(135deg,#0ea5e9,#2563eb,#4f46e5);
-}
-
 *{box-sizing:border-box;margin:0;padding:0;}
+#ob-root{font-family:'Cairo',sans-serif;position:fixed;inset:0;background:#f0f4ff;display:flex;align-items:center;justify-content:center;overflow:auto;direction:rtl;z-index:9999;}
+.ob-bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 70% 55% at 15% 8%,rgba(99,102,241,.12) 0%,transparent 60%),radial-gradient(ellipse 55% 70% at 85% 85%,rgba(37,99,235,.1) 0%,transparent 55%);}
+.ob-wrap{position:relative;z-index:10;width:min(880px,97vw);}
+.ob-steps{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:18px;}
+.ob-step-dot{width:7px;height:7px;border-radius:50%;background:rgba(37,99,235,.18);transition:all .35s ease;}
+.ob-step-dot.done{background:rgba(37,99,235,.38);}
+.ob-step-dot.cur{background:#2563eb;width:26px;border-radius:4px;}
+.ob-card{background:#fff;border-radius:20px;box-shadow:0 8px 48px rgba(37,99,235,.11),0 2px 8px rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.08);display:none;animation:cardIn .4s cubic-bezier(.16,1,.3,1);}
+.ob-card.active{display:block;}
+@keyframes cardIn{from{opacity:0;transform:translateY(18px) scale(.984)}to{opacity:1;transform:none}}
+.ob-card-bar{height:3px;background:linear-gradient(90deg,#6366f1,#2563eb,#38bdf8);border-radius:20px 20px 0 0;}
 
-/* ─── الجذر ─── */
-#ob-root{
-  font-family:'Cairo',sans-serif;
-  min-height:100vh;
-  background:linear-gradient(150deg,var(--ob-bg1) 0%,var(--ob-bg2) 50%,var(--ob-bg3) 100%);
-  color:var(--ob-text);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  position:fixed;inset:0;z-index:9999;
-  overflow:hidden;
-}
+/* SCENE A */
+.slides-wrap{display:flex;flex-direction:column;min-height:320px;}
+.ob-slide{display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:44px 60px 24px;flex:1;animation:slideIn .42s cubic-bezier(.16,1,.3,1);}
+.ob-slide.active{display:flex;}
+@keyframes slideIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.sl-icon-box{width:72px;height:72px;border-radius:20px;background:linear-gradient(135deg,#6366f1,#2563eb,#38bdf8);display:flex;align-items:center;justify-content:center;font-size:2rem;color:#fff;margin:0 auto 18px;box-shadow:0 8px 28px rgba(37,99,235,.25);animation:iconPop .45s cubic-bezier(.22,1,.36,1);}
+@keyframes iconPop{from{transform:scale(.35);opacity:0}to{transform:scale(1);opacity:1}}
+.sl-emoji{font-size:3.4rem;margin-bottom:14px;display:block;animation:iconPop .38s cubic-bezier(.22,1,.36,1);}
+.sl-badge{display:inline-flex;align-items:center;gap:5px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:20px;padding:4px 16px;font-size:.71rem;font-weight:700;color:#2563eb;margin-bottom:12px;}
+.sl-title{font-size:1.65rem;font-weight:900;background:linear-gradient(135deg,#1e3a8a,#2563eb,#0ea5e9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px;line-height:1.2;}
+.sl-desc{font-size:.88rem;color:#64748b;line-height:1.8;max-width:420px;margin:0 auto;}
+.sl-footer{border-top:1px solid #f1f5f9;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.sl-dots{display:flex;gap:6px;}
+.sl-dot{width:7px;height:7px;border-radius:50%;background:#e2e8f0;cursor:pointer;transition:all .3s ease;}
+.sl-dot.active{background:#2563eb;width:22px;border-radius:4px;}
+.sl-bar-wrap{flex:1;height:3px;background:#e2e8f0;border-radius:3px;overflow:hidden;}
+.sl-bar{height:100%;background:linear-gradient(90deg,#6366f1,#2563eb);width:0;border-radius:3px;}
+.sl-skip{font-size:.73rem;color:#94a3b8;cursor:pointer;background:none;border:none;font-family:'Cairo',sans-serif;padding:4px 8px;border-radius:6px;transition:color .2s;white-space:nowrap;}
+.sl-skip:hover{color:#2563eb;}
 
-/* ─── طبقات الخلفية اللؤلؤية ─── */
-.ob-pearl-layer{
-  position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 10%,rgba(56,189,248,.08) 0%,transparent 60%),
-    radial-gradient(ellipse 60% 80% at 80% 80%,rgba(99,102,241,.07) 0%,transparent 55%),
-    radial-gradient(ellipse 50% 50% at 50% 50%,rgba(37,99,235,.04) 0%,transparent 70%);
-}
-/* نقاط عائمة ناعمة */
-.ob-dot-layer{
-  position:fixed;inset:0;pointer-events:none;z-index:0;
-  background-image:radial-gradient(rgba(37,99,235,.12) 1.5px,transparent 1.5px);
-  background-size:36px 36px;
-  opacity:.45;
-}
-/* دوائر كبيرة ديكورية */
-.ob-circle{
-  position:fixed;border-radius:50%;pointer-events:none;z-index:0;
-  border:1.5px solid rgba(37,99,235,.07);
-}
+/* SCENE B */
+.sc-header{text-align:center;padding:30px 40px 0;margin-bottom:22px;}
+.sc-eyebrow{display:inline-flex;align-items:center;gap:5px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:20px;padding:4px 14px;font-size:.7rem;font-weight:700;color:#2563eb;margin-bottom:10px;}
+.sc-title{font-size:1.55rem;font-weight:900;background:linear-gradient(135deg,#1e3a8a,#2563eb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:5px;}
+.sc-sub{font-size:.83rem;color:#64748b;}
+.sc-body{padding:0 32px 30px;}
+.sector-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:22px;}
+.sec-card{background:#fafbff;border:1.5px solid #e2e8f0;border-radius:14px;padding:20px 12px 14px;cursor:pointer;text-align:center;transition:all .2s cubic-bezier(.22,1,.36,1);}
+.sec-card:hover{border-color:#93c5fd;transform:translateY(-3px);box-shadow:0 8px 24px rgba(37,99,235,.12);background:#fff;}
+.sec-card.selected{border-color:#2563eb;background:linear-gradient(135deg,#eff6ff,#e8f0fe);box-shadow:0 0 0 3px rgba(37,99,235,.1),0 8px 24px rgba(37,99,235,.14);}
+.sec-emoji{font-size:2rem;display:block;margin-bottom:8px;}
+.sec-name{font-size:.78rem;font-weight:800;color:#1e293b;line-height:1.3;}
+.act-counter-banner{background:linear-gradient(135deg,#1e3a8a,#2563eb,#0ea5e9);border-radius:14px;padding:13px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden;}
+.act-counter-banner::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 18% 20%,rgba(255,255,255,.16),transparent 34%),radial-gradient(circle at 78% 82%,rgba(255,255,255,.12),transparent 32%);pointer-events:none;}
+.act-counter-num{position:relative;z-index:1;font-size:2.15rem;font-weight:900;color:#fff;line-height:1;min-width:64px;text-align:center;font-variant-numeric:tabular-nums;}
+.act-counter-text{position:relative;z-index:1;flex:1;}
+.act-counter-title{font-size:.89rem;font-weight:900;color:#fff;line-height:1.4;}
+.act-counter-sub{font-size:.7rem;color:rgba(255,255,255,.86);margin-top:2px;}
+.act-counter-icons{display:flex;gap:4px;margin-top:5px;}
+.act-counter-icons span{font-size:.82rem;opacity:0;transform:translateY(5px) scale(.7);transition:all .26s ease;}
+.act-counter-icons span.show{opacity:1;transform:none;}
 
-/* ─── حاوية المسرح ─── */
-.ob-wrap{
-  position:relative;z-index:10;
-  width:min(1080px,98vw);
-  padding:10px 16px;
-}
+/* SCENE C */
+.sc-c-layout{display:flex;min-height:390px;}
+.sc-c-main{flex:1;padding:26px 30px;border-left:1px solid #f1f5f9;}
+.sc-c-top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;}
+.sc-c-back-btn{display:inline-flex;align-items:center;gap:5px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:6px 14px;color:#64748b;font-size:.73rem;font-family:'Cairo',sans-serif;cursor:pointer;transition:all .18s;white-space:nowrap;}
+.sc-c-back-btn:hover{border-color:#2563eb;color:#2563eb;}
+.sc-c-h{font-size:1.05rem;font-weight:900;color:#1e293b;}
+.sc-c-s{font-size:.72rem;color:#6366f1;font-weight:700;}
+.ob-tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;}
+.ob-tab{padding:5px 12px;border-radius:7px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:.71rem;font-weight:700;cursor:pointer;transition:all .16s;font-family:'Cairo',sans-serif;}
+.ob-tab:hover{border-color:#93c5fd;color:#2563eb;}
+.ob-tab.active{background:linear-gradient(135deg,#6366f1,#2563eb);color:#fff;border-color:transparent;box-shadow:0 3px 12px rgba(37,99,235,.22);}
+.ob-acts{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;max-height:220px;overflow-y:auto;padding-left:2px;}
+.ob-acts::-webkit-scrollbar{width:3px;}
+.ob-acts::-webkit-scrollbar-thumb{background:rgba(37,99,235,.2);border-radius:3px;}
+.ob-act{background:#fafbff;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 4px 7px;cursor:pointer;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .16s;min-height:64px;}
+.ob-act:hover{border-color:#93c5fd;background:#fff;box-shadow:0 3px 12px rgba(37,99,235,.1);}
+.ob-act.selected{border-color:#2563eb;background:linear-gradient(135deg,#eff6ff,#e8f0fe);box-shadow:0 3px 14px rgba(37,99,235,.18);}
+.ob-act-icon{font-size:1.3rem;line-height:1;}
+.ob-act-name{font-size:.6rem;font-weight:700;color:#334155;line-height:1.3;}
+.sc-c-form{width:260px;flex-shrink:0;padding:26px 22px;background:#fafbff;display:flex;flex-direction:column;gap:13px;}
+.sc-c-form-title{font-size:.84rem;font-weight:900;color:#1e293b;}
+.sc-c-form-sub{font-size:.7rem;color:#64748b;margin-top:-8px;}
+.ob-sel-badge{display:none;align-items:center;gap:7px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:9px;padding:7px 11px;font-size:.72rem;color:#059669;font-weight:700;}
+.ob-sel-badge.show{display:flex;}
+.ob-change-btn{background:none;border:1px solid #a7f3d0;border-radius:7px;color:#059669;font-size:.65rem;font-family:'Cairo',sans-serif;padding:2px 8px;cursor:pointer;margin-right:auto;transition:all .16s;white-space:nowrap;}
+.ob-change-btn:hover{background:#d1fae5;border-color:#059669;}
+.ob-tab-all{background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1.5px solid #6ee7b7;color:#059669;}
+.ob-tab-all.active{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border-color:transparent;}
+.ob-label{font-size:.71rem;font-weight:700;color:#334155;margin-bottom:3px;display:block;}
+.ob-label span{color:#ef4444;}
+.ob-input{width:100%;padding:9px 11px;background:#fff;border:1.5px solid #e2e8f0;border-radius:9px;color:#1e293b;font-family:'Cairo',sans-serif;font-size:.86rem;outline:none;transition:border-color .18s,box-shadow .18s;}
+.ob-input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.09);}
+.ob-input::placeholder{color:#cbd5e1;}
+.ob-btn{width:100%;padding:12px;border:none;border-radius:11px;background:linear-gradient(135deg,#6366f1,#2563eb,#0ea5e9);color:#fff;font-size:.9rem;font-weight:800;font-family:'Cairo',sans-serif;cursor:pointer;transition:all .2s;box-shadow:0 4px 18px rgba(37,99,235,.22);}
+.ob-btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(37,99,235,.3);}
+.ob-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none;}
 
-/* ─── شريط التقدم ─── */
-.ob-progress{
-  display:flex;align-items:center;justify-content:center;
-  gap:8px;margin-bottom:28px;
-}
-.ob-dot{
-  width:8px;height:8px;border-radius:50%;
-  background:rgba(37,99,235,.15);
-  transition:all .4s cubic-bezier(.22,1,.36,1);
-}
-.ob-dot.done{background:var(--ob-success);}
-.ob-dot.cur{background:var(--ob-accent);width:28px;border-radius:5px;}
-
-/* ─── المشاهد ─── */
-.ob-scene{
-  display:none;
-  background:var(--ob-card);
-  border:1px solid var(--ob-border);
-  border-radius:24px;
-  box-shadow:var(--ob-shadow-lg);
-  padding:50px 60px;
-  position:relative;overflow:hidden;
-  animation:sceneIn .45s cubic-bezier(.16,1,.3,1);
-}
-.ob-scene.active{display:block;}
-@keyframes sceneIn{
-  from{opacity:0;transform:translateY(20px) scale(.985)}
-  to  {opacity:1;transform:translateY(0)   scale(1)}
-}
-/* خط علوي ملون لكل مشهد */
-.ob-scene::before{
-  content:'';
-  position:absolute;top:0;left:0;right:0;height:3px;
-  background:var(--ob-icon-grad3);
-  border-radius:24px 24px 0 0;
-}
-
-/* علامة مائية */
-.ob-watermark{
-  position:absolute;bottom:14px;left:20px;
-  display:flex;align-items:center;gap:7px;
-  opacity:.18;pointer-events:none;
-}
-.ob-watermark img{width:28px;height:28px;border-radius:6px;object-fit:contain;}
-.ob-watermark span{font-size:.67rem;font-weight:700;color:var(--ob-accent);}
-
-/* ══════════════════════════════════════════════════
-   أيقونة متدرجة سماوية — الأساس
-══════════════════════════════════════════════════ */
-.grad-icon{
-  display:inline-flex;align-items:center;justify-content:center;
-  border-radius:16px;
-  background:var(--ob-icon-grad);
-  box-shadow:0 6px 20px rgba(37,99,235,.22);
-  color:#fff;flex-shrink:0;
-}
-.grad-icon.sm{width:42px;height:42px;font-size:1.15rem;border-radius:11px;}
-.grad-icon.md{width:54px;height:54px;font-size:1.4rem;border-radius:14px;}
-.grad-icon.lg{width:72px;height:72px;font-size:2rem;border-radius:18px;}
-.grad-icon.alt{background:var(--ob-icon-grad2);}
-.grad-icon.alt3{background:var(--ob-icon-grad3);}
-
-/* ══════════════════════════════════════════════════
-   SCENE A — الهوية الإدارية (full-width 3 cols)
-══════════════════════════════════════════════════ */
-.sc-a-top{
-  display:flex;align-items:center;gap:28px;
-  margin-bottom:40px;
-  padding-bottom:32px;
-  border-bottom:1.5px solid var(--ob-border);
-}
-.sc-a-logo-box{
-  position:relative;flex-shrink:0;
-  width:80px;height:80px;
-  display:flex;align-items:center;justify-content:center;
-}
-.sc-a-logo-box .grad-icon{width:80px;height:80px;font-size:2.4rem;border-radius:22px;background:var(--ob-icon-grad3);}
-.sc-a-logo-ring{
-  position:absolute;inset:-8px;border-radius:30px;
-  border:2px solid rgba(37,99,235,.18);
-  animation:ringPulse 3s ease-in-out infinite;
-}
-@keyframes ringPulse{
-  0%{transform:scale(.88);opacity:.7}
-  70%{transform:scale(1.12);opacity:.05}
-  100%{transform:scale(.88);opacity:.7}
-}
-.sc-a-texts{}
-.sc-a-badge{
-  display:inline-flex;align-items:center;gap:5px;
-  background:rgba(37,99,235,.07);border:1px solid var(--ob-border2);
-  border-radius:20px;padding:3px 12px;
-  font-size:.7rem;font-weight:700;letter-spacing:.08em;
-  color:var(--ob-accent);margin-bottom:8px;
-}
-.sc-a-title{
-  font-size:2rem;font-weight:900;line-height:1.2;
-  background:linear-gradient(135deg,#1e3a8a,#2563eb,#0ea5e9);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  margin-bottom:5px;
-}
-.sc-a-sub{font-size:.88rem;color:var(--ob-dim);line-height:1.6;}
-
-/* شبكة المزايا 3×2 */
-.feat-grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:16px;
-  margin-bottom:30px;
-}
-.feat-card{
-  display:flex;align-items:flex-start;gap:14px;
-  background:linear-gradient(135deg,#f8fbff,#f0f6ff);
-  border:1px solid var(--ob-border);
-  border-radius:16px;
-  padding:18px 16px;
-  transition:all .22s cubic-bezier(.22,1,.36,1);
-  animation:featSlide .55s cubic-bezier(.16,1,.3,1) both;
-}
-.feat-card:nth-child(1){animation-delay:.05s}
-.feat-card:nth-child(2){animation-delay:.11s}
-.feat-card:nth-child(3){animation-delay:.17s}
-.feat-card:nth-child(4){animation-delay:.23s}
-.feat-card:nth-child(5){animation-delay:.29s}
-.feat-card:nth-child(6){animation-delay:.35s}
-@keyframes featSlide{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.feat-card:hover{
-  transform:translateY(-3px);
-  box-shadow:0 8px 28px rgba(37,99,235,.12);
-  border-color:var(--ob-border2);
-}
-.feat-body{}
-.feat-title{font-size:.82rem;font-weight:800;color:var(--ob-text);margin-bottom:3px;}
-.feat-desc{font-size:.72rem;color:var(--ob-dim);line-height:1.5;}
-
-/* شريط التقدم */
-.sc-a-progress-row{display:flex;align-items:center;gap:12px;}
-.sc-a-bar-wrap{flex:1;height:5px;background:rgba(37,99,235,.1);border-radius:5px;overflow:hidden;}
-.sc-a-bar-fill{
-  height:100%;width:0;
-  background:var(--ob-icon-grad3);
-  border-radius:5px;transition:width .05s linear;
-}
-.sc-a-hint{font-size:.72rem;color:var(--ob-muted);white-space:nowrap;}
-
-/* ══════════════════════════════════════════════════
-   SCENE B — اختيار القطاع (full-width 4 cols)
-══════════════════════════════════════════════════ */
-.sc-b-header{text-align:center;margin-bottom:32px;}
-.sc-b-eyebrow{
-  display:inline-flex;align-items:center;gap:6px;
-  background:rgba(37,99,235,.07);border:1px solid var(--ob-border2);
-  border-radius:20px;padding:4px 14px;
-  font-size:.72rem;font-weight:700;letter-spacing:.08em;
-  color:var(--ob-accent);margin-bottom:12px;
-}
-.sc-b-title{
-  font-size:1.9rem;font-weight:900;
-  background:linear-gradient(135deg,#1e3a8a,#2563eb);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  margin-bottom:6px;
-}
-.sc-b-sub{font-size:.9rem;color:var(--ob-dim);}
-
-.sector-grid-8{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:14px;
-  margin-bottom:24px;
-}
-.sec-card{
-  background:#fff;
-  border:2px solid var(--ob-border);
-  border-radius:16px;
-  padding:26px 14px 20px;
-  cursor:pointer;text-align:center;
-  transition:all .22s cubic-bezier(.22,1,.36,1);
-  animation:secIn .5s cubic-bezier(.16,1,.3,1) both;
-}
-.sec-card:nth-child(1){animation-delay:.04s}
-.sec-card:nth-child(2){animation-delay:.09s}
-.sec-card:nth-child(3){animation-delay:.14s}
-.sec-card:nth-child(4){animation-delay:.19s}
-.sec-card:nth-child(5){animation-delay:.24s}
-.sec-card:nth-child(6){animation-delay:.29s}
-.sec-card:nth-child(7){animation-delay:.34s}
-.sec-card:nth-child(8){animation-delay:.39s}
-@keyframes secIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
-.sec-card:hover{
-  border-color:var(--ob-accent);
-  transform:translateY(-4px);
-  box-shadow:0 10px 32px rgba(37,99,235,.14);
-}
-.sec-card.selected{
-  border-color:var(--ob-accent);
-  background:linear-gradient(150deg,#f0f6ff,#e8f0fe);
-  box-shadow:0 0 0 4px rgba(37,99,235,.12),0 10px 32px rgba(37,99,235,.16);
-}
-.sec-icon-wrap{
-  width:56px;height:56px;border-radius:16px;
-  background:var(--ob-icon-grad);
-  display:flex;align-items:center;justify-content:center;
-  font-size:1.7rem;margin:0 auto 12px;
-  box-shadow:0 6px 18px rgba(37,99,235,.2);
-  transition:all .22s;
-}
-.sec-card:hover .sec-icon-wrap{box-shadow:0 8px 24px rgba(37,99,235,.3);}
-.sec-card.selected .sec-icon-wrap{background:var(--ob-icon-grad3);}
-.sec-name{font-size:.82rem;font-weight:800;color:var(--ob-text);line-height:1.3;}
-
-/* ══════════════════════════════════════════════════
-   SCENE C — الأنشطة الفرعية
-══════════════════════════════════════════════════ */
-.sc-c-top{
-  display:flex;align-items:flex-start;justify-content:space-between;
-  margin-bottom:20px;gap:16px;
-}
-.sc-c-back{
-  display:inline-flex;align-items:center;gap:5px;
-  background:#fff;border:1.5px solid var(--ob-border);border-radius:9px;
-  color:var(--ob-dim);font-size:.78rem;font-family:'Cairo',sans-serif;
-  padding:5px 12px;cursor:pointer;
-  transition:all .18s;white-space:nowrap;
-}
-.sc-c-back:hover{border-color:var(--ob-accent);color:var(--ob-accent);}
-.sc-c-titles{}
-.sc-c-title{font-size:1.35rem;font-weight:900;color:var(--ob-text);margin-bottom:3px;}
-.sc-c-sub{
-  font-size:.8rem;font-weight:700;
-  background:var(--ob-icon-grad);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-}
-
-.ob-tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px;}
-.ob-tab{
-  padding:5px 14px;border-radius:8px;
-  border:1.5px solid var(--ob-border);
-  background:#fff;color:var(--ob-dim);
-  font-size:.75rem;font-weight:700;cursor:pointer;
-  transition:all .18s;font-family:'Cairo',sans-serif;
-}
-.ob-tab:hover{border-color:var(--ob-accent);color:var(--ob-accent);}
-.ob-tab.active{
-  background:var(--ob-icon-grad);color:#fff;
-  border-color:transparent;
-  box-shadow:0 3px 12px rgba(37,99,235,.25);
-}
-
-.ob-acts{
-  display:grid;grid-template-columns:repeat(5,1fr);
-  gap:9px;max-height:240px;overflow-y:auto;
-  padding-left:3px;margin-bottom:18px;
-}
-.ob-acts::-webkit-scrollbar{width:4px;}
-.ob-acts::-webkit-scrollbar-thumb{background:rgba(37,99,235,.2);border-radius:4px;}
-.ob-act{
-  background:#fff;border:2px solid var(--ob-border);
-  border-radius:12px;padding:10px 6px;
-  cursor:pointer;text-align:center;
-  display:flex;flex-direction:column;align-items:center;gap:4px;
-  transition:all .18s;min-height:72px;
-}
-.ob-act:hover{border-color:var(--ob-accent);box-shadow:0 4px 14px rgba(37,99,235,.12);}
-.ob-act.selected{
-  border-color:var(--ob-accent);
-  background:linear-gradient(135deg,#f0f6ff,#e8f0fe);
-  box-shadow:0 4px 14px rgba(37,99,235,.18);
-}
-.ob-act-icon-wrap{
-  width:36px;height:36px;border-radius:10px;
-  background:var(--ob-icon-grad);
-  display:flex;align-items:center;justify-content:center;
-  font-size:1.1rem;
-  box-shadow:0 3px 10px rgba(37,99,235,.18);
-}
-.ob-act.selected .ob-act-icon-wrap{background:var(--ob-icon-grad3);}
-.ob-act-name{font-size:.64rem;font-weight:700;color:var(--ob-mid);line-height:1.3;}
-
-.ob-badge{
-  display:none;align-items:center;gap:8px;
-  background:rgba(5,150,105,.07);border:1.5px solid rgba(5,150,105,.2);
-  border-radius:10px;padding:8px 14px;
-  font-size:.78rem;color:var(--ob-success);
-  margin-bottom:16px;
-}
-.ob-badge.show{display:flex;}
-.ob-badge i{flex-shrink:0;}
-
-.ob-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px;}
-.ob-field-full{grid-column:1/-1;}
-.ob-label{font-size:.77rem;font-weight:700;color:var(--ob-mid);margin-bottom:5px;display:block;}
-.ob-label span{color:var(--ob-danger);}
-.ob-input{
-  width:100%;padding:10px 14px;
-  background:#fff;
-  border:2px solid var(--ob-border);border-radius:10px;
-  color:var(--ob-text);font-family:'Cairo',sans-serif;
-  font-size:.9rem;outline:none;
-  transition:border-color .2s,box-shadow .2s;
-}
-.ob-input:focus{
-  border-color:var(--ob-accent);
-  box-shadow:0 0 0 3px rgba(37,99,235,.1);
-}
-.ob-input::placeholder{color:var(--ob-muted);}
-
-/* ══════════════════════════════════════════════════
-   SCENE D — التهيئة الذكية
-══════════════════════════════════════════════════ */
-.sc-d-heading{
-  text-align:center;margin-bottom:28px;
-}
-.sc-d-heading p{
-  font-size:.82rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  background:var(--ob-icon-grad3);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-}
-
-.sc-d-inner{display:flex;gap:32px;align-items:stretch;}
-
-/* المزايا (يمين) */
-.sc-d-feats{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start;}
-.sc-d-feat{
-  display:flex;align-items:center;gap:12px;
-  background:#fff;
-  border:1.5px solid var(--ob-border);border-radius:14px;
-  padding:14px 16px;
-  opacity:0;transform:translateY(10px);
-  transition:opacity .4s ease,transform .4s ease,border-color .3s,box-shadow .3s;
-}
-.sc-d-feat.show{opacity:1;transform:translateY(0);}
-.sc-d-feat.lit{
-  border-color:var(--ob-border2);
-  box-shadow:0 4px 18px rgba(37,99,235,.1);
-}
-.sc-d-feat-text strong{display:block;font-size:.8rem;font-weight:800;color:var(--ob-text);}
-.sc-d-feat-text span{font-size:.7rem;color:var(--ob-dim);}
-
-/* العداد (يسار) */
-.sc-d-engine{
-  width:200px;flex-shrink:0;
-  display:flex;flex-direction:column;align-items:center;
-  background:linear-gradient(150deg,#f0f6ff,#e8f0fe);
-  border:1.5px solid var(--ob-border);border-radius:18px;
-  padding:24px 16px;
-}
-.sc-d-spinner-wrap{
-  position:relative;width:88px;height:88px;
-  margin-bottom:12px;
-}
-.sc-d-ring-outer{
-  width:88px;height:88px;border-radius:50%;
-  border:3px solid rgba(37,99,235,.1);
-  border-top-color:var(--ob-accent);
-  animation:spin 1.2s linear infinite;
-  position:absolute;top:0;left:0;
-}
+/* SCENE D */
+.sc-d-wrap{display:flex;align-items:stretch;min-height:360px;}
+.sc-d-main{flex:1;padding:30px 34px;display:flex;flex-direction:column;border-left:1px solid #f1f5f9;}
+.sc-d-heading{margin-bottom:18px;}
+.sc-d-heading h2{font-size:1.15rem;font-weight:900;color:#1e293b;margin-bottom:3px;}
+.sc-d-heading p{font-size:.78rem;color:#64748b;}
+.sc-d-feats{display:grid;grid-template-columns:1fr 1fr;gap:9px;flex:1;align-content:start;}
+.sc-d-feat{display:flex;align-items:center;gap:10px;background:#fafbff;border:1.5px solid #e2e8f0;border-radius:11px;padding:11px 13px;opacity:0;transform:translateY(8px);transition:opacity .4s ease,transform .4s ease,border-color .3s;}
+.sc-d-feat.show{opacity:1;transform:none;}
+.sc-d-feat.lit{border-color:rgba(37,99,235,.2);box-shadow:0 3px 14px rgba(37,99,235,.08);}
+.sc-d-ico{width:34px;height:34px;border-radius:9px;flex-shrink:0;background:linear-gradient(135deg,#6366f1,#2563eb);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.82rem;}
+.sc-d-feat-text strong{display:block;font-size:.75rem;font-weight:800;color:#1e293b;}
+.sc-d-feat-text span{font-size:.66rem;color:#64748b;}
+.sc-d-engine{width:210px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:30px 18px;background:linear-gradient(160deg,#eff6ff,#e0e7ff);}
+.sc-d-spinner{position:relative;width:80px;height:80px;margin-bottom:14px;}
+.sc-d-ring1{position:absolute;inset:0;border-radius:50%;border:3px solid transparent;border-top-color:#2563eb;border-right-color:#6366f1;animation:spin 1.1s linear infinite;}
+.sc-d-ring2{position:absolute;inset:10px;border-radius:50%;border:2px solid transparent;border-bottom-color:#38bdf8;border-left-color:#6366f1;animation:spin 1.8s linear infinite reverse;}
 @keyframes spin{to{transform:rotate(360deg)}}
-.sc-d-ring-inner{
-  position:absolute;top:10px;left:10px;right:10px;bottom:10px;
-  border-radius:50%;
-  border:2px solid rgba(56,189,248,.3);
-  border-bottom-color:#38bdf8;
-  animation:spin 2s linear infinite reverse;
-}
-.sc-d-shield-center{
-  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-}
-.sc-d-shield-center .grad-icon{width:52px;height:52px;font-size:1.4rem;}
-.sc-d-count{
-  font-size:2.8rem;font-weight:900;
-  background:var(--ob-icon-grad3);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  margin-bottom:8px;font-variant-numeric:tabular-nums;
-}
-.sc-d-log{
-  width:100%;background:#fff;border-radius:10px;
-  border:1px solid var(--ob-border);
-  padding:10px;font-size:.62rem;
-  font-family:monospace;color:var(--ob-accent);
-  max-height:110px;overflow-y:auto;
-  line-height:1.8;text-align:right;flex:1;
-}
+.sc-d-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+.sc-d-center i{font-size:1.4rem;background:linear-gradient(135deg,#6366f1,#2563eb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sc-d-count{font-size:2.5rem;font-weight:900;background:linear-gradient(135deg,#6366f1,#2563eb,#0ea5e9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px;}
+.sc-d-log{width:100%;background:#fff;border-radius:8px;border:1px solid #e2e8f0;padding:8px 9px;font-size:.59rem;font-family:monospace;color:#2563eb;max-height:115px;overflow-y:auto;line-height:1.9;text-align:right;flex:1;}
 .sc-d-log::-webkit-scrollbar{width:2px;}
-.sc-d-log::-webkit-scrollbar-thumb{background:rgba(37,99,235,.2);}
+.sc-d-log::-webkit-scrollbar-thumb{background:rgba(37,99,235,.18);}
 .sc-d-log-line{opacity:0;animation:logFade .3s forwards;}
 @keyframes logFade{to{opacity:1}}
-.sc-d-bar-wrap{width:100%;height:5px;background:rgba(37,99,235,.1);border-radius:5px;margin-top:12px;overflow:hidden;}
-.sc-d-bar{height:100%;width:0;background:var(--ob-icon-grad3);border-radius:5px;transition:width .6s ease;}
+.sc-d-bar-wrap{width:100%;height:4px;background:rgba(37,99,235,.12);border-radius:4px;margin-top:10px;}
+.sc-d-bar{height:100%;width:0;background:linear-gradient(90deg,#6366f1,#2563eb,#38bdf8);border-radius:4px;transition:width .6s ease;}
 
-/* ══════════════════════════════════════════════════
-   SCENE E — النهاية
-══════════════════════════════════════════════════ */
-.sc-e-wrap{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;}
-.sc-e-left{text-align:center;}
-.sc-e-emblem{
-  position:relative;width:110px;height:110px;
-  margin:0 auto 22px;
-  display:flex;align-items:center;justify-content:center;
-}
-.sc-e-emblem .grad-icon{width:110px;height:110px;font-size:3rem;border-radius:28px;background:var(--ob-icon-grad3);}
-.sc-e-check{
-  position:absolute;bottom:-5px;right:-5px;
-  width:30px;height:30px;border-radius:50%;
-  background:var(--ob-success);
-  display:flex;align-items:center;justify-content:center;
-  font-size:.8rem;color:#fff;
-  box-shadow:0 4px 12px rgba(5,150,105,.3);
-  animation:popIn .4s .2s cubic-bezier(.22,1,.36,1) both;
-}
-@keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}
-.sc-e-trust{
-  font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-  background:var(--ob-icon-grad);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  margin-bottom:10px;
-}
-.sc-e-title{
-  font-size:2rem;font-weight:900;
-  background:linear-gradient(135deg,#065f46,#059669,#10b981);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  margin-bottom:5px;line-height:1.2;
-}
-.sc-e-slogan{font-size:1rem;font-weight:800;color:var(--ob-text);margin-bottom:6px;}
-.sc-e-sub{font-size:.82rem;color:var(--ob-dim);line-height:1.6;}
+/* SCENE E */
+.sc-e-wrap{display:grid;grid-template-columns:1fr 1fr;min-height:360px;}
+.sc-e-brand{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 34px;background:linear-gradient(160deg,#f8faff,#eef3ff);border-left:1px solid #e0e7ff;text-align:center;}
+.sc-e-emblem{position:relative;width:88px;height:88px;margin:0 auto 18px;display:flex;align-items:center;justify-content:center;}
+.sc-e-ico{width:88px;height:88px;border-radius:22px;background:linear-gradient(135deg,#6366f1,#2563eb,#0ea5e9);display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:#fff;box-shadow:0 8px 32px rgba(37,99,235,.28);animation:popIn .5s cubic-bezier(.22,1,.36,1);}
+@keyframes popIn{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}
+.sc-e-check{position:absolute;bottom:-4px;left:-4px;width:24px;height:24px;border-radius:50%;background:#059669;display:flex;align-items:center;justify-content:center;font-size:.65rem;color:#fff;box-shadow:0 3px 10px rgba(5,150,105,.3);animation:popIn .4s .3s cubic-bezier(.22,1,.36,1) both;}
+.sc-e-brand-name{font-size:2.2rem;font-weight:900;background:linear-gradient(135deg,#6366f1,#2563eb,#0ea5e9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;margin-bottom:4px;}
+.sc-e-brand-tag{font-size:.87rem;font-weight:700;color:#64748b;margin-bottom:8px;}
+.sc-e-slogan{font-size:1.1rem;font-weight:900;color:#1e293b;opacity:0;animation:sloganReveal .7s .7s cubic-bezier(.22,1,.36,1) both;}
+@keyframes sloganReveal{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.sc-e-right{display:flex;flex-direction:column;justify-content:center;padding:36px 34px;gap:12px;}
+.sc-e-msgs{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;}
+.sc-e-msg{display:flex;align-items:center;gap:10px;background:#fafbff;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 13px;font-size:.78rem;color:#334155;opacity:0;transform:translateX(12px);transition:opacity .4s ease,transform .4s ease;}
+.sc-e-msg.show{opacity:1;transform:none;}
+.sc-e-msg-ico{width:28px;height:28px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#fff;background:linear-gradient(135deg,#6366f1,#2563eb);}
+.ob-btn-go{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border:none;border-radius:11px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:.92rem;font-weight:800;font-family:'Cairo',sans-serif;cursor:pointer;transition:opacity .5s ease,transform .2s,box-shadow .2s;box-shadow:0 4px 18px rgba(5,150,105,.25);opacity:0;}
+.ob-btn-go:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(5,150,105,.3);}
 
-.sc-e-right{}
-.sc-e-messages{display:flex;flex-direction:column;gap:10px;margin-bottom:24px;}
-.sc-e-msg{
-  display:flex;align-items:center;gap:10px;
-  background:#fff;border:1.5px solid var(--ob-border);border-radius:12px;
-  padding:12px 16px;font-size:.82rem;color:var(--ob-mid);
-  opacity:0;transform:translateX(-12px);
-  transition:opacity .4s ease,transform .4s ease;
-}
-.sc-e-msg.show{opacity:1;transform:translateX(0);}
-.sc-e-msg .grad-icon{width:32px;height:32px;font-size:.8rem;border-radius:9px;flex-shrink:0;}
+/* علامة مائية */
+.ob-wm{display:flex;align-items:center;justify-content:flex-end;gap:5px;padding:8px 16px 12px;opacity:.2;pointer-events:none;}
+.ob-wm img{width:20px;height:20px;border-radius:5px;object-fit:contain;}
+.ob-wm span{font-size:.6rem;font-weight:700;color:#2563eb;}
 
-/* Brand name + taglines في Scene E */
-.sc-e-brand-name{
-  font-size:2.8rem;font-weight:900;line-height:1.1;margin:12px 0 4px;
-  background:var(--ob-icon-grad3);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-}
-.sc-e-brand-tag{
-  font-size:1.1rem;font-weight:800;color:var(--ob-mid);margin-bottom:18px;
-}
-.sc-e-taglines{display:flex;flex-direction:column;gap:8px;margin-bottom:4px;}
-.sc-e-tagline{
-  display:flex;align-items:center;gap:8px;
-  font-size:.87rem;font-weight:700;color:var(--ob-text);
-  opacity:0;transform:translateY(8px);
-  transition:opacity .4s ease,transform .4s ease;
-}
-.sc-e-tagline.show{opacity:1;transform:translateY(0);}
-.sc-e-tagline i{
-  background:var(--ob-icon-grad);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  font-size:.9rem;width:16px;
-}
-
-/* ══════════════════════════════════════════════════
-   أزرار
-══════════════════════════════════════════════════ */
-.ob-btn{
-  width:100%;padding:14px;border:none;border-radius:12px;
-  background:var(--ob-icon-grad3);
-  color:#fff;font-size:.97rem;font-weight:800;
-  font-family:'Cairo',sans-serif;cursor:pointer;
-  transition:all .22s;
-  box-shadow:0 4px 20px rgba(37,99,235,.22);
-}
-.ob-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(37,99,235,.3);}
-.ob-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
-
-.ob-btn-success{
-  background:linear-gradient(135deg,#059669,#10b981);
-  display:block;text-align:center;text-decoration:none;
-  padding:15px;border-radius:12px;
-  color:#fff;font-size:1rem;font-weight:800;
-  font-family:'Cairo',sans-serif;
-  box-shadow:0 4px 20px rgba(5,150,105,.25);
-  transition:all .22s;
-}
-.ob-btn-success:hover{
-  transform:translateY(-2px);
-  box-shadow:0 8px 32px rgba(5,150,105,.32);
-  text-decoration:none;
-}
-
-/* ══════════════════════════════════════════════════
-   موبايل
-══════════════════════════════════════════════════ */
 @media(max-width:700px){
-  .ob-scene{padding:28px 18px;}
-  .sc-a-top{flex-direction:column;gap:16px;}
-  .feat-grid{grid-template-columns:repeat(2,1fr);}
-  .sector-grid-8{grid-template-columns:repeat(2,1fr);}
+  .act-counter-banner{padding:12px 10px;gap:10px;}
+  .act-counter-num{font-size:1.72rem;min-width:50px;}
+  .act-counter-title{font-size:.78rem;}
+  .act-counter-sub{font-size:.63rem;}
+  .sector-grid{grid-template-columns:repeat(2,1fr);}
   .ob-acts{grid-template-columns:repeat(3,1fr);}
-  .sc-d-inner{flex-direction:column;}
+  .sc-c-layout{flex-direction:column;}
+  .sc-c-form{width:100%;border-top:1px solid #f1f5f9;}
+  .sc-d-wrap{flex-direction:column;}
   .sc-d-engine{width:100%;}
   .sc-d-feats{grid-template-columns:1fr;}
   .sc-e-wrap{grid-template-columns:1fr;}
-  .ob-fields{grid-template-columns:1fr;}
+  .ob-slide{padding:34px 20px 20px;}
+  .sl-title{font-size:1.4rem;}
+  .sc-header{padding:22px 18px 0;}
+  .sc-body{padding:0 18px 22px;}
 }
 </style>
 
 <div id="ob-root">
-  <!-- خلفية لؤلؤية -->
-  <div class="ob-pearl-layer"></div>
-  <div class="ob-dot-layer"></div>
-  <div class="ob-circle" style="width:600px;height:600px;top:-200px;right:-180px;"></div>
-  <div class="ob-circle" style="width:400px;height:400px;bottom:-140px;left:-120px;"></div>
+<div class="ob-bg"></div>
+<div class="ob-wrap">
 
-  <div class="ob-wrap">
+<!-- نقاط التقدم -->
+<div class="ob-steps">
+  <div class="ob-step-dot cur" id="dot0"></div>
+  <div class="ob-step-dot" id="dot1"></div>
+  <div class="ob-step-dot" id="dot2"></div>
+  <div class="ob-step-dot" id="dot3"></div>
+  <div class="ob-step-dot" id="dot4"></div>
+</div>
 
-    <!-- مؤشر الخطوات -->
-    <div class="ob-progress" id="obProgress">
-      <div class="ob-dot cur" id="dot0"></div>
-      <div class="ob-dot"    id="dot1"></div>
-      <div class="ob-dot"    id="dot2"></div>
-      <div class="ob-dot"    id="dot3"></div>
-      <div class="ob-dot"    id="dot4"></div>
+<!-- SCENE A -->
+<div class="ob-card active" id="scA">
+  <div class="slides-wrap" id="slidesWrap">
+    <div class="ob-slide active" id="sl0">
+      <div class="sl-icon-box"><i class="fas fa-shield-halved"></i></div>
+      <div class="sl-badge"><i class="fas fa-circle" style="font-size:.4rem;"></i> منصة أعمال احترافية</div>
+      <h1 class="sl-title">مرحباً بك في جنان بيز</h1>
+      <p class="sl-desc">منصة إدارة أعمال متكاملة بُنيت للسوق العربي — دقيقة، آمنة، وجاهزة للعمل من اليوم الأول.</p>
     </div>
+    <div class="ob-slide" id="sl1">
+      <span class="sl-emoji">📊</span>
+      <h2 class="sl-title">تقارير مالية فورية</h2>
+      <p class="sl-desc">أرباح وخسائر، ميزانية عمومية، وتدفق نقدي — بضغطة واحدة وبيانات حقيقية من أول يوم.</p>
+    </div>
+    <div class="ob-slide" id="sl2">
+      <span class="sl-emoji">⚡</span>
+      <h2 class="sl-title">نقطة بيع سريعة</h2>
+      <p class="sl-desc">باركود، فواتير ضريبية، ومدفوعات متعددة في ثوانٍ — تجربة بيع سلسة لك ولعملائك.</p>
+    </div>
+    <div class="ob-slide" id="sl3">
+      <span class="sl-emoji">📦</span>
+      <h2 class="sl-title">مخزون ذكي</h2>
+      <p class="sl-desc">تتبع دقيق لكل صنف، تنبيهات نقص المخزون والصلاحية — لا تفقد فرصة بيع واحدة.</p>
+    </div>
+    <div class="ob-slide" id="sl4">
+      <span class="sl-emoji">🕌</span>
+      <h2 class="sl-title">زكاة وضريبة VAT</h2>
+      <p class="sl-desc">احتساب تلقائي وفق متطلبات هيئة الزكاة والدخل — التزام كامل بلا أي عناء.</p>
+    </div>
+    <div class="ob-slide" id="sl5">
+      <span class="sl-emoji">📶</span>
+      <h2 class="sl-title">عمل بلا إنترنت</h2>
+      <p class="sl-desc">استمر في البيع أوفلاين — التزامن يتم تلقائياً عند العودة للاتصال بلا فقدان أي بيانات.</p>
+    </div>
+  </div>
+  <div class="sl-footer">
+    <div class="sl-dots" id="slDots">
+      <div class="sl-dot active"></div><div class="sl-dot"></div><div class="sl-dot"></div>
+      <div class="sl-dot"></div><div class="sl-dot"></div><div class="sl-dot"></div>
+    </div>
+    <div class="sl-bar-wrap"><div class="sl-bar" id="slBar"></div></div>
+    <button class="sl-skip" onclick="skipSlides()">تخطي ←</button>
+  </div>
+  <div class="ob-wm"><img src="/static/images/logo-transparent.png" alt="" onerror="this.style.display='none'"><span>جنان بيز</span></div>
+</div>
 
-    <!-- ═══ SCENE A — الهوية الإدارية ═══ -->
-    <div class="ob-scene active" id="scA">
-
-      <div class="sc-a-top">
-        <div class="sc-a-logo-box">
-          <div class="grad-icon alt3" style="width:80px;height:80px;font-size:2.4rem;border-radius:22px;">
-            <i class="fas fa-shield-halved"></i>
-          </div>
-          <div class="sc-a-logo-ring"></div>
-        </div>
-        <div class="sc-a-texts">
-          <div class="sc-a-badge"><i class="fas fa-circle-dot" style="font-size:.55rem;"></i> منصة محاسبة سعودية احترافية</div>
-          <h1 class="sc-a-title">جنان بيز — هويتك الإدارية السيادية</h1>
-          <p class="sc-a-sub">نظام محاسبي متكامل بُنيَ للسوق السعودي. دقيق، آمن، وجاهز من اليوم الأول.</p>
-        </div>
-      </div>
-
-      <div class="feat-grid">
-        <div class="feat-card">
-          <div class="grad-icon sm"><i class="fas fa-chart-pie"></i></div>
-          <div class="feat-body">
-            <div class="feat-title">تقارير مالية فورية</div>
-            <div class="feat-desc">أرباح وخسائر، ميزانية عمومية، تدفق نقدي — بضغطة واحدة</div>
-          </div>
-        </div>
-        <div class="feat-card">
-          <div class="grad-icon sm alt"><i class="fas fa-shield-halved"></i></div>
-          <div class="feat-body">
-            <div class="feat-title">أمان وصلاحيات محكمة</div>
-            <div class="feat-desc">تشفير كامل للبيانات مع نظام صلاحيات متعدد المستويات</div>
-          </div>
-        </div>
-        <div class="feat-card">
-          <div class="grad-icon sm alt3"><i class="fas fa-bolt"></i></div>
-          <div class="feat-body">
-            <div class="feat-title">نقطة بيع سريعة</div>
-            <div class="feat-desc">باركود، فواتير ضريبية، ومدفوعات متعددة في ثوانٍ</div>
-          </div>
-        </div>
-        <div class="feat-card">
-          <div class="grad-icon sm"><i class="fas fa-mosque"></i></div>
-          <div class="feat-body">
-            <div class="feat-title">زكاة وضريبة VAT</div>
-            <div class="feat-desc">احتساب تلقائي وفق متطلبات هيئة الزكاة والدخل</div>
-          </div>
-        </div>
-        <div class="feat-card">
-          <div class="grad-icon sm alt"><i class="fas fa-wifi"></i></div>
-          <div class="feat-body">
-            <div class="feat-title">عمل بلا إنترنت</div>
-            <div class="feat-desc">استمر في البيع أوفلاين — التزامن تلقائي عند الاتصال</div>
-          </div>
-        </div>
-        <div class="feat-card">
-          <div class="grad-icon sm alt3"><i class="fas fa-boxes-stacked"></i></div>
-          <div class="feat-body">
-            <div class="feat-title">مخزون ذكي</div>
-            <div class="feat-desc">تتبع دقيق، تنبيهات نقص المخزون، تقارير الأصناف</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="sc-a-progress-row">
-        <div class="sc-a-bar-wrap">
-          <div class="sc-a-bar-fill" id="scABar"></div>
-        </div>
-        <span class="sc-a-hint">جارٍ التحضير...</span>
-      </div>
-
-      <div class="ob-watermark">
-        <img src="/static/images/شعار جنان بيز.jpg" alt="" onerror="this.style.display='none'">
-        <span>جنان بيز</span>
+<!-- SCENE B -->
+<div class="ob-card" id="scB">
+  <div class="ob-card-bar"></div>
+  <div class="sc-header">
+    <div class="sc-eyebrow"><i class="fas fa-building" style="font-size:.55rem;"></i> الخطوة الأولى</div>
+    <h2 class="sc-title">ما طبيعة نشاطك التجاري؟</h2>
+    <p class="sc-sub">اختر القطاع الذي تنتمي إليه منشأتك</p>
+  </div>
+  <div class="sc-body">
+    <div class="act-counter-banner" id="activityBanner">
+      <div class="act-counter-num" id="activityCounter">0</div>
+      <div class="act-counter-text">
+        <div class="act-counter-title">🚀 أكثر من <span id="activityTotalText">0</span> نشاط بانتظارك</div>
+        <div class="act-counter-sub">🧭 اختر نشاطك بثقة، ويمكنك التبديل والرجوع في أي وقت</div>
+        <div class="act-counter-icons" id="activityIcons"><span>📦</span><span>🏪</span><span>🏢</span><span>🏗️</span><span>🏥</span><span>🚛</span></div>
       </div>
     </div>
-
-    <!-- ═══ SCENE B — اختيار القطاع ═══ -->
-    <div class="ob-scene" id="scB">
-      <div class="sc-b-header">
-        <div class="sc-b-eyebrow"><i class="fas fa-building" style="font-size:.65rem;"></i> الخطوة الأولى</div>
-        <h2 class="sc-b-title">نتمنى اختيار نشاط تجارتك</h2>
-        <p class="sc-b-sub">حدد القطاع الذي تنتمي إليه منشأتك لتبدأ التهيئة الذكية</p>
-      </div>
-
-      <div class="sector-grid-8">
-        <div class="sec-card" id="sec-wholesale"     onclick="pickSector('wholesale')">
-          <div class="sec-icon-wrap">📦</div><div class="sec-name">بيع جملة</div>
-        </div>
-        <div class="sec-card" id="sec-retail"        onclick="pickSector('retail')">
-          <div class="sec-icon-wrap">🏪</div><div class="sec-name">بيع تجزئة</div>
-        </div>
-        <div class="sec-card" id="sec-services"      onclick="pickSector('services')">
-          <div class="sec-icon-wrap">🏢</div><div class="sec-name">خدمات وتعليم</div>
-        </div>
-        <div class="sec-card" id="sec-contracting"   onclick="pickSector('contracting')">
-          <div class="sec-icon-wrap">🏗️</div><div class="sec-name">مقاولات وإنشاءات</div>
-        </div>
-        <div class="sec-card" id="sec-manufacturing" onclick="pickSector('manufacturing')">
-          <div class="sec-icon-wrap">🏭</div><div class="sec-name">صناعة وإنتاج</div>
-        </div>
-        <div class="sec-card" id="sec-hospitality"   onclick="pickSector('hospitality')">
-          <div class="sec-icon-wrap">🍽️</div><div class="sec-name">ضيافة ومطاعم</div>
-        </div>
-        <div class="sec-card" id="sec-healthcare"    onclick="pickSector('healthcare')">
-          <div class="sec-icon-wrap">🏥</div><div class="sec-name">رعاية صحية</div>
-        </div>
-        <div class="sec-card" id="sec-logistics"     onclick="pickSector('logistics')">
-          <div class="sec-icon-wrap">🚛</div><div class="sec-name">لوجستيات ونقل</div>
-        </div>
-      </div>
-
-      <button class="ob-btn" id="btnBNext" disabled onclick="goToC()">
-        <i class="fas fa-arrow-left"></i> التالي — اختر نشاطك التفصيلي
-      </button>
-
-      <div class="ob-watermark">
-        <img src="/static/images/شعار جنان بيز.jpg" alt="" onerror="this.style.display='none'">
-        <span>جنان بيز</span>
-      </div>
+    <div class="sector-grid">
+      <div class="sec-card" id="sec-wholesale" onclick="pickSector('wholesale')"><span class="sec-emoji">📦</span><div class="sec-name">بيع جملة</div></div>
+      <div class="sec-card" id="sec-retail" onclick="pickSector('retail')"><span class="sec-emoji">🏪</span><div class="sec-name">بيع تجزئة</div></div>
+      <div class="sec-card" id="sec-services" onclick="pickSector('services')"><span class="sec-emoji">🏢</span><div class="sec-name">خدمات وتعليم</div></div>
+      <div class="sec-card" id="sec-contracting" onclick="pickSector('contracting')"><span class="sec-emoji">🏗️</span><div class="sec-name">مقاولات وإنشاءات</div></div>
+      <div class="sec-card" id="sec-manufacturing" onclick="pickSector('manufacturing')"><span class="sec-emoji">🏭</span><div class="sec-name">صناعة وإنتاج</div></div>
+      <div class="sec-card" id="sec-hospitality" onclick="pickSector('hospitality')"><span class="sec-emoji">🍽️</span><div class="sec-name">ضيافة ومطاعم</div></div>
+      <div class="sec-card" id="sec-healthcare" onclick="pickSector('healthcare')"><span class="sec-emoji">🏥</span><div class="sec-name">رعاية صحية</div></div>
+      <div class="sec-card" id="sec-logistics" onclick="pickSector('logistics')"><span class="sec-emoji">🚛</span><div class="sec-name">لوجستيات ونقل</div></div>
     </div>
+    <button class="ob-btn" id="btnBNext" disabled onclick="goToC()">
+      <i class="fas fa-arrow-left"></i> التالي — اختر نشاطك التفصيلي
+    </button>
+  </div>
+  <div class="ob-wm"><img src="/static/images/logo-transparent.png" alt="" onerror="this.style.display='none'"><span>جنان بيز</span></div>
+</div>
 
-    <!-- ═══ SCENE C — الأنشطة الفرعية ═══ -->
-    <div class="ob-scene" id="scC">
-      <div class="sc-c-top">
-        <div class="sc-c-titles">
-          <h2 class="sc-c-title" id="scCTitle">اختر نشاطك</h2>
-          <p class="sc-c-sub">ليتم تهيئة عملك بالكامل بلا تعقيد</p>
-        </div>
-        <button class="sc-c-back" onclick="goScene('B')">
-          <i class="fas fa-arrow-right"></i> رجوع
-        </button>
+<!-- SCENE C -->
+<div class="ob-card" id="scC">
+  <div class="ob-card-bar"></div>
+  <div class="sc-c-layout">
+    <div class="sc-c-main">
+      <div class="sc-c-top-bar">
+        <div><div class="sc-c-h" id="scCTitle">اختر نشاطك</div><div class="sc-c-s">ليتم تهيئة عملك بالكامل</div></div>
+        <button class="sc-c-back-btn" onclick="goScene('B')"><i class="fas fa-arrow-right"></i> رجوع</button>
       </div>
-
       <div class="ob-tabs" id="obTabs"></div>
       <div class="ob-acts" id="obActs"></div>
+    </div>
+    <div class="sc-c-form">
+      <div><div class="sc-c-form-title">معلومات منشأتك</div><div class="sc-c-form-sub" style="font-size:.68rem;color:#94a3b8;">ستُستخدم في فواتيرك ولوحة التحكم</div></div>
+      <div class="ob-sel-badge" id="obBadge"><i class="fas fa-check-circle"></i><span id="obBadgeLabel">تم اختيار النشاط</span><button class="ob-change-btn" onclick="clearActSelection()" type="button">تغيير ↩</button></div>
+      <div><label class="ob-label">اسم المنشأة <span>*</span></label><input class="ob-input" id="bizName" type="text" placeholder="مثال: مؤسسة الأمانة" value="{{ request.form.get('business_name','') }}"></div>
+      <div><label class="ob-label">الرقم الضريبي <span style="color:#94a3b8;font-weight:400;">(اختياري)</span></label><input class="ob-input" id="taxNum" type="text" placeholder="0000000000" value="{{ request.form.get('tax_number','') }}"></div>
+      <div><label class="ob-label">المدينة <span style="color:#94a3b8;font-weight:400;">(اختياري)</span></label><input class="ob-input" id="cityIn" type="text" placeholder="الرياض، جدة..." value="{{ request.form.get('city','') }}"></div>
+      <button class="ob-btn" id="btnLaunch" disabled onclick="launchSetup()" style="margin-top:auto;"><i class="fas fa-rocket"></i> ابدأ التهيئة</button>
+    </div>
+  </div>
+  <div class="ob-wm"><img src="/static/images/logo-transparent.png" alt="" onerror="this.style.display='none'"><span>جنان بيز</span></div>
+</div>
 
-      <div class="ob-badge" id="obBadge">
-        <i class="fas fa-check-circle"></i>
-        <span id="obBadgeLabel">تم اختيار النشاط</span>
+<!-- SCENE D -->
+<div class="ob-card" id="scD">
+  <div class="ob-card-bar"></div>
+  <div class="sc-d-wrap">
+    <div class="sc-d-main">
+      <div class="sc-d-heading"><h2>⚙ جارٍ تهيئة منصتك</h2><p>نُعدّ كل شيء لك وفق نشاطك التجاري...</p></div>
+      <div class="sc-d-feats">
+        <div class="sc-d-feat" id="df0"><div class="sc-d-ico"><i class="fas fa-chart-pie"></i></div><div class="sc-d-feat-text"><strong>تقارير مالية</strong><span>ميزانية، أرباح، تدفق نقدي</span></div></div>
+        <div class="sc-d-feat" id="df1"><div class="sc-d-ico" style="background:linear-gradient(135deg,#0ea5e9,#38bdf8);"><i class="fas fa-wifi"></i></div><div class="sc-d-feat-text"><strong>عمل بلا إنترنت</strong><span>بيع مستمر، تزامن لاحقاً</span></div></div>
+        <div class="sc-d-feat" id="df2"><div class="sc-d-ico" style="background:linear-gradient(135deg,#059669,#10b981);"><i class="fas fa-mosque"></i></div><div class="sc-d-feat-text"><strong>زكاة وضريبة VAT</strong><span>احتساب تلقائي وفق الهيئة</span></div></div>
+        <div class="sc-d-feat" id="df3"><div class="sc-d-ico" style="background:linear-gradient(135deg,#f59e0b,#f97316);"><i class="fas fa-bolt"></i></div><div class="sc-d-feat-text"><strong>نقطة بيع فورية</strong><span>باركود، فواتير، مدفوعات</span></div></div>
+        <div class="sc-d-feat" id="df4" style="grid-column:1/-1;"><div class="sc-d-ico"><i class="fas fa-boxes-stacked"></i></div><div class="sc-d-feat-text"><strong>مخزون ذكي + تنبيهات</strong><span>تتبع كامل، تقارير الأصناف، حد الطلب التلقائي</span></div></div>
       </div>
+    </div>
+    <div class="sc-d-engine">
+      <div class="sc-d-spinner"><div class="sc-d-ring1"></div><div class="sc-d-ring2"></div><div class="sc-d-center"><i class="fas fa-shield-halved"></i></div></div>
+      <div class="sc-d-count" id="scDCount">20</div>
+      <div class="sc-d-log" id="scDLog"></div>
+      <div class="sc-d-bar-wrap"><div class="sc-d-bar" id="scDBar"></div></div>
+    </div>
+  </div>
+  <form method="POST" action="{{ url_for('core.onboarding') }}" id="obForm" style="display:none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="industry_type" id="h_industry">
+    <input type="hidden" name="business_name" id="h_name">
+    <input type="hidden" name="tax_number" id="h_tax">
+    <input type="hidden" name="city" id="h_city">
+  </form>
+  <div class="ob-wm"><img src="/static/images/logo-transparent.png" alt="" onerror="this.style.display='none'"><span>جنان بيز</span></div>
+</div>
 
-      <div class="ob-fields">
-        <div class="ob-field-full">
-          <label class="ob-label">اسم المنشأة <span>*</span></label>
-          <input class="ob-input" id="bizName" type="text"
-                 placeholder="مثال: مؤسسة الأمانة للتجارة، شركة الوفاء..."
-                 value="{{ request.form.get('business_name','') }}">
-        </div>
-        <div>
-          <label class="ob-label">الرقم الضريبي <span style="color:var(--ob-muted);font-weight:400;">(اختياري)</span></label>
-          <input class="ob-input" id="taxNum" type="text" placeholder="0000000000"
-                 value="{{ request.form.get('tax_number','') }}">
-        </div>
-        <div>
-          <label class="ob-label">المدينة <span style="color:var(--ob-muted);font-weight:400;">(اختياري)</span></label>
-          <input class="ob-input" id="cityIn" type="text" placeholder="الرياض، جدة، الدمام..."
-                 value="{{ request.form.get('city','') }}">
-        </div>
+<!-- SCENE E -->
+<div class="ob-card" id="scE">
+  <div class="ob-card-bar"></div>
+  <div class="sc-e-wrap">
+    <div class="sc-e-brand">
+      <div class="sc-e-emblem"><div class="sc-e-ico"><i class="fas fa-shield-halved"></i></div><div class="sc-e-check"><i class="fas fa-check"></i></div></div>
+      <div class="sc-e-brand-name">جنان بيز</div>
+      <div class="sc-e-brand-tag">منصة حلول أعمالك</div>
+      <div class="sc-e-slogan">تجارتك بين يديك ✓</div>
+    </div>
+    <div class="sc-e-right">
+      <div class="sc-e-msgs">
+        <div class="sc-e-msg" id="em0"><div class="sc-e-msg-ico"><i class="fas fa-check"></i></div><span>دليل الحسابات جاهز وفق نشاطك</span></div>
+        <div class="sc-e-msg" id="em1"><div class="sc-e-msg-ico" style="background:linear-gradient(135deg,#0ea5e9,#6366f1);"><i class="fas fa-check"></i></div><span>المستودع والأصناف مُهيَّأة بالكامل</span></div>
+        <div class="sc-e-msg" id="em2"><div class="sc-e-msg-ico" style="background:linear-gradient(135deg,#059669,#10b981);"><i class="fas fa-check"></i></div><span>الضريبة والزكاة مُفعَّلة للاحتساب</span></div>
+        <div class="sc-e-msg" id="em3"><div class="sc-e-msg-ico" style="background:linear-gradient(135deg,#f59e0b,#f97316);"><i class="fas fa-check"></i></div><span>لوحة التحكم والتقارير جاهزة</span></div>
       </div>
-
-      <button class="ob-btn" id="btnLaunch" disabled onclick="launchSetup()">
-        <i class="fas fa-rocket"></i> ابدأ التهيئة الذكية
+      <button id="btnEnterDash" onclick="document.getElementById('obForm').submit()" class="ob-btn-go">
+        <i class="fas fa-arrow-left"></i> ابدأ الآن — ادخل لوحة التحكم
       </button>
-
-      <div class="ob-watermark">
-        <img src="/static/images/شعار جنان بيز.jpg" alt="" onerror="this.style.display='none'">
-        <span>جنان بيز</span>
-      </div>
     </div>
+  </div>
+  <div class="ob-wm"><img src="/static/images/logo-transparent.png" alt="" onerror="this.style.display='none'"><span>جنان بيز</span></div>
+</div>
 
-    <!-- ═══ SCENE D — التهيئة الذكية ═══ -->
-    <div class="ob-scene" id="scD">
-      <div class="sc-d-heading">
-        <p>⚙ تهيئة ذكية جارية — يرجى الانتظار</p>
-      </div>
-
-      <div class="sc-d-inner">
-
-        <!-- المزايا 2×2+1 -->
-        <div class="sc-d-feats">
-          <div class="sc-d-feat" id="df0">
-            <div class="grad-icon sm"><i class="fas fa-chart-pie"></i></div>
-            <div class="sc-d-feat-text">
-              <strong>تقارير مالية ذكية</strong>
-              <span>ميزانية، أرباح، تدفق نقدي</span>
-            </div>
-          </div>
-          <div class="sc-d-feat" id="df1">
-            <div class="grad-icon sm alt"><i class="fas fa-wifi"></i></div>
-            <div class="sc-d-feat-text">
-              <strong>عمل بلا إنترنت</strong>
-              <span>بيع مستمر، تزامن لاحقاً</span>
-            </div>
-          </div>
-          <div class="sc-d-feat" id="df2">
-            <div class="grad-icon sm alt3"><i class="fas fa-mosque"></i></div>
-            <div class="sc-d-feat-text">
-              <strong>زكاة وضريبة VAT</strong>
-              <span>احتساب تلقائي وفق الهيئة</span>
-            </div>
-          </div>
-          <div class="sc-d-feat" id="df3">
-            <div class="grad-icon sm"><i class="fas fa-bolt"></i></div>
-            <div class="sc-d-feat-text">
-              <strong>نقطة بيع فورية</strong>
-              <span>باركود، فواتير، مدفوعات</span>
-            </div>
-          </div>
-          <div class="sc-d-feat" id="df4" style="grid-column:1/-1;">
-            <div class="grad-icon sm alt"><i class="fas fa-boxes-stacked"></i></div>
-            <div class="sc-d-feat-text">
-              <strong>مخزون ذكي + تنبيهات</strong>
-              <span>تتبع كامل، تقارير الأصناف، حد الطلب التلقائي</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- العداد -->
-        <div class="sc-d-engine">
-          <div class="sc-d-spinner-wrap">
-            <div class="sc-d-ring-outer"></div>
-            <div class="sc-d-ring-inner"></div>
-            <div class="sc-d-shield-center">
-              <div class="grad-icon alt3" style="width:52px;height:52px;font-size:1.4rem;border-radius:14px;">
-                <i class="fas fa-shield-halved"></i>
-              </div>
-            </div>
-          </div>
-          <div class="sc-d-count" id="scDCount">20</div>
-          <div class="sc-d-log"   id="scDLog"></div>
-          <div class="sc-d-bar-wrap"><div class="sc-d-bar" id="scDBar"></div></div>
-        </div>
-
-      </div>
-
-      <form method="POST" action="{{ url_for('core.onboarding') }}" id="obForm" style="display:none;">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <input type="hidden" name="industry_type" id="h_industry">
-        <input type="hidden" name="business_name" id="h_name">
-        <input type="hidden" name="tax_number"    id="h_tax">
-        <input type="hidden" name="city"          id="h_city">
-      </form>
-
-      <div class="ob-watermark">
-        <img src="/static/images/شعار جنان بيز.jpg" alt="" onerror="this.style.display='none'">
-        <span>جنان بيز</span>
-      </div>
-    </div>
-
-    <!-- ═══ SCENE E — النهاية الراقية ═══ -->
-    <div class="ob-scene" id="scE">
-      <div class="sc-e-wrap">
-
-        <div class="sc-e-left">
-          <div class="sc-e-emblem">
-            <div class="grad-icon alt3" style="width:110px;height:110px;font-size:3rem;border-radius:28px;animation:popIn .5s cubic-bezier(.22,1,.36,1);">
-              <i class="fas fa-shield-halved"></i>
-            </div>
-            <div class="sc-e-check"><i class="fas fa-check"></i></div>
-          </div>
-
-          <h1 class="sc-e-brand-name">جنان بيز</h1>
-          <p class="sc-e-brand-tag">منصة حلول أعمالك</p>
-
-          <div class="sc-e-taglines">
-            <div class="sc-e-tagline"><i class="fas fa-bolt"></i> تابع عملك باحترافية</div>
-            <div class="sc-e-tagline"><i class="fas fa-wifi"></i> تابع عن بُعد في أي وقت</div>
-            <div class="sc-e-tagline"><i class="fas fa-eye"></i> أعمالك تحت نظرك دائماً</div>
-            <div class="sc-e-tagline"><i class="fas fa-layer-group"></i> إدارة متكاملة من أول يوم</div>
-          </div>
-        </div>
-
-        <div class="sc-e-right">
-          <div class="sc-e-messages">
-            <div class="sc-e-msg" id="em0">
-              <div class="grad-icon sm" style="flex-shrink:0;"><i class="fas fa-check"></i></div>
-              <span>دليل الحسابات جاهز وفق نشاطك التجاري</span>
-            </div>
-            <div class="sc-e-msg" id="em1">
-              <div class="grad-icon sm alt" style="flex-shrink:0;"><i class="fas fa-check"></i></div>
-              <span>المستودع والأصناف مُهيَّأة بالكامل</span>
-            </div>
-            <div class="sc-e-msg" id="em2">
-              <div class="grad-icon sm alt3" style="flex-shrink:0;"><i class="fas fa-check"></i></div>
-              <span>الضريبة والزكاة مُفعَّلة وجاهزة للاحتساب</span>
-            </div>
-            <div class="sc-e-msg" id="em3">
-              <div class="grad-icon sm" style="flex-shrink:0;"><i class="fas fa-check"></i></div>
-              <span>لوحة التحكم والتقارير جاهزة للاستخدام</span>
-            </div>
-          </div>
-
-          <button id="btnEnterDash" onclick="document.getElementById('obForm').submit()" class="ob-btn-success" style="opacity:0;transition:opacity .5s;border:none;cursor:pointer;">
-            <i class="fas fa-arrow-left"></i> ابدأ الآن — ادخل إلى لوحة التحكم
-          </button>
-        </div>
-
-      </div>
-
-      <div class="ob-watermark">
-        <img src="/static/images/شعار جنان بيز.jpg" alt="" onerror="this.style.display='none'">
-        <span>جنان بيز</span>
-      </div>
-    </div>
-
-  </div><!-- .ob-wrap -->
-</div><!-- #ob-root -->
+</div></div>
 
 <script>
-/* ══════════════════════════════════════════════════
-   بيانات الأنشطة — 8 قطاعات، 195 نشاط
-══════════════════════════════════════════════════ */
-const ACTS = {
-  retail:{
-    fnb:[["retail_fnb_supermarket","🏪","سوبر ماركت"],["retail_fnb_grocery","🛒","تموينات وبقالة"],["retail_fnb_produce","🥦","خضار وفواكه"],["retail_fnb_butcher","🥩","ملحمة ودواجن"],["retail_fnb_roaster","☕","محمصة وتمور"],["retail_fnb_beverages","🧃","مياه ومشروبات"]],
-    health:[["retail_health_pharmacy","💊","صيدلية"],["retail_health_medical","🩺","مستلزمات طبية"],["retail_health_supplements","🥗","مكملات غذائية"]],
-    fashion:[["retail_fashion_clothing_m","👔","ملابس رجالية"],["retail_fashion_clothing_f","👗","ملابس نسائية"],["retail_fashion_clothing_k","👶","ملابس أطفال"],["retail_fashion_shoes","👟","أحذية وجلود"],["retail_fashion_accessories","🎀","إكسسوارات"],["retail_fashion_uniforms","🦺","زي موحد"]],
-    electronics:[["retail_electronics_mobile","📱","جوالات وملحقات"],["retail_electronics_computers","💻","كمبيوتر ولابتوب"],["retail_electronics_appliances","🔌","أجهزة منزلية"],["retail_electronics_gaming","🎮","ألعاب فيديو"],["retail_electronics_cameras","📷","كاميرات"]],
-    bakery:[["retail_bakery_bread","🍞","مخبز آلي ويدوي"],["retail_bakery_sweets","🍰","حلويات ومعجنات"],["retail_bakery_chocolate","🍫","شوكولاتة وهدايا"],["retail_bakery_icecream","🍦","آيس كريم"]],
-    home:[["retail_home_furniture","🛋️","أثاث منزلي"],["retail_home_kitchenware","🍳","أواني منزلية"],["retail_home_carpet","🟫","مفروشات وسجاد"],["retail_home_decor","🪴","ديكورات"]],
-    optics:[["retail_optics_eyewear","👓","نظارات وبصريات"],["retail_optics_watches","⌚","ساعات"],["retail_optics_jewelry","💎","مجوهرات وذهب"]],
-    stationery:[["retail_stationery_books","📚","مكتبة وقرطاسية"],["retail_stationery_toys","🧸","ألعاب أطفال"],["retail_stationery_gifts","🎁","هدايا وتحف"]],
-    cosmetics:[["retail_cosmetics_perfume","🕌","عطور شرقية"],["retail_cosmetics_makeup","💄","مستحضرات تجميل"],["retail_cosmetics_personal","🧴","عناية شخصية"]],
-    flowers:[["retail_flowers_shop","🌸","محل زهور"],["retail_flowers_events","🎊","لوازم حفلات"]],
-    hardware:[["retail_hardware_plumbing","🔧","سباكة وكهرباء"],["retail_hardware_paints","🎨","دهانات"],["retail_hardware_materials","🧱","مواد بناء"]],
-    pets:[["retail_pets_animals","🐦","طيور وحيوانات"],["retail_pets_supplies","🐾","أغذية ومستلزمات"]],
-  },
-  wholesale:{
-    fnb:[["wholesale_fnb_general","🛒","تموينات عامة"],["wholesale_fnb_meat","🥩","لحوم ودواجن"],["wholesale_fnb_produce","🥦","فواكه وخضروات"],["wholesale_fnb_beverages","🧃","مشروبات"],["wholesale_fnb_sweets","🍬","حلويات ومكسرات"],["wholesale_fnb_dairy","🥛","ألبان وأجبان"],["wholesale_fnb_coffee","☕","بن وبهارات"]],
-    construction:[["wholesale_construction_steel","🔩","حديد ومعادن"],["wholesale_construction_cement","🧱","أسمنت وخرسانة"],["wholesale_construction_timber","🪵","أخشاب"],["wholesale_construction_paints","🎨","دهانات"],["wholesale_construction_plumbing","🔧","أدوات صحية"],["wholesale_construction_ceramics","🟫","سيراميك ورخام"],["wholesale_construction_glass","🪟","زجاج وألمنيوم"]],
-    electronics:[["wholesale_electronics_appliances","🫙","أجهزة منزلية"],["wholesale_electronics_mobile","📱","جوالات"],["wholesale_electronics_computers","💻","حاسب وطابعات"],["wholesale_electronics_security","📷","أنظمة مراقبة"],["wholesale_electronics_consumer","🎮","إلكترونيات استهلاكية"]],
-    auto:[["wholesale_auto_car_parts","🔩","قطع سيارات"],["wholesale_auto_truck_parts","🚛","قطع شاحنات"],["wholesale_auto_tires","🛞","إطارات وبطاريات"],["wholesale_auto_oils","🛢️","زيوت محركات"],["wholesale_auto_industrial","⚙️","معدات صناعية"]],
-    health:[["wholesale_health_pharma","💊","أدوية"],["wholesale_health_devices","🩺","أجهزة طبية"],["wholesale_health_supplies","🏥","مستلزمات طبية"],["wholesale_health_supplements","🥗","مكملات"]],
-    fashion:[["wholesale_fashion_fabrics","🧵","أقمشة"],["wholesale_fashion_clothing","👗","ملابس جاهزة"],["wholesale_fashion_shoes","👟","أحذية وجلود"],["wholesale_fashion_carpet","🟫","سجاد"],["wholesale_fashion_sewing","✂️","مستلزمات خياطة"]],
-    chemicals:[["wholesale_chemicals_cleaning","🧴","منظفات"],["wholesale_chemicals_plastic","📦","بلاستيك وورق"],["wholesale_chemicals_fertilizers","🌱","أسمدة"],["wholesale_chemicals_industrial","⚗️","كيماويات صناعية"]],
-    furniture:[["wholesale_furniture_office","🖥️","أثاث مكتبي"],["wholesale_furniture_home","🛋️","أثاث منزلي"],["wholesale_furniture_perfume","🕌","عطور"],["wholesale_furniture_watches","⌚","ساعات"],["wholesale_furniture_kitchenware","🍳","أواني"]],
-    stationery:[["wholesale_stationery_school","📚","أدوات مدرسية"],["wholesale_stationery_paper","🖨️","ورق وطباعة"],["wholesale_stationery_gifts","🎁","هدايا وألعاب"]],
-  },
-  services:{
-    education:[["svc_edu_university","🎓","جامعة أهلية"],["svc_edu_college","🏛️","كلية تخصصية"],["svc_edu_aviation","✈️","أكاديمية طيران"],["svc_edu_sports","⚽","أكاديمية رياضية"],["svc_edu_tech","💻","أكاديمية تقنية"],["svc_edu_intl_school","🌍","مدرسة عالمية"],["svc_edu_local_school","📖","مدرسة أهلية"],["svc_edu_language","🗣️","معهد لغات"],["svc_edu_computer","🖥️","معهد حاسب"],["svc_edu_vocational","🔧","تدريب مهني"],["svc_edu_driving","🚗","تعليم قيادة"],["svc_edu_tutoring","📝","تقوية دراسية"],["svc_edu_nursery","🧸","حضانة ورياض"]],
-    professional:[["svc_pro_legal","⚖️","محاماة"],["svc_pro_accounting","📊","محاسبة"],["svc_pro_tax","🧾","استشارات ضريبية"],["svc_pro_engineering","📐","هندسة وتصميم"],["svc_pro_realestate_val","🏠","تقييم عقاري"],["svc_pro_translation","📜","ترجمة"],["svc_pro_recruitment","👥","استقدام"],["svc_pro_management","💼","استشارات إدارية"],["svc_pro_feasibility","📈","دراسات جدوى"],["svc_pro_insurance","🛡️","وساطة تأمين"]],
-    personal:[["svc_per_barber","💈","حلاقة رجالي"],["svc_per_spa","💅","سبا نسائي"],["svc_per_laundry_auto","👕","مغسلة"],["svc_per_laundry_carpet","🛋️","غسيل سجاد"],["svc_per_tailor_m","👔","خياطة رجالية"],["svc_per_tailor_f","👗","خياطة نسائية"],["svc_per_studio","📸","استديو تصوير"],["svc_per_gym_m","🏋️","نادي رجالي"],["svc_per_gym_f","🤸","نادي نسائي"],["svc_per_cleaning","🧹","تنظيف منازل"],["svc_per_pestcontrol","🪲","مكافحة حشرات"]],
-    maintenance:[["svc_mnt_auto","🔧","صيانة سيارات"],["svc_mnt_detailing","🚘","عناية سيارات"],["svc_mnt_mobile","📱","صيانة جوالات"],["svc_mnt_computers","💻","صيانة حواسب"],["svc_mnt_appliances","🔌","أجهزة منزلية"],["svc_mnt_elevators","🛗","مصاعد"],["svc_mnt_hvac","❄️","تكييف"],["svc_mnt_home","🏠","سباكة وكهرباء"],["svc_mnt_garden","🌿","حدائق"],["svc_mnt_vehicle_insp","🔍","فحص مركبات"]],
-    media:[["svc_med_digital_mkt","📣","تسويق رقمي"],["svc_med_advertising","🎯","دعاية وإعلان"],["svc_med_printing","🖨️","مطبعة"],["svc_med_events","🎪","فعاليات"],["svc_med_production","🎬","إنتاج فني"],["svc_med_calligraphy","✍️","خطاط"],["svc_med_weddings","💒","أفراح ومناسبات"]],
-    travel:[["svc_trv_agency","✈️","سفر وسياحة"],["svc_trv_hajj","🕌","حج وعمرة"],["svc_trv_car_rental","🚗","تأجير سيارات"],["svc_trv_luxury_rental","🏎️","سيارات فارهة"],["svc_trv_hotels","🏨","فنادق"],["svc_trv_realestate_mkt","🏢","تسويق عقاري"],["svc_trv_property_mgmt","🗝️","إدارة أملاك"],["svc_trv_owners_assoc","🏘️","اتحاد ملاك"],["svc_trv_security","🛡️","أمن وحراسة"]],
-  },
-  contracting:{
-    works:[["con_general","🏗️","مقاولات عامة"],["con_plumbing","🔧","سباكة"],["con_electric","⚡","كهرباء"],["con_painting","🎨","دهانات وديكور"],["con_elevator","🛗","مصاعد"],["con_hvac","❄️","تكييف HVAC"],["con_fire","🧯","حريق وسلامة"],["con_cctv","📷","كاميرات وأمن"],["con_landscape","🌿","حدائق وري"],["con_insulation","🏠","عزل أسطح"],["con_earthwork","🚜","حفر وردم"],["con_equipment","🏗️","معدات ثقيلة"],["con_marble","✨","رخام وسيراميك"],["con_carpentry","🪵","نجارة"],["con_ironwork","⚙️","حدادة"]],
-  },
-  manufacturing:{
-    factory:[["mfg_plastic","🏭","مصنع بلاستيك"],["mfg_carton","📦","كرتون وتغليف"],["mfg_beverages","🥤","مياه وعصائر"],["mfg_dates","🌴","تعبئة تمور"],["mfg_sweets","🍬","حلويات صناعية"],["mfg_carpentry","🪚","نجارة أوتوماتيك"],["mfg_metalwork","🔩","حدادة وخراطة"],["mfg_aluminum","🪟","ألمنيوم"],["mfg_textile","🧵","خياطة وملابس"],["mfg_mill","⚙️","مطحنة"],["mfg_cleaning","🧴","مواد تنظيف"],["mfg_furniture","🪑","أثاث معدني"]],
-  },
-  hospitality:{
-    venues:[["hos_fastfood","🍔","وجبات سريعة"],["hos_traditional","🍲","بخاري وشعبي"],["hos_cloud","☁️","مطبخ سحابي"],["hos_cafe","☕","كافيه"],["hos_hotel","🏨","فندق"],["hos_apartments","🛋️","شقق مفروشة"],["hos_events","🎉","قاعة أفراح"],["hos_resort","🌴","منتجع"],["hos_buffet","🍽️","بوفيه"],["hos_truck","🚐","عربة طعام"]],
-  },
-  healthcare:{
-    clinics:[["hlt_clinic","🏥","مستوصف/مجمع طبي"],["hlt_lab","🔬","مختبر تحاليل"],["hlt_physio","🩺","علاج طبيعي"],["hlt_eye","👁️","عيون وبصريات"],["hlt_dental","🦷","أسنان"],["hlt_radiology","🔭","أشعة"],["hlt_cupping","💉","حجامة"],["hlt_pharmacy","💊","صيدلية طبية"]],
-  },
-  logistics:{
-    transport:[["lgx_fleet","🚛","شحن بري"],["lgx_warehouse","🏭","مستودع"],["lgx_courier","📦","توصيل طرود"],["lgx_customs","📋","تخليص جمركي"],["lgx_trucks","🚚","تأجير شاحنات"],["lgx_cold","❄️","نقل مبرد"],["lgx_freight","✈️","شحن دولي"]],
-  },
-};
+// ── بيانات الأنشطة من الخادم ─────────────────────────────────────────
+const RAW_INDUSTRY = {{ industry_types | tojson }};
 
-const TABS_MAP = {
-  retail:{fnb:"غذاء",health:"صحة",fashion:"موضة",electronics:"إلكترونيات",bakery:"حلويات",home:"منزل",optics:"بصريات",stationery:"قرطاسية",cosmetics:"تجميل",flowers:"زهور",hardware:"بناء",pets:"حيوانات"},
-  wholesale:{fnb:"غذاء",construction:"بناء",electronics:"إلكترونيات",auto:"سيارات",health:"صحة",fashion:"موضة",chemicals:"كيماويات",furniture:"أثاث",stationery:"قرطاسية"},
-  services:{education:"تعليم",professional:"مهني",personal:"شخصي",maintenance:"صيانة",media:"إعلام",travel:"سياحة"},
-  contracting:{works:"مقاولات"},
-  manufacturing:{factory:"صناعة"},
-  hospitality:{venues:"ضيافة"},
-  healthcare:{clinics:"صحة"},
-  logistics:{transport:"لوجستيات"},
-};
-
-const SECTOR_TITLES = {
-  wholesale:"اختر نشاط الجملة",retail:"اختر نشاط التجزئة",
-  services:"اختر نشاطك الخدمي",contracting:"اختر نشاط المقاولات",
-  manufacturing:"اختر النشاط الصناعي",hospitality:"اختر نشاط الضيافة",
-  healthcare:"اختر النشاط الصحي",logistics:"اختر نشاط اللوجستيات",
-};
-
-const LOG_MSGS = [
-  "[SYS] تحليل خصائص النشاط التجاري...",
-  "[DB] بناء هيكل دليل الحسابات...",
-  "[TAX] تكوين قواعد الضريبة والزكاة...",
-  "[INV] إنشاء نماذج الفواتير...",
-  "[CAT] تصنيف فئات المنتجات...",
-  "[WH] تهيئة المستودع الرئيسي...",
-  "[SEC] تطبيق بروتوكولات الأمان...",
-  "[RPT] بناء لوحة التحكم...",
-  "[POS] تفعيل نقطة البيع...",
-  "[USR] ضبط صلاحيات المستخدمين...",
-  "[SYNC] مزامنة الإعدادات...",
-  "[HASH] التحقق من سلامة البيانات...",
-  "[OK] اكتملت التهيئة بنجاح.",
+// ── إيموجي لكل بادئة ─────────────────────────────────────────────────
+const EMOJI_PREFIX = [
+  ['retail_fnb','🍔'],['retail_fashion','👗'],['retail_electronics','📱'],
+  ['retail_construction','🧱'],['retail_health','💊'],['retail_auto','🚗'],
+  ['retail_home','🏠'],['retail_specialized','⭐'],['retail','🏪'],
+  ['wholesale_fnb','🛒'],['wholesale_fashion','👔'],['wholesale_electronics','💻'],
+  ['wholesale_construction','🏗️'],['wholesale_health','🩺'],['wholesale_auto','🔩'],
+  ['wholesale_home','🛋️'],['wholesale_specialized','📦'],['wholesale','📦'],
+  ['food_','🍽️'],['restaurant','🍲'],['cafe','☕'],['coffeeshop','☕'],
+  ['hospitality_hotel','🏨'],['hospitality_furnished','🛋️'],['hospitality_resort','🌴'],
+  ['hospitality_chalet','🏕️'],['hospitality_camping','⛺'],['hospitality_','🌟'],
+  ['medical_dental','🦷'],['medical_optical','👁️'],['medical_physio','🦴'],
+  ['medical_lab','🔬'],['medical_radio','📡'],['medical_pharma','💊'],
+  ['medical_derm','🌸'],['medical_ortho','🦴'],['medical_pedia','👶'],
+  ['medical_gyna','👩'],['medical_','🏥'],['medical','🏥'],
+  ['services_cleaning','🧹'],['services_laundry','👕'],['services_pest','🪲'],
+  ['services_beauty_salon_f','💄'],['services_beauty_salon_m','💈'],
+  ['services_spa','💅'],['services_fitness','🏋️'],['services_gym','🤸'],
+  ['services_printing','🖨️'],['services_photography','📸'],
+  ['services_advertising','📣'],['services_it_','💻'],['services_software','💾'],
+  ['services_account','📊'],['services_legal','⚖️'],['services_consult','💼'],
+  ['services_train','🎓'],['services_translat','📜'],
+  ['services_travel','✈️'],['services_hajj','🕌'],['services_event','🎉'],
+  ['services_security','🛡️'],['services_maint','🔧'],['services_landscap','🌿'],
+  ['services_recruit','👥'],['services_architect','📐'],['services_interior','🎨'],
+  ['services_engineering','📐'],['services_e_comm','🛍️'],['services_finance','💰'],
+  ['services_insurance','🛡️'],['services_exchange','💱'],['services_media','📺'],
+  ['services_driving','🚗'],['services_manpower','👷'],['services_charity','❤️'],
+  ['services_government','🏛️'],['services_','🏢'],['services','🏢'],
+  ['education_school','📖'],['education_nursery','🧸'],['education_training','🔧'],
+  ['education_tutor','📝'],['education_language','🗣️'],['education_quran','📿'],['education_','🎓'],
+  ['real_estate_agency','🤝'],['real_estate_dev','🏢'],['real_estate_mgmt','🗝️'],['real_estate_','🏠'],
+  ['auto_service_carwash','🚿'],['auto_service_repair','🔧'],['auto_service_paint','🎨'],['auto_service_','🚘'],
+  ['transport_freight','🚛'],['transport_courier','📦'],['transport_moving','🚐'],
+  ['transport_passenger','🚌'],['transport_taxi','🚕'],['transport_logistics','📋'],
+  ['transport_customs','📋'],['transport_shipping','⛴️'],['transport_rental','🚚'],['transport_','🚛'],
+  ['industrial_print','🖨️'],['industrial_pack','📦'],['industrial_recycl','♻️'],
+  ['industrial_food','🍴'],['industrial_chem','⚗️'],['industrial_metal','🔩'],
+  ['industrial_wood','🪵'],['industrial_const','🏗️'],['industrial_','🏭'],
+  ['agriculture_dates','🌴'],['agriculture_poultry','🐓'],['agriculture_fish','🐟'],
+  ['agriculture_green','🥬'],['agriculture_honey','🍯'],['agriculture_supply','🌱'],['agriculture_','🌾'],
+  ['construction','🏗️'],['car_rental','🚗'],
 ];
+function getEmoji(code){
+  for(const [p,e] of EMOJI_PREFIX){if(code===p||code.startsWith(p))return e;}
+  return '🏢';
+}
 
-/* ═══════ حالة التطبيق ═══════ */
-let selSector = null, selAct = null, selActName = '';
+// ── تحديد القطاع من الكود ───────────────────────────────────────────
+function getSector(code){
+  if(code==='retail'||code.startsWith('retail_'))return'retail';
+  if(code==='wholesale'||code.startsWith('wholesale_'))return'wholesale';
+  if(code.startsWith('food_')||code==='restaurant'||code==='cafe'||code==='coffeeshop')return'hospitality';
+  if(code.startsWith('hospitality_'))return'hospitality';
+  if(code==='medical'||code==='medical_complex'||code.startsWith('medical_'))return'healthcare';
+  if(code==='construction')return'contracting';
+  if(code.startsWith('industrial_'))return'manufacturing';
+  if(code.startsWith('agriculture_'))return'manufacturing';
+  if(code.startsWith('transport_'))return'logistics';
+  if(code==='car_rental'||code.startsWith('auto_service_'))return'services';
+  if(code==='services'||code.startsWith('services_')||code.startsWith('education_')||code.startsWith('real_estate_'))return'services';
+  return null;// legacy غير مصنف — تجاهل
+}
 
-/* ═══════ جزيئات الخلفية ═══════ */
-(function(){
-  const c = document.getElementById('obParticles');
-  for(let i=0;i<60;i++){
-    const p = document.createElement('div');
-    p.className='ob-particle';
-    const sz = Math.random()*2.5+1;
-    const blue = Math.random()>.5;
-    p.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;background:${blue?'rgba(59,130,246,.5)':'rgba(255,255,255,.4)'};animation-delay:${Math.random()*4}s;animation-duration:${3+Math.random()*4}s;`;
-    c.appendChild(p);
+// ── تحديد اسم التاب من الكود ────────────────────────────────────────
+const TAB_LABEL = {
+  // retail
+  fnb:'غذاء وتموين',fashion:'موضة وملبوسات',electronics:'إلكترونيات',
+  construction:'مواد بناء',health:'صحة وعناية',auto:'سيارات',
+  home:'منزل ومكتب',specialized:'متخصصة',
+  // wholesale (نفس المفاتيح)
+  // hospitality
+  food:'طعام ومشروبات',hospitality:'إقامة وسياحة',
+  // healthcare
+  medical:'خدمات طبية',
+  // services
+  services:'خدمات عامة',education:'تعليم',real_estate:'عقارات',
+  auto_service:'خدمات سيارات',car_rental:'تأجير سيارات',
+  // manufacturing
+  industrial:'صناعة',agriculture:'زراعة',
+  // logistics
+  transport:'نقل وشحن',
+  // contracting
+  contracting:'مقاولات',
+  // fallback
+  other:'أخرى',
+};
+function getTabKey(code,sector){
+  const p=code.split('_');
+  if(sector==='retail'||sector==='wholesale')return p[1]||'other';
+  if(sector==='hospitality'){
+    if(p[0]==='food'||code==='restaurant'||code==='cafe'||code==='coffeeshop')return'food';
+    return'hospitality';
   }
-})();
+  if(sector==='healthcare')return'medical';
+  if(sector==='contracting')return'contracting';
+  if(sector==='manufacturing')return p[0]==='agriculture'?'agriculture':'industrial';
+  if(sector==='logistics')return'transport';
+  if(sector==='services'){
+    if(p[0]==='education')return'education';
+    if(p[0]==='real')return'real_estate';
+    if(p[0]==='auto')return'auto_service';
+    if(code==='car_rental')return'car_rental';
+    return'services';
+  }
+  return'other';
+}
 
-/* ═══════ تبديل المشاهد ═══════ */
+// ── بناء هيكل ACTS و TABS_MAP من بيانات الخادم ──────────────────────
+const ACTS={};
+const TABS_MAP={};
+for(const [code,label] of RAW_INDUSTRY){
+  const sector=getSector(code);
+  if(!sector)continue;
+  const tab=getTabKey(code,sector);
+  if(!ACTS[sector])ACTS[sector]={};
+  if(!ACTS[sector][tab])ACTS[sector][tab]=[];
+  ACTS[sector][tab].push([code,getEmoji(code),label]);
+  if(!TABS_MAP[sector])TABS_MAP[sector]={};
+  TABS_MAP[sector][tab]=TAB_LABEL[tab]||tab;
+}
+
+const SECTOR_TITLES={wholesale:"اختر نشاط الجملة",retail:"اختر نشاط التجزئة",services:"اختر نشاطك الخدمي",contracting:"اختر نشاط المقاولات",manufacturing:"اختر النشاط الصناعي",hospitality:"اختر نشاط الضيافة",healthcare:"اختر النشاط الصحي",logistics:"اختر نشاط اللوجستيات"};
+const LOG_MSGS=["[SYS] تحليل خصائص النشاط التجاري...","[DB] بناء هيكل دليل الحسابات...","[TAX] تكوين قواعد الضريبة والزكاة...","[INV] إنشاء نماذج الفواتير...","[CAT] تصنيف فئات المنتجات...","[WH] تهيئة المستودع الرئيسي...","[SEC] تطبيق بروتوكولات الأمان...","[RPT] بناء لوحة التحكم...","[POS] تفعيل نقطة البيع...","[USR] ضبط صلاحيات المستخدمين...","[SYNC] مزامنة الإعدادات...","[HASH] التحقق من سلامة البيانات...","[OK] اكتملت التهيئة بنجاح."];
+let selSector=null,selAct=null;
+let activityAnimDone=false;
+
+function startActivityCounter(){
+  if(activityAnimDone)return;
+  activityAnimDone=true;
+  const total=RAW_INDUSTRY.length;
+  const numEl=document.getElementById('activityCounter');
+  const totalText=document.getElementById('activityTotalText');
+  const icons=document.querySelectorAll('#activityIcons span');
+  if(totalText)totalText.textContent=String(total);
+  if(!numEl)return;
+  const dur=1200;
+  const start=performance.now();
+  function tick(ts){
+    const p=Math.min((ts-start)/dur,1);
+    numEl.textContent=String(Math.floor(p*total));
+    if(p<1){requestAnimationFrame(tick);}else{numEl.textContent=String(total);} 
+  }
+  requestAnimationFrame(tick);
+  icons.forEach((ic,i)=>setTimeout(()=>ic.classList.add('show'),220+(i*120)));
+}
+
 function goScene(id){
-  document.querySelectorAll('.ob-scene').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.ob-card').forEach(c=>c.classList.remove('active'));
   document.getElementById('sc'+id).classList.add('active');
-  updateDots(id);
-}
-function updateDots(id){
-  const map={A:0,B:1,C:2,D:3,E:4};
-  const cur=map[id]??0;
-  for(let i=0;i<5;i++){
-    const d=document.getElementById('dot'+i);
-    d.classList.remove('cur','done');
-    if(i<cur) d.classList.add('done');
-    else if(i===cur) d.classList.add('cur');
-  }
+  const map={A:0,B:1,C:2,D:3,E:4},cur=map[id]??0;
+  for(let i=0;i<5;i++){const d=document.getElementById('dot'+i);d.classList.remove('cur','done');if(i<cur)d.classList.add('done');else if(i===cur)d.classList.add('cur');}
+  if(id==='B')startActivityCounter();
 }
 
-/* ═══════ SCENE A — شريط الاستعراض ═══════ */
+/* SCENE A */
 (function(){
-  const bar=document.getElementById('scABar');
-  const DUR=5500;
-  let start=null;
-  function ani(ts){
-    if(!start) start=ts;
-    const pct=Math.min((ts-start)/DUR*100,100);
-    bar.style.width=pct+'%';
-    if(pct<100) requestAnimationFrame(ani);
-    else goScene('B');
-  }
-  requestAnimationFrame(ani);
+  // إذا كانت البداية من شاشة اختيار النشاط، لا تشغّل السلايدر.
+  const sceneA=document.getElementById('scA');
+  if(!sceneA || !sceneA.classList.contains('active')) return;
+  const TOTAL=6,DELAY=2600;let cur=0,barStart=null;
+  const dots=document.querySelectorAll('#slDots .sl-dot'),bar=document.getElementById('slBar');
+  function showSlide(i){document.querySelectorAll('.ob-slide').forEach((s,idx)=>s.classList.toggle('active',idx===i));dots.forEach((d,idx)=>d.classList.toggle('active',idx===i));barStart=performance.now();requestAnimationFrame(frameBar);}
+  function frameBar(ts){if(!barStart)return;const p=Math.min((ts-barStart)/DELAY*100,100);bar.style.width=p+'%';if(p<100)requestAnimationFrame(frameBar);}
+  dots.forEach((d,idx)=>d.addEventListener('click',()=>{cur=idx;showSlide(cur);}));
+  const t=setInterval(()=>{cur++;if(cur>=TOTAL){clearInterval(t);barStart=null;bar.style.width='100%';goScene('B');return;}showSlide(cur);},DELAY);
+  showSlide(0);
 })();
+function skipSlides(){goScene('B');}
 
-/* ═══════ SCENE B — اختيار القطاع ═══════ */
-function pickSector(s){
-  selSector=s; selAct=null; selActName='';
-  document.querySelectorAll('.sec-card').forEach(c=>c.classList.toggle('selected',c.id==='sec-'+s));
-  document.getElementById('btnBNext').disabled=false;
-}
+/* SCENE B */
+function pickSector(s){selSector=s;selAct=null;document.querySelectorAll('.sec-card').forEach(c=>c.classList.toggle('selected',c.id==='sec-'+s));document.getElementById('btnBNext').disabled=false;}
 function goToC(){
-  if(!selSector) return;
-  buildActScene(selSector);
+  if(!selSector)return;
+  const tabs=TABS_MAP[selSector]||{},tabEl=document.getElementById('obTabs');
+  document.getElementById('scCTitle').textContent=SECTOR_TITLES[selSector]||'اختر نشاطك';
+  tabEl.innerHTML='';
+  Object.keys(tabs).forEach((k,i)=>{const b=document.createElement('button');b.type='button';b.className='ob-tab'+(i===0?' active':'');b.textContent=tabs[k];b.dataset.key=k;b.onclick=()=>showTab(selSector,k);tabEl.appendChild(b);});
+  // زر عرض الكل
+  const allBtn=document.createElement('button');allBtn.type='button';allBtn.className='ob-tab ob-tab-all';allBtn.textContent='عرض الكل 🔍';allBtn.dataset.key='__all__';allBtn.onclick=()=>showAllActs(selSector);tabEl.appendChild(allBtn);
+  const first=Object.keys(tabs)[0];if(first)showTab(selSector,first);
   goScene('C');
 }
 
-/* ═══════ SCENE C — بناء التبويبات والأنشطة ═══════ */
-function buildActScene(sector){
-  document.getElementById('scCTitle').textContent=SECTOR_TITLES[sector]||'اختر نشاطك';
-  const tabs=TABS_MAP[sector]||{};
-  const tabEl=document.getElementById('obTabs');
-  tabEl.innerHTML='';
-  Object.keys(tabs).forEach((k,i)=>{
-    const b=document.createElement('button');
-    b.type='button';
-    b.className='ob-tab'+(i===0?' active':'');
-    b.textContent=tabs[k];
-    b.dataset.key=k;
-    b.onclick=()=>showTab(sector,k);
-    tabEl.appendChild(b);
-  });
-  const firstKey=Object.keys(tabs)[0];
-  if(firstKey) showTab(sector,firstKey);
-}
+/* SCENE C */
 function showTab(sector,key){
   document.querySelectorAll('.ob-tab').forEach(t=>t.classList.toggle('active',t.dataset.key===key));
-  const grid=document.getElementById('obActs');
-  grid.innerHTML='';
+  const grid=document.getElementById('obActs');grid.innerHTML='';
   (ACTS[sector]?.[key]||[]).forEach(([code,icon,name])=>{
-    const d=document.createElement('div');
-    d.className='ob-act'+(code===selAct?' selected':'');
-    d.innerHTML=`<div class="ob-act-icon">${icon}</div><div class="ob-act-name">${name}</div>`;
-    d.onclick=()=>{
-      selAct=code; selActName=name;
-      document.querySelectorAll('.ob-act').forEach(c=>c.classList.remove('selected'));
-      d.classList.add('selected');
-      const badge=document.getElementById('obBadge');
-      badge.classList.add('show');
-      document.getElementById('obBadgeLabel').textContent='تم اختيار: '+name;
-      checkLaunch();
-    };
+    const d=document.createElement('div');d.className='ob-act'+(code===selAct?' selected':'');
+    const iconEl=document.createElement('div');
+    iconEl.className='ob-act-icon';
+    iconEl.textContent=icon;
+    const nameEl=document.createElement('div');
+    nameEl.className='ob-act-name';
+    nameEl.textContent=name;
+    d.append(iconEl,nameEl);
+    d.onclick=()=>{selAct=code;document.querySelectorAll('.ob-act').forEach(c=>c.classList.remove('selected'));d.classList.add('selected');const b=document.getElementById('obBadge');b.classList.add('show');document.getElementById('obBadgeLabel').textContent='✓ '+name;checkLaunch();};
     grid.appendChild(d);
   });
 }
-function checkLaunch(){
-  const ok=!!selAct && document.getElementById('bizName').value.trim().length>0;
-  document.getElementById('btnLaunch').disabled=!ok;
+function clearActSelection(){selAct=null;document.querySelectorAll('.ob-act').forEach(c=>c.classList.remove('selected'));document.getElementById('obBadge').classList.remove('show');checkLaunch();}
+function showAllActs(sector){
+  document.querySelectorAll('.ob-tab').forEach(t=>t.classList.toggle('active',t.dataset.key==='__all__'));
+  const grid=document.getElementById('obActs');grid.innerHTML='';
+  const tabs=TABS_MAP[sector]||{};
+  Object.keys(tabs).forEach(key=>{
+    (ACTS[sector]?.[key]||[]).forEach(([code,icon,name])=>{
+      const d=document.createElement('div');d.className='ob-act'+(code===selAct?' selected':'');
+      const iconEl=document.createElement('div');iconEl.className='ob-act-icon';iconEl.textContent=icon;
+      const nameEl=document.createElement('div');nameEl.className='ob-act-name';nameEl.textContent=name;
+      d.append(iconEl,nameEl);
+      d.onclick=()=>{selAct=code;document.querySelectorAll('.ob-act').forEach(c=>c.classList.remove('selected'));d.classList.add('selected');const b=document.getElementById('obBadge');b.classList.add('show');document.getElementById('obBadgeLabel').textContent='✓ '+name;checkLaunch();};
+      grid.appendChild(d);
+    });
+  });
 }
+function checkLaunch(){document.getElementById('btnLaunch').disabled=!(selAct&&document.getElementById('bizName').value.trim());}
 document.getElementById('bizName').addEventListener('input',checkLaunch);
 
-/* ═══════ SCENE D — التهيئة الذكية ═══════ */
+/* SCENE D */
 function launchSetup(){
-  if(!selAct||!document.getElementById('bizName').value.trim()) return;
+  if(!selAct||!document.getElementById('bizName').value.trim())return;
   document.getElementById('h_industry').value=selAct;
   document.getElementById('h_name').value=document.getElementById('bizName').value.trim();
   document.getElementById('h_tax').value=document.getElementById('taxNum').value.trim();
   document.getElementById('h_city').value=document.getElementById('cityIn').value.trim();
   goScene('D');
-  runEngine();
-}
-function runEngine(){
-  const countEl=document.getElementById('scDCount');
-  const logEl=document.getElementById('scDLog');
-  const barEl=document.getElementById('scDBar');
-  let sec=20, logI=0;
-  const TOTAL=20;
-
-  [0,1,2,3,4].forEach(i=>{
-    setTimeout(()=>{
-      const el=document.getElementById('df'+i);
-      if(el){el.classList.add('show');setTimeout(()=>el.classList.add('lit'),400);}
-    },i*2000+500);
-  });
-
-  const timer=setInterval(()=>{
-    sec--;
-    countEl.textContent=sec;
-    barEl.style.width=((TOTAL-sec)/TOTAL*100)+'%';
-    if(logI<LOG_MSGS.length){
-      const line=document.createElement('div');
-      line.className='sc-d-log-line';
-      line.textContent=LOG_MSGS[logI++];
-      logEl.appendChild(line);
-      logEl.scrollTop=logEl.scrollHeight;
-    }
-    if(sec<=0){
-      clearInterval(timer);
-      goScene('E');
-      startSceneE();
-    }
-  },1000);
+  let sec=20,logI=0;
+  const cEl=document.getElementById('scDCount'),lEl=document.getElementById('scDLog'),bEl=document.getElementById('scDBar');
+  [0,1,2,3,4].forEach(i=>setTimeout(()=>{const el=document.getElementById('df'+i);if(el){el.classList.add('show');setTimeout(()=>el.classList.add('lit'),380);}},i*2000+600));
+  const t=setInterval(()=>{sec--;cEl.textContent=sec;bEl.style.width=((20-sec)/20*100)+'%';if(logI<LOG_MSGS.length){const l=document.createElement('div');l.className='sc-d-log-line';l.textContent=LOG_MSGS[logI++];lEl.appendChild(l);lEl.scrollTop=lEl.scrollHeight;}if(sec<=0){clearInterval(t);goScene('E');startE();}},1000);
 }
 
-function startSceneE(){
-  /* ظهور رسائل التحقق واحدة تلو الأخرى */
-  [0,1,2,3].forEach(i=>{
-    setTimeout(()=>{
-      const el=document.getElementById('em'+i);
-      if(el) el.classList.add('show');
-    }, i*600 + 400);
-  });
-  /* ظهور taglines */
-  document.querySelectorAll('.sc-e-tagline').forEach((el,i)=>{
-    setTimeout(()=>el.classList.add('show'), i*400 + 300);
-  });
-  /* ظهور الزر بعد الرسائل */
-  setTimeout(()=>{
-    const btn=document.getElementById('btnEnterDash');
-    if(btn) btn.style.opacity='1';
-  }, 3200);
-  /* إرسال النموذج تلقائياً بعد 5 ثواني من ظهور المشهد */
-  setTimeout(()=>{
-    document.getElementById('obForm').submit();
-  }, 5000);
+/* SCENE E */
+function startE(){
+  [0,1,2,3].forEach(i=>setTimeout(()=>{const el=document.getElementById('em'+i);if(el)el.classList.add('show');},i*550+400));
+  setTimeout(()=>{const btn=document.getElementById('btnEnterDash');if(btn)btn.style.opacity='1';},2800);
+  setTimeout(()=>document.getElementById('obForm').submit(),5000);
 }
+
+// Scene A هي الافتراضية — السلايدر يتولى الانتقال لـ B تلقائياً
+// (لا حاجة لتشغيل العداد هنا، يُشغَّل عند الانتقال لـ B عبر goScene)
 </script>
 {% endblock %}
+

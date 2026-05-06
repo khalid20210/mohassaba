@@ -41,7 +41,7 @@ class DatabaseConnection:
             duration_ms = (time.time() - start) * 1000
             
             # تسجيل الأداء
-            result_count = len(cursor.fetchall()) if hasattr(cursor, 'fetchall') else 0
+            result_count = cursor.rowcount if getattr(cursor, 'rowcount', -1) not in (-1, None) else 0
             perf_tracker.track_db_query(query, duration_ms, params, result_count)
             
             return cursor

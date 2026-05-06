@@ -11,6 +11,21 @@ from flask import Blueprint, jsonify, redirect, render_template, request, sessio
 
 from modules.extensions import check_password, get_db, hash_password
 from modules.middleware import onboarding_required, require_perm
+from modules.security_hardening import (
+    detect_debt_kiting_risk,
+    detect_mock_location,
+    enforce_credit_limit,
+    enforce_invoice_item_integrity,
+    enforce_price_floor,
+    enforce_secure_local_timestamp,
+    ensure_security_tables,
+    mark_custody_close,
+    mark_custody_open,
+    mark_first_payment_verified,
+    register_security_incident,
+    require_open_custody_for_sales,
+    resolve_commission_status_for_invoice,
+)
 from modules.validators import (
     SCHEMA_AGENT_CREATE,
     SCHEMA_BLIND_CLOSE,
@@ -25,6 +40,25 @@ bp = Blueprint("workforce", __name__)
 _agent_login_attempts: dict = {}
 _AGENT_MAX_ATTEMPTS = 5
 _AGENT_WINDOW_SEC = 300  # 5 minutes
+
+
+def _build_safe_update_parts(payload: dict, allowed: dict):
+    """يبني set clause آمنة من whitelist مع تحويل أنواع صارم."""
+    fields, vals = [], []
+    for col, caster in allowed.items():
+        if col not in payload:
+            continue
+        raw = payload[col]
+        if raw is None:
+            fields.append(f"{col}=?")
+            vals.append(None)
+            continue
+        try:
+            fields.append(f"{col}=?")
+            vals.append(caster(raw))
+        except (TypeError, ValueError):
+            raise ValueError(f"قيمة غير صالحة للحقل: {col}")
+    return fields, vals
 
 
 # ─────────────────────────────────────────────────────────────
@@ -652,12 +686,19 @@ def api_v1_agent_update(agent_id: int):
     if not agent:
         return jsonify({"success": False, "error": "المندوب غير موجود"}), 404
 
-    fields = []
-    vals = []
-    for col in ["full_name", "phone", "whatsapp_number", "commission_rate", "region", "notes"]:
-        if col in payload:
-            fields.append(f"{col}=?")
-            vals.append(payload[col])
+    allowed = {
+        "full_name": str,
+        "phone": str,
+        "whatsapp_number": str,
+        "commission_rate": float,
+        "region": str,
+        "notes": str,
+    }
+    try:
+        fields, vals = _build_safe_update_parts(payload, allowed)
+    except ValueError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
+
     if not fields:
         return jsonify({"success": False, "error": "لا توجد بيانات للتحديث"}), 400
     vals.append(agent_id)
@@ -698,6 +739,19 @@ def api_v1_agent_record_location(agent_id: int):
         return jsonify({"success": False, "error": "latitude و longitude مطلوبان"}), 400
     db = get_db()
     biz_id = session["business_id"]
+    ensure_security_tables(db)
+    suspicious_gps, gps_msg = detect_mock_location(payload)
+    if suspicious_gps:
+        register_security_incident(
+            db,
+            biz_id,
+            incident_type="gps_spoof_location",
+            severity="high",
+            agent_id=agent_id,
+            payload={"reason": gps_msg, "lat": lat, "lng": lng},
+        )
+        db.commit()
+        return jsonify({"success": False, "error": "GPS غير موثوق"}), 409
     db.execute(
         """INSERT INTO agent_locations (business_id, agent_id, latitude, longitude, accuracy, battery)
            VALUES (?,?,?,?,?,?)""",
@@ -756,6 +810,19 @@ def api_v1_agent_checkin(agent_id: int):
     payload = request.get_json(force=True) or {}
     db = get_db()
     biz_id = session["business_id"]
+    ensure_security_tables(db)
+    suspicious_gps, gps_msg = detect_mock_location(payload)
+    if suspicious_gps:
+        register_security_incident(
+            db,
+            biz_id,
+            incident_type="gps_spoof_checkin",
+            severity="high",
+            agent_id=agent_id,
+            payload={"reason": gps_msg},
+        )
+        db.commit()
+        return jsonify({"success": False, "error": "تم رفض check-in: GPS غير موثوق"}), 409
     today = datetime.now().strftime("%Y-%m-%d")
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -777,6 +844,7 @@ def api_v1_agent_checkin(agent_id: int):
                VALUES (?,?,?,?,?,?)""",
             (biz_id, agent_id, today, now_str, payload.get("latitude"), payload.get("longitude")),
         )
+    mark_custody_open(db, biz_id, agent_id, today)
     db.commit()
     return jsonify({"success": True, "checkin_at": now_str, "message": "تم تسجيل الحضور"})
 
@@ -787,6 +855,19 @@ def api_v1_agent_checkout(agent_id: int):
     payload = request.get_json(force=True) or {}
     db = get_db()
     biz_id = session["business_id"]
+    ensure_security_tables(db)
+    suspicious_gps, gps_msg = detect_mock_location(payload)
+    if suspicious_gps:
+        register_security_incident(
+            db,
+            biz_id,
+            incident_type="gps_spoof_checkout",
+            severity="high",
+            agent_id=agent_id,
+            payload={"reason": gps_msg},
+        )
+        db.commit()
+        return jsonify({"success": False, "error": "تم رفض checkout: GPS غير موثوق"}), 409
     today = datetime.now().strftime("%Y-%m-%d")
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -806,6 +887,14 @@ def api_v1_agent_checkout(agent_id: int):
            WHERE id=?""",
         (now_str, payload.get("latitude"), payload.get("longitude"),
          total_hours, payload.get("notes"), rec["id"]),
+    )
+    mark_custody_close(
+        db,
+        biz_id,
+        agent_id,
+        today,
+        backup_hash=(payload.get("offline_backup_hash") or "").strip() or None,
+        notes=payload.get("notes"),
     )
     db.commit()
     return jsonify({
@@ -881,11 +970,21 @@ def api_v1_agent_client_profile_update(agent_id: int, profile_id: int):
     payload = request.get_json(force=True) or {}
     db = get_db()
     biz_id = session["business_id"]
-    fields, vals = [], []
-    for col in ["company_name", "manager_name", "phone", "region", "address", "notes", "lat", "lng"]:
-        if col in payload:
-            fields.append(f"{col}=?")
-            vals.append(payload[col])
+    allowed = {
+        "company_name": str,
+        "manager_name": str,
+        "phone": str,
+        "region": str,
+        "address": str,
+        "notes": str,
+        "lat": float,
+        "lng": float,
+    }
+    try:
+        fields, vals = _build_safe_update_parts(payload, allowed)
+    except ValueError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
+
     if not fields:
         return jsonify({"success": False, "error": "لا توجد بيانات"}), 400
     vals += [profile_id, agent_id, biz_id]
@@ -967,9 +1066,83 @@ def api_v1_agent_create_invoice(agent_id: int):
         return jsonify({"success": False, "error": "الفاتورة لا تحتوي على منتجات"}), 400
     if not payload.get("contact_id") and not payload.get("client_name"):
         return jsonify({"success": False, "error": "اسم العميل أو contact_id مطلوب"}), 400
+    ok_items, items_msg = enforce_invoice_item_integrity(items)
+    if not ok_items:
+        return jsonify({"success": False, "error": items_msg}), 400
 
     db = get_db()
     biz_id = session["business_id"]
+    ensure_security_tables(db)
+
+    ratio_row = db.execute(
+        "SELECT value FROM settings WHERE business_id=? AND key='price_floor_ratio' LIMIT 1",
+        (biz_id,),
+    ).fetchone()
+    try:
+        price_floor_ratio = float((ratio_row["value"] if ratio_row else 1.0) or 1.0)
+    except Exception:
+        price_floor_ratio = 1.0
+    ok_floor, floor_msg, floor_meta = enforce_price_floor(db, biz_id, items, min_ratio=price_floor_ratio)
+    if not ok_floor:
+        register_security_incident(
+            db,
+            biz_id,
+            incident_type="price_floor_breach_attempt",
+            severity="high",
+            agent_id=agent_id,
+            payload=floor_meta,
+        )
+        db.commit()
+        return jsonify({"success": False, "error": floor_msg}), 409
+
+    ok_ts, ts_msg = enforce_secure_local_timestamp(
+        db,
+        biz_id,
+        agent_id,
+        payload.get("device_timestamp") or payload.get("local_timestamp") or payload.get("created_at"),
+    )
+    if not ok_ts:
+        register_security_incident(
+            db,
+            biz_id,
+            incident_type="timestamp_spoof_attempt",
+            severity="high",
+            agent_id=agent_id,
+            payload={"payload_ts": payload.get("device_timestamp"), "reason": ts_msg},
+        )
+        db.commit()
+        return jsonify({"success": False, "error": ts_msg}), 409
+
+    suspicious_gps, gps_msg = detect_mock_location(payload)
+    if suspicious_gps:
+        register_security_incident(
+            db,
+            biz_id,
+            incident_type="gps_spoof_attempt",
+            severity="high",
+            agent_id=agent_id,
+            payload={
+                "reason": gps_msg,
+                "lat": payload.get("latitude") or payload.get("lat"),
+                "lng": payload.get("longitude") or payload.get("lng"),
+            },
+        )
+        db.commit()
+        return jsonify({"success": False, "error": "تم رفض العملية: موقع غير موثوق"}), 409
+
+    today = datetime.now().strftime("%Y-%m-%d")
+    has_custody, custody_msg = require_open_custody_for_sales(db, biz_id, agent_id, today)
+    if not has_custody:
+        register_security_incident(
+            db,
+            biz_id,
+            incident_type="sale_without_custody_checkin",
+            severity="high",
+            agent_id=agent_id,
+            payload={"message": custody_msg},
+        )
+        db.commit()
+        return jsonify({"success": False, "error": custody_msg}), 409
 
     # احتساب المجموع
     total = 0.0
@@ -984,6 +1157,25 @@ def api_v1_agent_create_invoice(agent_id: int):
     )
     tax_amount = round(total * tax_rate / 100, 2)
     grand_total = round(total + tax_amount, 2)
+    payment_method = (payload.get("payment_method") or "cash").strip().lower()
+    ok_credit, credit_msg = enforce_credit_limit(
+        db,
+        biz_id,
+        payload.get("contact_id"),
+        grand_total,
+        payment_method,
+    )
+    if not ok_credit:
+        register_security_incident(
+            db,
+            biz_id,
+            incident_type="credit_limit_breach_attempt",
+            severity="high",
+            agent_id=agent_id,
+            payload={"contact_id": payload.get("contact_id"), "grand_total": grand_total},
+        )
+        db.commit()
+        return jsonify({"success": False, "error": credit_msg}), 409
 
     # رقم الفاتورة
     count = db.execute("SELECT COUNT(*) FROM invoices WHERE business_id=?", (biz_id,)).fetchone()[0]
@@ -1041,17 +1233,61 @@ def api_v1_agent_create_invoice(agent_id: int):
         if agent_row and float(agent_row["commission_rate"] or 0) > 0:
             rate = float(agent_row["commission_rate"])
             comm_amount = round(grand_total * rate / 100, 2)
+            payment_method = (payload.get("payment_method") or "cash").strip().lower()
+            inv_status = "unpaid" if payment_method in {"credit", "ajal"} else "pending"
+            comm_status, comm_reason = resolve_commission_status_for_invoice(
+                db,
+                biz_id,
+                payload.get("contact_id"),
+                payment_method,
+                inv_status,
+            )
             db.execute(
                 """INSERT INTO agent_commissions
                    (business_id, agent_id, invoice_id, invoice_total, commission_rate, commission_amount, status)
-                   VALUES (?,?,?,?,?,?,'pending')""",
-                (biz_id, agent_id, inv_id, grand_total, rate, comm_amount),
+                   VALUES (?,?,?,?,?,?,?)""",
+                (biz_id, agent_id, inv_id, grand_total, rate, comm_amount, comm_status),
+            )
+            if comm_status == "hold":
+                register_security_incident(
+                    db,
+                    biz_id,
+                    incident_type="commission_hold",
+                    severity="medium",
+                    agent_id=agent_id,
+                    payload={"invoice_id": inv_id, "reason": comm_reason},
+                )
+
+        kiting_risk, kiting_meta = detect_debt_kiting_risk(
+            db,
+            biz_id,
+            payload.get("contact_id"),
+            agent_id,
+        )
+        if kiting_risk:
+            register_security_incident(
+                db,
+                biz_id,
+                incident_type="debt_kiting_risk",
+                severity="high",
+                agent_id=agent_id,
+                payload={"invoice_id": inv_id, **kiting_meta},
             )
             db.execute(
                 """INSERT OR IGNORE INTO agent_invoice_links (business_id, agent_id, invoice_id)
                    VALUES (?,?,?)""",
                 (biz_id, agent_id, inv_id),
             )
+
+        db.execute(
+            """INSERT INTO reminders (business_id, title, reminder_type, due_date, notes, is_active, is_dismissed)
+               VALUES (?, ?, 'custom', date('now'), ?, 1, 0)""",
+            (
+                biz_id,
+                f"تحقق نزاهة فاتورة مندوب #{agent_id}",
+                f"invoice_id={inv_id}, audit=independent_debt_confirmation",
+            ),
+        )
 
         db.commit()
 
@@ -1109,6 +1345,7 @@ def api_v1_agent_sync(agent_id: int):
     db, biz_id = _get_agent_biz(agent_id)
     if not biz_id:
         return jsonify({"success": False, "error": "unauthorized"}), 401
+    ensure_security_tables(db)
 
     payload = request.get_json(force=True) or {}
     queue   = payload.get("queue", [])
@@ -1138,9 +1375,74 @@ def api_v1_agent_sync(agent_id: int):
                 items    = p.get("items", [])
                 if not items:
                     raise ValueError("لا توجد أصناف في الفاتورة")
-                now_str  = datetime.now().isoformat(timespec="seconds")
+                ok_items, items_msg = enforce_invoice_item_integrity(items)
+                if not ok_items:
+                    raise ValueError(items_msg)
+                ok_ts, ts_msg = enforce_secure_local_timestamp(
+                    db,
+                    biz_id,
+                    agent_id,
+                    p.get("device_timestamp") or p.get("local_timestamp") or p.get("created_at"),
+                )
+                if not ok_ts:
+                    register_security_incident(
+                        db,
+                        biz_id,
+                        incident_type="timestamp_spoof_attempt_sync",
+                        severity="high",
+                        agent_id=agent_id,
+                        payload={"reason": ts_msg, "local_id": local_id},
+                    )
+                    raise ValueError(ts_msg)
+
+                suspicious_gps, gps_msg = detect_mock_location(p)
+                if suspicious_gps:
+                    register_security_incident(
+                        db,
+                        biz_id,
+                        incident_type="gps_spoof_attempt_sync",
+                        severity="high",
+                        agent_id=agent_id,
+                        payload={"reason": gps_msg, "local_id": local_id},
+                    )
+                    raise ValueError("رفض إنشاء الفاتورة: GPS غير موثوق")
+
+                work_date = datetime.now().strftime("%Y-%m-%d")
+                has_custody, custody_msg = require_open_custody_for_sales(db, biz_id, agent_id, work_date)
+                if not has_custody:
+                    raise ValueError(custody_msg)
+
+                backup_hash = (p.get("offline_backup_hash") or "").strip()
+                if not backup_hash:
+                    register_security_incident(
+                        db,
+                        biz_id,
+                        incident_type="offline_backup_proof_missing",
+                        severity="high",
+                        agent_id=agent_id,
+                        payload={"action": "create_invoice", "local_id": local_id},
+                    )
+                    raise ValueError("يلزم إثبات نسخة أوفلاين مشفرة قبل مزامنة الفاتورة")
                 inv_num  = f"AGT-{datetime.now().strftime('%Y%m%d%H%M%S')}-{agent_id}"
                 grand    = sum(float(i.get("qty",1))*float(i.get("unit_price",0)) for i in items)
+                payment_method = (p.get("payment_method") or "credit").strip().lower()
+                ok_credit, credit_msg = enforce_credit_limit(
+                    db,
+                    biz_id,
+                    p.get("contact_id"),
+                    grand,
+                    payment_method,
+                )
+                if not ok_credit:
+                    register_security_incident(
+                        db,
+                        biz_id,
+                        incident_type="credit_limit_breach_attempt_sync",
+                        severity="high",
+                        agent_id=agent_id,
+                        payload={"contact_id": p.get("contact_id"), "grand_total": grand, "local_id": local_id},
+                    )
+                    raise ValueError(credit_msg)
 
                 db.execute(
                     """INSERT INTO invoices
@@ -1183,15 +1485,56 @@ def api_v1_agent_sync(agent_id: int):
                 if ag and float(ag["commission_rate"] or 0) > 0:
                     rate  = float(ag["commission_rate"])
                     comm  = round(grand * rate / 100, 2)
+                    payment_method = (p.get("payment_method") or "credit").strip().lower()
+                    comm_status, comm_reason = resolve_commission_status_for_invoice(
+                        db,
+                        biz_id,
+                        p.get("contact_id"),
+                        payment_method,
+                        "unpaid",
+                    )
                     db.execute(
                         """INSERT INTO agent_commissions
                            (business_id, agent_id, invoice_id, invoice_total, commission_rate, commission_amount, status)
-                           VALUES (?,?,?,?,?,?,'pending')""",
-                        (biz_id, agent_id, inv_id, grand, rate, comm),
+                           VALUES (?,?,?,?,?,?,?)""",
+                        (biz_id, agent_id, inv_id, grand, rate, comm, comm_status),
+                    )
+                    if comm_status == "hold":
+                        register_security_incident(
+                            db,
+                            biz_id,
+                            incident_type="commission_hold_sync",
+                            severity="medium",
+                            agent_id=agent_id,
+                            payload={"invoice_id": inv_id, "reason": comm_reason, "local_id": local_id},
+                        )
+                kiting_risk, kiting_meta = detect_debt_kiting_risk(
+                    db,
+                    biz_id,
+                    p.get("contact_id"),
+                    agent_id,
+                )
+                if kiting_risk:
+                    register_security_incident(
+                        db,
+                        biz_id,
+                        incident_type="debt_kiting_risk_sync",
+                        severity="high",
+                        agent_id=agent_id,
+                        payload={"invoice_id": inv_id, "local_id": local_id, **kiting_meta},
                     )
                 db.execute(
                     "INSERT OR IGNORE INTO agent_invoice_links (business_id, agent_id, invoice_id) VALUES (?,?,?)",
                     (biz_id, agent_id, inv_id),
+                )
+                db.execute(
+                    """INSERT INTO reminders (business_id, title, reminder_type, due_date, notes, is_active, is_dismissed)
+                       VALUES (?, ?, 'custom', date('now'), ?, 1, 0)""",
+                    (
+                        biz_id,
+                        f"تحقق دين مستقل لفاتورة أوفلاين مندوب #{agent_id}",
+                        f"invoice_id={inv_id}, sync_local_id={local_id}",
+                    ),
                 )
                 results.append({"local_id": local_id, "status": "done",
                                  "invoice_id": inv_id, "invoice_number": inv_num})
@@ -1231,6 +1574,17 @@ def api_v1_agent_sync(agent_id: int):
 
             # ─── تسجيل حضور ───────────────────────────────────────────
             elif action == "checkin":
+                suspicious_gps, gps_msg = detect_mock_location(p)
+                if suspicious_gps:
+                    register_security_incident(
+                        db,
+                        biz_id,
+                        incident_type="gps_spoof_checkin_sync",
+                        severity="high",
+                        agent_id=agent_id,
+                        payload={"reason": gps_msg, "local_id": local_id},
+                    )
+                    raise ValueError("رفض check-in: GPS غير موثوق")
                 today = datetime.now().strftime("%Y-%m-%d")
                 existing = db.execute(
                     "SELECT id FROM agent_attendance WHERE agent_id=? AND work_date=?",
@@ -1244,10 +1598,22 @@ def api_v1_agent_sync(agent_id: int):
                         (biz_id, agent_id, today,
                          p.get("lat"), p.get("lng")),
                     )
+                mark_custody_open(db, biz_id, agent_id, today)
                 results.append({"local_id": local_id, "status": "done"})
 
             # ─── تسجيل انصراف ─────────────────────────────────────────
             elif action == "checkout":
+                suspicious_gps, gps_msg = detect_mock_location(p)
+                if suspicious_gps:
+                    register_security_incident(
+                        db,
+                        biz_id,
+                        incident_type="gps_spoof_checkout_sync",
+                        severity="high",
+                        agent_id=agent_id,
+                        payload={"reason": gps_msg, "local_id": local_id},
+                    )
+                    raise ValueError("رفض checkout: GPS غير موثوق")
                 rec = db.execute(
                     "SELECT id, checkin_at FROM agent_attendance WHERE agent_id=? AND work_date=date('now')",
                     (agent_id,),
@@ -1262,10 +1628,29 @@ def api_v1_agent_sync(agent_id: int):
                            WHERE id=?""",
                         (p.get("lat"), p.get("lng"), hours, rec["id"]),
                     )
+                    mark_custody_close(
+                        db,
+                        biz_id,
+                        agent_id,
+                        datetime.now().strftime("%Y-%m-%d"),
+                        backup_hash=(p.get("offline_backup_hash") or "").strip() or None,
+                        notes=p.get("notes"),
+                    )
                 results.append({"local_id": local_id, "status": "done"})
 
             # ─── موقع GPS ─────────────────────────────────────────────
             elif action == "log_location":
+                suspicious_gps, gps_msg = detect_mock_location(p)
+                if suspicious_gps:
+                    register_security_incident(
+                        db,
+                        biz_id,
+                        incident_type="gps_spoof_location_sync",
+                        severity="medium",
+                        agent_id=agent_id,
+                        payload={"reason": gps_msg, "local_id": local_id},
+                    )
+                    raise ValueError("رفض تسجيل الموقع: GPS غير موثوق")
                 db.execute(
                     """INSERT INTO agent_locations
                        (business_id, agent_id, latitude, longitude, accuracy, battery, recorded_at)
@@ -1537,6 +1922,13 @@ def api_v1_collection_confirm(col_id: int):
            WHERE id=?""",
         (user_id, col_id),
     )
+    if col["invoice_id"]:
+        row = db.execute(
+            "SELECT party_id FROM invoices WHERE id=? AND business_id=? LIMIT 1",
+            (col["invoice_id"], biz_id),
+        ).fetchone()
+        if row and row["party_id"]:
+            mark_first_payment_verified(db, biz_id, int(row["party_id"]))
     db.commit()
     return jsonify({"success": True, "message": "تم تأكيد التحصيل"})
 
@@ -1788,15 +2180,12 @@ def api_agent_settings():
                     "agent_can_send_offer"]
     allowed_real = ["agent_max_discount_pct"]
 
-    fields, vals = [], []
-    for k in allowed_int:
-        if k in payload:
-            fields.append(f"{k}=?")
-            vals.append(int(payload[k]))
-    for k in allowed_real:
-        if k in payload:
-            fields.append(f"{k}=?")
-            vals.append(float(payload[k]))
+    allowed = {k: int for k in allowed_int}
+    allowed.update({k: float for k in allowed_real})
+    try:
+        fields, vals = _build_safe_update_parts(payload, allowed)
+    except ValueError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
 
     if not fields:
         return jsonify({"success": False, "error": "لا توجد بيانات"}), 400
@@ -1867,17 +2256,20 @@ def api_agent_permissions(agent_id: int):
 
     # POST
     payload = request.get_json(force=True) or {}
-    fields, vals = [], []
-    for col in ["perm_discount","perm_edit_price","perm_view_cost",
-                "perm_collect","perm_add_client","perm_create_draft","perm_send_offer"]:
-        if col in payload:
-            v = payload[col]
-            fields.append(f"{col}=?")
-            vals.append(None if v is None else int(v))
-    if "max_discount_pct" in payload:
-        v = payload["max_discount_pct"]
-        fields.append("max_discount_pct=?")
-        vals.append(None if v is None else float(v))
+    allowed = {
+        "perm_discount": int,
+        "perm_edit_price": int,
+        "perm_view_cost": int,
+        "perm_collect": int,
+        "perm_add_client": int,
+        "perm_create_draft": int,
+        "perm_send_offer": int,
+        "max_discount_pct": float,
+    }
+    try:
+        fields, vals = _build_safe_update_parts(payload, allowed)
+    except ValueError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
 
     if not fields:
         return jsonify({"success": False, "error": "لا توجد بيانات"}), 400
@@ -1982,9 +2374,35 @@ def api_v2_agent_sync_batch(agent_id: int):
 
     payload = request.get_json(force=True, silent=True) or {}
     items   = payload.get("queue", [])
+    ensure_security_tables(db)
 
     if not items:
         return jsonify({"success": True, "accepted": 0, "rejected_dup": 0, "queue_tip": 0})
+
+    if len(items) > 500:
+        register_security_incident(
+            db,
+            biz_id,
+            incident_type="sync_storm_oversized_batch",
+            severity="high",
+            agent_id=agent_id,
+            payload={"count": len(items)},
+        )
+        db.commit()
+        return jsonify({"success": False, "error": "batch_too_large", "max": 500}), 413
+
+    local_ids = [str(i.get("local_id")) for i in items if i.get("local_id") is not None]
+    if len(local_ids) != len(set(local_ids)):
+        register_security_incident(
+            db,
+            biz_id,
+            incident_type="sync_batch_duplicate_local_id",
+            severity="medium",
+            agent_id=agent_id,
+            payload={"count": len(items)},
+        )
+        db.commit()
+        return jsonify({"success": False, "error": "duplicate_local_id_in_batch"}), 409
 
     result = enqueue_batch(db, biz_id, agent_id, items)
 

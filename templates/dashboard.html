@@ -366,6 +366,25 @@
   </div>
 </section>
 
+{% if can_manage_cancel_requests and (pending_cancel_requests_count or 0) > 0 %}
+<section class="db-workspace" style="margin-bottom:18px;">
+  <div class="db-panel" style="border-color:rgba(239,68,68,.38); background:linear-gradient(135deg, rgba(127,29,29,.22), rgba(69,10,10,.18));">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div>
+        <h3 style="margin:0;color:#fecaca;">🚨 تنبيه إداري: طلبات إلغاء مدفوعة معلقة</h3>
+        <p style="margin:.35rem 0 0;color:#fecaca;opacity:.92;">يوجد {{ pending_cancel_requests_count }} طلب بانتظار اعتماد المدير.</p>
+        {% if (pending_cancel_requests_sla_breached_count or 0) > 0 %}
+        <p style="margin:.25rem 0 0;color:#fecaca;font-weight:700;">متجاوز SLA: {{ pending_cancel_requests_sla_breached_count }} طلب</p>
+        {% endif %}
+      </div>
+      <a class="db-link" href="{{ url_for('invoices.pending_cancel_requests_page') }}" style="background:rgba(127,29,29,.45);border-color:rgba(252,165,165,.55);color:#fee2e2;">
+        فتح شاشة الاعتمادات ←
+      </a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
 <!-- ═══ اقتراحات إعادة الطلب (Retail Inventory Reorder Widget) ═══ -->
 {% if reorder_suggestions and reorder_suggestions|length > 0 %}
 <section class="db-workspace" style="margin-bottom:18px">
@@ -410,8 +429,52 @@
 {% endif %}
 
 <!-- ═══ Widgets متقدمة حسب نوع النشاط ═══ -->
+{% if industry_kpis.sales_by_cashier_today or industry_kpis.sales_by_agent_today %}
+<section class="db-workspace" style="margin-bottom:18px">
+  {% if industry_kpis.sales_by_cashier_today %}
+  <div class="db-panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="margin:0">🧾 مبيعات اليوم حسب الكاشير</h3>
+      <a href="/invoices/" style="font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none">الفواتير ←</a>
+    </div>
+    <div style="display:grid;gap:8px;max-height:210px;overflow-y:auto">
+      {% for row in industry_kpis.sales_by_cashier_today %}
+      <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(17,62,84,.38);border:1px solid rgba(84,203,255,.2);border-radius:11px;padding:10px 12px">
+        <div>
+          <div style="color:#ecfbff;font-weight:700;font-size:.84rem">{{ row.actor_name }}</div>
+          <div style="color:var(--db-muted);font-size:.72rem">{{ row.invoices_count }} فاتورة</div>
+        </div>
+        <div style="color:#0ad0c5;font-weight:800;font-size:.88rem">{{ row.sales_total|round(0)|int }} ر.س</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if industry_kpis.sales_by_agent_today %}
+  <div class="db-panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="margin:0">🤝 مبيعات اليوم حسب المندوب</h3>
+      <a href="/agents/dashboard" style="font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none">المناديب ←</a>
+    </div>
+    <div style="display:grid;gap:8px;max-height:210px;overflow-y:auto">
+      {% for row in industry_kpis.sales_by_agent_today %}
+      <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(17,62,84,.38);border:1px solid rgba(84,203,255,.2);border-radius:11px;padding:10px 12px">
+        <div>
+          <div style="color:#ecfbff;font-weight:700;font-size:.84rem">{{ row.actor_name }}</div>
+          <div style="color:var(--db-muted);font-size:.72rem">{{ row.invoices_count }} فاتورة</div>
+        </div>
+        <div style="color:#0ad0c5;font-weight:800;font-size:.88rem">{{ row.sales_total|round(0)|int }} ر.س</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+
 <!-- للتجزئة: أفضل المبيعات اليوم + معدل الدوران + الأصناف البطيئة -->
-{% if industry_kpis.pos_mode in ('standard', 'retail', 'fashion', 'pharmacy') %}
+{% if industry_kpis.pos_mode in ('standard', 'retail', 'fashion') %}
   {% if industry_kpis.today_sales and industry_kpis.today_sales|length > 0 %}
   <section class="db-workspace" style="margin-bottom:18px">
     <div class="db-panel">
@@ -469,14 +532,215 @@
         <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.22);border-radius:12px;padding:12px;font-size:.85rem">
           <div style="color:#ecfbff;font-weight:600">{{ item.sku }}</div>
           <div style="color:var(--db-muted);font-size:.75rem">{{ item.product_name[:18] }}</div>
-          <div style="color:#ef4444;font-weight:700;margin-top:4px">{{ item.current_qty|round(2) }} وحدة</div>
-          <div style="color:var(--db-muted);font-size:.75rem">قيمة: {{ item.stock_value|round(0)|int }} ر.س</div>
+          <div style="color:#ef4444;font-weight:700;margin-top:4px">{{ (item.current_qty or 0)|round(2) }} وحدة</div>
+          <div style="color:var(--db-muted);font-size:.75rem">قيمة: {{ (item.stock_value or 0)|round(0)|int }} ر.س</div>
         </div>
         {% endfor %}
       </div>
     </div>
   </section>
   {% endif %}
+
+<!-- للصيدليات: الأعلى صرفاً + قرب انتهاء الصلاحية -->
+{% elif industry_kpis.pos_mode == 'pharmacy' %}
+  {% if industry_kpis.top_drugs and industry_kpis.top_drugs|length > 0 %}
+  <section class="db-workspace" style="margin-bottom:18px">
+    <div class="db-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h3 style="margin:0">💊 الأدوية الأعلى صرفًا (30 يوم)</h3>
+        <a href="/analytics" style="font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none">التحليلات ←</a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;max-height:220px;overflow-y:auto">
+        {% for item in industry_kpis.top_drugs[:8] %}
+        <div style="background:rgba(69,168,255,.08);border:1px solid rgba(69,168,255,.22);border-radius:12px;padding:12px">
+          <div style="color:var(--db-muted);font-size:.75rem">{{ item.description[:26] }}</div>
+          <div style="color:#0ad0c5;font-weight:700;font-size:1.05rem;margin:6px 0">{{ item.rev|round(0)|int }} ر.س</div>
+          <div style="color:var(--db-muted);font-size:.75rem">{{ item.qty|round(0)|int }} عبوة</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if industry_kpis.expiry_soon and industry_kpis.expiry_soon|length > 0 %}
+  <section class="db-workspace" style="margin-bottom:18px">
+    <div class="db-panel">
+      <h3 style="margin:0 0 12px">⏳ أصناف تقترب من انتهاء الصلاحية (30 يوم)</h3>
+      <div style="overflow-x:auto">
+        <table style="width:100%;font-size:.82rem;border-collapse:collapse">
+          <thead>
+            <tr style="border-bottom:1px solid rgba(75,195,255,.28)">
+              <th style="text-align:right;padding:8px 0;color:var(--db-muted)">الصنف</th>
+              <th style="text-align:center;padding:8px 0;color:var(--db-muted)">الباركود</th>
+              <th style="text-align:center;padding:8px 0;color:var(--db-muted)">الصلاحية</th>
+              <th style="text-align:center;padding:8px 0;color:var(--db-muted)">الكمية</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ex in industry_kpis.expiry_soon[:10] %}
+            <tr style="border-bottom:1px solid rgba(75,195,255,.12)">
+              <td style="padding:8px 0;color:#ecfbff">{{ ex.name[:28] }}</td>
+              <td style="padding:8px 0;text-align:center;color:var(--db-muted)">{{ ex.barcode or '-' }}</td>
+              <td style="padding:8px 0;text-align:center;color:#f59e0b">{{ ex.expiry_date }}</td>
+              <td style="padding:8px 0;text-align:center;color:#0ad0c5">{{ (ex.qty or 0)|round(0)|int }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+<!-- للمطاعم: أكثر الطاولات/الأطباق + متوسط الطلب -->
+{% elif industry_kpis.pos_mode == 'restaurant' %}
+  <section class="db-workspace" style="margin-bottom:18px">
+    <div class="db-panel">
+      <h3 style="margin:0 0 12px">🍽️ أداء المطعم (30 يوم)</h3>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
+        <div style="background:rgba(69,168,255,.08);border:1px solid rgba(69,168,255,.22);border-radius:12px;padding:12px">
+          <div style="color:var(--db-muted);font-size:.75rem">متوسط الطلب</div>
+          <div style="color:#0ad0c5;font-weight:800;font-size:1.15rem">{{ industry_kpis.avg_order_value|round(0)|int }} ر.س</div>
+        </div>
+        <div style="background:rgba(69,168,255,.08);border:1px solid rgba(69,168,255,.22);border-radius:12px;padding:12px">
+          <div style="color:var(--db-muted);font-size:.75rem">عدد الطلبات</div>
+          <div style="color:#45a8ff;font-weight:800;font-size:1.15rem">{{ industry_kpis.orders_count }}</div>
+        </div>
+        <div style="background:rgba(69,168,255,.08);border:1px solid rgba(69,168,255,.22);border-radius:12px;padding:12px">
+          <div style="color:var(--db-muted);font-size:.75rem">إيراد المطعم</div>
+          <div style="color:#f5feff;font-weight:800;font-size:1.15rem">{{ industry_kpis.total_restaurant_rev|round(0)|int }} ر.س</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {% if industry_kpis.top_dishes and industry_kpis.top_dishes|length > 0 %}
+  <section class="db-workspace" style="margin-bottom:18px">
+    <div class="db-panel">
+      <h3 style="margin:0 0 12px">🔥 أكثر الأطباق مبيعًا</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
+        {% for d in industry_kpis.top_dishes[:6] %}
+        <div style="background:rgba(10,208,197,.08);border:1px solid rgba(10,208,197,.22);border-radius:12px;padding:12px">
+          <div style="color:#ecfbff;font-weight:700;font-size:.82rem">{{ d.description[:24] }}</div>
+          <div style="color:#0ad0c5;font-weight:800;margin-top:6px">{{ d.qty|round(0)|int }} طلب</div>
+          <div style="color:var(--db-muted);font-size:.74rem">{{ d.rev|round(0)|int }} ر.س</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if industry_kpis.top_tables and industry_kpis.top_tables|length > 0 %}
+    <div class="db-panel">
+      <h3 style="margin:0 0 12px">🪑 أعلى الطاولات/العملاء</h3>
+      <div style="display:grid;gap:8px;max-height:220px;overflow-y:auto">
+        {% for t in industry_kpis.top_tables[:8] %}
+        <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(17,62,84,.38);border:1px solid rgba(84,203,255,.2);border-radius:11px;padding:10px 12px">
+          <div>
+            <div style="color:#ecfbff;font-weight:700;font-size:.84rem">{{ t.party_name or 'غير محدد' }}</div>
+            <div style="color:var(--db-muted);font-size:.72rem">{{ t.visits }} زيارة</div>
+          </div>
+          <div style="color:#0ad0c5;font-weight:800;font-size:.88rem">{{ t.revenue|round(0)|int }} ر.س</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+<!-- للمقاولات: ملخص المشاريع + الذمم + كبار العملاء -->
+{% elif industry_kpis.pos_mode == 'construction' %}
+  <section class="db-workspace" style="margin-bottom:18px">
+    <div class="db-panel">
+      <h3 style="margin:0 0 12px">🏗️ ملخص المشاريع</h3>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
+        <div style="background:rgba(69,168,255,.08);border:1px solid rgba(69,168,255,.22);border-radius:12px;padding:12px">
+          <div style="color:var(--db-muted);font-size:.75rem">إجمالي المشاريع</div>
+          <div style="color:#45a8ff;font-weight:800;font-size:1.15rem">{{ industry_kpis.projects_summary.total_projects or 0 }}</div>
+        </div>
+        <div style="background:rgba(10,208,197,.08);border:1px solid rgba(10,208,197,.22);border-radius:12px;padding:12px">
+          <div style="color:var(--db-muted);font-size:.75rem">نشطة حاليًا</div>
+          <div style="color:#0ad0c5;font-weight:800;font-size:1.15rem">{{ industry_kpis.projects_summary.active_projects or 0 }}</div>
+        </div>
+        <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.22);border-radius:12px;padding:12px">
+          <div style="color:var(--db-muted);font-size:.75rem">مكتملة هذا الشهر</div>
+          <div style="color:#f59e0b;font-weight:800;font-size:1.15rem">{{ industry_kpis.projects_summary.completed_this_month or 0 }}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div style="background:rgba(17,62,84,.38);border:1px solid rgba(84,203,255,.2);border-radius:11px;padding:10px 12px;color:#b9e3f2;font-size:.82rem">
+          مستخلصات الشهر: <b style="color:#ecfbff">{{ industry_kpis.extracts_summary.extracts_this_month or 0 }}</b>
+        </div>
+        <div style="background:rgba(17,62,84,.38);border:1px solid rgba(84,203,255,.2);border-radius:11px;padding:10px 12px;color:#b9e3f2;font-size:.82rem">
+          مستخلصات مفوترة: <b style="color:#ecfbff">{{ industry_kpis.extracts_summary.invoiced_extracts_this_month or 0 }}</b>
+        </div>
+      </div>
+    </div>
+
+    <div class="db-panel">
+      <h3 style="margin:0 0 12px;color:#ef4444">💳 الذمم المفتوحة للمشاريع</h3>
+      <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.22);border-radius:12px;padding:12px;margin-bottom:10px">
+        <div style="color:var(--db-muted);font-size:.75rem">إجمالي الذمم المفتوحة</div>
+        <div style="color:#ef4444;font-weight:800;font-size:1.2rem">{{ industry_kpis.total_open_debt|round(0)|int }} ر.س</div>
+      </div>
+      {% if industry_kpis.top_clients and industry_kpis.top_clients|length > 0 %}
+      <div style="display:grid;gap:8px;max-height:220px;overflow-y:auto">
+        {% for c in industry_kpis.top_clients[:6] %}
+        <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(17,62,84,.38);border:1px solid rgba(84,203,255,.2);border-radius:11px;padding:10px 12px">
+          <div>
+            <div style="color:#ecfbff;font-weight:700;font-size:.84rem">{{ c.party_name or 'بدون اسم' }}</div>
+            <div style="color:var(--db-muted);font-size:.72rem">{{ c.projects }} عقد/فاتورة</div>
+          </div>
+          <div style="text-align:left">
+            <div style="color:#0ad0c5;font-weight:800;font-size:.84rem">{{ c.contracted_value|round(0)|int }} ر.س</div>
+            <div style="color:#94a3b8;font-size:.72rem">محصل {{ c.collected|round(0)|int }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+<!-- للورش/التأجير: أوامر مفتوحة + أعلى الخدمات -->
+{% elif industry_kpis.pos_mode in ('workshop', 'rental') %}
+  <section class="db-workspace" style="margin-bottom:18px">
+    {% if industry_kpis.open_orders and industry_kpis.open_orders|length > 0 %}
+    <div class="db-panel">
+      <h3 style="margin:0 0 12px">🛠️ الأوامر المفتوحة</h3>
+      <div style="display:grid;gap:8px;max-height:220px;overflow-y:auto">
+        {% for o in industry_kpis.open_orders[:8] %}
+        <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(17,62,84,.38);border:1px solid rgba(84,203,255,.2);border-radius:11px;padding:10px 12px">
+          <div>
+            <div style="color:#ecfbff;font-weight:700;font-size:.82rem">{{ o.invoice_number }}</div>
+            <div style="color:var(--db-muted);font-size:.72rem">{{ o.party_name or 'عميل غير محدد' }}</div>
+          </div>
+          <div style="text-align:left">
+            <div style="color:#f5feff;font-weight:800;font-size:.84rem">{{ o.total|round(0)|int }} ر.س</div>
+            <div style="color:#f59e0b;font-size:.72rem">{{ o.status }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if industry_kpis.top_services and industry_kpis.top_services|length > 0 %}
+    <div class="db-panel">
+      <h3 style="margin:0 0 12px">⭐ أعلى الخدمات مبيعًا</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
+        {% for s in industry_kpis.top_services[:6] %}
+        <div style="background:rgba(10,208,197,.08);border:1px solid rgba(10,208,197,.22);border-radius:12px;padding:12px">
+          <div style="color:#ecfbff;font-weight:700;font-size:.82rem">{{ s.description[:24] }}</div>
+          <div style="color:#0ad0c5;font-weight:800;margin-top:6px">{{ s.cnt|round(0)|int }} عملية</div>
+          <div style="color:var(--db-muted);font-size:.74rem">{{ s.rev|round(0)|int }} ر.س</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </section>
 
 <!-- للجملة: أكثر الموزعين + الديون المتأخرة + أصناف منخفضة -->
 {% elif industry_kpis.pos_mode == 'wholesale' %}

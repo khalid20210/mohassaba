@@ -123,7 +123,7 @@
               class="btn {{ 'btn-off' if r.is_active else 'btn-toggle' }}">
         {{ 'إيقاف' if r.is_active else 'تفعيل' }}
       </button>
-      <button onclick="deleteRecipe({{ r.id }}, '{{ r.recipe_name }}')" class="btn btn-delete">حذف</button>
+      <button onclick='deleteRecipe({{ r.id }}, {{ r.recipe_name | tojson }})' class="btn btn-delete">حذف</button>
     </div>
   </div>
   {% endfor %}

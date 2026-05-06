@@ -5,6 +5,8 @@ preflight_launch500.py
 from pathlib import Path
 import os
 
+from security_status_report import report_status
+
 
 def _load_env_file(path: Path) -> None:
     if not path.exists():
@@ -19,6 +21,7 @@ def _load_env_file(path: Path) -> None:
 
 def main() -> int:
     # استخدم إعدادات الإنتاج إن كان الملف موجوداً
+    report_status("Preflight Launch500", "جاري التنفيذ...", "بدء تحميل .env.production وإنشاء التطبيق")
     _load_env_file(Path('.env.production'))
 
     from modules import create_app
@@ -51,10 +54,20 @@ def main() -> int:
     for name, ok, detail in checks:
         state = "PASS" if ok else "FAIL"
         print(f"{state:<5} | {name:<18} | {detail}")
+        report_status(
+            f"Launch500 / {name}",
+            "نجاح ✅" if ok else "فشل ❌",
+            str(detail),
+        )
         if not ok:
             failed += 1
 
     print("ready.checks:", rjson.get('checks'))
+
+    if failed:
+        report_status("Preflight Launch500", "فشل ❌", f"عدد الفحوصات الفاشلة = {failed}")
+    else:
+        report_status("Preflight Launch500", "نجاح ✅", "كل فحوصات الجاهزية اجتازت")
 
     return 1 if failed else 0
 

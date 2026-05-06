@@ -68,8 +68,11 @@ def create_app():
     from .blueprints.services.routes   import bp as services_bp
     from .blueprints.invoices.routes   import bp as invoices_bp
     from .blueprints.recipes.routes    import bp as recipes_bp
+    from .blueprints.admin.routes      import bp as admin_bp
+    from .blueprints.receivables.routes import bp as receivables_bp
+    from .blueprints.hr.routes         import bp as hr_bp
 
-    for bp in (auth_bp, core_bp, accounting_bp, supply_bp, pos_bp, restaurant_bp, workforce_bp, owner_bp, inventory_bp, contacts_bp, barcode_bp, medical_bp, construction_bp, rental_bp, wholesale_bp, services_bp, invoices_bp, recipes_bp):
+    for bp in (auth_bp, core_bp, accounting_bp, supply_bp, pos_bp, restaurant_bp, workforce_bp, owner_bp, inventory_bp, contacts_bp, barcode_bp, medical_bp, construction_bp, rental_bp, wholesale_bp, services_bp, invoices_bp, recipes_bp, admin_bp, receivables_bp, hr_bp):
         app.register_blueprint(bp)
 
     # ── Jinja2 Custom Filters ─────────────────────────────────────────────────
@@ -82,6 +85,14 @@ def create_app():
     app.jinja_env.filters["from_json"] = _from_json
     app.jinja_env.globals["enumerate"] = enumerate
     app.jinja_env.filters["enumerate"] = enumerate
+
+    # ── i18n: دالة الترجمة t() ──────────────────────────────────────────────
+    from .i18n import translate as _translate
+    from flask import g as _flask_g
+    def _t_global(key: str) -> str:
+        lang = getattr(_flask_g, "lang", "ar")
+        return _translate(key, lang)
+    app.jinja_env.globals["t"] = _t_global
 
     # ── Middleware ─────────────────────────────────────────────────────────────
     from .middleware import platform_guard, load_user, inject_globals, add_security_headers, enforce_global_csrf
@@ -98,6 +109,35 @@ def create_app():
 
     # ── DB Migrations (نظام التهجير الجديد المرقّم) ───────────────────────────
     _run_migrations(app)
+
+    # ── جداول HR (الموارد البشرية) ────────────────────────────────────────────
+    try:
+        import sqlite3
+        from .config import DB_PATH as _DB_PATH_HR
+        _hr_conn = sqlite3.connect(str(_DB_PATH_HR))
+        _hr_conn.row_factory = sqlite3.Row
+        from .blueprints.hr.routes import init_hr_tables
+        init_hr_tables(_hr_conn)
+        _hr_conn.commit()
+        _hr_conn.close()
+        logger.info("HR tables: ✅ تم التحقق/إنشاء جداول الموارد البشرية")
+    except Exception as _hr_err:
+        logger.warning(f"HR tables: تحذير — {_hr_err}")
+
+    # ── Activity Seeder: حقن الأنشطة الـ 196 مرة واحدة عند بدء التشغيل ─────────
+    try:
+        from .activity_seeder import seed_activities
+        seeded = seed_activities(str(DB_PATH))
+        if seeded:
+            logger.info("activity_seeder: ✅ تم حقن %d نشاط في قاعدة البيانات", seeded)
+    except Exception as _seed_err:
+        logger.warning("activity_seeder: تحذير — %s", _seed_err)
+
+    # ── تهيئة الميثاق الدستوري الشامل ────────────────────────────────────────
+    from .constitutional_integration import initialize_constitutional_framework, register_constitutional_health_checks
+    success, message = initialize_constitutional_framework(app)
+    logger.info(message)
+    register_constitutional_health_checks(app)
 
     # ── ZATCA Background Worker ────────────────────────────────────────────────
     _start_zatca_worker(app)
@@ -157,6 +197,70 @@ def _run_migrations(app):
         conn.close()
     except Exception as e:
         logger.warning(f"Migration inline warning: {e}")
+    
+    # ثالثاً: تهيئة جداول الميثاق الدستوري
+    try:
+        from .smart_recycle_bin import RECYCLE_BIN_SCHEMA
+        from .enhanced_audit import ENHANCED_AUDIT_SCHEMA
+        from .resilience_engine import BackupRecoveryManager
+        
+        conn = sqlite3.connect(str(DB_PATH))
+        conn.execute("PRAGMA foreign_keys = ON")
+
+        # ترقية آمنة للجداول القديمة قبل تطبيق schema الكامل.
+        recycle_cols = {
+            row[1]
+            for row in conn.execute("PRAGMA table_info(recycle_bin)").fetchall()
+        }
+        if recycle_cols:
+            missing_defs = {
+                "table_name": "TEXT NOT NULL DEFAULT ''",
+                "record_id": "INTEGER NOT NULL DEFAULT 0",
+                "retention_until": "TEXT NOT NULL DEFAULT ''",
+                "is_admin_locked": "INTEGER DEFAULT 0",
+                "restoration_count": "INTEGER DEFAULT 0",
+                "last_restored_at": "TEXT",
+                "notes": "TEXT",
+            }
+            for col, col_def in missing_defs.items():
+                if col not in recycle_cols:
+                    conn.execute(f"ALTER TABLE recycle_bin ADD COLUMN {col} {col_def}")
+        
+        # سلة المهملات
+        for stmt in RECYCLE_BIN_SCHEMA.strip().split(";"):
+            stmt = stmt.strip()
+            if stmt:
+                try:
+                    conn.execute(stmt)
+                except sqlite3.OperationalError as oe:
+                    if "already exists" not in str(oe):
+                        logger.warning(f"Recycle bin schema warning: {oe}")
+        
+        # الرقابة المحسّنة
+        for stmt in ENHANCED_AUDIT_SCHEMA.strip().split(";"):
+            stmt = stmt.strip()
+            if stmt:
+                try:
+                    conn.execute(stmt)
+                except sqlite3.OperationalError as oe:
+                    if "already exists" not in str(oe):
+                        logger.warning(f"Enhanced audit schema warning: {oe}")
+        
+        # النسخ الاحتياطية
+        for stmt in BackupRecoveryManager.BACKUP_SCHEMA.strip().split(";"):
+            stmt = stmt.strip()
+            if stmt:
+                try:
+                    conn.execute(stmt)
+                except sqlite3.OperationalError as oe:
+                    if "already exists" not in str(oe):
+                        logger.warning(f"Backup schema warning: {oe}")
+        
+        conn.commit()
+        conn.close()
+        logger.info("✓ جداول الميثاق الدستوري جاهزة")
+    except Exception as e:
+        logger.warning(f"Constitutional schema warning: {e}")
 
 
 def _start_zatca_worker(app):

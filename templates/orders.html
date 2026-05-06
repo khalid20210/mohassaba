@@ -186,10 +186,10 @@
           <td>
             <button type="button" class="btn btn-secondary btn-sm" onclick="showInvoiceChanges({{ inv.id }})">📊 مقارنة</button>
             {% if can_cancel_invoice and inv.status != 'cancelled' %}
-            <button type="button" class="btn btn-danger btn-sm" onclick="cancelInvoice({{ inv.id }}, '{{ inv.invoice_number }}')">⛔ إلغاء</button>
+            <button type="button" class="btn btn-danger btn-sm" onclick='cancelInvoice({{ inv.id }}, {{ inv.invoice_number | tojson }})'>⛔ إلغاء</button>
             {% endif %}
             {% if can_delete_invoice and inv.status == 'draft' %}
-            <button type="button" class="btn btn-danger btn-sm" onclick="deleteInvoice({{ inv.id }}, '{{ inv.invoice_number }}')">🗑 حذف</button>
+            <button type="button" class="btn btn-danger btn-sm" onclick='deleteInvoice({{ inv.id }}, {{ inv.invoice_number | tojson }})'>🗑 حذف</button>
             {% endif %}
           </td>
           {% endif %}

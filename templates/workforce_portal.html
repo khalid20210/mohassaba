@@ -93,13 +93,29 @@ async function jpost(url,payload){
 
 function money(n){ return Number(n||0).toLocaleString('ar-SA',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
+function setListMessage(el, msg){
+  const box = document.createElement('div');
+  box.className = 'wf-item';
+  box.textContent = msg;
+  el.replaceChildren(box);
+}
+
 async function loadEmployees(){
   const data = await jget('/api/v1/employees');
   const list = document.getElementById('employeesList');
-  if(!data.success){ list.innerHTML='<div class="wf-item">تعذر جلب الموظفين</div>'; return; }
-  list.innerHTML = (data.employees||[]).map(e=>
-    `<div class="wf-item"><span>#${e.id} — ${e.full_name}</span><span>${money(e.base_salary)} ريال</span></div>`
-  ).join('') || '<div class="wf-item">لا يوجد موظفون بعد</div>';
+  if(!data.success){ setListMessage(list, 'تعذر جلب الموظفين'); return; }
+  const employees = data.employees || [];
+  if(!employees.length){ setListMessage(list, 'لا يوجد موظفون بعد'); return; }
+  list.replaceChildren(...employees.map(e => {
+    const row = document.createElement('div');
+    row.className = 'wf-item';
+    const left = document.createElement('span');
+    left.textContent = `#${e.id} — ${e.full_name || ''}`;
+    const right = document.createElement('span');
+    right.textContent = `${money(e.base_salary)} ريال`;
+    row.append(left, right);
+    return row;
+  }));
 }
 
 async function createEmployee(){
@@ -131,14 +147,19 @@ async function closeBlindShift(){
 async function loadAgents(){
   const data = await jget('/api/v1/agents');
   const list = document.getElementById('agentsList');
-  if(!data.success){ list.innerHTML='<div class="wf-item">تعذر جلب المناديب</div>'; return; }
+  if(!data.success){ setListMessage(list, 'تعذر جلب المناديب'); return; }
   const agents = data.agents || [];
-  list.innerHTML = agents.map(a=>
-    `<div class="wf-item">
-      <span>#${a.id} — ${a.full_name}</span>
-      <span>${Number(a.commission_rate||0).toFixed(2)}%</span>
-    </div>`
-  ).join('') || '<div class="wf-item">لا يوجد مناديب بعد</div>';
+  if(!agents.length){ setListMessage(list, 'لا يوجد مناديب بعد'); return; }
+  list.replaceChildren(...agents.map(a => {
+    const row = document.createElement('div');
+    row.className = 'wf-item';
+    const left = document.createElement('span');
+    left.textContent = `#${a.id} — ${a.full_name || ''}`;
+    const right = document.createElement('span');
+    right.textContent = `${Number(a.commission_rate || 0).toFixed(2)}%`;
+    row.append(left, right);
+    return row;
+  }));
 
   if(agents.length){ loadAgentSummary(agents[0].id); }
 }
@@ -159,11 +180,21 @@ async function loadAgentSummary(agentId){
   const data = await jget(`/api/v1/agents/${agentId}/commissions/summary?days=30`);
   if(!data.success) return;
   const s = data.summary || {};
-  document.getElementById('agentKpis').innerHTML = `
-    <div><b>${s.invoices_count || 0}</b><span>عدد الفواتير</span></div>
-    <div><b>${money(s.commissions_pending)}</b><span>عمولات معلّقة</span></div>
-    <div><b>${money(s.commissions_paid)}</b><span>عمولات مدفوعة</span></div>
-  `;
+  const wrap = document.getElementById('agentKpis');
+  const cards = [
+    { value: String(s.invoices_count || 0), label: 'عدد الفواتير' },
+    { value: money(s.commissions_pending), label: 'عمولات معلّقة' },
+    { value: money(s.commissions_paid), label: 'عمولات مدفوعة' },
+  ].map(item => {
+    const card = document.createElement('div');
+    const value = document.createElement('b');
+    value.textContent = item.value;
+    const label = document.createElement('span');
+    label.textContent = item.label;
+    card.append(value, label);
+    return card;
+  });
+  wrap.replaceChildren(...cards);
 }
 
 loadEmployees();

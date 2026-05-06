@@ -109,6 +109,23 @@ const TYPE_META = {
   {% endfor %}
 };
 
+function escHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function encodeReminder(item) {
+  return encodeURIComponent(JSON.stringify(item));
+}
+
+function openEditEncoded(payload) {
+  openEdit(JSON.parse(decodeURIComponent(payload)));
+}
+
 function toggleRecurrence() {
   document.getElementById('recurrenceDays').style.display =
     document.getElementById('rRecurring').checked ? 'block' : 'none';
@@ -221,19 +238,19 @@ function loadReminders() {
         return `<div class="reminder-card" style="${dimmed}">
           <div class="reminder-icon">${meta.icon}</div>
           <div class="reminder-meta">
-            <p class="reminder-title">${item.title}</p>
+            <p class="reminder-title">${escHtml(item.title)}</p>
             <div class="reminder-sub">
-              <span>${meta.label}</span>
-              <span>📅 ${due}</span>
-              ${item.amount ? `<span>💰 ${parseFloat(item.amount).toLocaleString('ar-SA')} ر.س</span>` : ''}
-              ${item.is_recurring ? `<span>🔁 كل ${item.recurrence_days||'?'} يوم</span>` : ''}
-              ${item.notes ? `<span title="${item.notes}">📝 ${item.notes.slice(0,40)}${item.notes.length>40?'…':''}</span>` : ''}
+              <span>${escHtml(meta.label)}</span>
+              <span>📅 ${escHtml(due)}</span>
+              ${item.amount ? `<span>💰 ${escHtml(parseFloat(item.amount).toLocaleString('ar-SA'))} ر.س</span>` : ''}
+              ${item.is_recurring ? `<span>🔁 كل ${escHtml(item.recurrence_days||'?')} يوم</span>` : ''}
+              ${item.notes ? `<span title="${escHtml(item.notes)}">📝 ${escHtml(item.notes.slice(0,40))}${item.notes.length>40?'…':''}</span>` : ''}
             </div>
           </div>
           <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
             ${badge}
             <div style="display:flex;gap:6px;margin-top:4px">
-              <button onclick='openEdit(${JSON.stringify(item)})' class="btn btn-sm btn-outline">✏️</button>
+              <button data-item="${escHtml(encodeReminder(item))}" onclick="openEditEncoded(this.dataset.item)" class="btn btn-sm btn-outline">✏️</button>
               ${!item.is_dismissed ? `<button onclick="dismissReminder(${item.id})" class="btn btn-sm btn-outline" title="رفض">✓</button>` : ''}
               <button onclick="deleteReminder(${item.id})" class="btn btn-sm btn-danger" title="حذف">🗑️</button>
             </div>
@@ -251,7 +268,7 @@ function loadReminders() {
         const m = TYPE_META[type] || {icon:'🔔', label:'أخرى'};
         return `<div class="stat-card">
           <div class="stat-icon">${m.icon}</div>
-          <div><div class="stat-value">${cnt}</div><div class="stat-label">${m.label}</div></div>
+          <div><div class="stat-value">${escHtml(cnt)}</div><div class="stat-label">${escHtml(m.label)}</div></div>
         </div>`;
       }).join('') || '<p style="color:var(--text-muted);padding:8px 0">لا توجد تنبيهات نشطة</p>';
     });

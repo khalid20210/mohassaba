@@ -18,6 +18,7 @@ from .runtime_services import (
     should_use_distributed_rate_limit,
     check_rate_limit_distributed,
 )
+from .i18n import SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE
 
 
 _rate_limit_state: dict[str, deque] = {}
@@ -132,6 +133,24 @@ def owner_required(f):
     return decorated
 
 
+def admin_required(f):
+    """ديكوراتور: يسمح فقط لـ الأدمن (role = 'admin')"""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect(url_for("auth.auth_login"))
+        
+        if not g.user or g.user.get("role") != "admin":
+            flash("هذه الصفحة مخصصة للأدمن فقط", "error")
+            if "user_id" in session:
+                return redirect(url_for("core.dashboard"))
+            else:
+                return redirect(url_for("auth.auth_login"))
+        
+        return f(*args, **kwargs)
+    return decorated
+
+
 def write_audit_log(db, business_id: int, action: str,
                     entity_type: str = None, entity_id: int = None,
                     old_value: str = None, new_value: str = None):
@@ -169,6 +188,12 @@ def load_user():
     g.user_perms     = {}
     g.country_profile = None
 
+    # ── تحديد اللغة (جلسة → مستخدم → افتراضي) ───────────────────────────
+    lang = session.get("lang", DEFAULT_LANGUAGE)
+    if lang not in SUPPORTED_LANGUAGES:
+        lang = DEFAULT_LANGUAGE
+    g.lang = lang
+
     user_id = session.get("user_id")
     if user_id:
         db = get_db()
@@ -182,6 +207,10 @@ def load_user():
 
         if g.user:
             g.user = dict(g.user)
+            # ── تحديث اللغة من تفضيل المستخدم المحفوظ ─────────────────────
+            user_lang = g.user.get("preferred_language") or DEFAULT_LANGUAGE
+            if user_lang in SUPPORTED_LANGUAGES and "lang" not in session:
+                g.lang = user_lang
 
         # ── RLS Guard: تحقق أن business_id في الجلسة يطابق قاعدة البيانات ──────
         # يمنع تلاعب المستخدم بالجلسة للوصول لبيانات منشأة أخرى
@@ -244,9 +273,10 @@ def load_user():
             path = request.path or ""
             if not path.startswith(("/static", "/api", "/auth", "/healthz", "/readyz")):
                 itype = g.business.get("industry_type") or ""
+                itype_sidebar = get_sidebar_key(itype)
                 for prefix, allowed_set in INDUSTRY_ROUTE_GUARDS.items():
                     if path.startswith(prefix):
-                        if itype not in allowed_set:
+                        if itype not in allowed_set and itype_sidebar not in allowed_set:
                             flash("هذا القسم غير متاح لنشاطك التجاري", "error")
                             return redirect(url_for("core.dashboard"))
                         break
@@ -264,7 +294,37 @@ def platform_guard():
     if path in ("/healthz", "/readyz", "/offline"):
         return None
 
+    # Force Update Gate: إغلاق إجباري للنسخ القديمة لتطبيق المندوب
+    if path.startswith(("/api/v1/agents", "/api/v2/agents")):
+        try:
+            db = get_db()
+            biz_id = session.get("business_id") or session.get("agent_biz_id")
+            if not biz_id:
+                hdr_biz = request.headers.get("X-Business-ID")
+                if hdr_biz and str(hdr_biz).isdigit():
+                    biz_id = int(hdr_biz)
+
+            from .security_hardening import enforce_agent_app_version
+            app_version = request.headers.get("X-App-Version") or request.headers.get("App-Version")
+            ok, policy = enforce_agent_app_version(db, int(biz_id) if biz_id else None, app_version)
+            if not ok:
+                return jsonify({
+                    "success": False,
+                    "error": "force_update_required",
+                    "message": "يرجى تحديث التطبيق قبل المتابعة",
+                    "policy": policy,
+                    "request_id": g.request_id,
+                }), 426
+        except Exception:
+            # لا نعطل المنصة بالكامل في حال خطأ عارض هنا
+            pass
+
     key = request.headers.get("X-Forwarded-For", "").split(",")[0].strip() or request.remote_addr or "unknown"
+
+    # استثناء localhost من Rate Limiting (تطوير واختبارات)
+    if key in ("127.0.0.1", "::1", "localhost"):
+        return None
+
     now = monotonic()
 
     # Rate limit موزع (Redis) عند تفعيله
@@ -306,6 +366,7 @@ def platform_guard():
 def inject_globals():
     """Context processor: يُضاف لكل القوالب"""
     from .config import INDUSTRY_TYPES
+    lang = getattr(g, "lang", DEFAULT_LANGUAGE)
     return {
         "current_user":     g.user,
         "current_business": g.business,
@@ -317,6 +378,9 @@ def inject_globals():
         "csrf_token":       generate_csrf_token(),
         "user_has_perm":    user_has_perm,
         "country_profile":  g.country_profile,
+        "lang":             lang,
+        "is_rtl":           lang == "ar",
+        "text_dir":         "rtl" if lang == "ar" else "ltr",
     }
 
 
@@ -382,7 +446,7 @@ def add_security_headers(response):
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net unpkg.com; "
         "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com; "
-        "font-src 'self' fonts.gstatic.com data:; "
+        "font-src 'self' fonts.gstatic.com cdn.jsdelivr.net data:; "
         "img-src 'self' data: blob:; "
         "connect-src 'self';"
     )

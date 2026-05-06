@@ -44,6 +44,69 @@
 
 <script>
 const scanLog = [];
+
+function renderScanResult(found, productName, barcodeValue, sellPrice) {
+  const contentEl = document.getElementById('result-content');
+  const wrapper = document.createElement('div');
+  wrapper.style.padding = '12px';
+
+  if (found) {
+    wrapper.style.display = 'flex';
+    wrapper.style.alignItems = 'center';
+    wrapper.style.gap = '16px';
+
+    const icon = document.createElement('span');
+    icon.style.fontSize = '2rem';
+    icon.textContent = '✅';
+
+    const info = document.createElement('div');
+    const title = document.createElement('strong');
+    title.style.fontSize = '1.1rem';
+    title.textContent = productName || 'منتج';
+
+    const barcode = document.createElement('span');
+    barcode.style.color = '#94a3b8';
+    barcode.style.fontSize = '.85rem';
+    barcode.textContent = `الباركود: ${barcodeValue}`;
+
+    const price = document.createElement('span');
+    price.style.color = '#22c55e';
+    price.textContent = `السعر: ${sellPrice || '—'} ر.س`;
+
+    info.append(title, document.createElement('br'), barcode, document.createElement('br'), price);
+    wrapper.append(icon, info);
+  } else {
+    wrapper.style.color = '#ef4444';
+    wrapper.textContent = `❌ لم يُعثر على منتج بهذا الباركود: ${barcodeValue}`;
+  }
+
+  contentEl.replaceChildren(wrapper);
+}
+
+function renderScanLog() {
+  const logEl = document.getElementById('scan-log');
+  if (!scanLog.length) {
+    const empty = document.createElement('p');
+    empty.textContent = 'لا توجد عمليات مسح بعد...';
+    logEl.replaceChildren(empty);
+    return;
+  }
+
+  logEl.replaceChildren(...scanLog.slice(0, 5).map(s => {
+    const row = document.createElement('div');
+    row.style.padding = '4px 0';
+    row.style.borderBottom = '1px solid rgba(255,255,255,.05)';
+    const code = document.createElement('code');
+    code.textContent = s.val;
+    row.append(
+      document.createTextNode(`${s.found ? '✅' : '❌'} `),
+      code,
+      document.createTextNode(` — ${s.time}`),
+    );
+    return row;
+  }));
+}
+
 document.getElementById('scan-form').addEventListener('submit', async function(e) {
   e.preventDefault();
   const val = document.getElementById('barcode-input').value.trim();
@@ -58,30 +121,12 @@ document.getElementById('scan-form').addEventListener('submit', async function(e
     const data = await res.json();
 
     const resultEl = document.getElementById('scan-result');
-    const contentEl = document.getElementById('result-content');
     resultEl.style.display = 'block';
-
-    if (data.found) {
-      contentEl.innerHTML = `
-        <div style="display:flex;align-items:center;gap:16px;padding:8px;">
-          <span style="font-size:2rem;">✅</span>
-          <div>
-            <strong style="font-size:1.1rem;">${data.product_name || 'منتج'}</strong><br>
-            <span style="color:#94a3b8;font-size:.85rem;">الباركود: ${val}</span><br>
-            <span style="color:#22c55e;">السعر: ${data.sell_price || '—'} ر.س</span>
-          </div>
-        </div>`;
-    } else {
-      contentEl.innerHTML = `<div style="padding:12px;color:#ef4444;">❌ لم يُعثر على منتج بهذا الباركود: <strong>${val}</strong></div>`;
-    }
+    renderScanResult(data.found, data.product_name, val, data.sell_price);
 
     // إضافة للسجل
     scanLog.unshift({ val, time: new Date().toLocaleTimeString('ar'), found: data.found });
-    document.getElementById('scan-log').innerHTML = scanLog.slice(0,5).map(s =>
-      `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05);">
-        ${s.found ? '✅' : '❌'} <code>${s.val}</code> — ${s.time}
-       </div>`
-    ).join('');
+    renderScanLog();
 
     document.getElementById('barcode-input').value = '';
     document.getElementById('barcode-input').focus();

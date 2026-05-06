@@ -53,6 +53,22 @@
 .agent-comm{color:#4ade80;font-size:.85rem;font-weight:800}
 .agent-inv{color:#94a3b8;font-size:.72rem}
 
+/* ══ Owner Overview Widgets ═════════════════════════════════════════════ */
+.ow-mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.ow-mini-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:1100px){.ow-mini-grid,.ow-mini-grid-3{grid-template-columns:1fr}}
+.ow-mini-table{display:grid;gap:8px;max-height:280px;overflow:auto;padding-right:2px}
+.ow-mini-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(148,163,184,.1)}
+.ow-mini-row:last-child{border:none}
+.ow-mini-name{color:#e2e8f0;font-size:.82rem;font-weight:700}
+.ow-mini-meta{color:#94a3b8;font-size:.72rem}
+.ow-mini-val{color:#4ade80;font-size:.82rem;font-weight:800;white-space:nowrap}
+.ow-pill{display:inline-block;background:rgba(37,99,235,.15);color:#93c5fd;border:1px solid rgba(37,99,235,.25);border-radius:999px;padding:3px 8px;font-size:.68rem;font-weight:700}
+.ow-kv{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(148,163,184,.1);font-size:.82rem}
+.ow-kv:last-child{border:none}
+.ow-kv .k{color:#94a3b8}
+.ow-kv .v{color:#e2e8f0;font-weight:800}
+
 /* ══ Control Panel ══════════════════════════════════════════════════════ */
 .ctrl-toggle-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(148,163,184,.1)}
 .ctrl-toggle-row:last-of-type{border:none}
@@ -155,6 +171,78 @@ input:checked+.toggle-slider::before{transform:translateX(-20px)}
       <span class="kpi-icon">💼</span>
       <p class="kpi-val">{{ "{:,.0f}".format(kpis.payroll_total - kpis.deductions_total) }}</p>
       <p class="kpi-lbl">صافي الرواتب المستحقة</p>
+    </div>
+  </div>
+
+  {# ── ملخص المالك الشامل (من كل وحدات النظام) ───────────────────────── #}
+  <div class="ow-mini-grid-3">
+    <div class="ow-card">
+      <h3 class="ow-card-title">🧾 المبيعات اليوم حسب الكاشير</h3>
+      {% if sales_by_cashier_today %}
+      <div class="ow-mini-table">
+        {% for row in sales_by_cashier_today %}
+        <div class="ow-mini-row">
+          <div>
+            <div class="ow-mini-name">{{ row.actor_name }}</div>
+            <div class="ow-mini-meta">{{ row.invoices_count }} فاتورة</div>
+          </div>
+          <span class="ow-pill">كاشير</span>
+          <div class="ow-mini-val">{{ "{:,.0f}".format(row.sales_total or 0) }} ر.س</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="color:#64748b;font-size:.82rem;text-align:center;margin-top:14px">لا توجد مبيعات مسندة لكاشير اليوم</p>
+      {% endif %}
+    </div>
+
+    <div class="ow-card">
+      <h3 class="ow-card-title">🤝 المبيعات اليوم حسب المندوب</h3>
+      {% if sales_by_agent_today %}
+      <div class="ow-mini-table">
+        {% for row in sales_by_agent_today %}
+        <div class="ow-mini-row">
+          <div>
+            <div class="ow-mini-name">{{ row.actor_name }}</div>
+            <div class="ow-mini-meta">{{ row.invoices_count }} فاتورة</div>
+          </div>
+          <span class="ow-pill">مندوب</span>
+          <div class="ow-mini-val">{{ "{:,.0f}".format(row.sales_total or 0) }} ر.س</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="color:#64748b;font-size:.82rem;text-align:center;margin-top:14px">لا توجد فواتير مرتبطة بمناديب اليوم</p>
+      {% endif %}
+    </div>
+
+    <div class="ow-card">
+      <h3 class="ow-card-title">🏗 ملخص المقاولات</h3>
+      <div class="ow-kv"><span class="k">إجمالي المشاريع</span><span class="v">{{ construction_summary.total_projects }}</span></div>
+      <div class="ow-kv"><span class="k">مشاريع نشطة</span><span class="v">{{ construction_summary.active_projects }}</span></div>
+      <div class="ow-kv"><span class="k">مشاريع مكتملة</span><span class="v">{{ construction_summary.completed_projects }}</span></div>
+      <div class="ow-kv"><span class="k">مكتملة هذا الشهر</span><span class="v">{{ construction_summary.completed_this_month }}</span></div>
+      <div class="ow-kv"><span class="k">مستخلصات هذا الشهر</span><span class="v">{{ construction_summary.extracts_this_month }}</span></div>
+      <div class="ow-kv"><span class="k">مستخلصات مفوترة</span><span class="v">{{ construction_summary.invoiced_extracts_this_month }}</span></div>
+    </div>
+  </div>
+
+  <div class="ow-mini-grid">
+    <div class="ow-card">
+      <h3 class="ow-card-title">📡 نبض التشغيل اليومي</h3>
+      <div class="ow-kv"><span class="k">عدد فواتير اليوم</span><span class="v">{{ operational_snapshot.invoices_today }}</span></div>
+      <div class="ow-kv"><span class="k">الذمم المفتوحة</span><span class="v">{{ "{:,.0f}".format(operational_snapshot.receivables_open or 0) }} ر.س</span></div>
+      <div class="ow-kv"><span class="k">عدد المنتجات</span><span class="v">{{ operational_snapshot.products_count }}</span></div>
+      <div class="ow-kv"><span class="k">عدد العملاء/الموردين</span><span class="v">{{ operational_snapshot.contacts_count }}</span></div>
+    </div>
+
+    <div class="ow-card">
+      <h3 class="ow-card-title">🧭 اختصار تنفيذي للمالك</h3>
+      <ul class="db-side-list" style="margin-top:8px">
+        <li>مبيعات اليوم موزعة حسب المنفّذ (كاشير/مندوب) بدل رقم إجمالي فقط.</li>
+        <li>حالة المقاولات في سطر واحد: نشط، مكتمل، ومخرجات الشهر.</li>
+        <li>نبض تشغيلي موحد: فواتير اليوم + الذمم + حجم البيانات الأساسية.</li>
+      </ul>
     </div>
   </div>
 

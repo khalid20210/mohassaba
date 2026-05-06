@@ -1,187 +1,400 @@
 {% extends "base.html" %}
-{% block title %}{{ patient.full_name }}{% endblock %}
-{% block page_title %}🏥 {{ patient.full_name }}{% endblock %}
+{% block title %}{{ patient.patient_name }}{% endblock %}
+{% block page_title %}ملف المريض{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <div>
-    <a href="/medical/patients" style="color:#94a3b8;font-size:.85rem;">← المرضى</a>
-    <p class="page-subtitle" style="margin-top:4px;">ملف #{{ patient.file_number or patient.id }}</p>
+<style>
+.med-modal{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
+.med-modal.open{opacity:1;pointer-events:all;}
+.med-modal-bg{position:absolute;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);}
+.med-modal-box{position:relative;z-index:1;background:linear-gradient(145deg,#1e293b,#0f172a);border:1px solid rgba(56,189,248,.2);border-radius:20px;padding:28px;width:90%;max-width:560px;max-height:90vh;overflow-y:auto;transform:translateY(20px);transition:transform .25s;}
+.med-modal.open .med-modal-box{transform:translateY(0);}
+.med-modal-header{display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.08);}
+.med-modal-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#0ea5e9,#6366f1);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;}
+.med-modal-title{font-size:1.1rem;font-weight:700;color:#f1f5f9;margin:0;flex:1;}
+.med-modal-close{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
+.med-modal-close:hover{background:rgba(239,68,68,.15);color:#ef4444;border-color:rgba(239,68,68,.3);}
+.med-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.med-form-grid .full{grid-column:1/-1;}
+.med-label{display:block;font-size:.78rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+.med-input{width:100%;padding:10px 14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#f1f5f9;font-size:.9rem;transition:border .2s;box-sizing:border-box;}
+.med-input:focus{outline:none;border-color:#38bdf8;background:rgba(56,189,248,.05);}
+.med-input::placeholder{color:#475569;}
+.med-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06);}
+.btn-cancel{padding:10px 20px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .2s;}
+.btn-cancel:hover{background:rgba(255,255,255,.1);color:#f1f5f9;}
+.btn-submit{padding:10px 24px;border-radius:10px;background:linear-gradient(135deg,#0ea5e9,#6366f1);border:none;color:#fff;font-size:.88rem;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn-submit:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(14,165,233,.3);}
+.tab-bar{display:flex;gap:4px;background:rgba(255,255,255,.04);padding:4px;border-radius:12px;margin-bottom:20px;}
+.tab-btn{flex:1;padding:9px;border:none;border-radius:9px;background:transparent;color:#64748b;font-weight:600;font-size:.84rem;cursor:pointer;transition:all .2s;}
+.tab-btn.active{background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#fff;}
+.tab-pane{display:none;}
+.tab-pane.active{display:block;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.info-row{display:flex;flex-direction:column;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.05);}
+.info-row:nth-child(odd){border-left:1px solid rgba(255,255,255,.05);}
+.info-row-label{font-size:.73rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.info-row-val{font-size:.9rem;color:#f1f5f9;font-weight:500;}
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:600;}
+.badge-scheduled{background:#1e3a5f;color:#93c5fd;}
+.badge-completed{background:#14532d;color:#86efac;}
+.badge-cancelled{background:#7f1d1d;color:#fca5a5;}
+.visit-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px;margin-bottom:10px;}
+.vital-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px;}
+.vital-box{background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.12);border-radius:10px;padding:10px;text-align:center;}
+.vital-val{font-size:1.1rem;font-weight:700;color:#38bdf8;}
+.vital-lbl{font-size:.72rem;color:#64748b;margin-top:2px;}
+</style>
+
+<!-- Back Button -->
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+  <a href="/medical/patients" style="display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#94a3b8;text-decoration:none;font-size:.88rem;font-weight:600;transition:all .2s;" onmouseover="this.style.color='#f1f5f9'" onmouseout="this.style.color='#94a3b8'">
+    ← رجوع للمرضى
+  </a>
+  <div style="flex:1;">
+    <div style="font-size:1.3rem;font-weight:800;color:#f1f5f9;">{{ patient.patient_name }}</div>
+    <div style="font-size:.82rem;color:#38bdf8;font-family:monospace;margin-top:2px;">📁 {{ patient.file_number or 'MED-?????' }}</div>
   </div>
   <div style="display:flex;gap:8px;">
-    <button class="btn btn-secondary" onclick="document.getElementById('editPatientModal').classList.add('show')">✏️ تعديل</button>
-    <button class="btn btn-primary" onclick="document.getElementById('newApptModal').classList.add('show')">+ موعد جديد</button>
+    <button onclick="openModal('editPatientModal')" style="padding:9px 18px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-size:.85rem;font-weight:600;cursor:pointer;">✏️ تعديل البيانات</button>
+    <button onclick="openModal('newApptModal')" style="padding:9px 20px;border-radius:10px;background:linear-gradient(135deg,#0ea5e9,#6366f1);border:none;color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;">📅 موعد جديد</button>
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+<!-- Profile Header Card -->
+<div style="background:linear-gradient(135deg,rgba(14,165,233,.12),rgba(99,102,241,.08));border:1px solid rgba(56,189,248,.2);border-radius:18px;padding:24px;margin-bottom:20px;display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+  <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,{% if patient.gender=='male' %}#1e40af,#3b82f6{% elif patient.gender=='female' %}#9d174d,#ec4899{% else %}#374151,#6b7280{% endif %});display:flex;align-items:center;justify-content:center;font-size:2.2rem;flex-shrink:0;">
+    {{ '👨' if patient.gender=='male' else '👩' if patient.gender=='female' else '🧑' }}
+  </div>
+  <div style="flex:1;min-width:200px;">
+    <div style="font-size:1.6rem;font-weight:800;color:#f1f5f9;margin-bottom:6px;">{{ patient.patient_name }}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      {% if patient.blood_type %}
+      <span style="background:rgba(239,68,68,.15);color:#ef4444;padding:4px 12px;border-radius:20px;font-size:.82rem;font-weight:700;border:1px solid rgba(239,68,68,.2);">🩸 {{ patient.blood_type }}</span>
+      {% endif %}
+      {% if patient.gender %}
+      <span style="background:rgba(56,189,248,.1);color:#38bdf8;padding:4px 12px;border-radius:20px;font-size:.82rem;border:1px solid rgba(56,189,248,.2);">{{ '♂ ذكر' if patient.gender=='male' else '♀ أنثى' }}</span>
+      {% endif %}
+      {% if patient.date_of_birth %}
+      <span style="background:rgba(255,255,255,.05);color:#94a3b8;padding:4px 12px;border-radius:20px;font-size:.82rem;">🎂 {{ patient.date_of_birth }}</span>
+      {% endif %}
+      {% if patient.patient_phone %}
+      <span style="background:rgba(255,255,255,.05);color:#94a3b8;padding:4px 12px;border-radius:20px;font-size:.82rem;">📱 {{ patient.patient_phone }}</span>
+      {% endif %}
+      {% if patient.last_visit %}
+      <span style="background:rgba(52,211,153,.1);color:#34d399;padding:4px 12px;border-radius:20px;font-size:.82rem;border:1px solid rgba(52,211,153,.2);">🕐 آخر زيارة: {{ patient.last_visit[:10] }}</span>
+      {% endif %}
+    </div>
+    {% if patient.chronic_diseases %}
+    <div style="margin-top:10px;padding:8px 12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;color:#f59e0b;font-size:.83rem;">
+      💊 أمراض مزمنة: {{ patient.chronic_diseases }}
+    </div>
+    {% endif %}
+    {% if patient.allergies %}
+    <div style="margin-top:6px;padding:8px 12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;color:#ef4444;font-size:.83rem;">
+      ⚠️ حساسية: {{ patient.allergies }}
+    </div>
+    {% endif %}
+  </div>
+  <!-- Quick Stats -->
+  <div style="display:flex;gap:12px;flex-shrink:0;">
+    <div style="text-align:center;padding:12px 16px;background:rgba(255,255,255,.04);border-radius:12px;">
+      <div style="font-size:1.5rem;font-weight:800;color:#a78bfa;">{{ appointments|length }}</div>
+      <div style="font-size:.73rem;color:#64748b;margin-top:2px;">مواعيد</div>
+    </div>
+    <div style="text-align:center;padding:12px 16px;background:rgba(255,255,255,.04);border-radius:12px;">
+      <div style="font-size:1.5rem;font-weight:800;color:#34d399;">{{ visits|length }}</div>
+      <div style="font-size:.73rem;color:#64748b;margin-top:2px;">زيارات</div>
+    </div>
+    <div style="text-align:center;padding:12px 16px;background:rgba(255,255,255,.04);border-radius:12px;">
+      <div style="font-size:1.5rem;font-weight:800;color:#fbbf24;">{{ prescriptions|length }}</div>
+      <div style="font-size:.73rem;color:#64748b;margin-top:2px;">وصفات</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="showTab('tab-info',this)">👤 البيانات الشخصية</button>
+  <button class="tab-btn" onclick="showTab('tab-appts',this)">📅 المواعيد ({{ appointments|length }})</button>
+  <button class="tab-btn" onclick="showTab('tab-visits',this)">🩺 الزيارات ({{ visits|length }})</button>
+  <button class="tab-btn" onclick="showTab('tab-rx',this)">💊 الوصفات ({{ prescriptions|length }})</button>
+</div>
+
+<!-- Tab: Info -->
+<div id="tab-info" class="tab-pane active">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">👤 بيانات شخصية</h3></div>
+      <div class="info-grid">
+        <div class="info-row"><span class="info-row-label">📱 الهاتف</span><span class="info-row-val">{{ patient.patient_phone or '—' }}</span></div>
+        <div class="info-row"><span class="info-row-label">📧 البريد</span><span class="info-row-val">{{ patient.email or '—' }}</span></div>
+        <div class="info-row"><span class="info-row-label">🪪 الرقم الوطني</span><span class="info-row-val" style="font-family:monospace;">{{ patient.national_id or '—' }}</span></div>
+        <div class="info-row"><span class="info-row-label">🏠 العنوان</span><span class="info-row-val">{{ patient.address or '—' }}</span></div>
+        <div class="info-row"><span class="info-row-label">📞 جهة طوارئ</span><span class="info-row-val">{{ patient.emergency_contact or '—' }}</span></div>
+        <div class="info-row"><span class="info-row-label">📱 هاتف الطوارئ</span><span class="info-row-val">{{ patient.emergency_phone or '—' }}</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">🩺 معلومات طبية</h3></div>
+      <div class="info-grid">
+        <div class="info-row"><span class="info-row-label">🩸 فصيلة الدم</span><span class="info-row-val" style="color:#ef4444;font-size:1.1rem;font-weight:800;">{{ patient.blood_type or '—' }}</span></div>
+        <div class="info-row"><span class="info-row-label">📏 الطول</span><span class="info-row-val">{{ (patient.height|string + ' سم') if patient.height else '—' }}</span></div>
+        <div class="info-row"><span class="info-row-label">⚖️ الوزن</span><span class="info-row-val">{{ (patient.weight|string + ' كغ') if patient.weight else '—' }}</span></div>
+        <div class="info-row"><span class="info-row-label">🛡️ شركة التأمين</span><span class="info-row-val">{{ insurance.name if insurance else '—' }}</span></div>
+        <div class="info-row" style="grid-column:1/-1;"><span class="info-row-label">💊 أمراض مزمنة</span><span class="info-row-val" style="color:#f59e0b;">{{ patient.chronic_diseases or '—' }}</span></div>
+        <div class="info-row" style="grid-column:1/-1;"><span class="info-row-label">⚠️ حساسية</span><span class="info-row-val" style="color:#ef4444;">{{ patient.allergies or '—' }}</span></div>
+      </div>
+      {% if patient.medical_history %}
+      <div style="padding:12px 16px;border-top:1px solid rgba(255,255,255,.05);">
+        <div class="info-row-label" style="margin-bottom:6px;">📄 التاريخ المرضي</div>
+        <div style="color:#cbd5e1;font-size:.85rem;line-height:1.6;">{{ patient.medical_history }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Tab: Appointments -->
+<div id="tab-appts" class="tab-pane">
   <div class="card">
-    <div class="card-header"><h3 class="card-title">👤 البيانات الشخصية</h3></div>
+    <div class="card-header">
+      <h3 class="card-title">📅 سجل المواعيد</h3>
+      <button onclick="openModal('newApptModal')" style="padding:7px 16px;border-radius:8px;background:linear-gradient(135deg,#0ea5e9,#6366f1);border:none;color:#fff;font-size:.82rem;font-weight:700;cursor:pointer;">＋ موعد جديد</button>
+    </div>
     <table class="table">
-      <tr><td style="color:#94a3b8;">الاسم</td><td><strong>{{ patient.full_name }}</strong></td></tr>
-      <tr><td style="color:#94a3b8;">الجنس</td><td>{{ '♂ ذكر' if patient.gender=='male' else '♀ أنثى' if patient.gender=='female' else '—' }}</td></tr>
-      <tr><td style="color:#94a3b8;">تاريخ الميلاد</td><td>{{ patient.date_of_birth or '—' }}</td></tr>
-      <tr><td style="color:#94a3b8;">الهاتف</td><td>{{ patient.phone or '—' }}</td></tr>
-      <tr><td style="color:#94a3b8;">البريد</td><td>{{ patient.email or '—' }}</td></tr>
-      <tr><td style="color:#94a3b8;">الرقم الوطني</td><td>{{ patient.national_id or '—' }}</td></tr>
+      <thead>
+        <tr><th>التاريخ</th><th>الوقت</th><th>الطبيب</th><th>النوع</th><th>السبب</th><th>الحالة</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for a in appointments %}
+        <tr>
+          <td style="font-weight:700;">{{ a.appointment_date or '—' }}</td>
+          <td style="color:#64748b;font-size:.82rem;">{{ a.appointment_time or '—' }}</td>
+          <td>{{ a.doctor_name or '—' }}</td>
+          <td style="color:#94a3b8;font-size:.82rem;">{{ a.appointment_type or '—' }}</td>
+          <td style="color:#94a3b8;font-size:.82rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.reason or '—' }}</td>
+          <td>
+            {% if a.status=='scheduled' %}<span class="status-badge badge-scheduled">📅 مجدول</span>
+            {% elif a.status=='completed' %}<span class="status-badge badge-completed">✓ منجز</span>
+            {% elif a.status=='cancelled' %}<span class="status-badge badge-cancelled">✕ ملغي</span>
+            {% else %}<span style="color:#64748b;font-size:.82rem;">{{ a.status }}</span>{% endif %}
+          </td>
+          <td><a href="/medical/appointments/{{ a.id }}" style="padding:4px 12px;border-radius:7px;background:rgba(56,189,248,.1);color:#38bdf8;text-decoration:none;font-size:.8rem;font-weight:600;">تفاصيل</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" style="text-align:center;color:#64748b;padding:32px;">لا توجد مواعيد مسجلة</td></tr>
+        {% endfor %}
+      </tbody>
     </table>
   </div>
+</div>
+
+<!-- Tab: Visits -->
+<div id="tab-visits" class="tab-pane">
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    {% for v in visits %}
+    <div class="visit-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div>
+          <strong style="color:#f1f5f9;">🕐 {{ v.visit_date[:10] if v.visit_date else '—' }}</strong>
+          {% if v.doctor_name %}<span style="color:#64748b;font-size:.82rem;margin-right:8px;">— د. {{ v.doctor_name }}</span>{% endif %}
+        </div>
+        {% if v.follow_up_date %}<span style="background:rgba(245,158,11,.1);color:#f59e0b;padding:3px 10px;border-radius:20px;font-size:.78rem;">📌 متابعة: {{ v.follow_up_date }}</span>{% endif %}
+      </div>
+      {% if v.diagnosis %}
+      <div style="margin-bottom:8px;"><span style="color:#64748b;font-size:.78rem;">التشخيص: </span><span style="color:#f1f5f9;">{{ v.diagnosis }}</span></div>
+      {% endif %}
+      {% if v.treatment %}
+      <div style="margin-bottom:8px;"><span style="color:#64748b;font-size:.78rem;">العلاج: </span><span style="color:#86efac;">{{ v.treatment }}</span></div>
+      {% endif %}
+      {% if v.vital_bp or v.vital_temp or v.vital_pulse or v.vital_weight %}
+      <div class="vital-grid">
+        {% if v.vital_bp %}<div class="vital-box"><div class="vital-val">{{ v.vital_bp }}</div><div class="vital-lbl">الضغط</div></div>{% endif %}
+        {% if v.vital_temp %}<div class="vital-box"><div class="vital-val">{{ v.vital_temp }}°</div><div class="vital-lbl">الحرارة</div></div>{% endif %}
+        {% if v.vital_pulse %}<div class="vital-box"><div class="vital-val">{{ v.vital_pulse }}</div><div class="vital-lbl">النبض</div></div>{% endif %}
+        {% if v.vital_weight %}<div class="vital-box"><div class="vital-val">{{ v.vital_weight }} كغ</div><div class="vital-lbl">الوزن</div></div>{% endif %}
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:60px;color:#64748b;">
+      <div style="font-size:3rem;margin-bottom:12px;">🩺</div>
+      <p>لا توجد زيارات مسجلة</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Tab: Prescriptions -->
+<div id="tab-rx" class="tab-pane">
   <div class="card">
-    <div class="card-header"><h3 class="card-title">🩺 المعلومات الطبية</h3></div>
     <table class="table">
-      <tr><td style="color:#94a3b8;">فصيلة الدم</td><td style="color:#ef4444;font-weight:700;font-size:1.2rem;">{{ patient.blood_type or '—' }}</td></tr>
-      <tr><td style="color:#94a3b8;">الطول</td><td>{{ patient.height or '—' }} سم</td></tr>
-      <tr><td style="color:#94a3b8;">الوزن</td><td>{{ patient.weight or '—' }} كغ</td></tr>
-      <tr><td style="color:#94a3b8;">الأمراض المزمنة</td><td style="color:#f59e0b;">{{ patient.chronic_diseases or '—' }}</td></tr>
-      <tr><td style="color:#94a3b8;">الحساسية</td><td style="color:#ef4444;">{{ patient.allergies or '—' }}</td></tr>
+      <thead>
+        <tr><th>التاريخ</th><th>الطبيب</th><th>الأدوية</th><th>ملاحظات</th></tr>
+      </thead>
+      <tbody>
+        {% for rx in prescriptions %}
+        <tr>
+          <td style="font-weight:700;white-space:nowrap;">{{ rx.created_at[:10] if rx.created_at else '—' }}</td>
+          <td>{{ rx.doctor_name if rx.doctor_name is defined else '—' }}</td>
+          <td style="color:#86efac;">{{ rx.prescription_items or rx.medications or '—' }}</td>
+          <td style="color:#64748b;font-size:.82rem;">{{ rx.notes or '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center;color:#64748b;padding:32px;">لا توجد وصفات طبية</td></tr>
+        {% endfor %}
+      </tbody>
     </table>
   </div>
-</div>
-
-<!-- المواعيد -->
-<div class="card" style="margin-top:16px;">
-  <div class="card-header">
-    <h3 class="card-title">📅 سجل المواعيد</h3>
-    <span style="color:#94a3b8;font-size:.82rem;">{{ appointments|length }} موعد</span>
-  </div>
-  <table class="table">
-    <thead>
-      <tr><th>التاريخ</th><th>الطبيب</th><th>النوع</th><th>السبب</th><th>الحالة</th><th></th></tr>
-    </thead>
-    <tbody>
-      {% for a in appointments %}
-      <tr>
-        <td><strong>{{ a.appointment_date or '—' }}</strong> <span style="color:#64748b;font-size:.82rem;">{{ a.appointment_time or '' }}</span></td>
-        <td>{{ a.doctor_id or '—' }}</td>
-        <td style="font-size:.82rem;color:#94a3b8;">{{ a.appointment_type or '—' }}</td>
-        <td style="color:#94a3b8;font-size:.82rem;">{{ a.reason or '—' }}</td>
-        <td>
-          {% if a.status=='scheduled' %}<span style="background:#1e3a5f;color:#93c5fd;padding:2px 8px;border-radius:20px;font-size:.78rem;">📅 مجدول</span>
-          {% elif a.status=='completed' %}<span style="background:#14532d;color:#86efac;padding:2px 8px;border-radius:20px;font-size:.78rem;">✓ منجز</span>
-          {% elif a.status=='cancelled' %}<span style="background:#7f1d1d;color:#fca5a5;padding:2px 8px;border-radius:20px;font-size:.78rem;">✕ ملغي</span>
-          {% else %}<span style="color:#94a3b8;">{{ a.status }}</span>{% endif %}
-        </td>
-        <td><a href="/medical/appointments/{{ a.id }}" class="btn btn-secondary" style="padding:4px 10px;font-size:.78rem;">تفاصيل</a></td>
-      </tr>
-      {% else %}
-      <tr><td colspan="6" style="text-align:center;color:#64748b;padding:20px;">لا توجد مواعيد</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-<!-- الوصفات -->
-<div class="card" style="margin-top:16px;">
-  <div class="card-header">
-    <h3 class="card-title">💊 الوصفات الطبية</h3>
-    <span style="color:#94a3b8;font-size:.82rem;">{{ prescriptions|length }} وصفة</span>
-  </div>
-  <table class="table">
-    <thead>
-      <tr><th>التاريخ</th><th>الطبيب</th><th>الأدوية</th><th>الحالة</th></tr>
-    </thead>
-    <tbody>
-      {% for rx in prescriptions %}
-      <tr>
-        <td>{{ rx.prescription_date or '—' }}</td>
-        <td>{{ rx.doctor_id or '—' }}</td>
-        <td style="color:#94a3b8;font-size:.82rem;">{{ rx.medications or rx.diagnosis or '—' }}</td>
-        <td>
-          {% if rx.status=='active' %}<span style="background:#14532d;color:#86efac;padding:2px 8px;border-radius:20px;font-size:.78rem;">نشطة</span>
-          {% elif rx.status=='completed' %}<span style="background:rgba(255,255,255,.06);color:#64748b;padding:2px 8px;border-radius:20px;font-size:.78rem;">منتهية</span>
-          {% else %}<span style="color:#94a3b8;">{{ rx.status or '—' }}</span>{% endif %}
-        </td>
-      </tr>
-      {% else %}
-      <tr><td colspan="4" style="text-align:center;color:#64748b;padding:20px;">لا توجد وصفات</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
 </div>
 
 <!-- Modal: موعد جديد -->
-<div class="modal-overlay" id="newApptModal">
-  <div class="modal-box" style="max-width:440px;">
-    <div class="modal-header">
-      <h3 class="modal-title">📅 موعد جديد</h3>
-      <button class="modal-close" onclick="document.getElementById('newApptModal').classList.remove('show')">✕</button>
+<div class="med-modal" id="newApptModal">
+  <div class="med-modal-bg" onclick="closeModal('newApptModal')"></div>
+  <div class="med-modal-box">
+    <div class="med-modal-header">
+      <div class="med-modal-icon">📅</div>
+      <h3 class="med-modal-title">حجز موعد جديد</h3>
+      <button class="med-modal-close" onclick="closeModal('newApptModal')" title="إغلاق">✕</button>
     </div>
     <form method="post" action="/medical/appointments/new">
       <input type="hidden" name="patient_id" value="{{ patient.id }}">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="form-group">
-          <label class="form-label">التاريخ *</label>
-          <input name="date" type="date" class="form-input" required>
+      <input type="hidden" name="back_to" value="/medical/patients/{{ patient.id }}">
+      <div class="med-form-grid">
+        <div>
+          <label class="med-label">📅 التاريخ *</label>
+          <input name="appointment_date" type="date" class="med-input" required>
         </div>
-        <div class="form-group">
-          <label class="form-label">الوقت</label>
-          <input name="time" type="time" class="form-input">
+        <div>
+          <label class="med-label">🕐 الوقت</label>
+          <input name="appointment_time" type="time" class="med-input">
         </div>
-        <div class="form-group">
-          <label class="form-label">نوع الزيارة</label>
-          <select name="type" class="form-input">
-            <option value="checkup">كشف عادي</option>
-            <option value="followup">متابعة</option>
-            <option value="emergency">طارئ</option>
-            <option value="consultation">استشارة</option>
+        <div>
+          <label class="med-label">📋 نوع الزيارة</label>
+          <select name="appointment_type" class="med-input">
+            <option value="كشف">🔍 كشف عادي</option>
+            <option value="متابعة">🔁 متابعة</option>
+            <option value="طارئ">🚨 طارئ</option>
+            <option value="استشارة">💬 استشارة</option>
           </select>
         </div>
-        <div class="form-group">
-          <label class="form-label">معرف الطبيب</label>
-          <input name="doctor_id" class="form-input" type="number" placeholder="رقم الطبيب">
+        <div>
+          <label class="med-label">👨‍⚕️ الطبيب</label>
+          <select name="doctor_id" class="med-input">
+            <option value="">— غير محدد</option>
+            {% for doc in doctors %}
+            <option value="{{ doc.id }}">{{ doc.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="full">
+          <label class="med-label">📝 سبب الزيارة</label>
+          <textarea name="reason" class="med-input" rows="3" placeholder="اكتب وصفاً للحالة أو سبب الزيارة..."></textarea>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">سبب الزيارة</label>
-        <textarea name="reason" class="form-input" rows="2" placeholder="وصف الحالة..."></textarea>
-      </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
-        <button type="button" class="btn btn-secondary" onclick="document.getElementById('newApptModal').classList.remove('show')">إلغاء</button>
-        <button type="submit" class="btn btn-primary">✅ حجز الموعد</button>
+      <div class="med-footer">
+        <button type="button" class="btn-cancel" onclick="closeModal('newApptModal')">↩ إلغاء</button>
+        <button type="submit" class="btn-submit">📅 حجز الموعد</button>
       </div>
     </form>
   </div>
 </div>
 
 <!-- Modal: تعديل بيانات المريض -->
-<div class="modal-overlay" id="editPatientModal">
-  <div class="modal-box" style="max-width:500px;">
-    <div class="modal-header">
-      <h3 class="modal-title">✏️ تعديل بيانات المريض</h3>
-      <button class="modal-close" onclick="document.getElementById('editPatientModal').classList.remove('show')">✕</button>
+<div class="med-modal" id="editPatientModal">
+  <div class="med-modal-bg" onclick="closeModal('editPatientModal')"></div>
+  <div class="med-modal-box" style="max-width:600px;">
+    <div class="med-modal-header">
+      <div class="med-modal-icon" style="background:linear-gradient(135deg,#f59e0b,#ef4444);">✏️</div>
+      <h3 class="med-modal-title">تعديل بيانات المريض</h3>
+      <button class="med-modal-close" onclick="closeModal('editPatientModal')" title="إغلاق">✕</button>
     </div>
     <form method="post" action="/medical/patients/{{ patient.id }}/edit">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="form-group" style="grid-column:1/-1;">
-          <label class="form-label">الاسم الكامل</label>
-          <input name="full_name" class="form-input" value="{{ patient.full_name }}">
+      <div class="med-form-grid">
+        <div class="full">
+          <label class="med-label">👤 الاسم الكامل</label>
+          <input name="full_name" class="med-input" value="{{ patient.patient_name }}">
         </div>
-        <div class="form-group">
-          <label class="form-label">الهاتف</label>
-          <input name="phone" class="form-input" value="{{ patient.phone or '' }}">
+        <div>
+          <label class="med-label">📱 الهاتف</label>
+          <input name="phone" class="med-input" value="{{ patient.patient_phone or '' }}">
         </div>
-        <div class="form-group">
-          <label class="form-label">فصيلة الدم</label>
-          <select name="blood_type" class="form-input">
+        <div>
+          <label class="med-label">🪪 الرقم الوطني</label>
+          <input name="national_id" class="med-input" value="{{ patient.national_id or '' }}">
+        </div>
+        <div>
+          <label class="med-label">🎂 تاريخ الميلاد</label>
+          <input name="dob" type="date" class="med-input" value="{{ patient.date_of_birth or '' }}">
+        </div>
+        <div>
+          <label class="med-label">⚥ الجنس</label>
+          <select name="gender" class="med-input">
+            <option value="male" {% if patient.gender=='male' %}selected{% endif %}>♂ ذكر</option>
+            <option value="female" {% if patient.gender=='female' %}selected{% endif %}>♀ أنثى</option>
+          </select>
+        </div>
+        <div>
+          <label class="med-label">🩸 فصيلة الدم</label>
+          <select name="blood_type" class="med-input">
             {% for bt in ['','A+','A-','B+','B-','AB+','AB-','O+','O-'] %}
-            <option value="{{ bt }}" {% if patient.blood_type==bt %}selected{% endif %}>{{ bt or 'غير معروفة' }}</option>
+            <option value="{{ bt }}" {% if patient.blood_type==bt %}selected{% endif %}>{{ bt or '— غير معروفة' }}</option>
             {% endfor %}
           </select>
         </div>
+        <div>
+          <label class="med-label">📏 الطول (سم)</label>
+          <input name="height" type="number" class="med-input" value="{{ patient.height or '' }}" placeholder="170">
+        </div>
+        <div>
+          <label class="med-label">⚖️ الوزن (كغ)</label>
+          <input name="weight" type="number" class="med-input" value="{{ patient.weight or '' }}" placeholder="70">
+        </div>
+        <div class="full">
+          <label class="med-label">💊 أمراض مزمنة</label>
+          <input name="chronic_diseases" class="med-input" value="{{ patient.chronic_diseases or '' }}" placeholder="سكري، ضغط...">
+        </div>
+        <div class="full">
+          <label class="med-label">⚠️ حساسية (Allergies)</label>
+          <input name="allergies" class="med-input" value="{{ patient.allergies or '' }}" placeholder="البنسلين...">
+        </div>
+        <div>
+          <label class="med-label">📞 جهة اتصال طوارئ</label>
+          <input name="emergency_contact" class="med-input" value="{{ patient.emergency_contact or '' }}">
+        </div>
+        <div>
+          <label class="med-label">📱 هاتف الطوارئ</label>
+          <input name="emergency_phone" class="med-input" value="{{ patient.emergency_phone or '' }}">
+        </div>
+        <div class="full">
+          <label class="med-label">📄 التاريخ المرضي</label>
+          <textarea name="medical_history" class="med-input" rows="3">{{ patient.medical_history or '' }}</textarea>
+        </div>
+        <div class="full">
+          <label class="med-label">📝 ملاحظات</label>
+          <textarea name="notes" class="med-input" rows="2">{{ patient.notes or '' }}</textarea>
+        </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">الأمراض المزمنة</label>
-        <input name="chronic" class="form-input" value="{{ patient.chronic_diseases or '' }}">
-      </div>
-      <div class="form-group">
-        <label class="form-label">الحساسية</label>
-        <input name="allergies" class="form-input" value="{{ patient.allergies or '' }}">
-      </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
-        <button type="button" class="btn btn-secondary" onclick="document.getElementById('editPatientModal').classList.remove('show')">إلغاء</button>
-        <button type="submit" class="btn btn-primary">💾 حفظ التعديلات</button>
+      <div class="med-footer">
+        <button type="button" class="btn-cancel" onclick="closeModal('editPatientModal')">↩ إلغاء</button>
+        <button type="submit" class="btn-submit">💾 حفظ التعديلات</button>
       </div>
     </form>
   </div>
 </div>
+
+<script>
+function openModal(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';}
+function closeModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';}
+function showTab(id,btn){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape') document.querySelectorAll('.med-modal.open').forEach(m=>m.classList.remove('open'));
+});
+</script>
 {% endblock %}

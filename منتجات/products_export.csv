@@ -1,0 +1,1001 @@
+ID,Code,Name (AR),Name (EN),Category ID,Category Name,Business Type,Unit,Price,Cost,Stock
+1,PRD-reta-0001,ساعة 1,Product_0001,280,جوالات وإكسسوارات,retail_electronics_mobile,زجاجة,176.2,124.32,286
+2,PRD-spa_-0002,تابلت 2,Product_0002,360,مركز سبا,spa_center,خدمة,288.84,162.46,74
+3,PRD-smoo-0003,جوال 3,Product_0003,421,محل سموثي,smoothie_bar,متر,194.88,72.84,156
+4,PRD-surv-0004,وسادة 4,Product_0004,416,خدمة المراقبة,surveillance_service,كيس,58.42,31.58,396
+5,PRD-reta-0005,شامبو 5,Product_0005,299,معسلات ومستلزمات تدخين,retail_specialized_tobacco,كيس,157.73,103.12,315
+6,PRD-beau-0006,تدريب 6,Product_0006,352,صالون شعر,beauty_hair,كرتونة,157.71,75.66,426
+7,PRD-reta-0007,تنظيف 7,Product_0007,280,جوالات وإكسسوارات,retail_electronics_mobile,زجاجة,89.49,30.38,183
+8,PRD-inte-0008,مياه معدنية 8,Product_0008,400,خدمة التصميم الداخلي,interior_design,ساعة,87.58,41.76,500
+9,PRD-cate-0009,دقيق 9,Product_0009,417,خدمة الطعام والشراب,catering_service,متر,427.45,210.17,497
+10,PRD-reta-0010,جبن 10,Product_0010,300,زهور وهدايا,retail_specialized_flowers,كيس,498.23,368.08,47
+11,PRD-clea-0011,كرسي 11,Product_0011,413,خدمة التنظيف,cleaning_service,كيلو,434.48,334.93,283
+12,PRD-thea-0012,مرهم 12,Product_0012,438,دار المسرح,theater,قطعة,137.51,59.38,375
+13,PRD-libr-0013,خافض حرارة 13,Product_0013,448,مكتبة عامة,library,قطعة,117.2,49.91,480
+14,PRD-educ-0014,فحص 14,Product_0014,340,أكاديمية فنون,education_art,زجاجة,37.3,21.63,310
+15,PRD-medi-0015,تصليح 15,Product_0015,312,عيادة جلدية,medical_dermatology,زجاجة,89.27,66.82,275
+16,PRD-cour-0016,دقيق 16,Product_0016,386,خدمة الرسائل السريعة,courier_service,كرتونة,417.38,205.5,266
+17,PRD-reta-0017,دجاج 17,Product_0017,263,تجار التمور,retail_fnb_dates,حصة,16.76,10.53,298
+18,PRD-reta-0018,خضار 18,Product_0018,268,أحذية,retail_fashion_shoes,كرتونة,208.78,88.05,297
+19,PRD-past-0019,حذاء 19,Product_0019,424,مطعم معكرونة,pasta_restaurant,كيلو,286.84,203.62,119
+20,PRD-whol-0020,فواكه 20,Product_0020,305,تجارة جملة,wholesale,كرتونة,426.25,237.7,337
+21,PRD-reta-0021,قميص 21,Product_0021,292,إكسسوارات سيارات,retail_auto_accessories,كيس,238.98,83.49,125
+22,PRD-educ-0022,تنظيف 22,Product_0022,337,معهد محاسبة,education_accounting,زجاجة,37.81,18.02,112
+23,PRD-educ-0023,شاشة 23,Product_0023,333,معهد لغة إنجليزية,education_english,كرتونة,193.37,108.23,384
+24,PRD-wate-0024,فستان 24,Product_0024,411,خدمة العزل المائي,waterproofing_service,كيس,158.56,56.89,351
+25,PRD-educ-0025,فستان 25,Product_0025,346,أكاديمية كرة قدم,education_soccer,حصة,377.95,184.45,218
+26,PRD-thai-0026,دجاج 26,Product_0026,431,مطعم تايلاندي,thai_restaurant,كيلو,88.99,46.47,73
+27,PRD-surv-0027,خزانة 27,Product_0027,416,خدمة المراقبة,surveillance_service,كيلو,292.19,140.36,443
+28,PRD-medi-0028,سمك 28,Product_0028,314,عيادة قلب,medical_cardiology,كرتونة,346.0,251.37,156
+29,PRD-educ-0029,ساعة 29,Product_0029,341,استوديو رقص,education_dance,متر,455.17,190.48,405
+30,PRD-perf-0030,سماعات 30,Product_0030,364,متجر عطور,perfume_shop,كيلو,67.47,20.95,181
+31,PRD-real-0031,ضمادات 31,Product_0031,397,وكالة عقارات,real_estate_agency,خدمة,388.61,252.82,56
+32,PRD-medi-0032,حلويات 32,Product_0032,313,عيادة عظام,medical_orthopedics,ساعة,250.13,191.45,295
+33,PRD-iron-0033,مرتبة 33,Product_0033,371,خدمة الكي,ironing_service,جلسة,119.22,40.29,109
+34,PRD-educ-0034,توصيل 34,Product_0034,336,معهد تكنولوجيا المعلومات,education_it,متر,353.28,262.78,420
+35,PRD-reta-0035,دجاج 35,Product_0035,262,خضار وفواكه,retail_fnb_produce,كرتونة,12.73,4.76,213
+36,PRD-reta-0036,علاج 36,Product_0036,274,مواد بناء,retail_construction_materials,ساعة,451.69,179.11,272
+37,PRD-food-0037,تركيب 37,Product_0037,255,مقهى,food_coffeeshop,ساعة,98.64,51.37,260
+38,PRD-maso-0038,إصلاح 38,Product_0038,407,خدمة البناء,masonry_service,كيلو,224.85,92.44,63
+39,PRD-surv-0039,فيتامين 39,Product_0039,416,خدمة المراقبة,surveillance_service,ساعة,279.8,188.89,466
+40,PRD-reta-0040,مياه معدنية 40,Product_0040,264,مياه ومشروبات,retail_fnb_beverages,كيس,378.04,194.64,269
+41,PRD-spa_-0041,مرهم 41,Product_0041,360,مركز سبا,spa_center,خدمة,202.58,66.04,313
+42,PRD-beau-0042,خزانة 42,Product_0042,351,صالون أظافر,beauty_nails,كيس,48.46,33.74,416
+43,PRD-well-0043,قميص 43,Product_0043,322,مركز مساج,wellness_massage,جلسة,100.04,43.32,20
+44,PRD-educ-0044,شامبو 44,Product_0044,348,أكاديمية تصوير,education_photography,كيلو,331.64,218.53,41
+45,PRD-reta-0045,خضار 45,Product_0045,271,نظارات وبصريات,retail_fashion_optics,ساعة,300.76,91.5,471
+46,PRD-reta-0046,تدريب 46,Product_0046,263,تجار التمور,retail_fnb_dates,كرتونة,266.06,127.94,292
+47,PRD-food-0047,شاحن 47,Product_0047,254,كافيه,food_cafe,زجاجة,127.41,44.35,500
+48,PRD-beau-0048,خبز 48,Product_0048,355,متخصص الرموش,beauty_lashes,خدمة,65.45,23.1,101
+49,PRD-reta-0049,لحم 49,Product_0049,259,محمصة,retail_fnb_roaster,كيلو,132.26,58.36,229
+50,PRD-auto-0050,خبز 50,Product_0050,377,محل إطارات,automotive_tires,ساعة,454.72,361.58,333
+51,PRD-beau-0051,سرير 51,Product_0051,352,صالون شعر,beauty_hair,جلسة,481.27,196.91,289
+52,PRD-logi-0052,قميص 52,Product_0052,388,شركة لوجستيات,logistics_service,قطعة,467.89,250.2,6
+53,PRD-reta-0053,تدريب 53,Product_0053,273,مستلزمات خياطة,retail_fashion_tailoring,متر,458.12,345.44,98
+54,PRD-medi-0054,دجاج 54,Product_0054,317,قسم الأشعات,medical_radiology,زجاجة,316.94,194.99,160
+55,PRD-bus_-0055,تنظيف 55,Product_0055,389,خدمة النقل العام,bus_service,كيلو,291.91,146.08,246
+56,PRD-medi-0056,عصير 56,Product_0056,314,عيادة قلب,medical_cardiology,كيس,411.61,317.6,359
+57,PRD-educ-0057,مسكن 57,Product_0057,347,معهد برمجة,education_coding,كرتونة,319.53,102.39,190
+58,PRD-zoo-0058,باور بانك 58,Product_0058,446,حديقة حيوانات,zoo,قطعة,143.56,95.14,109
+59,PRD-auto-0059,ساعة 59,Product_0059,378,محل بطاريات,automotive_battery,كيلو,378.0,134.31,26
+60,PRD-ince-0060,غطاء سرير 60,Product_0060,366,متجر البخور,incense_shop,متر,149.39,66.43,261
+61,PRD-deli-0061,خافض حرارة 61,Product_0061,385,خدمة التوصيل,delivery_service,زجاجة,206.01,78.43,253
+62,PRD-auto-0062,بنطلون 62,Product_0062,373,ورشة تصبيغ السيارات,automotive_painting,قطعة,193.28,140.78,469
+63,PRD-henn-0063,كرسي 63,Product_0063,362,متخصص الحناء,henna_center,متر,448.59,253.15,53
+64,PRD-seaf-0064,خزانة 64,Product_0064,425,مطعم مأكولات بحرية,seafood_restaurant,ساعة,232.35,156.99,471
+65,PRD-medi-0065,شاشة 65,Product_0065,319,عيادة علاج طبيعي,medical_physiotherapy,ساعة,237.8,142.65,36
+66,PRD-logi-0066,قميص 66,Product_0066,388,شركة لوجستيات,logistics_service,قطعة,26.68,13.08,498
+67,PRD-reta-0067,وسادة 67,Product_0067,286,عطور وبخور,retail_health_perfume,جلسة,378.02,188.21,8
+68,PRD-reta-0068,كابل 68,Product_0068,291,إطارات وبطاريات,retail_auto_tires,خدمة,166.72,129.05,314
+69,PRD-auto-0069,فحص 69,Product_0069,375,محطة غسيل سيارات,automotive_wash,كرتونة,96.97,56.72,417
+70,PRD-indi-0070,صيانة 70,Product_0070,430,مطعم هندي,indian_restaurant,كرتونة,496.21,291.57,148
+71,PRD-truc-0071,تدريب 71,Product_0071,391,تأجير شاحنات,truck_rental,كيس,301.06,119.16,273
+72,PRD-auto-0072,حليب 72,Product_0072,378,محل بطاريات,automotive_battery,زجاجة,400.64,128.95,273
+73,PRD-perf-0073,وسادة 73,Product_0073,364,متجر عطور,perfume_shop,ساعة,318.73,209.29,10
+74,PRD-equi-0074,حليب منكهة 74,Product_0074,392,تأجير معدات بناء,equipment_rental,زجاجة,134.05,72.79,320
+75,PRD-japa-0075,مرتبة 75,Product_0075,429,مطعم ياباني,japanese_restaurant,قطعة,70.19,48.62,167
+76,PRD-reta-0076,شاحن 76,Product_0076,289,مكملات غذائية,retail_health_supplements,قطعة,187.57,90.75,344
+77,PRD-aqua-0077,أرز 77,Product_0077,447,حوض سمك عملاق,aquarium,خدمة,295.69,190.21,234
+78,PRD-past-0078,قهوة 78,Product_0078,424,مطعم معكرونة,pasta_restaurant,ساعة,56.42,32.96,315
+79,PRD-reta-0079,علاج 79,Product_0079,297,مكتبات وقرطاسية,retail_home_stationery,كيس,442.8,315.11,449
+80,PRD-auto-0080,مياه معدنية 80,Product_0080,378,محل بطاريات,automotive_battery,كيس,127.25,82.79,10
+81,PRD-reta-0081,خضار 81,Product_0081,288,مستلزمات طبية,retail_health_medical,زجاجة,23.85,16.16,209
+82,PRD-thea-0082,قبعة 82,Product_0082,438,دار المسرح,theater,حصة,32.84,10.56,28
+83,PRD-smoo-0083,جبن 83,Product_0083,421,محل سموثي,smoothie_bar,كيلو,206.05,141.64,41
+84,PRD-past-0084,حذاء 84,Product_0084,418,محل الحلويات,pastry_shop,ساعة,168.78,122.39,461
+85,PRD-reta-0085,شاحن 85,Product_0085,300,زهور وهدايا,retail_specialized_flowers,متر,490.01,378.97,299
+86,PRD-reta-0086,جوال 86,Product_0086,284,كاميرات وأمن,retail_electronics_security,حصة,97.3,46.01,288
+87,PRD-auto-0087,جوارب 87,Product_0087,379,محل زيوت محركات,automotive_oil,كيس,329.37,243.16,379
+88,PRD-saun-0088,مرتبة 88,Product_0088,361,مركز حمام بخار,sauna_center,جلسة,101.99,76.55,413
+89,PRD-medi-0089,تدريب 89,Product_0089,319,عيادة علاج طبيعي,medical_physiotherapy,حصة,355.43,185.18,228
+90,PRD-past-0090,خضار 90,Product_0090,418,محل الحلويات,pastry_shop,كيلو,363.71,276.38,174
+91,PRD-reta-0091,سرير 91,Product_0091,297,مكتبات وقرطاسية,retail_home_stationery,كيس,244.76,133.68,250
+92,PRD-reta-0092,كابل 92,Product_0092,266,ملابس نسائي,retail_fashion_clothing_f,متر,298.95,117.11,365
+93,PRD-educ-0093,عصير 93,Product_0093,337,معهد محاسبة,education_accounting,جلسة,418.79,310.11,429
+94,PRD-alte-0094,فحص 94,Product_0094,369,خدمة تعديل الملابس,alterations_service,كيلو,292.41,178.68,475
+95,PRD-perf-0095,جبن 95,Product_0095,364,متجر عطور,perfume_shop,زجاجة,305.55,159.53,94
+96,PRD-beau-0096,لوحة مفاتيح 96,Product_0096,355,متخصص الرموش,beauty_lashes,زجاجة,122.06,77.29,125
+97,PRD-beau-0097,دقيق 97,Product_0097,357,متخصص الثقب,beauty_piercing,خدمة,213.65,83.51,74
+98,PRD-reta-0098,كابل 98,Product_0098,297,مكتبات وقرطاسية,retail_home_stationery,ساعة,22.79,12.05,215
+99,PRD-cate-0099,نظارة 99,Product_0099,417,خدمة الطعام والشراب,catering_service,حصة,369.96,183.9,147
+100,PRD-elec-0100,سماعات 100,Product_0100,404,خدمة الكهرباء,electrical_service,ساعة,171.22,67.16,42
+101,PRD-auto-0101,علاج 101,Product_0101,379,محل زيوت محركات,automotive_oil,ساعة,465.36,350.98,126
+102,PRD-saun-0102,تصليح 102,Product_0102,361,مركز حمام بخار,sauna_center,متر,140.65,74.23,191
+103,PRD-reta-0103,كرسي 103,Product_0103,272,أقمشة ومنسوجات,retail_fashion_fabric,حصة,236.97,150.06,386
+104,PRD-well-0104,طاولة 104,Product_0104,322,مركز مساج,wellness_massage,كرتونة,163.53,101.94,220
+105,PRD-tail-0105,صيانة 105,Product_0105,368,خدمة الخياطة,tailoring_service,جلسة,344.99,235.86,223
+106,PRD-aqua-0106,تابلت 106,Product_0106,447,حوض سمك عملاق,aquarium,ساعة,329.19,172.04,434
+107,PRD-medi-0107,تركيب 107,Product_0107,316,مختبر طبي,medical_lab,قطعة,454.17,244.24,326
+108,PRD-maso-0108,مسكن 108,Product_0108,407,خدمة البناء,masonry_service,كيلو,368.95,186.25,92
+109,PRD-reta-0109,مطهر 109,Product_0109,273,مستلزمات خياطة,retail_fashion_tailoring,زجاجة,477.41,348.51,6
+110,PRD-beau-0110,أرز 110,Product_0110,351,صالون أظافر,beauty_nails,جلسة,308.77,221.93,481
+111,PRD-educ-0111,عصير 111,Product_0111,337,معهد محاسبة,education_accounting,جلسة,149.59,68.9,159
+112,PRD-laun-0112,جبن 112,Product_0112,367,خدمة غسيل ملابس,laundry_service,ساعة,447.58,207.81,101
+113,PRD-alte-0113,عصير 113,Product_0113,369,خدمة تعديل الملابس,alterations_service,خدمة,13.67,5.97,155
+114,PRD-surv-0114,تدريب 114,Product_0114,416,خدمة المراقبة,surveillance_service,جلسة,210.3,77.16,237
+115,PRD-medi-0115,مرتبة 115,Product_0115,313,عيادة عظام,medical_orthopedics,كرتونة,173.46,115.74,323
+116,PRD-alte-0116,كابل 116,Product_0116,369,خدمة تعديل الملابس,alterations_service,جلسة,353.7,128.32,371
+117,PRD-educ-0117,تنظيف 117,Product_0117,347,معهد برمجة,education_coding,ساعة,374.33,281.82,286
+118,PRD-beau-0118,تنظيف 118,Product_0118,355,متخصص الرموش,beauty_lashes,جلسة,126.04,52.34,161
+119,PRD-wedd-0119,سمك 119,Product_0119,396,خدمة سيارات الأفراح,wedding_cars,جلسة,253.09,132.59,36
+120,PRD-reta-0120,مرتبة 120,Product_0120,284,كاميرات وأمن,retail_electronics_security,جلسة,465.33,179.73,270
+121,PRD-reta-0121,تابلت 121,Product_0121,297,مكتبات وقرطاسية,retail_home_stationery,كيس,374.99,136.02,443
+122,PRD-reta-0122,جوال 122,Product_0122,290,قطع غيار سيارات,retail_auto_parts,جلسة,65.46,24.38,319
+123,PRD-unis-0123,وسادة 123,Product_0123,359,صالون مختلط,unisex_salon,متر,146.02,91.31,285
+124,PRD-reta-0124,باور بانك 124,Product_0124,275,سباكة وصحيات,retail_construction_plumbing,زجاجة,499.9,354.64,61
+125,PRD-food-0125,تنظيف 125,Product_0125,255,مقهى,food_coffeeshop,جلسة,324.46,230.43,212
+126,PRD-medi-0126,زيت 126,Product_0126,316,مختبر طبي,medical_lab,زجاجة,176.63,57.26,235
+127,PRD-medi-0127,مسكن 127,Product_0127,319,عيادة علاج طبيعي,medical_physiotherapy,ساعة,441.1,293.71,133
+128,PRD-educ-0128,أدوية 128,Product_0128,346,أكاديمية كرة قدم,education_soccer,متر,190.98,78.84,60
+129,PRD-libr-0129,حلويات 129,Product_0129,448,مكتبة عامة,library,جلسة,115.76,38.58,392
+130,PRD-ice_-0130,فستان 130,Product_0130,419,محل آيس كريم,ice_cream_shop,كرتونة,22.33,13.48,264
+131,PRD-taxi-0131,صابون 131,Product_0131,383,خدمة تاكسي,taxi_service,جلسة,287.83,116.01,11
+132,PRD-glaz-0132,سرير 132,Product_0132,409,خدمة تركيب الزجاج,glazing_service,ساعة,349.21,226.18,91
+133,PRD-salo-0133,تصليح 133,Product_0133,326,صالون حلاقة,salon_hairdresser,كيس,148.93,82.0,32
+134,PRD-reta-0134,باور بانك 134,Product_0134,268,أحذية,retail_fashion_shoes,قطعة,118.11,74.61,356
+135,PRD-reta-0135,فواكه 135,Product_0135,291,إطارات وبطاريات,retail_auto_tires,متر,99.01,63.97,47
+136,PRD-educ-0136,كابل 136,Product_0136,342,معهد دروس خصوصية,education_tutoring,خدمة,44.95,33.78,126
+137,PRD-reta-0137,شامبو 137,Product_0137,303,معدات رياضية,retail_specialized_sports,زجاجة,96.66,62.25,481
+138,PRD-educ-0138,حزام 138,Product_0138,343,مدرسة فنون قتالية,education_martial_arts,خدمة,287.89,188.7,53
+139,PRD-auto-0139,شاي 139,Product_0139,380,خدمة تنجيد السيارات,automotive_upholstery,خدمة,204.42,135.37,252
+140,PRD-japa-0140,طاولة 140,Product_0140,429,مطعم ياباني,japanese_restaurant,قطعة,269.47,93.67,167
+141,PRD-carp-0141,تنظيف 141,Product_0141,406,خدمة النجارة,carpentry_service,جلسة,352.7,142.08,190
+142,PRD-educ-0142,شامبو 142,Product_0142,333,معهد لغة إنجليزية,education_english,حصة,103.34,31.61,447
+143,PRD-seaf-0143,صيانة 143,Product_0143,425,مطعم مأكولات بحرية,seafood_restaurant,ساعة,440.14,323.93,48
+144,PRD-past-0144,خبز 144,Product_0144,418,محل الحلويات,pastry_shop,زجاجة,242.2,125.01,313
+145,PRD-auto-0145,حذاء 145,Product_0145,376,خدمة صيانة دورية,automotive_maintenance,خدمة,10.87,8.5,470
+146,PRD-reta-0146,وسادة 146,Product_0146,260,مخبز,retail_fnb_bakery,خدمة,24.97,10.43,26
+147,PRD-kara-0147,دجاج 147,Product_0147,441,محل كاراوكي,karaoke,كرتونة,362.54,119.12,468
+148,PRD-beau-0148,تنظيف 148,Product_0148,357,متخصص الثقب,beauty_piercing,ساعة,174.1,138.03,47
+149,PRD-educ-0149,سماعات 149,Product_0149,330,جامعة,education_university,خدمة,110.01,64.37,77
+150,PRD-well-0150,أدوية 150,Product_0150,324,عيادة تغذية,wellness_nutrition,حصة,299.41,224.41,336
+151,PRD-educ-0151,صابون 151,Product_0151,330,جامعة,education_university,كيس,482.09,368.89,400
+152,PRD-beau-0152,استشارة 152,Product_0152,354,متخصص النمص والحلاوة,beauty_threading,قطعة,207.97,143.32,69
+153,PRD-iron-0153,طاولة 153,Product_0153,371,خدمة الكي,ironing_service,قطعة,98.74,42.99,421
+154,PRD-wate-0154,تابلت 154,Product_0154,411,خدمة العزل المائي,waterproofing_service,جلسة,228.84,136.24,36
+155,PRD-logi-0155,قبعة 155,Product_0155,388,شركة لوجستيات,logistics_service,حصة,117.64,93.78,437
+156,PRD-buff-0156,دقيق 156,Product_0156,427,مطعم بوفيه,buffet_restaurant,جلسة,375.68,114.08,421
+157,PRD-salo-0157,تركيب 157,Product_0157,326,صالون حلاقة,salon_hairdresser,كرتونة,104.6,66.77,66
+158,PRD-well-0158,خضار 158,Product_0158,323,استوديو يوجا,wellness_yoga,جلسة,411.66,200.25,10
+159,PRD-educ-0159,تابلت 159,Product_0159,329,مدرسة ثانوية,education_secondary_school,حصة,429.97,147.13,467
+160,PRD-reta-0160,طاولة 160,Product_0160,303,معدات رياضية,retail_specialized_sports,خدمة,98.49,40.9,22
+161,PRD-auto-0161,دجاج 161,Product_0161,378,محل بطاريات,automotive_battery,قطعة,417.03,309.98,28
+162,PRD-reta-0162,علاج 162,Product_0162,302,مستلزمات حيوانات أليفة,retail_specialized_pets,خدمة,188.25,111.07,110
+163,PRD-reta-0163,عصير 163,Product_0163,287,مستحضرات تجميل,retail_health_cosmetics,حصة,294.29,217.63,473
+164,PRD-medi-0164,لحم 164,Product_0164,317,قسم الأشعات,medical_radiology,متر,44.67,23.13,339
+165,PRD-buff-0165,جوارب 165,Product_0165,427,مطعم بوفيه,buffet_restaurant,قطعة,65.71,36.55,337
+166,PRD-libr-0166,مرهم 166,Product_0166,448,مكتبة عامة,library,جلسة,334.57,178.42,356
+167,PRD-cine-0167,جبن 167,Product_0167,437,دار السينما,cinema,متر,234.86,81.8,215
+168,PRD-cons-0168,غطاء سرير 168,Product_0168,306,مقاولات وتشغيل,construction,قطعة,335.09,106.25,141
+169,PRD-reta-0169,مرتبة 169,Product_0169,298,تجهيزات مكاتب,retail_home_office,متر,405.51,223.63,109
+170,PRD-barb-0170,أدوية 170,Product_0170,358,حلاقة رجالية,barber_shop,حصة,360.2,193.57,314
+171,PRD-fast-0171,توصيل 171,Product_0171,422,مطعم وجبات سريعة,fast_food,خدمة,293.04,181.6,335
+172,PRD-reta-0172,شوكولاتة 172,Product_0172,290,قطع غيار سيارات,retail_auto_parts,متر,147.15,77.81,32
+173,PRD-bowl-0173,كرسي 173,Product_0173,439,مركز البولينج,bowling,ساعة,53.94,17.26,443
+174,PRD-indi-0174,جبن 174,Product_0174,430,مطعم هندي,indian_restaurant,متر,275.77,191.7,416
+175,PRD-reta-0175,قهوة 175,Product_0175,261,ملحمة / جزارة,retail_fnb_butcher,جلسة,396.99,141.5,399
+176,PRD-pain-0176,تابلت 176,Product_0176,405,خدمة الدهان,painting_service,كرتونة,66.58,29.59,309
+177,PRD-pizz-0177,زيت 177,Product_0177,423,مطعم بيتزا,pizza_restaurant,زجاجة,325.63,220.25,446
+178,PRD-gril-0178,سماعات 178,Product_0178,426,مطعم شواء,grilled_restaurant,زجاجة,442.2,288.85,109
+179,PRD-spa_-0179,شامبو 179,Product_0179,360,مركز سبا,spa_center,كرتونة,249.33,187.24,292
+180,PRD-reta-0180,مياه معدنية 180,Product_0180,260,مخبز,retail_fnb_bakery,ساعة,396.45,245.34,406
+181,PRD-car_-0181,باور بانك 181,Product_0181,390,تأجير سيارات فاخرة,car_rental_premium,خدمة,365.97,251.82,81
+182,PRD-amus-0182,جوارب 182,Product_0182,445,مدينة ملاهي,amusement_park,كيس,456.12,203.74,178
+183,PRD-medi-0183,صيانة 183,Product_0183,317,قسم الأشعات,medical_radiology,ساعة,295.68,113.83,393
+184,PRD-reta-0184,صيانة 184,Product_0184,268,أحذية,retail_fashion_shoes,جلسة,254.72,92.47,187
+185,PRD-deli-0185,تصليح 185,Product_0185,385,خدمة التوصيل,delivery_service,خدمة,253.9,104.85,288
+186,PRD-food-0186,أرز 186,Product_0186,253,مطعم,food_restaurant,حصة,493.82,171.78,273
+187,PRD-beau-0187,قميص 187,Product_0187,350,مركز العناية بالبشرة,beauty_skincare,حصة,96.04,48.25,103
+188,PRD-arca-0188,تدريب 188,Product_0188,440,قاعة ألعاب,arcade,حصة,349.87,138.9,4
+189,PRD-pizz-0189,حلويات 189,Product_0189,423,مطعم بيتزا,pizza_restaurant,كرتونة,232.57,117.77,23
+190,PRD-reta-0190,ساعة 190,Product_0190,258,بقالة / تموينات,retail_fnb_grocery,حصة,439.68,153.43,216
+191,PRD-ince-0191,قبعة 191,Product_0191,366,متجر البخور,incense_shop,جلسة,168.71,99.51,89
+192,PRD-medi-0192,توصيل 192,Product_0192,308,عيادة / مستشفى,medical,ساعة,345.47,136.71,292
+193,PRD-park-0193,مياه معدنية 193,Product_0193,444,حديقة ترفيهية,park,متر,257.94,160.23,428
+194,PRD-thea-0194,بنطلون 194,Product_0194,438,دار المسرح,theater,كرتونة,380.67,279.9,490
+195,PRD-well-0195,سرير 195,Product_0195,323,استوديو يوجا,wellness_yoga,خدمة,187.42,80.75,392
+196,PRD-reta-0196,قهوة 196,Product_0196,276,كهرباء وإنارة,retail_construction_electrical,قطعة,392.48,216.88,441
+197,PRD-educ-0197,مرتبة 197,Product_0197,339,أكاديمية موسيقى,education_music,زجاجة,470.15,302.51,166
+198,PRD-kara-0198,شراب سعال 198,Product_0198,441,محل كاراوكي,karaoke,خدمة,498.28,344.42,47
+199,PRD-truc-0199,حليب 199,Product_0199,391,تأجير شاحنات,truck_rental,زجاجة,447.52,257.3,280
+200,PRD-bicy-0200,دجاج 200,Product_0200,394,تأجير دراجات هوائية,bicycle_rental,قطعة,33.27,16.95,388
+201,PRD-bowl-0201,شاحن 201,Product_0201,439,مركز البولينج,bowling,قطعة,22.35,14.75,297
+202,PRD-truc-0202,دجاج 202,Product_0202,391,تأجير شاحنات,truck_rental,كيس,448.09,163.15,146
+203,PRD-educ-0203,منديل 203,Product_0203,328,مدرسة ابتدائية,education_primary_school,حصة,112.23,81.09,125
+204,PRD-reta-0204,سرير 204,Product_0204,293,ورشة صيانة سيارات,retail_auto_workshop,زجاجة,47.55,32.0,360
+205,PRD-zoo-0205,نظارة 205,Product_0205,446,حديقة حيوانات,zoo,كرتونة,93.68,51.59,498
+206,PRD-saun-0206,شاشة 206,Product_0206,361,مركز حمام بخار,sauna_center,كيلو,91.52,57.4,329
+207,PRD-germ-0207,سمك 207,Product_0207,433,مطعم ألماني,german_restaurant,قطعة,116.54,57.94,227
+208,PRD-well-0208,استشارة 208,Product_0208,325,تقويم أسنان,wellness_dental,كرتونة,330.55,101.67,295
+209,PRD-real-0209,صابون 209,Product_0209,397,وكالة عقارات,real_estate_agency,زجاجة,325.29,166.94,174
+210,PRD-bowl-0210,تابلت 210,Product_0210,439,مركز البولينج,bowling,متر,490.4,313.19,39
+211,PRD-reta-0211,فحص 211,Product_0211,275,سباكة وصحيات,retail_construction_plumbing,كرتونة,396.77,260.32,12
+212,PRD-secu-0212,فيتامين 212,Product_0212,415,خدمة الأمن والحراسة,security_service,كيس,393.2,167.83,317
+213,PRD-car_-0213,ساعة 213,Product_0213,390,تأجير سيارات فاخرة,car_rental_premium,كيلو,35.01,16.95,340
+214,PRD-beau-0214,حليب منكهة 214,Product_0214,350,مركز العناية بالبشرة,beauty_skincare,حصة,207.81,72.15,295
+215,PRD-educ-0215,حذاء 215,Product_0215,349,مدرسة الطهي,education_culinary,كيلو,338.54,264.55,221
+216,PRD-food-0216,منديل 216,Product_0216,254,كافيه,food_cafe,كيلو,488.73,389.01,89
+217,PRD-seaf-0217,زيت 217,Product_0217,425,مطعم مأكولات بحرية,seafood_restaurant,قطعة,204.57,86.0,172
+218,PRD-educ-0218,سمك 218,Product_0218,347,معهد برمجة,education_coding,خدمة,12.76,6.64,342
+219,PRD-reta-0219,كابل 219,Product_0219,271,نظارات وبصريات,retail_fashion_optics,كيلو,431.77,180.88,251
+220,PRD-barb-0220,قهوة 220,Product_0220,358,حلاقة رجالية,barber_shop,زجاجة,162.17,81.17,369
+221,PRD-reta-0221,شامبو 221,Product_0221,285,صيدلية,retail_health_pharmacy,زجاجة,296.97,138.11,111
+222,PRD-well-0222,دقيق 222,Product_0222,320,صالة رياضية,wellness_gym,خدمة,142.41,45.38,178
+223,PRD-reta-0223,سرير 223,Product_0223,292,إكسسوارات سيارات,retail_auto_accessories,قطعة,287.8,217.95,299
+224,PRD-arca-0224,حزام 224,Product_0224,440,قاعة ألعاب,arcade,قطعة,58.41,41.96,349
+225,PRD-gril-0225,إصلاح 225,Product_0225,426,مطعم شواء,grilled_restaurant,كرتونة,16.52,6.9,199
+226,PRD-kara-0226,سرير 226,Product_0226,441,محل كاراوكي,karaoke,ساعة,22.09,17.48,224
+227,PRD-medi-0227,حقيبة 227,Product_0227,311,عيادة عيون,medical_optics,كيلو,234.89,150.63,151
+228,PRD-fast-0228,فستان 228,Product_0228,422,مطعم وجبات سريعة,fast_food,كيلو,131.35,73.54,63
+229,PRD-reta-0229,مرهم 229,Product_0229,304,لوازم رحلات وصيد,retail_specialized_camping,زجاجة,46.3,16.41,326
+230,PRD-auto-0230,جبن 230,Product_0230,373,ورشة تصبيغ السيارات,automotive_painting,كيس,68.17,42.69,430
+231,PRD-reta-0231,شوكولاتة 231,Product_0231,278,أرضيات وسيراميك,retail_construction_flooring,كيلو,450.42,152.2,396
+232,PRD-cate-0232,فحص 232,Product_0232,417,خدمة الطعام والشراب,catering_service,جلسة,493.62,173.34,195
+233,PRD-reta-0233,سرير 233,Product_0233,267,ملابس أطفال,retail_fashion_clothing_k,قطعة,237.27,132.76,401
+234,PRD-educ-0234,علاج 234,Product_0234,335,معهد لغة فرنسية,education_french,متر,204.75,145.85,75
+235,PRD-beau-0235,سرير 235,Product_0235,354,متخصص النمص والحلاوة,beauty_threading,كيس,66.96,45.7,317
+236,PRD-reta-0236,منديل 236,Product_0236,281,كمبيوتر ولابتوب,retail_electronics_computers,ساعة,361.72,112.69,227
+237,PRD-cour-0237,تركيب 237,Product_0237,386,خدمة الرسائل السريعة,courier_service,كيس,76.59,41.13,327
+238,PRD-plum-0238,شاحن 238,Product_0238,403,خدمة السباكة,plumbing_service,كيلو,167.15,132.62,256
+239,PRD-reta-0239,توصيل 239,Product_0239,295,سجاد وموكيت,retail_home_carpet,متر,284.82,170.08,11
+240,PRD-ince-0240,دقيق 240,Product_0240,366,متجر البخور,incense_shop,ساعة,159.26,77.71,29
+241,PRD-medi-0241,سماعات 241,Product_0241,308,عيادة / مستشفى,medical,كيس,12.35,4.99,390
+242,PRD-auto-0242,حقيبة 242,Product_0242,373,ورشة تصبيغ السيارات,automotive_painting,قطعة,70.86,29.03,121
+243,PRD-oud_-0243,حليب 243,Product_0243,365,متجر العود,oud_shop,ساعة,34.73,27.02,94
+244,PRD-reta-0244,تنظيف 244,Product_0244,273,مستلزمات خياطة,retail_fashion_tailoring,كيلو,161.6,58.22,81
+245,PRD-reta-0245,سرير 245,Product_0245,284,كاميرات وأمن,retail_electronics_security,زجاجة,319.5,247.08,488
+246,PRD-reta-0246,عصير 246,Product_0246,297,مكتبات وقرطاسية,retail_home_stationery,متر,29.42,14.68,322
+247,PRD-reta-0247,زيت 247,Product_0247,285,صيدلية,retail_health_pharmacy,قطعة,227.28,91.19,405
+248,PRD-car_-0248,صيانة 248,Product_0248,390,تأجير سيارات فاخرة,car_rental_premium,قطعة,158.73,50.14,252
+249,PRD-pest-0249,طاولة 249,Product_0249,412,خدمة مكافحة الآفات,pest_control,قطعة,306.24,120.2,394
+250,PRD-oud_-0250,زيت 250,Product_0250,365,متجر العود,oud_shop,جلسة,314.09,118.35,350
+251,PRD-past-0251,توصيل 251,Product_0251,424,مطعم معكرونة,pasta_restaurant,متر,42.94,22.18,356
+252,PRD-reta-0252,دجاج 252,Product_0252,257,سوبر ماركت,retail_fnb_supermarket,كيس,304.4,114.17,37
+253,PRD-beau-0253,لوحة مفاتيح 253,Product_0253,355,متخصص الرموش,beauty_lashes,زجاجة,265.77,82.83,132
+254,PRD-well-0254,دجاج 254,Product_0254,324,عيادة تغذية,wellness_nutrition,متر,268.94,130.6,98
+255,PRD-scoo-0255,شراب سعال 255,Product_0255,393,تأجير دراجات نارية,scooter_rental,قطعة,348.96,177.03,108
+256,PRD-amus-0256,ضمادات 256,Product_0256,445,مدينة ملاهي,amusement_park,زجاجة,54.73,41.39,97
+257,PRD-reta-0257,أرز 257,Product_0257,259,محمصة,retail_fnb_roaster,جلسة,119.13,95.19,270
+258,PRD-beau-0258,مسكن 258,Product_0258,350,مركز العناية بالبشرة,beauty_skincare,ساعة,174.67,81.06,427
+259,PRD-leba-0259,جوارب 259,Product_0259,436,مطعم لبناني,lebanese_restaurant,جلسة,298.67,203.74,15
+260,PRD-secu-0260,خبز 260,Product_0260,415,خدمة الأمن والحراسة,security_service,كيس,114.09,53.15,189
+261,PRD-educ-0261,شامبو 261,Product_0261,340,أكاديمية فنون,education_art,زجاجة,287.03,110.68,253
+262,PRD-beau-0262,خبز 262,Product_0262,357,متخصص الثقب,beauty_piercing,جلسة,218.08,90.2,356
+263,PRD-reta-0263,استشارة 263,Product_0263,301,ألعاب وهدايا,retail_specialized_toys,حصة,231.1,135.89,482
+264,PRD-spa_-0264,إصلاح 264,Product_0264,360,مركز سبا,spa_center,جلسة,366.57,169.62,156
+265,PRD-leba-0265,زيت 265,Product_0265,436,مطعم لبناني,lebanese_restaurant,خدمة,313.67,225.52,50
+266,PRD-auto-0266,قهوة 266,Product_0266,381,محل زجاج سيارات,automotive_windshield,متر,346.09,133.28,112
+267,PRD-reta-0267,نظارة 267,Product_0267,298,تجهيزات مكاتب,retail_home_office,زجاجة,200.18,72.19,215
+268,PRD-glaz-0268,باور بانك 268,Product_0268,409,خدمة تركيب الزجاج,glazing_service,حصة,389.67,149.05,260
+269,PRD-reta-0269,تنظيف 269,Product_0269,292,إكسسوارات سيارات,retail_auto_accessories,كرتونة,486.69,291.28,209
+270,PRD-cate-0270,لابتوب 270,Product_0270,417,خدمة الطعام والشراب,catering_service,ساعة,113.54,50.0,413
+271,PRD-reta-0271,توصيل 271,Product_0271,302,مستلزمات حيوانات أليفة,retail_specialized_pets,قطعة,87.91,49.51,339
+272,PRD-medi-0272,جوارب 272,Product_0272,313,عيادة عظام,medical_orthopedics,زجاجة,31.02,18.24,368
+273,PRD-educ-0273,لوحة مفاتيح 273,Product_0273,340,أكاديمية فنون,education_art,قطعة,22.35,16.86,66
+274,PRD-oud_-0274,لابتوب 274,Product_0274,365,متجر العود,oud_shop,حصة,108.59,57.25,14
+275,PRD-thai-0275,علاج 275,Product_0275,431,مطعم تايلاندي,thai_restaurant,ساعة,459.82,221.67,80
+276,PRD-educ-0276,لابتوب 276,Product_0276,334,معهد لغة عربية,education_arabic,كرتونة,395.78,273.29,77
+277,PRD-well-0277,زيت 277,Product_0277,322,مركز مساج,wellness_massage,كرتونة,15.71,9.91,59
+278,PRD-reta-0278,مياه معدنية 278,Product_0278,269,حقائب وإكسسوارات,retail_fashion_bags,زجاجة,346.79,112.41,255
+279,PRD-bus_-0279,فواكه 279,Product_0279,389,خدمة النقل العام,bus_service,زجاجة,377.12,221.74,104
+280,PRD-reta-0280,دقيق 280,Product_0280,298,تجهيزات مكاتب,retail_home_office,جلسة,190.43,71.06,258
+281,PRD-educ-0281,طاولة 281,Product_0281,348,أكاديمية تصوير,education_photography,كيلو,462.09,169.15,446
+282,PRD-well-0282,غطاء سرير 282,Product_0282,321,منتجع صحي,wellness_spa,حصة,203.2,126.42,324
+283,PRD-maso-0283,صيانة 283,Product_0283,407,خدمة البناء,masonry_service,كيلو,365.14,228.74,170
+284,PRD-beau-0284,مرتبة 284,Product_0284,354,متخصص النمص والحلاوة,beauty_threading,حصة,464.75,161.1,181
+285,PRD-scoo-0285,تدريب 285,Product_0285,393,تأجير دراجات نارية,scooter_rental,كرتونة,245.51,117.57,365
+286,PRD-reta-0286,شوكولاتة 286,Product_0286,261,ملحمة / جزارة,retail_fnb_butcher,ساعة,424.52,240.3,12
+287,PRD-cour-0287,فواكه 287,Product_0287,386,خدمة الرسائل السريعة,courier_service,خدمة,74.23,39.39,390
+288,PRD-ice_-0288,غطاء سرير 288,Product_0288,419,محل آيس كريم,ice_cream_shop,حصة,10.24,4.43,238
+289,PRD-auto-0289,شامبو 289,Product_0289,373,ورشة تصبيغ السيارات,automotive_painting,كرتونة,206.57,124.29,35
+290,PRD-reta-0290,تدريب 290,Product_0290,293,ورشة صيانة سيارات,retail_auto_workshop,كيس,473.24,278.55,130
+291,PRD-reta-0291,خبز 291,Product_0291,298,تجهيزات مكاتب,retail_home_office,متر,373.96,204.26,234
+292,PRD-educ-0292,طاولة 292,Product_0292,329,مدرسة ثانوية,education_secondary_school,متر,158.69,104.07,384
+293,PRD-auto-0293,أدوية 293,Product_0293,373,ورشة تصبيغ السيارات,automotive_painting,ساعة,130.23,95.11,206
+294,PRD-educ-0294,إصلاح 294,Product_0294,341,استوديو رقص,education_dance,ساعة,28.22,15.98,111
+295,PRD-ride-0295,أدوية 295,Product_0295,384,خدمة مشاركة الركوب,rideshare_service,زجاجة,387.01,263.5,285
+296,PRD-medi-0296,فحص 296,Product_0296,310,عيادة أسنان,medical_dentistry,كرتونة,283.06,170.91,147
+297,PRD-medi-0297,جوارب 297,Product_0297,312,عيادة جلدية,medical_dermatology,زجاجة,149.02,70.59,131
+298,PRD-educ-0298,حلويات 298,Product_0298,338,معهد مهني,education_vocational,متر,182.5,136.27,127
+299,PRD-educ-0299,شراب سعال 299,Product_0299,346,أكاديمية كرة قدم,education_soccer,كيس,274.38,172.78,206
+300,PRD-well-0300,أرز 300,Product_0300,324,عيادة تغذية,wellness_nutrition,كيس,106.27,73.9,146
+301,PRD-reta-0301,أدوية 301,Product_0301,281,كمبيوتر ولابتوب,retail_electronics_computers,خدمة,301.23,189.82,108
+302,PRD-reta-0302,غطاء سرير 302,Product_0302,300,زهور وهدايا,retail_specialized_flowers,متر,204.43,112.65,460
+303,PRD-buff-0303,غطاء سرير 303,Product_0303,427,مطعم بوفيه,buffet_restaurant,كرتونة,270.03,102.03,88
+304,PRD-reta-0304,تابلت 304,Product_0304,265,ملابس رجالي,retail_fashion_clothing_m,كيلو,216.41,152.24,244
+305,PRD-leba-0305,فستان 305,Product_0305,436,مطعم لبناني,lebanese_restaurant,زجاجة,365.88,217.77,147
+306,PRD-unis-0306,نظارة 306,Product_0306,359,صالون مختلط,unisex_salon,كيس,398.49,215.28,421
+307,PRD-reta-0307,علاج 307,Product_0307,287,مستحضرات تجميل,retail_health_cosmetics,كرتونة,98.74,50.75,82
+308,PRD-reta-0308,أرز 308,Product_0308,284,كاميرات وأمن,retail_electronics_security,كيس,226.47,80.21,165
+309,PRD-reta-0309,حزام 309,Product_0309,274,مواد بناء,retail_construction_materials,زجاجة,237.26,161.42,460
+310,PRD-educ-0310,سمك 310,Product_0310,337,معهد محاسبة,education_accounting,زجاجة,276.14,105.42,240
+311,PRD-oud_-0311,حليب 311,Product_0311,365,متجر العود,oud_shop,جلسة,435.97,233.55,332
+312,PRD-well-0312,لابتوب 312,Product_0312,321,منتجع صحي,wellness_spa,زجاجة,163.86,87.36,120
+313,PRD-educ-0313,خافض حرارة 313,Product_0313,340,أكاديمية فنون,education_art,ساعة,250.27,138.45,327
+314,PRD-well-0314,مسكن 314,Product_0314,325,تقويم أسنان,wellness_dental,متر,396.24,280.42,452
+315,PRD-reta-0315,جوارب 315,Product_0315,282,أجهزة منزلية,retail_electronics_appliances,كرتونة,109.07,66.44,46
+316,PRD-libr-0316,زيت 316,Product_0316,448,مكتبة عامة,library,كيلو,481.52,275.1,177
+317,PRD-well-0317,لحم 317,Product_0317,320,صالة رياضية,wellness_gym,كرتونة,168.96,55.92,352
+318,PRD-medi-0318,صيانة 318,Product_0318,318,عيادة نفسية,medical_psychology,زجاجة,440.62,207.91,215
+319,PRD-wate-0319,مياه معدنية 319,Product_0319,411,خدمة العزل المائي,waterproofing_service,قطعة,327.27,117.44,104
+320,PRD-educ-0320,مياه معدنية 320,Product_0320,329,مدرسة ثانوية,education_secondary_school,كيس,22.76,17.07,37
+321,PRD-medi-0321,قهوة 321,Product_0321,317,قسم الأشعات,medical_radiology,كيلو,420.28,247.69,58
+322,PRD-unis-0322,باور بانك 322,Product_0322,359,صالون مختلط,unisex_salon,متر,395.97,225.55,354
+323,PRD-auto-0323,علاج 323,Product_0323,373,ورشة تصبيغ السيارات,automotive_painting,جلسة,220.94,95.46,485
+324,PRD-boat-0324,دقيق 324,Product_0324,395,تأجير قوارب,boat_rental,كيلو,195.36,112.87,487
+325,PRD-logi-0325,حذاء 325,Product_0325,388,شركة لوجستيات,logistics_service,قطعة,360.69,114.67,389
+326,PRD-reta-0326,مطهر 326,Product_0326,300,زهور وهدايا,retail_specialized_flowers,جلسة,214.53,80.18,37
+327,PRD-reta-0327,منديل 327,Product_0327,284,كاميرات وأمن,retail_electronics_security,حصة,21.69,15.39,429
+328,PRD-real-0328,أرز 328,Product_0328,399,تأجير العقارات,real_estate_rental,خدمة,281.28,199.59,399
+329,PRD-reta-0329,حذاء 329,Product_0329,283,إلكترونيات ترفيهية,retail_electronics_entertainment,خدمة,153.9,96.75,408
+330,PRD-food-0330,توصيل 330,Product_0330,253,مطعم,food_restaurant,حصة,247.09,139.63,410
+331,PRD-educ-0331,شاي 331,Product_0331,340,أكاديمية فنون,education_art,زجاجة,116.71,48.44,74
+332,PRD-educ-0332,حلويات 332,Product_0332,348,أكاديمية تصوير,education_photography,زجاجة,14.79,6.05,200
+333,PRD-auto-0333,قميص 333,Product_0333,373,ورشة تصبيغ السيارات,automotive_painting,جلسة,181.69,98.07,381
+334,PRD-reta-0334,شوكولاتة 334,Product_0334,257,سوبر ماركت,retail_fnb_supermarket,متر,48.16,18.94,332
+335,PRD-food-0335,فستان 335,Product_0335,256,معسلات,food_hookah,حصة,147.19,47.89,158
+336,PRD-reta-0336,قهوة 336,Product_0336,301,ألعاب وهدايا,retail_specialized_toys,كيس,184.29,140.33,389
+337,PRD-auto-0337,حليب منكهة 337,Product_0337,382,كهرباء سيارات,automotive_electrical,كيلو,488.65,347.37,81
+338,PRD-well-0338,حذاء 338,Product_0338,323,استوديو يوجا,wellness_yoga,خدمة,419.08,167.71,447
+339,PRD-food-0339,مرتبة 339,Product_0339,255,مقهى,food_coffeeshop,كيلو,472.27,196.56,148
+340,PRD-bicy-0340,خافض حرارة 340,Product_0340,394,تأجير دراجات هوائية,bicycle_rental,كرتونة,119.8,38.17,473
+341,PRD-bus_-0341,فواكه 341,Product_0341,389,خدمة النقل العام,bus_service,متر,241.67,90.76,470
+342,PRD-juic-0342,طاولة 342,Product_0342,420,محل عصائر,juice_bar,كيس,451.78,251.3,162
+343,PRD-medi-0343,استشارة 343,Product_0343,319,عيادة علاج طبيعي,medical_physiotherapy,كيس,308.41,238.26,331
+344,PRD-educ-0344,صيانة 344,Product_0344,329,مدرسة ثانوية,education_secondary_school,زجاجة,288.67,208.85,171
+345,PRD-auto-0345,عصير 345,Product_0345,376,خدمة صيانة دورية,automotive_maintenance,جلسة,229.26,140.11,78
+346,PRD-beau-0346,فيتامين 346,Product_0346,350,مركز العناية بالبشرة,beauty_skincare,كيلو,239.27,140.65,70
+347,PRD-pain-0347,صيانة 347,Product_0347,405,خدمة الدهان,painting_service,كيلو,226.18,125.15,381
+348,PRD-reta-0348,عصير 348,Product_0348,299,معسلات ومستلزمات تدخين,retail_specialized_tobacco,كيس,399.31,270.78,276
+349,PRD-auto-0349,كرسي 349,Product_0349,377,محل إطارات,automotive_tires,جلسة,460.98,348.3,43
+350,PRD-wate-0350,كابل 350,Product_0350,411,خدمة العزل المائي,waterproofing_service,ساعة,310.15,200.31,397
+351,PRD-arca-0351,خضار 351,Product_0351,440,قاعة ألعاب,arcade,كرتونة,431.58,274.32,392
+352,PRD-educ-0352,حزام 352,Product_0352,345,أكاديمية التنس,education_tennis,كيلو,114.07,72.25,360
+353,PRD-cate-0353,دقيق 353,Product_0353,417,خدمة الطعام والشراب,catering_service,قطعة,131.28,91.82,335
+354,PRD-wate-0354,قهوة 354,Product_0354,411,خدمة العزل المائي,waterproofing_service,حصة,215.3,83.25,444
+355,PRD-reta-0355,حلويات 355,Product_0355,287,مستحضرات تجميل,retail_health_cosmetics,ساعة,350.7,259.46,130
+356,PRD-educ-0356,كرسي 356,Product_0356,331,روضة أطفال,education_kindergarten,متر,49.66,38.87,257
+357,PRD-japa-0357,حلويات 357,Product_0357,429,مطعم ياباني,japanese_restaurant,جلسة,44.38,13.8,423
+358,PRD-juic-0358,حذاء 358,Product_0358,420,محل عصائر,juice_bar,متر,164.4,69.28,257
+359,PRD-car_-0359,علاج 359,Product_0359,390,تأجير سيارات فاخرة,car_rental_premium,كيلو,434.62,274.12,180
+360,PRD-educ-0360,نظارة 360,Product_0360,334,معهد لغة عربية,education_arabic,حصة,413.33,221.66,447
+361,PRD-educ-0361,حقيبة 361,Product_0361,332,مدرسة قيادة,education_driving,حصة,343.91,139.68,242
+362,PRD-clea-0362,كرسي 362,Product_0362,413,خدمة التنظيف,cleaning_service,كرتونة,157.72,50.81,363
+363,PRD-thea-0363,حزام 363,Product_0363,438,دار المسرح,theater,كيس,166.5,52.08,134
+364,PRD-food-0364,قبعة 364,Product_0364,253,مطعم,food_restaurant,كرتونة,390.16,155.13,357
+365,PRD-inte-0365,شامبو 365,Product_0365,400,خدمة التصميم الداخلي,interior_design,خدمة,333.71,253.17,261
+366,PRD-real-0366,فحص 366,Product_0366,397,وكالة عقارات,real_estate_agency,كيس,91.51,36.33,436
+367,PRD-elec-0367,شامبو 367,Product_0367,404,خدمة الكهرباء,electrical_service,كيلو,388.86,254.47,283
+368,PRD-hvac-0368,سماعات 368,Product_0368,410,خدمة التكييف والتهوية,hvac_service,متر,341.94,268.14,325
+369,PRD-germ-0369,قهوة 369,Product_0369,433,مطعم ألماني,german_restaurant,حصة,350.85,117.96,398
+370,PRD-reta-0370,مطهر 370,Product_0370,278,أرضيات وسيراميك,retail_construction_flooring,كيس,223.2,109.81,216
+371,PRD-educ-0371,توصيل 371,Product_0371,330,جامعة,education_university,زجاجة,384.91,221.11,384
+372,PRD-reta-0372,أدوية 372,Product_0372,295,سجاد وموكيت,retail_home_carpet,زجاجة,317.66,152.18,222
+373,PRD-boat-0373,تركيب 373,Product_0373,395,تأجير قوارب,boat_rental,خدمة,321.02,128.52,82
+374,PRD-educ-0374,لوحة مفاتيح 374,Product_0374,337,معهد محاسبة,education_accounting,جلسة,338.35,268.7,76
+375,PRD-germ-0375,لابتوب 375,Product_0375,433,مطعم ألماني,german_restaurant,ساعة,16.3,6.39,401
+376,PRD-maso-0376,صابون 376,Product_0376,407,خدمة البناء,masonry_service,جلسة,423.24,174.78,488
+377,PRD-smoo-0377,لوحة مفاتيح 377,Product_0377,421,محل سموثي,smoothie_bar,كيس,95.31,49.69,468
+378,PRD-auto-0378,إصلاح 378,Product_0378,382,كهرباء سيارات,automotive_electrical,حصة,194.9,116.59,255
+379,PRD-auto-0379,خزانة 379,Product_0379,381,محل زجاج سيارات,automotive_windshield,خدمة,237.42,130.23,338
+380,PRD-reta-0380,منديل 380,Product_0380,302,مستلزمات حيوانات أليفة,retail_specialized_pets,كيلو,436.64,254.02,379
+381,PRD-reta-0381,جوارب 381,Product_0381,300,زهور وهدايا,retail_specialized_flowers,حصة,117.43,77.42,260
+382,PRD-reta-0382,مياه معدنية 382,Product_0382,259,محمصة,retail_fnb_roaster,خدمة,34.47,15.86,388
+383,PRD-beau-0383,غطاء سرير 383,Product_0383,350,مركز العناية بالبشرة,beauty_skincare,كيس,382.32,139.45,423
+384,PRD-oud_-0384,ساعة 384,Product_0384,365,متجر العود,oud_shop,ساعة,409.6,207.74,22
+385,PRD-unis-0385,تابلت 385,Product_0385,359,صالون مختلط,unisex_salon,كرتونة,133.0,49.63,449
+386,PRD-amus-0386,مرتبة 386,Product_0386,445,مدينة ملاهي,amusement_park,حصة,246.55,75.43,46
+387,PRD-truc-0387,مسكن 387,Product_0387,391,تأجير شاحنات,truck_rental,حصة,158.01,74.98,356
+388,PRD-seaf-0388,قهوة 388,Product_0388,425,مطعم مأكولات بحرية,seafood_restaurant,كيلو,452.56,165.11,263
+389,PRD-reta-0389,صابون 389,Product_0389,300,زهور وهدايا,retail_specialized_flowers,كرتونة,269.59,131.46,83
+390,PRD-indi-0390,مرهم 390,Product_0390,430,مطعم هندي,indian_restaurant,كرتونة,474.9,169.14,440
+391,PRD-tail-0391,خضار 391,Product_0391,368,خدمة الخياطة,tailoring_service,ساعة,72.57,29.06,250
+392,PRD-reta-0392,سرير 392,Product_0392,283,إلكترونيات ترفيهية,retail_electronics_entertainment,جلسة,129.86,94.14,85
+393,PRD-pain-0393,فستان 393,Product_0393,405,خدمة الدهان,painting_service,قطعة,181.93,100.56,19
+394,PRD-educ-0394,فيتامين 394,Product_0394,342,معهد دروس خصوصية,education_tutoring,كرتونة,478.73,169.41,57
+395,PRD-reta-0395,فيتامين 395,Product_0395,299,معسلات ومستلزمات تدخين,retail_specialized_tobacco,زجاجة,427.59,172.18,268
+396,PRD-food-0396,حزام 396,Product_0396,256,معسلات,food_hookah,كيس,495.0,191.49,167
+397,PRD-japa-0397,عصير 397,Product_0397,429,مطعم ياباني,japanese_restaurant,حصة,492.0,310.21,351
+398,PRD-auto-0398,شامبو 398,Product_0398,377,محل إطارات,automotive_tires,كيس,112.16,78.46,8
+399,PRD-educ-0399,شاحن 399,Product_0399,345,أكاديمية التنس,education_tennis,متر,398.57,280.94,138
+400,PRD-clea-0400,دقيق 400,Product_0400,413,خدمة التنظيف,cleaning_service,قطعة,51.27,36.94,153
+401,PRD-reta-0401,إصلاح 401,Product_0401,288,مستلزمات طبية,retail_health_medical,كرتونة,220.52,132.0,144
+402,PRD-educ-0402,دجاج 402,Product_0402,332,مدرسة قيادة,education_driving,قطعة,496.78,269.85,199
+403,PRD-reta-0403,لابتوب 403,Product_0403,286,عطور وبخور,retail_health_perfume,ساعة,125.36,89.05,65
+404,PRD-syri-0404,نظارة 404,Product_0404,435,مطعم سوري,syrian_restaurant,خدمة,86.26,45.46,268
+405,PRD-past-0405,ضمادات 405,Product_0405,418,محل الحلويات,pastry_shop,ساعة,463.52,359.16,226
+406,PRD-cine-0406,غطاء سرير 406,Product_0406,437,دار السينما,cinema,حصة,162.54,106.1,491
+407,PRD-saun-0407,لابتوب 407,Product_0407,361,مركز حمام بخار,sauna_center,كيس,277.46,173.6,447
+408,PRD-auto-0408,قبعة 408,Product_0408,378,محل بطاريات,automotive_battery,حصة,100.37,66.63,308
+409,PRD-medi-0409,خافض حرارة 409,Product_0409,312,عيادة جلدية,medical_dermatology,قطعة,432.89,204.93,417
+410,PRD-reta-0410,تركيب 410,Product_0410,286,عطور وبخور,retail_health_perfume,خدمة,170.11,131.48,431
+411,PRD-reta-0411,صابون 411,Product_0411,280,جوالات وإكسسوارات,retail_electronics_mobile,جلسة,282.26,131.86,273
+412,PRD-glaz-0412,أرز 412,Product_0412,409,خدمة تركيب الزجاج,glazing_service,كيلو,479.95,242.66,69
+413,PRD-reta-0413,شراب سعال 413,Product_0413,279,عدد وأدوات,retail_construction_hardware,كرتونة,487.17,216.0,381
+414,PRD-libr-0414,توصيل 414,Product_0414,448,مكتبة عامة,library,ساعة,223.07,111.42,281
+415,PRD-educ-0415,جبن 415,Product_0415,328,مدرسة ابتدائية,education_primary_school,زجاجة,305.44,102.98,86
+416,PRD-serv-0416,خزانة 416,Product_0416,309,خدمات عامة,services,قطعة,416.05,240.09,476
+417,PRD-bus_-0417,سمك 417,Product_0417,389,خدمة النقل العام,bus_service,جلسة,17.51,6.1,352
+418,PRD-well-0418,سمك 418,Product_0418,322,مركز مساج,wellness_massage,قطعة,432.17,294.93,15
+419,PRD-reta-0419,شاي 419,Product_0419,264,مياه ومشروبات,retail_fnb_beverages,جلسة,286.7,135.62,162
+420,PRD-reta-0420,صابون 420,Product_0420,297,مكتبات وقرطاسية,retail_home_stationery,قطعة,47.75,27.26,240
+421,PRD-iron-0421,صيانة 421,Product_0421,371,خدمة الكي,ironing_service,كيس,58.7,29.67,84
+422,PRD-food-0422,دجاج 422,Product_0422,256,معسلات,food_hookah,ساعة,170.47,99.89,499
+423,PRD-nigh-0423,قبعة 423,Product_0423,442,ملهى ليلي,nightclub,كرتونة,212.23,124.11,378
+424,PRD-salo-0424,عصير 424,Product_0424,327,صالون تجميل,salon_beauty,كرتونة,391.66,291.03,327
+425,PRD-reta-0425,إصلاح 425,Product_0425,296,أواني منزلية,retail_home_kitchenware,قطعة,27.45,17.93,132
+426,PRD-medi-0426,صابون 426,Product_0426,311,عيادة عيون,medical_optics,ساعة,49.19,14.77,288
+427,PRD-juic-0427,سرير 427,Product_0427,420,محل عصائر,juice_bar,ساعة,308.0,181.84,425
+428,PRD-indi-0428,تنظيف 428,Product_0428,430,مطعم هندي,indian_restaurant,زجاجة,437.12,160.76,442
+429,PRD-fren-0429,لحم 429,Product_0429,434,مطعم فرنسي,french_restaurant,حصة,463.23,292.04,102
+430,PRD-serv-0430,سمك 430,Product_0430,309,خدمات عامة,services,متر,89.2,66.72,6
+431,PRD-juic-0431,فستان 431,Product_0431,420,محل عصائر,juice_bar,خدمة,462.75,317.49,192
+432,PRD-educ-0432,وسادة 432,Product_0432,346,أكاديمية كرة قدم,education_soccer,ساعة,460.93,358.46,182
+433,PRD-food-0433,سماعات 433,Product_0433,253,مطعم,food_restaurant,حصة,379.0,247.97,53
+434,PRD-perf-0434,جوارب 434,Product_0434,364,متجر عطور,perfume_shop,قطعة,298.25,209.82,34
+435,PRD-reta-0435,جوارب 435,Product_0435,276,كهرباء وإنارة,retail_construction_electrical,جلسة,158.76,75.85,158
+436,PRD-park-0436,خافض حرارة 436,Product_0436,444,حديقة ترفيهية,park,كرتونة,293.0,191.1,234
+437,PRD-educ-0437,تابلت 437,Product_0437,339,أكاديمية موسيقى,education_music,كيلو,150.99,45.9,230
+438,PRD-inte-0438,فحص 438,Product_0438,400,خدمة التصميم الداخلي,interior_design,متر,241.43,164.08,239
+439,PRD-mexi-0439,طاولة 439,Product_0439,432,مطعم مكسيكي,mexican_restaurant,قطعة,308.18,194.95,323
+440,PRD-reta-0440,فستان 440,Product_0440,259,محمصة,retail_fnb_roaster,جلسة,346.4,187.28,142
+441,PRD-cons-0441,توصيل 441,Product_0441,402,شركة مقاولات,construction_company,خدمة,284.78,144.89,4
+442,PRD-smoo-0442,فيتامين 442,Product_0442,421,محل سموثي,smoothie_bar,جلسة,108.19,34.16,478
+443,PRD-pizz-0443,شامبو 443,Product_0443,423,مطعم بيتزا,pizza_restaurant,قطعة,133.66,48.47,416
+444,PRD-reta-0444,إصلاح 444,Product_0444,281,كمبيوتر ولابتوب,retail_electronics_computers,ساعة,223.43,85.67,257
+445,PRD-cons-0445,قميص 445,Product_0445,306,مقاولات وتشغيل,construction,كرتونة,100.35,65.32,172
+446,PRD-medi-0446,وسادة 446,Product_0446,319,عيادة علاج طبيعي,medical_physiotherapy,متر,289.38,171.92,349
+447,PRD-unis-0447,منديل 447,Product_0447,359,صالون مختلط,unisex_salon,حصة,176.38,121.07,321
+448,PRD-beau-0448,فيتامين 448,Product_0448,357,متخصص الثقب,beauty_piercing,ساعة,270.32,171.1,155
+449,PRD-cons-0449,سرير 449,Product_0449,402,شركة مقاولات,construction_company,جلسة,355.04,198.64,215
+450,PRD-educ-0450,تركيب 450,Product_0450,343,مدرسة فنون قتالية,education_martial_arts,زجاجة,464.39,281.33,76
+451,PRD-reta-0451,طاولة 451,Product_0451,283,إلكترونيات ترفيهية,retail_electronics_entertainment,كيس,157.92,80.69,420
+452,PRD-surv-0452,تنظيف 452,Product_0452,416,خدمة المراقبة,surveillance_service,كرتونة,443.04,205.93,82
+453,PRD-gril-0453,شوكولاتة 453,Product_0453,426,مطعم شواء,grilled_restaurant,زجاجة,161.39,85.9,33
+454,PRD-ince-0454,دقيق 454,Product_0454,366,متجر البخور,incense_shop,كيلو,237.37,85.42,365
+455,PRD-reta-0455,دقيق 455,Product_0455,302,مستلزمات حيوانات أليفة,retail_specialized_pets,زجاجة,344.72,222.36,282
+456,PRD-past-0456,فيتامين 456,Product_0456,424,مطعم معكرونة,pasta_restaurant,كرتونة,10.33,6.76,328
+457,PRD-fast-0457,مياه معدنية 457,Product_0457,422,مطعم وجبات سريعة,fast_food,حصة,350.08,174.06,73
+458,PRD-indi-0458,جبن 458,Product_0458,430,مطعم هندي,indian_restaurant,كيس,324.58,188.27,68
+459,PRD-educ-0459,فواكه 459,Product_0459,338,معهد مهني,education_vocational,حصة,21.02,13.87,121
+460,PRD-educ-0460,قهوة 460,Product_0460,345,أكاديمية التنس,education_tennis,حصة,352.28,183.11,341
+461,PRD-educ-0461,لابتوب 461,Product_0461,334,معهد لغة عربية,education_arabic,متر,365.84,253.0,62
+462,PRD-ince-0462,أدوية 462,Product_0462,366,متجر البخور,incense_shop,جلسة,103.45,52.27,472
+463,PRD-beau-0463,أدوية 463,Product_0463,355,متخصص الرموش,beauty_lashes,كرتونة,388.62,190.13,187
+464,PRD-cine-0464,جبن 464,Product_0464,437,دار السينما,cinema,متر,368.23,161.18,428
+465,PRD-carp-0465,منديل 465,Product_0465,406,خدمة النجارة,carpentry_service,كيس,426.83,183.72,127
+466,PRD-secu-0466,ضمادات 466,Product_0466,415,خدمة الأمن والحراسة,security_service,زجاجة,105.58,35.11,130
+467,PRD-deli-0467,أدوية 467,Product_0467,385,خدمة التوصيل,delivery_service,ساعة,487.13,208.58,166
+468,PRD-indi-0468,دجاج 468,Product_0468,430,مطعم هندي,indian_restaurant,ساعة,349.71,176.21,86
+469,PRD-reta-0469,توصيل 469,Product_0469,259,محمصة,retail_fnb_roaster,زجاجة,429.87,276.34,230
+470,PRD-boat-0470,حزام 470,Product_0470,395,تأجير قوارب,boat_rental,خدمة,272.86,146.52,14
+471,PRD-medi-0471,تنظيف 471,Product_0471,315,عيادة أطفال,medical_pediatrics,كيس,421.08,289.28,289
+472,PRD-aqua-0472,كرسي 472,Product_0472,447,حوض سمك عملاق,aquarium,كيلو,303.37,216.83,378
+473,PRD-iron-0473,مطهر 473,Product_0473,371,خدمة الكي,ironing_service,متر,400.18,230.52,245
+474,PRD-reta-0474,حزام 474,Product_0474,301,ألعاب وهدايا,retail_specialized_toys,خدمة,61.42,44.03,347
+475,PRD-perf-0475,شوكولاتة 475,Product_0475,364,متجر عطور,perfume_shop,خدمة,448.96,183.61,90
+476,PRD-disi-0476,حزام 476,Product_0476,414,خدمة التطهير,disinfection_service,زجاجة,112.86,61.27,123
+477,PRD-ice_-0477,صابون 477,Product_0477,419,محل آيس كريم,ice_cream_shop,جلسة,454.19,293.27,477
+478,PRD-clea-0478,جبن 478,Product_0478,413,خدمة التنظيف,cleaning_service,خدمة,279.23,160.99,481
+479,PRD-well-0479,قهوة 479,Product_0479,321,منتجع صحي,wellness_spa,قطعة,465.12,218.36,411
+480,PRD-cate-0480,فيتامين 480,Product_0480,417,خدمة الطعام والشراب,catering_service,حصة,220.04,139.59,68
+481,PRD-beau-0481,إصلاح 481,Product_0481,357,متخصص الثقب,beauty_piercing,ساعة,342.22,254.21,382
+482,PRD-medi-0482,خبز 482,Product_0482,313,عيادة عظام,medical_orthopedics,قطعة,435.73,257.51,328
+483,PRD-reta-0483,لوحة مفاتيح 483,Product_0483,304,لوازم رحلات وصيد,retail_specialized_camping,متر,253.34,126.02,311
+484,PRD-medi-0484,جبن 484,Product_0484,316,مختبر طبي,medical_lab,ساعة,94.43,29.66,439
+485,PRD-medi-0485,مياه معدنية 485,Product_0485,317,قسم الأشعات,medical_radiology,خدمة,194.55,149.21,169
+486,PRD-whol-0486,لحم 486,Product_0486,305,تجارة جملة,wholesale,زجاجة,333.82,219.8,390
+487,PRD-educ-0487,فستان 487,Product_0487,332,مدرسة قيادة,education_driving,حصة,309.54,214.07,277
+488,PRD-educ-0488,بنطلون 488,Product_0488,330,جامعة,education_university,ساعة,443.04,273.84,291
+489,PRD-beau-0489,شاحن 489,Product_0489,354,متخصص النمص والحلاوة,beauty_threading,زجاجة,10.81,3.57,88
+490,PRD-perf-0490,سماعات 490,Product_0490,364,متجر عطور,perfume_shop,قطعة,261.16,204.63,446
+491,PRD-well-0491,استشارة 491,Product_0491,320,صالة رياضية,wellness_gym,كيس,183.18,140.24,28
+492,PRD-educ-0492,شوكولاتة 492,Product_0492,346,أكاديمية كرة قدم,education_soccer,جلسة,21.68,7.55,72
+493,PRD-japa-0493,باور بانك 493,Product_0493,429,مطعم ياباني,japanese_restaurant,كيلو,348.11,245.33,378
+494,PRD-ride-0494,مرتبة 494,Product_0494,384,خدمة مشاركة الركوب,rideshare_service,متر,169.81,117.54,37
+495,PRD-reta-0495,عصير 495,Product_0495,266,ملابس نسائي,retail_fashion_clothing_f,حصة,369.83,214.3,432
+496,PRD-reta-0496,حليب منكهة 496,Product_0496,272,أقمشة ومنسوجات,retail_fashion_fabric,قطعة,30.72,12.5,432
+497,PRD-reta-0497,قميص 497,Product_0497,294,أثاث ومفروشات,retail_home_furniture,جلسة,437.74,189.24,474
+498,PRD-food-0498,شراب سعال 498,Product_0498,256,معسلات,food_hookah,قطعة,322.5,232.93,244
+499,PRD-arca-0499,شراب سعال 499,Product_0499,440,قاعة ألعاب,arcade,كيلو,287.98,207.74,392
+500,PRD-arch-0500,ساعة 500,Product_0500,401,خدمة التصميم المعماري,architecture_design,ساعة,111.61,44.02,226
+501,PRD-reta-0501,لابتوب 501,Product_0501,286,عطور وبخور,retail_health_perfume,كيلو,316.58,204.63,396
+502,PRD-seaf-0502,تنظيف 502,Product_0502,425,مطعم مأكولات بحرية,seafood_restaurant,كرتونة,242.28,143.38,110
+503,PRD-arch-0503,فواكه 503,Product_0503,401,خدمة التصميم المعماري,architecture_design,كيس,198.24,69.74,387
+504,PRD-medi-0504,تصليح 504,Product_0504,308,عيادة / مستشفى,medical,قطعة,362.5,164.78,351
+505,PRD-educ-0505,علاج 505,Product_0505,332,مدرسة قيادة,education_driving,كيس,232.56,121.71,58
+506,PRD-laun-0506,سرير 506,Product_0506,367,خدمة غسيل ملابس,laundry_service,كيس,345.77,181.35,313
+507,PRD-well-0507,جبن 507,Product_0507,323,استوديو يوجا,wellness_yoga,كيس,178.53,102.81,385
+508,PRD-reta-0508,كابل 508,Product_0508,292,إكسسوارات سيارات,retail_auto_accessories,جلسة,141.95,56.23,37
+509,PRD-real-0509,مرهم 509,Product_0509,399,تأجير العقارات,real_estate_rental,ساعة,274.73,152.84,450
+510,PRD-libr-0510,فحص 510,Product_0510,448,مكتبة عامة,library,ساعة,178.98,105.92,371
+511,PRD-boat-0511,زيت 511,Product_0511,395,تأجير قوارب,boat_rental,زجاجة,483.12,225.76,7
+512,PRD-reta-0512,لابتوب 512,Product_0512,293,ورشة صيانة سيارات,retail_auto_workshop,كيس,488.73,250.31,365
+513,PRD-tail-0513,وسادة 513,Product_0513,368,خدمة الخياطة,tailoring_service,كرتونة,170.16,90.39,267
+514,PRD-auto-0514,مطهر 514,Product_0514,374,خدمة تفصيل السيارات,automotive_detailing,حصة,144.45,108.01,60
+515,PRD-educ-0515,دقيق 515,Product_0515,337,معهد محاسبة,education_accounting,ساعة,350.45,272.62,272
+516,PRD-juic-0516,شاشة 516,Product_0516,420,محل عصائر,juice_bar,كيس,259.27,170.29,206
+517,PRD-beau-0517,حزام 517,Product_0517,350,مركز العناية بالبشرة,beauty_skincare,جلسة,93.46,57.85,114
+518,PRD-educ-0518,حذاء 518,Product_0518,335,معهد لغة فرنسية,education_french,متر,75.76,38.85,306
+519,PRD-beau-0519,شاي 519,Product_0519,357,متخصص الثقب,beauty_piercing,حصة,400.82,214.16,43
+520,PRD-reta-0520,أرز 520,Product_0520,282,أجهزة منزلية,retail_electronics_appliances,ساعة,87.28,58.78,206
+521,PRD-waxi-0521,سمك 521,Product_0521,363,مركز إزالة الشعر,waxing_center,ساعة,181.28,73.75,75
+522,PRD-reta-0522,أدوية 522,Product_0522,287,مستحضرات تجميل,retail_health_cosmetics,كرتونة,464.78,150.53,408
+523,PRD-reta-0523,حليب منكهة 523,Product_0523,272,أقمشة ومنسوجات,retail_fashion_fabric,حصة,267.58,169.1,210
+524,PRD-medi-0524,شاي 524,Product_0524,311,عيادة عيون,medical_optics,جلسة,475.08,231.96,246
+525,PRD-salo-0525,جوارب 525,Product_0525,326,صالون حلاقة,salon_hairdresser,كيس,66.59,39.13,460
+526,PRD-dry_-0526,خبز 526,Product_0526,370,تنظيف جاف,dry_cleaning,متر,236.8,120.89,463
+527,PRD-beau-0527,مياه معدنية 527,Product_0527,354,متخصص النمص والحلاوة,beauty_threading,خدمة,451.07,220.85,259
+528,PRD-educ-0528,إصلاح 528,Product_0528,347,معهد برمجة,education_coding,قطعة,187.94,71.91,388
+529,PRD-educ-0529,غطاء سرير 529,Product_0529,335,معهد لغة فرنسية,education_french,قطعة,129.77,79.88,58
+530,PRD-reta-0530,لابتوب 530,Product_0530,259,محمصة,retail_fnb_roaster,جلسة,364.08,242.91,78
+531,PRD-perf-0531,حزام 531,Product_0531,364,متجر عطور,perfume_shop,زجاجة,259.54,136.96,393
+532,PRD-reta-0532,حلويات 532,Product_0532,298,تجهيزات مكاتب,retail_home_office,كيلو,151.07,89.98,6
+533,PRD-reta-0533,حقيبة 533,Product_0533,282,أجهزة منزلية,retail_electronics_appliances,كيلو,320.77,248.66,42
+534,PRD-auto-0534,دقيق 534,Product_0534,380,خدمة تنجيد السيارات,automotive_upholstery,زجاجة,219.4,173.28,297
+535,PRD-reta-0535,نظارة 535,Product_0535,287,مستحضرات تجميل,retail_health_cosmetics,متر,79.97,63.49,449
+536,PRD-auto-0536,فستان 536,Product_0536,377,محل إطارات,automotive_tires,متر,223.61,163.41,31
+537,PRD-medi-0537,قميص 537,Product_0537,313,عيادة عظام,medical_orthopedics,كيلو,108.43,53.9,124
+538,PRD-well-0538,حلويات 538,Product_0538,324,عيادة تغذية,wellness_nutrition,كرتونة,445.96,250.6,407
+539,PRD-reta-0539,فستان 539,Product_0539,266,ملابس نسائي,retail_fashion_clothing_f,خدمة,215.51,94.84,347
+540,PRD-dry_-0540,دقيق 540,Product_0540,370,تنظيف جاف,dry_cleaning,جلسة,259.05,98.75,351
+541,PRD-reta-0541,شراب سعال 541,Product_0541,290,قطع غيار سيارات,retail_auto_parts,قطعة,163.78,104.63,53
+542,PRD-reta-0542,مرهم 542,Product_0542,264,مياه ومشروبات,retail_fnb_beverages,خدمة,454.62,305.74,416
+543,PRD-leba-0543,ضمادات 543,Product_0543,436,مطعم لبناني,lebanese_restaurant,جلسة,395.36,123.74,41
+544,PRD-past-0544,قبعة 544,Product_0544,424,مطعم معكرونة,pasta_restaurant,حصة,261.17,109.58,367
+545,PRD-auto-0545,تصليح 545,Product_0545,382,كهرباء سيارات,automotive_electrical,خدمة,139.06,77.62,309
+546,PRD-cour-0546,إصلاح 546,Product_0546,386,خدمة الرسائل السريعة,courier_service,كيلو,76.58,38.88,500
+547,PRD-reta-0547,لوحة مفاتيح 547,Product_0547,264,مياه ومشروبات,retail_fnb_beverages,زجاجة,424.16,320.24,379
+548,PRD-beau-0548,حليب 548,Product_0548,356,متخصص الوشم,beauty_tattoo,متر,60.42,43.6,5
+549,PRD-well-0549,استشارة 549,Product_0549,324,عيادة تغذية,wellness_nutrition,زجاجة,470.82,305.09,155
+550,PRD-auto-0550,خزانة 550,Product_0550,377,محل إطارات,automotive_tires,ساعة,466.19,261.36,237
+551,PRD-reta-0551,فحص 551,Product_0551,273,مستلزمات خياطة,retail_fashion_tailoring,حصة,299.04,94.2,298
+552,PRD-medi-0552,تنظيف 552,Product_0552,317,قسم الأشعات,medical_radiology,ساعة,148.61,100.76,310
+553,PRD-reta-0553,فيتامين 553,Product_0553,301,ألعاب وهدايا,retail_specialized_toys,كرتونة,396.82,172.94,179
+554,PRD-reta-0554,قهوة 554,Product_0554,257,سوبر ماركت,retail_fnb_supermarket,قطعة,27.22,10.87,303
+555,PRD-beau-0555,طاولة 555,Product_0555,353,متجر مستحضرات تجميل,beauty_makeup,قطعة,330.62,172.11,43
+556,PRD-medi-0556,تركيب 556,Product_0556,317,قسم الأشعات,medical_radiology,كرتونة,474.39,264.59,87
+557,PRD-educ-0557,حقيبة 557,Product_0557,329,مدرسة ثانوية,education_secondary_school,ساعة,404.84,310.51,488
+558,PRD-auto-0558,شوكولاتة 558,Product_0558,374,خدمة تفصيل السيارات,automotive_detailing,كيس,483.21,146.25,202
+559,PRD-reta-0559,سرير 559,Product_0559,278,أرضيات وسيراميك,retail_construction_flooring,زجاجة,184.83,78.7,84
+560,PRD-reta-0560,قبعة 560,Product_0560,279,عدد وأدوات,retail_construction_hardware,كرتونة,425.38,231.3,104
+561,PRD-reta-0561,توصيل 561,Product_0561,286,عطور وبخور,retail_health_perfume,متر,21.08,7.9,99
+562,PRD-well-0562,وسادة 562,Product_0562,321,منتجع صحي,wellness_spa,قطعة,12.92,9.61,28
+563,PRD-reta-0563,حذاء 563,Product_0563,287,مستحضرات تجميل,retail_health_cosmetics,حصة,226.9,104.71,222
+564,PRD-well-0564,شاحن 564,Product_0564,322,مركز مساج,wellness_massage,جلسة,133.22,104.71,217
+565,PRD-mexi-0565,شاشة 565,Product_0565,432,مطعم مكسيكي,mexican_restaurant,كيس,326.67,222.97,143
+566,PRD-reta-0566,شوكولاتة 566,Product_0566,266,ملابس نسائي,retail_fashion_clothing_f,زجاجة,145.74,69.35,175
+567,PRD-thai-0567,تصليح 567,Product_0567,431,مطعم تايلاندي,thai_restaurant,متر,283.32,93.27,259
+568,PRD-reta-0568,تنظيف 568,Product_0568,280,جوالات وإكسسوارات,retail_electronics_mobile,خدمة,470.82,147.22,189
+569,PRD-secu-0569,فيتامين 569,Product_0569,415,خدمة الأمن والحراسة,security_service,جلسة,419.98,143.13,26
+570,PRD-reta-0570,علاج 570,Product_0570,289,مكملات غذائية,retail_health_supplements,قطعة,54.18,32.22,350
+571,PRD-educ-0571,قبعة 571,Product_0571,346,أكاديمية كرة قدم,education_soccer,جلسة,211.39,75.65,242
+572,PRD-indi-0572,صابون 572,Product_0572,430,مطعم هندي,indian_restaurant,ساعة,435.91,151.02,475
+573,PRD-chin-0573,طاولة 573,Product_0573,428,مطعم صيني,chinese_restaurant,كيس,368.44,280.28,395
+574,PRD-auto-0574,غطاء سرير 574,Product_0574,377,محل إطارات,automotive_tires,متر,312.89,104.95,452
+575,PRD-educ-0575,جوارب 575,Product_0575,333,معهد لغة إنجليزية,education_english,متر,479.23,323.45,82
+576,PRD-beau-0576,استشارة 576,Product_0576,355,متخصص الرموش,beauty_lashes,متر,245.41,146.5,392
+577,PRD-auto-0577,سماعات 577,Product_0577,375,محطة غسيل سيارات,automotive_wash,حصة,460.14,143.86,383
+578,PRD-reta-0578,مرتبة 578,Product_0578,266,ملابس نسائي,retail_fashion_clothing_f,كيلو,216.49,96.97,434
+579,PRD-reta-0579,حزام 579,Product_0579,264,مياه ومشروبات,retail_fnb_beverages,قطعة,261.33,197.98,57
+580,PRD-reta-0580,باور بانك 580,Product_0580,280,جوالات وإكسسوارات,retail_electronics_mobile,كيلو,451.11,321.1,155
+581,PRD-beau-0581,شوكولاتة 581,Product_0581,357,متخصص الثقب,beauty_piercing,زجاجة,373.11,243.11,317
+582,PRD-zoo-0582,تصليح 582,Product_0582,446,حديقة حيوانات,zoo,حصة,106.37,50.21,265
+583,PRD-waxi-0583,حزام 583,Product_0583,363,مركز إزالة الشعر,waxing_center,متر,57.77,22.77,34
+584,PRD-auto-0584,باور بانك 584,Product_0584,378,محل بطاريات,automotive_battery,قطعة,403.56,203.57,463
+585,PRD-perf-0585,ضمادات 585,Product_0585,364,متجر عطور,perfume_shop,متر,484.46,243.48,393
+586,PRD-educ-0586,حلويات 586,Product_0586,345,أكاديمية التنس,education_tennis,حصة,427.83,196.29,162
+587,PRD-reta-0587,منديل 587,Product_0587,303,معدات رياضية,retail_specialized_sports,خدمة,71.98,22.68,325
+588,PRD-thea-0588,تنظيف 588,Product_0588,438,دار المسرح,theater,خدمة,498.75,251.51,497
+589,PRD-dry_-0589,لابتوب 589,Product_0589,370,تنظيف جاف,dry_cleaning,كرتونة,268.64,84.18,187
+590,PRD-food-0590,لابتوب 590,Product_0590,256,معسلات,food_hookah,جلسة,405.3,288.27,244
+591,PRD-food-0591,جوارب 591,Product_0591,256,معسلات,food_hookah,حصة,110.21,60.57,477
+592,PRD-educ-0592,تدريب 592,Product_0592,338,معهد مهني,education_vocational,جلسة,33.81,18.63,437
+593,PRD-gril-0593,خضار 593,Product_0593,426,مطعم شواء,grilled_restaurant,حصة,400.76,169.96,297
+594,PRD-leba-0594,لابتوب 594,Product_0594,436,مطعم لبناني,lebanese_restaurant,ساعة,332.35,135.28,487
+595,PRD-reta-0595,سماعات 595,Product_0595,273,مستلزمات خياطة,retail_fashion_tailoring,كيس,408.69,314.02,262
+596,PRD-cine-0596,لابتوب 596,Product_0596,437,دار السينما,cinema,ساعة,36.97,24.22,224
+597,PRD-well-0597,أدوية 597,Product_0597,323,استوديو يوجا,wellness_yoga,متر,355.11,132.34,246
+598,PRD-reta-0598,حذاء 598,Product_0598,258,بقالة / تموينات,retail_fnb_grocery,قطعة,205.45,107.1,483
+599,PRD-reta-0599,تدريب 599,Product_0599,273,مستلزمات خياطة,retail_fashion_tailoring,ساعة,25.75,19.74,470
+600,PRD-ride-0600,فحص 600,Product_0600,384,خدمة مشاركة الركوب,rideshare_service,قطعة,499.98,335.39,128
+601,PRD-reta-0601,قميص 601,Product_0601,287,مستحضرات تجميل,retail_health_cosmetics,كيس,200.89,88.52,198
+602,PRD-park-0602,تصليح 602,Product_0602,444,حديقة ترفيهية,park,كيس,397.21,195.25,346
+603,PRD-reta-0603,تركيب 603,Product_0603,286,عطور وبخور,retail_health_perfume,ساعة,278.86,151.82,196
+604,PRD-logi-0604,كابل 604,Product_0604,388,شركة لوجستيات,logistics_service,كيس,203.78,119.98,444
+605,PRD-arca-0605,تابلت 605,Product_0605,440,قاعة ألعاب,arcade,زجاجة,339.44,143.42,435
+606,PRD-waxi-0606,حزام 606,Product_0606,363,مركز إزالة الشعر,waxing_center,خدمة,67.89,52.84,381
+607,PRD-past-0607,غطاء سرير 607,Product_0607,418,محل الحلويات,pastry_shop,خدمة,260.48,147.01,91
+608,PRD-medi-0608,مياه معدنية 608,Product_0608,319,عيادة علاج طبيعي,medical_physiotherapy,حصة,275.71,211.69,161
+609,PRD-arca-0609,إصلاح 609,Product_0609,440,قاعة ألعاب,arcade,ساعة,196.01,72.14,458
+610,PRD-dry_-0610,زيت 610,Product_0610,370,تنظيف جاف,dry_cleaning,جلسة,298.67,112.7,395
+611,PRD-educ-0611,جوارب 611,Product_0611,338,معهد مهني,education_vocational,قطعة,327.56,253.08,320
+612,PRD-pizz-0612,وسادة 612,Product_0612,423,مطعم بيتزا,pizza_restaurant,زجاجة,86.44,57.93,461
+613,PRD-educ-0613,بنطلون 613,Product_0613,338,معهد مهني,education_vocational,متر,64.6,30.94,168
+614,PRD-ride-0614,صيانة 614,Product_0614,384,خدمة مشاركة الركوب,rideshare_service,متر,185.57,62.12,459
+615,PRD-libr-0615,قبعة 615,Product_0615,448,مكتبة عامة,library,ساعة,132.12,92.02,153
+616,PRD-medi-0616,مرتبة 616,Product_0616,311,عيادة عيون,medical_optics,ساعة,91.09,28.94,151
+617,PRD-cate-0617,دقيق 617,Product_0617,417,خدمة الطعام والشراب,catering_service,خدمة,83.85,56.73,431
+618,PRD-equi-0618,حليب منكهة 618,Product_0618,392,تأجير معدات بناء,equipment_rental,حصة,403.76,184.23,40
+619,PRD-reta-0619,حليب 619,Product_0619,264,مياه ومشروبات,retail_fnb_beverages,كرتونة,85.86,57.3,324
+620,PRD-reta-0620,مرهم 620,Product_0620,289,مكملات غذائية,retail_health_supplements,حصة,261.74,191.27,434
+621,PRD-laun-0621,فستان 621,Product_0621,367,خدمة غسيل ملابس,laundry_service,متر,169.81,67.13,23
+622,PRD-laun-0622,فيتامين 622,Product_0622,367,خدمة غسيل ملابس,laundry_service,خدمة,283.17,185.96,130
+623,PRD-tili-0623,بنطلون 623,Product_0623,408,خدمة الرخام والسيراميك,tiling_service,جلسة,228.9,122.88,415
+624,PRD-food-0624,استشارة 624,Product_0624,254,كافيه,food_cafe,متر,38.79,13.86,349
+625,PRD-auto-0625,شراب سعال 625,Product_0625,374,خدمة تفصيل السيارات,automotive_detailing,خدمة,61.8,36.94,12
+626,PRD-medi-0626,غطاء سرير 626,Product_0626,313,عيادة عظام,medical_orthopedics,جلسة,379.32,215.71,181
+627,PRD-spor-0627,تصليح 627,Product_0627,443,حانة رياضية,sports_bar,خدمة,317.81,176.86,46
+628,PRD-reta-0628,جوارب 628,Product_0628,301,ألعاب وهدايا,retail_specialized_toys,متر,140.61,60.54,215
+629,PRD-well-0629,وسادة 629,Product_0629,325,تقويم أسنان,wellness_dental,كيس,261.67,190.86,355
+630,PRD-cons-0630,مرتبة 630,Product_0630,306,مقاولات وتشغيل,construction,ساعة,30.01,9.82,37
+631,PRD-beau-0631,تركيب 631,Product_0631,350,مركز العناية بالبشرة,beauty_skincare,كرتونة,26.89,14.98,170
+632,PRD-auto-0632,تصليح 632,Product_0632,372,ورشة إصلاح سيارات,automotive_repair,خدمة,332.91,180.85,113
+633,PRD-surv-0633,تركيب 633,Product_0633,416,خدمة المراقبة,surveillance_service,حصة,282.14,212.53,419
+634,PRD-educ-0634,ضمادات 634,Product_0634,343,مدرسة فنون قتالية,education_martial_arts,قطعة,456.74,310.2,8
+635,PRD-beau-0635,قميص 635,Product_0635,356,متخصص الوشم,beauty_tattoo,جلسة,435.28,174.91,469
+636,PRD-real-0636,مسكن 636,Product_0636,397,وكالة عقارات,real_estate_agency,خدمة,112.54,60.64,459
+637,PRD-glaz-0637,حذاء 637,Product_0637,409,خدمة تركيب الزجاج,glazing_service,كيس,50.71,24.7,13
+638,PRD-reta-0638,إصلاح 638,Product_0638,284,كاميرات وأمن,retail_electronics_security,جلسة,141.03,71.0,429
+639,PRD-auto-0639,بنطلون 639,Product_0639,378,محل بطاريات,automotive_battery,حصة,270.45,82.79,428
+640,PRD-beau-0640,لحم 640,Product_0640,356,متخصص الوشم,beauty_tattoo,قطعة,268.34,176.55,250
+641,PRD-glaz-0641,تنظيف 641,Product_0641,409,خدمة تركيب الزجاج,glazing_service,قطعة,363.15,280.62,66
+642,PRD-deli-0642,مسكن 642,Product_0642,385,خدمة التوصيل,delivery_service,كيلو,261.63,165.05,488
+643,PRD-reta-0643,سرير 643,Product_0643,261,ملحمة / جزارة,retail_fnb_butcher,حصة,47.52,29.34,134
+644,PRD-medi-0644,زيت 644,Product_0644,319,عيادة علاج طبيعي,medical_physiotherapy,قطعة,245.3,78.65,414
+645,PRD-auto-0645,مرتبة 645,Product_0645,382,كهرباء سيارات,automotive_electrical,متر,437.76,194.0,267
+646,PRD-well-0646,سماعات 646,Product_0646,323,استوديو يوجا,wellness_yoga,ساعة,402.38,124.19,272
+647,PRD-reta-0647,إصلاح 647,Product_0647,289,مكملات غذائية,retail_health_supplements,كيس,169.84,109.22,338
+648,PRD-reta-0648,عصير 648,Product_0648,303,معدات رياضية,retail_specialized_sports,متر,491.43,210.2,164
+649,PRD-arch-0649,مرهم 649,Product_0649,401,خدمة التصميم المعماري,architecture_design,متر,292.59,142.98,328
+650,PRD-carp-0650,فواكه 650,Product_0650,406,خدمة النجارة,carpentry_service,حصة,256.0,181.93,196
+651,PRD-cour-0651,تابلت 651,Product_0651,386,خدمة الرسائل السريعة,courier_service,كرتونة,363.86,124.64,370
+652,PRD-educ-0652,أدوية 652,Product_0652,332,مدرسة قيادة,education_driving,قطعة,467.73,216.06,471
+653,PRD-kara-0653,جوال 653,Product_0653,441,محل كاراوكي,karaoke,كيلو,244.54,130.49,34
+654,PRD-thea-0654,ساعة 654,Product_0654,438,دار المسرح,theater,متر,367.61,274.66,365
+655,PRD-reta-0655,غطاء سرير 655,Product_0655,264,مياه ومشروبات,retail_fnb_beverages,زجاجة,33.24,25.94,103
+656,PRD-salo-0656,بنطلون 656,Product_0656,327,صالون تجميل,salon_beauty,جلسة,93.1,32.86,110
+657,PRD-reta-0657,توصيل 657,Product_0657,263,تجار التمور,retail_fnb_dates,كيس,69.92,52.7,156
+658,PRD-educ-0658,قهوة 658,Product_0658,332,مدرسة قيادة,education_driving,زجاجة,135.23,79.07,493
+659,PRD-fast-0659,خبز 659,Product_0659,422,مطعم وجبات سريعة,fast_food,كيس,277.72,129.13,134
+660,PRD-auto-0660,تدريب 660,Product_0660,380,خدمة تنجيد السيارات,automotive_upholstery,جلسة,185.48,123.47,353
+661,PRD-scoo-0661,تابلت 661,Product_0661,393,تأجير دراجات نارية,scooter_rental,متر,370.16,165.18,490
+662,PRD-medi-0662,تابلت 662,Product_0662,308,عيادة / مستشفى,medical,جلسة,368.29,285.67,118
+663,PRD-educ-0663,فستان 663,Product_0663,346,أكاديمية كرة قدم,education_soccer,خدمة,68.37,34.5,353
+664,PRD-kara-0664,خزانة 664,Product_0664,441,محل كاراوكي,karaoke,قطعة,327.2,126.42,455
+665,PRD-whol-0665,حليب منكهة 665,Product_0665,305,تجارة جملة,wholesale,جلسة,206.7,135.54,169
+666,PRD-educ-0666,دقيق 666,Product_0666,336,معهد تكنولوجيا المعلومات,education_it,كيس,299.94,101.97,53
+667,PRD-equi-0667,دقيق 667,Product_0667,392,تأجير معدات بناء,equipment_rental,قطعة,482.55,223.49,382
+668,PRD-whol-0668,تصليح 668,Product_0668,305,تجارة جملة,wholesale,كيس,395.03,216.7,92
+669,PRD-bus_-0669,كرسي 669,Product_0669,389,خدمة النقل العام,bus_service,كرتونة,268.66,143.14,164
+670,PRD-auto-0670,خافض حرارة 670,Product_0670,372,ورشة إصلاح سيارات,automotive_repair,كيلو,458.55,144.95,56
+671,PRD-pest-0671,صيانة 671,Product_0671,412,خدمة مكافحة الآفات,pest_control,خدمة,87.08,64.05,73
+672,PRD-reta-0672,صيانة 672,Product_0672,285,صيدلية,retail_health_pharmacy,ساعة,147.77,57.09,87
+673,PRD-reta-0673,غطاء سرير 673,Product_0673,290,قطع غيار سيارات,retail_auto_parts,ساعة,18.34,10.06,119
+674,PRD-pain-0674,بنطلون 674,Product_0674,405,خدمة الدهان,painting_service,متر,419.76,200.6,362
+675,PRD-food-0675,تركيب 675,Product_0675,256,معسلات,food_hookah,ساعة,253.06,168.67,367
+676,PRD-reta-0676,حلويات 676,Product_0676,269,حقائب وإكسسوارات,retail_fashion_bags,حصة,88.66,49.48,76
+677,PRD-reta-0677,منديل 677,Product_0677,304,لوازم رحلات وصيد,retail_specialized_camping,حصة,76.52,52.83,396
+678,PRD-auto-0678,قبعة 678,Product_0678,377,محل إطارات,automotive_tires,زجاجة,290.17,193.64,474
+679,PRD-hvac-0679,علاج 679,Product_0679,410,خدمة التكييف والتهوية,hvac_service,خدمة,76.78,34.77,491
+680,PRD-whol-0680,لابتوب 680,Product_0680,305,تجارة جملة,wholesale,ساعة,451.67,232.86,300
+681,PRD-boat-0681,ضمادات 681,Product_0681,395,تأجير قوارب,boat_rental,زجاجة,376.75,238.16,210
+682,PRD-reta-0682,حقيبة 682,Product_0682,291,إطارات وبطاريات,retail_auto_tires,خدمة,392.25,211.95,129
+683,PRD-syri-0683,قهوة 683,Product_0683,435,مطعم سوري,syrian_restaurant,كيس,435.95,331.52,323
+684,PRD-carp-0684,مرهم 684,Product_0684,406,خدمة النجارة,carpentry_service,قطعة,86.32,44.43,303
+685,PRD-reta-0685,تابلت 685,Product_0685,296,أواني منزلية,retail_home_kitchenware,زجاجة,293.53,99.48,223
+686,PRD-tail-0686,نظارة 686,Product_0686,368,خدمة الخياطة,tailoring_service,كيلو,254.16,86.4,182
+687,PRD-perf-0687,تصليح 687,Product_0687,364,متجر عطور,perfume_shop,خدمة,148.97,62.84,226
+688,PRD-reta-0688,غطاء سرير 688,Product_0688,294,أثاث ومفروشات,retail_home_furniture,جلسة,239.72,175.24,207
+689,PRD-carp-0689,جوال 689,Product_0689,406,خدمة النجارة,carpentry_service,زجاجة,464.94,188.53,292
+690,PRD-fren-0690,فواكه 690,Product_0690,434,مطعم فرنسي,french_restaurant,زجاجة,12.8,6.16,134
+691,PRD-reta-0691,طاولة 691,Product_0691,302,مستلزمات حيوانات أليفة,retail_specialized_pets,زجاجة,386.21,219.33,391
+692,PRD-auto-0692,فيتامين 692,Product_0692,378,محل بطاريات,automotive_battery,قطعة,350.02,199.68,385
+693,PRD-salo-0693,قميص 693,Product_0693,326,صالون حلاقة,salon_hairdresser,خدمة,277.01,217.19,358
+694,PRD-cour-0694,ضمادات 694,Product_0694,386,خدمة الرسائل السريعة,courier_service,كيلو,498.05,161.59,436
+695,PRD-reta-0695,شراب سعال 695,Product_0695,299,معسلات ومستلزمات تدخين,retail_specialized_tobacco,متر,360.26,210.82,34
+696,PRD-reta-0696,قبعة 696,Product_0696,262,خضار وفواكه,retail_fnb_produce,جلسة,229.45,103.69,295
+697,PRD-movi-0697,باور بانك 697,Product_0697,387,خدمة النقل والتخزين,moving_service,خدمة,129.85,103.76,35
+698,PRD-nigh-0698,حذاء 698,Product_0698,442,ملهى ليلي,nightclub,حصة,117.19,75.67,151
+699,PRD-reta-0699,حلويات 699,Product_0699,276,كهرباء وإنارة,retail_construction_electrical,كيلو,214.58,124.92,372
+700,PRD-educ-0700,شراب سعال 700,Product_0700,336,معهد تكنولوجيا المعلومات,education_it,كرتونة,441.81,136.73,31
+701,PRD-well-0701,دجاج 701,Product_0701,321,منتجع صحي,wellness_spa,ساعة,64.71,34.39,447
+702,PRD-educ-0702,حلويات 702,Product_0702,343,مدرسة فنون قتالية,education_martial_arts,قطعة,372.45,157.36,368
+703,PRD-well-0703,زيت 703,Product_0703,322,مركز مساج,wellness_massage,ساعة,467.17,302.93,397
+704,PRD-educ-0704,مرهم 704,Product_0704,332,مدرسة قيادة,education_driving,زجاجة,212.64,116.02,485
+705,PRD-reta-0705,نظارة 705,Product_0705,287,مستحضرات تجميل,retail_health_cosmetics,ساعة,229.4,104.7,364
+706,PRD-laun-0706,ساعة 706,Product_0706,367,خدمة غسيل ملابس,laundry_service,متر,370.21,243.69,442
+707,PRD-truc-0707,حليب 707,Product_0707,391,تأجير شاحنات,truck_rental,كيس,174.77,90.79,21
+708,PRD-reta-0708,فحص 708,Product_0708,295,سجاد وموكيت,retail_home_carpet,زجاجة,187.91,100.63,48
+709,PRD-ince-0709,جوارب 709,Product_0709,366,متجر البخور,incense_shop,كيس,431.7,271.2,134
+710,PRD-educ-0710,جوال 710,Product_0710,348,أكاديمية تصوير,education_photography,متر,217.4,105.41,364
+711,PRD-educ-0711,كابل 711,Product_0711,336,معهد تكنولوجيا المعلومات,education_it,كرتونة,73.95,23.99,299
+712,PRD-reta-0712,شامبو 712,Product_0712,270,ساعات ومجوهرات,retail_fashion_watches,كيلو,337.21,145.71,389
+713,PRD-real-0713,إصلاح 713,Product_0713,398,بيع العقارات,real_estate_sales,خدمة,68.56,48.52,384
+714,PRD-reta-0714,نظارة 714,Product_0714,275,سباكة وصحيات,retail_construction_plumbing,ساعة,332.0,233.3,333
+715,PRD-tili-0715,فواكه 715,Product_0715,408,خدمة الرخام والسيراميك,tiling_service,كيلو,356.77,154.92,122
+716,PRD-educ-0716,فستان 716,Product_0716,341,استوديو رقص,education_dance,ساعة,435.73,286.08,256
+717,PRD-reta-0717,كابل 717,Product_0717,279,عدد وأدوات,retail_construction_hardware,كيس,215.5,103.89,139
+718,PRD-reta-0718,شامبو 718,Product_0718,260,مخبز,retail_fnb_bakery,متر,234.12,105.18,253
+719,PRD-movi-0719,سرير 719,Product_0719,387,خدمة النقل والتخزين,moving_service,قطعة,88.09,64.94,116
+720,PRD-educ-0720,خضار 720,Product_0720,348,أكاديمية تصوير,education_photography,كيس,257.82,88.57,168
+721,PRD-medi-0721,شامبو 721,Product_0721,315,عيادة أطفال,medical_pediatrics,ساعة,132.2,79.43,225
+722,PRD-beau-0722,استشارة 722,Product_0722,352,صالون شعر,beauty_hair,متر,176.43,101.8,21
+723,PRD-aqua-0723,عصير 723,Product_0723,447,حوض سمك عملاق,aquarium,زجاجة,50.29,18.64,162
+724,PRD-reta-0724,حليب 724,Product_0724,300,زهور وهدايا,retail_specialized_flowers,قطعة,65.22,29.0,129
+725,PRD-real-0725,فواكه 725,Product_0725,397,وكالة عقارات,real_estate_agency,جلسة,479.3,281.24,119
+726,PRD-reta-0726,تصليح 726,Product_0726,274,مواد بناء,retail_construction_materials,قطعة,419.6,219.29,118
+727,PRD-buff-0727,فيتامين 727,Product_0727,427,مطعم بوفيه,buffet_restaurant,كيلو,407.84,224.61,41
+728,PRD-reta-0728,شاي 728,Product_0728,269,حقائب وإكسسوارات,retail_fashion_bags,كرتونة,467.93,202.53,349
+729,PRD-cons-0729,فستان 729,Product_0729,402,شركة مقاولات,construction_company,كيس,14.93,4.67,222
+730,PRD-spor-0730,فواكه 730,Product_0730,443,حانة رياضية,sports_bar,خدمة,36.32,27.57,367
+731,PRD-reta-0731,فواكه 731,Product_0731,286,عطور وبخور,retail_health_perfume,خدمة,221.0,149.68,241
+732,PRD-auto-0732,مرهم 732,Product_0732,373,ورشة تصبيغ السيارات,automotive_painting,حصة,68.21,28.91,365
+733,PRD-salo-0733,شامبو 733,Product_0733,326,صالون حلاقة,salon_hairdresser,جلسة,474.85,313.76,319
+734,PRD-barb-0734,خزانة 734,Product_0734,358,حلاقة رجالية,barber_shop,زجاجة,86.35,62.84,220
+735,PRD-thea-0735,مياه معدنية 735,Product_0735,438,دار المسرح,theater,قطعة,147.13,88.67,14
+736,PRD-reta-0736,شاشة 736,Product_0736,301,ألعاب وهدايا,retail_specialized_toys,قطعة,353.68,177.78,244
+737,PRD-wedd-0737,تدريب 737,Product_0737,396,خدمة سيارات الأفراح,wedding_cars,ساعة,462.83,251.3,394
+738,PRD-reta-0738,إصلاح 738,Product_0738,281,كمبيوتر ولابتوب,retail_electronics_computers,خدمة,497.94,395.0,239
+739,PRD-reta-0739,أدوية 739,Product_0739,279,عدد وأدوات,retail_construction_hardware,كرتونة,376.78,133.53,168
+740,PRD-educ-0740,تابلت 740,Product_0740,328,مدرسة ابتدائية,education_primary_school,كيس,392.65,191.38,346
+741,PRD-reta-0741,شاشة 741,Product_0741,291,إطارات وبطاريات,retail_auto_tires,جلسة,58.21,20.35,408
+742,PRD-laun-0742,نظارة 742,Product_0742,367,خدمة غسيل ملابس,laundry_service,قطعة,107.88,33.33,235
+743,PRD-syri-0743,مطهر 743,Product_0743,435,مطعم سوري,syrian_restaurant,زجاجة,149.01,54.25,422
+744,PRD-past-0744,حذاء 744,Product_0744,424,مطعم معكرونة,pasta_restaurant,كيس,168.93,88.46,235
+745,PRD-food-0745,غطاء سرير 745,Product_0745,254,كافيه,food_cafe,قطعة,53.68,40.81,23
+746,PRD-pain-0746,سرير 746,Product_0746,405,خدمة الدهان,painting_service,زجاجة,74.4,28.02,12
+747,PRD-maso-0747,جوارب 747,Product_0747,407,خدمة البناء,masonry_service,كرتونة,287.66,142.36,219
+748,PRD-glaz-0748,كابل 748,Product_0748,409,خدمة تركيب الزجاج,glazing_service,كرتونة,211.01,153.7,9
+749,PRD-fast-0749,كرسي 749,Product_0749,422,مطعم وجبات سريعة,fast_food,جلسة,233.31,160.61,450
+750,PRD-medi-0750,تنظيف 750,Product_0750,319,عيادة علاج طبيعي,medical_physiotherapy,كرتونة,125.17,72.25,245
+751,PRD-auto-0751,مرتبة 751,Product_0751,375,محطة غسيل سيارات,automotive_wash,قطعة,128.97,45.8,379
+752,PRD-well-0752,إصلاح 752,Product_0752,321,منتجع صحي,wellness_spa,زجاجة,329.07,248.23,351
+753,PRD-well-0753,مرتبة 753,Product_0753,321,منتجع صحي,wellness_spa,حصة,385.13,267.51,475
+754,PRD-reta-0754,نظارة 754,Product_0754,290,قطع غيار سيارات,retail_auto_parts,خدمة,50.0,20.85,364
+755,PRD-food-0755,شاي 755,Product_0755,256,معسلات,food_hookah,كيلو,79.42,61.83,8
+756,PRD-alte-0756,توصيل 756,Product_0756,369,خدمة تعديل الملابس,alterations_service,كيلو,120.84,43.4,406
+757,PRD-pest-0757,غطاء سرير 757,Product_0757,412,خدمة مكافحة الآفات,pest_control,كيس,361.46,139.77,407
+758,PRD-auto-0758,شوكولاتة 758,Product_0758,380,خدمة تنجيد السيارات,automotive_upholstery,ساعة,422.01,131.95,459
+759,PRD-educ-0759,سمك 759,Product_0759,329,مدرسة ثانوية,education_secondary_school,قطعة,34.15,14.17,499
+760,PRD-educ-0760,ضمادات 760,Product_0760,335,معهد لغة فرنسية,education_french,كيس,265.55,166.44,145
+761,PRD-past-0761,وسادة 761,Product_0761,424,مطعم معكرونة,pasta_restaurant,كيلو,355.81,127.18,370
+762,PRD-food-0762,شاحن 762,Product_0762,255,مقهى,food_coffeeshop,كرتونة,140.65,56.12,291
+763,PRD-medi-0763,جبن 763,Product_0763,310,عيادة أسنان,medical_dentistry,كيلو,338.31,171.01,299
+764,PRD-medi-0764,استشارة 764,Product_0764,316,مختبر طبي,medical_lab,زجاجة,319.96,228.8,252
+765,PRD-reta-0765,دقيق 765,Product_0765,266,ملابس نسائي,retail_fashion_clothing_f,حصة,265.99,160.97,94
+766,PRD-medi-0766,جبن 766,Product_0766,317,قسم الأشعات,medical_radiology,كيس,165.71,53.58,411
+767,PRD-educ-0767,صابون 767,Product_0767,348,أكاديمية تصوير,education_photography,حصة,187.96,112.17,361
+768,PRD-pain-0768,وسادة 768,Product_0768,405,خدمة الدهان,painting_service,كيس,433.81,322.66,95
+769,PRD-reta-0769,عصير 769,Product_0769,294,أثاث ومفروشات,retail_home_furniture,كيلو,470.2,298.63,213
+770,PRD-reta-0770,حلويات 770,Product_0770,271,نظارات وبصريات,retail_fashion_optics,متر,429.73,327.58,308
+771,PRD-disi-0771,فحص 771,Product_0771,414,خدمة التطهير,disinfection_service,خدمة,151.62,52.95,382
+772,PRD-reta-0772,جبن 772,Product_0772,258,بقالة / تموينات,retail_fnb_grocery,حصة,224.59,90.75,359
+773,PRD-educ-0773,أرز 773,Product_0773,336,معهد تكنولوجيا المعلومات,education_it,خدمة,205.02,146.41,105
+774,PRD-reta-0774,شامبو 774,Product_0774,291,إطارات وبطاريات,retail_auto_tires,حصة,378.66,161.6,213
+775,PRD-educ-0775,حليب 775,Product_0775,339,أكاديمية موسيقى,education_music,كيلو,496.22,264.87,496
+776,PRD-educ-0776,استشارة 776,Product_0776,346,أكاديمية كرة قدم,education_soccer,متر,191.71,73.82,498
+777,PRD-reta-0777,إصلاح 777,Product_0777,271,نظارات وبصريات,retail_fashion_optics,حصة,458.09,358.38,101
+778,PRD-thai-0778,تابلت 778,Product_0778,431,مطعم تايلاندي,thai_restaurant,كيس,490.02,338.95,304
+779,PRD-bicy-0779,زيت 779,Product_0779,394,تأجير دراجات هوائية,bicycle_rental,كيلو,287.94,161.91,166
+780,PRD-oud_-0780,مياه معدنية 780,Product_0780,365,متجر العود,oud_shop,ساعة,115.6,47.7,452
+781,PRD-logi-0781,طاولة 781,Product_0781,388,شركة لوجستيات,logistics_service,ساعة,380.41,266.2,244
+782,PRD-perf-0782,منديل 782,Product_0782,364,متجر عطور,perfume_shop,ساعة,409.4,311.54,480
+783,PRD-reta-0783,جوال 783,Product_0783,290,قطع غيار سيارات,retail_auto_parts,ساعة,457.03,282.13,348
+784,PRD-tili-0784,خافض حرارة 784,Product_0784,408,خدمة الرخام والسيراميك,tiling_service,جلسة,455.94,201.75,155
+785,PRD-iron-0785,مرهم 785,Product_0785,371,خدمة الكي,ironing_service,كيس,186.44,132.69,251
+786,PRD-well-0786,ساعة 786,Product_0786,320,صالة رياضية,wellness_gym,جلسة,318.27,109.64,323
+787,PRD-reta-0787,مسكن 787,Product_0787,280,جوالات وإكسسوارات,retail_electronics_mobile,زجاجة,456.65,272.81,61
+788,PRD-secu-0788,سرير 788,Product_0788,415,خدمة الأمن والحراسة,security_service,متر,352.22,146.42,109
+789,PRD-well-0789,فواكه 789,Product_0789,325,تقويم أسنان,wellness_dental,حصة,76.2,55.77,269
+790,PRD-glaz-0790,دقيق 790,Product_0790,409,خدمة تركيب الزجاج,glazing_service,خدمة,279.98,191.86,106
+791,PRD-educ-0791,حلويات 791,Product_0791,344,مدرسة السباحة,education_swimming,حصة,182.4,98.14,466
+792,PRD-saun-0792,تصليح 792,Product_0792,361,مركز حمام بخار,sauna_center,متر,280.9,206.66,392
+793,PRD-arch-0793,نظارة 793,Product_0793,401,خدمة التصميم المعماري,architecture_design,زجاجة,453.02,278.49,279
+794,PRD-zoo-0794,تدريب 794,Product_0794,446,حديقة حيوانات,zoo,جلسة,389.49,258.56,203
+795,PRD-indi-0795,خضار 795,Product_0795,430,مطعم هندي,indian_restaurant,ساعة,374.15,135.15,350
+796,PRD-educ-0796,شاي 796,Product_0796,345,أكاديمية التنس,education_tennis,قطعة,454.87,286.41,11
+797,PRD-reta-0797,صيانة 797,Product_0797,298,تجهيزات مكاتب,retail_home_office,متر,315.3,150.66,121
+798,PRD-medi-0798,علاج 798,Product_0798,318,عيادة نفسية,medical_psychology,حصة,323.02,104.31,389
+799,PRD-indi-0799,غطاء سرير 799,Product_0799,430,مطعم هندي,indian_restaurant,ساعة,288.63,169.43,166
+800,PRD-reta-0800,بنطلون 800,Product_0800,260,مخبز,retail_fnb_bakery,كيس,364.02,267.15,408
+801,PRD-zoo-0801,فستان 801,Product_0801,446,حديقة حيوانات,zoo,كرتونة,459.88,276.97,385
+802,PRD-educ-0802,شامبو 802,Product_0802,339,أكاديمية موسيقى,education_music,خدمة,99.38,40.2,3
+803,PRD-iron-0803,مرتبة 803,Product_0803,371,خدمة الكي,ironing_service,ساعة,198.1,96.49,79
+804,PRD-well-0804,منديل 804,Product_0804,324,عيادة تغذية,wellness_nutrition,كيس,72.58,33.32,48
+805,PRD-beau-0805,حليب منكهة 805,Product_0805,357,متخصص الثقب,beauty_piercing,خدمة,20.42,10.71,305
+806,PRD-medi-0806,دقيق 806,Product_0806,314,عيادة قلب,medical_cardiology,زجاجة,477.31,186.35,124
+807,PRD-educ-0807,طاولة 807,Product_0807,345,أكاديمية التنس,education_tennis,قطعة,324.23,252.9,294
+808,PRD-well-0808,مرهم 808,Product_0808,325,تقويم أسنان,wellness_dental,كيلو,121.37,93.42,100
+809,PRD-medi-0809,تدريب 809,Product_0809,311,عيادة عيون,medical_optics,متر,339.78,241.15,384
+810,PRD-medi-0810,شامبو 810,Product_0810,314,عيادة قلب,medical_cardiology,كيس,103.19,34.15,342
+811,PRD-pain-0811,قبعة 811,Product_0811,405,خدمة الدهان,painting_service,جلسة,30.55,22.13,154
+812,PRD-logi-0812,شامبو 812,Product_0812,388,شركة لوجستيات,logistics_service,كرتونة,363.54,141.11,89
+813,PRD-pest-0813,خبز 813,Product_0813,412,خدمة مكافحة الآفات,pest_control,خدمة,288.39,216.6,443
+814,PRD-auto-0814,زيت 814,Product_0814,374,خدمة تفصيل السيارات,automotive_detailing,خدمة,434.32,229.37,78
+815,PRD-maso-0815,خزانة 815,Product_0815,407,خدمة البناء,masonry_service,خدمة,192.52,105.08,5
+816,PRD-reta-0816,كابل 816,Product_0816,271,نظارات وبصريات,retail_fashion_optics,كرتونة,30.21,9.37,20
+817,PRD-movi-0817,إصلاح 817,Product_0817,387,خدمة النقل والتخزين,moving_service,خدمة,454.99,140.52,323
+818,PRD-well-0818,لوحة مفاتيح 818,Product_0818,324,عيادة تغذية,wellness_nutrition,ساعة,366.99,184.92,182
+819,PRD-taxi-0819,كرسي 819,Product_0819,383,خدمة تاكسي,taxi_service,خدمة,62.09,24.74,498
+820,PRD-reta-0820,وسادة 820,Product_0820,289,مكملات غذائية,retail_health_supplements,حصة,316.72,150.77,33
+821,PRD-fast-0821,سماعات 821,Product_0821,422,مطعم وجبات سريعة,fast_food,ساعة,342.92,201.45,271
+822,PRD-reta-0822,مرتبة 822,Product_0822,275,سباكة وصحيات,retail_construction_plumbing,متر,51.56,28.8,23
+823,PRD-germ-0823,كرسي 823,Product_0823,433,مطعم ألماني,german_restaurant,كيس,66.46,38.34,244
+824,PRD-reta-0824,تصليح 824,Product_0824,297,مكتبات وقرطاسية,retail_home_stationery,ساعة,18.08,12.79,347
+825,PRD-surv-0825,خزانة 825,Product_0825,416,خدمة المراقبة,surveillance_service,حصة,220.19,122.5,270
+826,PRD-spa_-0826,حذاء 826,Product_0826,360,مركز سبا,spa_center,كرتونة,353.57,133.89,359
+827,PRD-inte-0827,بنطلون 827,Product_0827,400,خدمة التصميم الداخلي,interior_design,حصة,212.84,108.93,175
+828,PRD-educ-0828,تابلت 828,Product_0828,342,معهد دروس خصوصية,education_tutoring,حصة,42.19,13.11,200
+829,PRD-disi-0829,لوحة مفاتيح 829,Product_0829,414,خدمة التطهير,disinfection_service,حصة,79.78,39.56,199
+830,PRD-wedd-0830,فيتامين 830,Product_0830,396,خدمة سيارات الأفراح,wedding_cars,جلسة,446.23,179.08,213
+831,PRD-perf-0831,جوال 831,Product_0831,364,متجر عطور,perfume_shop,زجاجة,238.66,168.68,343
+832,PRD-movi-0832,مسكن 832,Product_0832,387,خدمة النقل والتخزين,moving_service,زجاجة,442.66,271.55,49
+833,PRD-mexi-0833,قهوة 833,Product_0833,432,مطعم مكسيكي,mexican_restaurant,قطعة,300.3,215.38,472
+834,PRD-reta-0834,قبعة 834,Product_0834,292,إكسسوارات سيارات,retail_auto_accessories,قطعة,324.67,128.37,4
+835,PRD-auto-0835,دجاج 835,Product_0835,381,محل زجاج سيارات,automotive_windshield,حصة,374.12,148.02,393
+836,PRD-educ-0836,زيت 836,Product_0836,336,معهد تكنولوجيا المعلومات,education_it,متر,190.45,85.58,420
+837,PRD-educ-0837,صابون 837,Product_0837,338,معهد مهني,education_vocational,قطعة,494.66,154.34,136
+838,PRD-medi-0838,ضمادات 838,Product_0838,317,قسم الأشعات,medical_radiology,كيس,143.6,103.55,388
+839,PRD-auto-0839,قميص 839,Product_0839,381,محل زجاج سيارات,automotive_windshield,قطعة,42.86,18.75,130
+840,PRD-spa_-0840,حذاء 840,Product_0840,360,مركز سبا,spa_center,زجاجة,471.76,335.48,16
+841,PRD-movi-0841,نظارة 841,Product_0841,387,خدمة النقل والتخزين,moving_service,كيلو,16.13,8.08,138
+842,PRD-medi-0842,فيتامين 842,Product_0842,315,عيادة أطفال,medical_pediatrics,حصة,70.0,25.44,386
+843,PRD-inte-0843,نظارة 843,Product_0843,400,خدمة التصميم الداخلي,interior_design,كرتونة,314.18,220.49,344
+844,PRD-reta-0844,بنطلون 844,Product_0844,295,سجاد وموكيت,retail_home_carpet,حصة,108.12,72.45,339
+845,PRD-maso-0845,مرهم 845,Product_0845,407,خدمة البناء,masonry_service,حصة,59.78,41.53,172
+846,PRD-beau-0846,منديل 846,Product_0846,354,متخصص النمص والحلاوة,beauty_threading,جلسة,140.58,72.21,217
+847,PRD-educ-0847,خبز 847,Product_0847,338,معهد مهني,education_vocational,كيلو,140.42,82.03,357
+848,PRD-reta-0848,حزام 848,Product_0848,259,محمصة,retail_fnb_roaster,كيلو,496.42,211.32,65
+849,PRD-reta-0849,تابلت 849,Product_0849,301,ألعاب وهدايا,retail_specialized_toys,متر,416.28,187.51,403
+850,PRD-bicy-0850,عصير 850,Product_0850,394,تأجير دراجات هوائية,bicycle_rental,جلسة,92.01,57.55,396
+851,PRD-taxi-0851,باور بانك 851,Product_0851,383,خدمة تاكسي,taxi_service,خدمة,23.47,10.13,344
+852,PRD-mexi-0852,أرز 852,Product_0852,432,مطعم مكسيكي,mexican_restaurant,ساعة,390.85,185.25,131
+853,PRD-well-0853,توصيل 853,Product_0853,321,منتجع صحي,wellness_spa,متر,226.26,110.17,437
+854,PRD-medi-0854,عصير 854,Product_0854,313,عيادة عظام,medical_orthopedics,ساعة,419.05,181.0,456
+855,PRD-well-0855,عصير 855,Product_0855,324,عيادة تغذية,wellness_nutrition,ساعة,237.66,119.82,320
+856,PRD-educ-0856,حقيبة 856,Product_0856,337,معهد محاسبة,education_accounting,قطعة,334.93,230.23,35
+857,PRD-auto-0857,خضار 857,Product_0857,378,محل بطاريات,automotive_battery,قطعة,386.25,295.97,323
+858,PRD-auto-0858,قبعة 858,Product_0858,380,خدمة تنجيد السيارات,automotive_upholstery,قطعة,185.15,127.82,20
+859,PRD-reta-0859,جبن 859,Product_0859,303,معدات رياضية,retail_specialized_sports,كيس,342.12,252.25,367
+860,PRD-reta-0860,فواكه 860,Product_0860,274,مواد بناء,retail_construction_materials,كيلو,347.25,245.94,427
+861,PRD-well-0861,باور بانك 861,Product_0861,324,عيادة تغذية,wellness_nutrition,ساعة,84.48,51.29,277
+862,PRD-educ-0862,لوحة مفاتيح 862,Product_0862,341,استوديو رقص,education_dance,قطعة,302.85,198.34,158
+863,PRD-juic-0863,فحص 863,Product_0863,420,محل عصائر,juice_bar,قطعة,44.55,22.43,488
+864,PRD-reta-0864,مسكن 864,Product_0864,264,مياه ومشروبات,retail_fnb_beverages,جلسة,383.63,278.34,205
+865,PRD-reta-0865,صابون 865,Product_0865,287,مستحضرات تجميل,retail_health_cosmetics,كيس,18.88,14.18,230
+866,PRD-auto-0866,تدريب 866,Product_0866,381,محل زجاج سيارات,automotive_windshield,قطعة,458.38,168.24,459
+867,PRD-reta-0867,وسادة 867,Product_0867,265,ملابس رجالي,retail_fashion_clothing_m,حصة,338.27,266.6,232
+868,PRD-educ-0868,حليب 868,Product_0868,329,مدرسة ثانوية,education_secondary_school,خدمة,257.08,156.29,165
+869,PRD-reta-0869,خضار 869,Product_0869,298,تجهيزات مكاتب,retail_home_office,حصة,379.23,181.84,211
+870,PRD-maso-0870,سرير 870,Product_0870,407,خدمة البناء,masonry_service,خدمة,349.73,136.79,54
+871,PRD-medi-0871,لحم 871,Product_0871,316,مختبر طبي,medical_lab,ساعة,377.46,220.53,138
+872,PRD-reta-0872,لوحة مفاتيح 872,Product_0872,293,ورشة صيانة سيارات,retail_auto_workshop,جلسة,224.69,144.83,177
+873,PRD-iron-0873,ضمادات 873,Product_0873,371,خدمة الكي,ironing_service,كيس,280.24,140.46,73
+874,PRD-food-0874,مرتبة 874,Product_0874,254,كافيه,food_cafe,جلسة,449.85,158.5,16
+875,PRD-reta-0875,شاشة 875,Product_0875,304,لوازم رحلات وصيد,retail_specialized_camping,كيلو,430.79,172.28,28
+876,PRD-whol-0876,مطهر 876,Product_0876,305,تجارة جملة,wholesale,خدمة,188.39,76.94,269
+877,PRD-reta-0877,تدريب 877,Product_0877,283,إلكترونيات ترفيهية,retail_electronics_entertainment,قطعة,142.41,47.01,232
+878,PRD-alte-0878,استشارة 878,Product_0878,369,خدمة تعديل الملابس,alterations_service,متر,491.42,377.27,461
+879,PRD-glaz-0879,صابون 879,Product_0879,409,خدمة تركيب الزجاج,glazing_service,زجاجة,54.12,26.55,342
+880,PRD-educ-0880,ضمادات 880,Product_0880,349,مدرسة الطهي,education_culinary,ساعة,292.12,164.87,212
+881,PRD-whol-0881,استشارة 881,Product_0881,305,تجارة جملة,wholesale,جلسة,463.02,332.18,433
+882,PRD-leba-0882,كابل 882,Product_0882,436,مطعم لبناني,lebanese_restaurant,كرتونة,493.91,199.46,479
+883,PRD-tili-0883,أدوية 883,Product_0883,408,خدمة الرخام والسيراميك,tiling_service,قطعة,446.9,184.66,112
+884,PRD-reta-0884,بنطلون 884,Product_0884,259,محمصة,retail_fnb_roaster,كرتونة,17.99,7.58,352
+885,PRD-fast-0885,دقيق 885,Product_0885,422,مطعم وجبات سريعة,fast_food,قطعة,209.89,149.33,399
+886,PRD-taxi-0886,بنطلون 886,Product_0886,383,خدمة تاكسي,taxi_service,جلسة,418.44,238.97,79
+887,PRD-auto-0887,شاشة 887,Product_0887,382,كهرباء سيارات,automotive_electrical,خدمة,84.28,30.27,253
+888,PRD-taxi-0888,لوحة مفاتيح 888,Product_0888,383,خدمة تاكسي,taxi_service,كيلو,174.24,122.41,491
+889,PRD-libr-0889,تركيب 889,Product_0889,448,مكتبة عامة,library,خدمة,335.8,228.79,241
+890,PRD-reta-0890,أرز 890,Product_0890,286,عطور وبخور,retail_health_perfume,قطعة,470.85,226.31,150
+891,PRD-tili-0891,حليب منكهة 891,Product_0891,408,خدمة الرخام والسيراميك,tiling_service,ساعة,152.26,99.59,112
+892,PRD-educ-0892,غطاء سرير 892,Product_0892,334,معهد لغة عربية,education_arabic,كرتونة,297.94,149.04,315
+893,PRD-park-0893,مسكن 893,Product_0893,444,حديقة ترفيهية,park,كيلو,216.53,161.1,90
+894,PRD-barb-0894,لوحة مفاتيح 894,Product_0894,358,حلاقة رجالية,barber_shop,كيس,238.2,151.89,201
+895,PRD-unis-0895,صيانة 895,Product_0895,359,صالون مختلط,unisex_salon,قطعة,494.59,326.07,40
+896,PRD-reta-0896,أدوية 896,Product_0896,261,ملحمة / جزارة,retail_fnb_butcher,زجاجة,238.47,127.85,173
+897,PRD-educ-0897,مسكن 897,Product_0897,346,أكاديمية كرة قدم,education_soccer,حصة,140.49,64.46,307
+898,PRD-beau-0898,خبز 898,Product_0898,352,صالون شعر,beauty_hair,قطعة,320.53,201.51,181
+899,PRD-educ-0899,خبز 899,Product_0899,328,مدرسة ابتدائية,education_primary_school,قطعة,290.66,225.83,151
+900,PRD-reta-0900,مرهم 900,Product_0900,277,دهانات,retail_construction_paints,كيس,425.1,140.27,72
+901,PRD-educ-0901,فواكه 901,Product_0901,333,معهد لغة إنجليزية,education_english,قطعة,25.43,13.79,176
+902,PRD-equi-0902,طاولة 902,Product_0902,392,تأجير معدات بناء,equipment_rental,خدمة,35.24,24.87,269
+903,PRD-pest-0903,منديل 903,Product_0903,412,خدمة مكافحة الآفات,pest_control,ساعة,100.81,69.15,373
+904,PRD-medi-0904,قبعة 904,Product_0904,312,عيادة جلدية,medical_dermatology,خدمة,271.35,201.88,175
+905,PRD-educ-0905,سماعات 905,Product_0905,332,مدرسة قيادة,education_driving,كيس,238.13,169.38,41
+906,PRD-medi-0906,ساعة 906,Product_0906,318,عيادة نفسية,medical_psychology,ساعة,125.62,75.7,200
+907,PRD-educ-0907,خزانة 907,Product_0907,343,مدرسة فنون قتالية,education_martial_arts,خدمة,385.67,169.78,17
+908,PRD-medi-0908,مرهم 908,Product_0908,312,عيادة جلدية,medical_dermatology,متر,333.75,193.61,412
+909,PRD-elec-0909,تابلت 909,Product_0909,404,خدمة الكهرباء,electrical_service,قطعة,14.68,6.63,357
+910,PRD-beau-0910,ساعة 910,Product_0910,356,متخصص الوشم,beauty_tattoo,حصة,373.68,121.78,121
+911,PRD-seaf-0911,قهوة 911,Product_0911,425,مطعم مأكولات بحرية,seafood_restaurant,جلسة,228.55,150.15,387
+912,PRD-alte-0912,شراب سعال 912,Product_0912,369,خدمة تعديل الملابس,alterations_service,ساعة,137.66,87.96,352
+913,PRD-well-0913,توصيل 913,Product_0913,321,منتجع صحي,wellness_spa,جلسة,26.54,16.26,211
+914,PRD-reta-0914,شاشة 914,Product_0914,262,خضار وفواكه,retail_fnb_produce,كرتونة,431.03,166.91,111
+915,PRD-beau-0915,بنطلون 915,Product_0915,356,متخصص الوشم,beauty_tattoo,ساعة,412.98,313.13,473
+916,PRD-educ-0916,دقيق 916,Product_0916,344,مدرسة السباحة,education_swimming,جلسة,471.28,181.18,482
+917,PRD-well-0917,غطاء سرير 917,Product_0917,321,منتجع صحي,wellness_spa,قطعة,200.89,71.14,127
+918,PRD-beau-0918,قميص 918,Product_0918,357,متخصص الثقب,beauty_piercing,ساعة,267.05,137.29,117
+919,PRD-salo-0919,إصلاح 919,Product_0919,327,صالون تجميل,salon_beauty,متر,125.23,99.97,365
+920,PRD-glaz-0920,جوارب 920,Product_0920,409,خدمة تركيب الزجاج,glazing_service,كيس,468.37,217.33,19
+921,PRD-auto-0921,حليب 921,Product_0921,377,محل إطارات,automotive_tires,كيلو,38.47,28.3,266
+922,PRD-cate-0922,جبن 922,Product_0922,417,خدمة الطعام والشراب,catering_service,ساعة,468.88,301.31,70
+923,PRD-past-0923,صيانة 923,Product_0923,424,مطعم معكرونة,pasta_restaurant,خدمة,82.71,30.13,478
+924,PRD-educ-0924,مسكن 924,Product_0924,328,مدرسة ابتدائية,education_primary_school,حصة,172.02,55.87,290
+925,PRD-auto-0925,علاج 925,Product_0925,372,ورشة إصلاح سيارات,automotive_repair,جلسة,348.05,129.88,285
+926,PRD-educ-0926,شامبو 926,Product_0926,332,مدرسة قيادة,education_driving,خدمة,103.62,31.97,262
+927,PRD-educ-0927,أرز 927,Product_0927,343,مدرسة فنون قتالية,education_martial_arts,جلسة,35.86,12.23,65
+928,PRD-logi-0928,استشارة 928,Product_0928,388,شركة لوجستيات,logistics_service,متر,336.74,115.85,176
+929,PRD-indi-0929,خزانة 929,Product_0929,430,مطعم هندي,indian_restaurant,زجاجة,67.52,25.14,423
+930,PRD-maso-0930,تدريب 930,Product_0930,407,خدمة البناء,masonry_service,جلسة,407.7,221.65,244
+931,PRD-auto-0931,استشارة 931,Product_0931,381,محل زجاج سيارات,automotive_windshield,كيلو,447.8,218.14,138
+932,PRD-glaz-0932,عصير 932,Product_0932,409,خدمة تركيب الزجاج,glazing_service,حصة,101.71,48.69,264
+933,PRD-educ-0933,ضمادات 933,Product_0933,334,معهد لغة عربية,education_arabic,متر,160.72,128.56,18
+934,PRD-reta-0934,تصليح 934,Product_0934,271,نظارات وبصريات,retail_fashion_optics,كيلو,182.66,127.21,287
+935,PRD-cine-0935,خضار 935,Product_0935,437,دار السينما,cinema,متر,133.47,54.72,328
+936,PRD-cate-0936,حليب منكهة 936,Product_0936,417,خدمة الطعام والشراب,catering_service,زجاجة,156.56,93.44,436
+937,PRD-reta-0937,تابلت 937,Product_0937,297,مكتبات وقرطاسية,retail_home_stationery,زجاجة,167.81,52.74,125
+938,PRD-pizz-0938,صابون 938,Product_0938,423,مطعم بيتزا,pizza_restaurant,كيلو,283.58,202.88,106
+939,PRD-salo-0939,شوكولاتة 939,Product_0939,326,صالون حلاقة,salon_hairdresser,كرتونة,419.28,317.34,117
+940,PRD-indi-0940,صيانة 940,Product_0940,430,مطعم هندي,indian_restaurant,كيس,299.72,169.58,241
+941,PRD-elec-0941,أرز 941,Product_0941,404,خدمة الكهرباء,electrical_service,ساعة,210.12,137.78,43
+942,PRD-auto-0942,ضمادات 942,Product_0942,379,محل زيوت محركات,automotive_oil,خدمة,185.49,58.16,29
+943,PRD-reta-0943,قميص 943,Product_0943,267,ملابس أطفال,retail_fashion_clothing_k,جلسة,46.68,33.54,326
+944,PRD-fren-0944,تصليح 944,Product_0944,434,مطعم فرنسي,french_restaurant,زجاجة,474.46,145.69,46
+945,PRD-auto-0945,حذاء 945,Product_0945,379,محل زيوت محركات,automotive_oil,كيس,348.58,241.99,334
+946,PRD-fren-0946,تابلت 946,Product_0946,434,مطعم فرنسي,french_restaurant,كيس,482.16,258.46,467
+947,PRD-spor-0947,شاحن 947,Product_0947,443,حانة رياضية,sports_bar,ساعة,358.45,268.36,370
+948,PRD-reta-0948,طاولة 948,Product_0948,269,حقائب وإكسسوارات,retail_fashion_bags,كيلو,385.27,131.23,200
+949,PRD-well-0949,شوكولاتة 949,Product_0949,324,عيادة تغذية,wellness_nutrition,زجاجة,109.32,55.4,278
+950,PRD-educ-0950,لابتوب 950,Product_0950,339,أكاديمية موسيقى,education_music,خدمة,267.76,120.96,19
+951,PRD-mexi-0951,إصلاح 951,Product_0951,432,مطعم مكسيكي,mexican_restaurant,كيس,334.41,189.27,354
+952,PRD-gril-0952,حليب 952,Product_0952,426,مطعم شواء,grilled_restaurant,قطعة,182.54,88.48,379
+953,PRD-educ-0953,دقيق 953,Product_0953,331,روضة أطفال,education_kindergarten,جلسة,27.06,11.42,151
+954,PRD-reta-0954,سماعات 954,Product_0954,259,محمصة,retail_fnb_roaster,كيس,319.03,218.63,147
+955,PRD-buff-0955,شراب سعال 955,Product_0955,427,مطعم بوفيه,buffet_restaurant,ساعة,352.38,111.6,485
+956,PRD-surv-0956,حزام 956,Product_0956,416,خدمة المراقبة,surveillance_service,قطعة,154.79,86.61,472
+957,PRD-reta-0957,خافض حرارة 957,Product_0957,272,أقمشة ومنسوجات,retail_fashion_fabric,كرتونة,275.98,172.03,289
+958,PRD-unis-0958,علاج 958,Product_0958,359,صالون مختلط,unisex_salon,قطعة,489.52,272.39,80
+959,PRD-tili-0959,تدريب 959,Product_0959,408,خدمة الرخام والسيراميك,tiling_service,كرتونة,58.83,39.05,82
+960,PRD-auto-0960,تركيب 960,Product_0960,381,محل زجاج سيارات,automotive_windshield,قطعة,458.59,270.45,254
+961,PRD-well-0961,تركيب 961,Product_0961,322,مركز مساج,wellness_massage,حصة,423.92,233.11,223
+962,PRD-beau-0962,شاحن 962,Product_0962,355,متخصص الرموش,beauty_lashes,حصة,15.0,8.41,220
+963,PRD-reta-0963,شاشة 963,Product_0963,271,نظارات وبصريات,retail_fashion_optics,جلسة,464.89,283.01,29
+964,PRD-auto-0964,خضار 964,Product_0964,375,محطة غسيل سيارات,automotive_wash,حصة,400.04,287.65,270
+965,PRD-tail-0965,شراب سعال 965,Product_0965,368,خدمة الخياطة,tailoring_service,متر,159.88,127.43,495
+966,PRD-medi-0966,مرهم 966,Product_0966,310,عيادة أسنان,medical_dentistry,جلسة,71.7,33.54,486
+967,PRD-reta-0967,دجاج 967,Product_0967,300,زهور وهدايا,retail_specialized_flowers,حصة,169.7,119.97,126
+968,PRD-alte-0968,حلويات 968,Product_0968,369,خدمة تعديل الملابس,alterations_service,زجاجة,392.69,135.99,441
+969,PRD-reta-0969,قميص 969,Product_0969,261,ملحمة / جزارة,retail_fnb_butcher,متر,146.23,59.11,269
+970,PRD-gril-0970,فواكه 970,Product_0970,426,مطعم شواء,grilled_restaurant,زجاجة,317.57,137.69,172
+971,PRD-reta-0971,أرز 971,Product_0971,297,مكتبات وقرطاسية,retail_home_stationery,خدمة,337.09,209.09,392
+972,PRD-educ-0972,غطاء سرير 972,Product_0972,330,جامعة,education_university,كيس,317.98,204.15,441
+973,PRD-ince-0973,ساعة 973,Product_0973,366,متجر البخور,incense_shop,جلسة,459.95,178.13,97
+974,PRD-japa-0974,فحص 974,Product_0974,429,مطعم ياباني,japanese_restaurant,حصة,140.36,95.38,238
+975,PRD-past-0975,فيتامين 975,Product_0975,418,محل الحلويات,pastry_shop,ساعة,418.15,318.19,500
+976,PRD-bowl-0976,علاج 976,Product_0976,439,مركز البولينج,bowling,كيس,123.1,38.58,117
+977,PRD-cate-0977,سمك 977,Product_0977,417,خدمة الطعام والشراب,catering_service,كيلو,408.86,161.0,352
+978,PRD-reta-0978,فيتامين 978,Product_0978,302,مستلزمات حيوانات أليفة,retail_specialized_pets,حصة,420.87,296.77,241
+979,PRD-waxi-0979,خضار 979,Product_0979,363,مركز إزالة الشعر,waxing_center,ساعة,291.31,124.21,278
+980,PRD-thea-0980,قهوة 980,Product_0980,438,دار المسرح,theater,جلسة,453.15,358.77,489
+981,PRD-educ-0981,حليب 981,Product_0981,339,أكاديمية موسيقى,education_music,ساعة,28.77,14.51,247
+982,PRD-beau-0982,شاشة 982,Product_0982,356,متخصص الوشم,beauty_tattoo,حصة,405.52,187.34,210
+983,PRD-carp-0983,قميص 983,Product_0983,406,خدمة النجارة,carpentry_service,كرتونة,83.5,52.13,440
+984,PRD-educ-0984,قهوة 984,Product_0984,349,مدرسة الطهي,education_culinary,كرتونة,29.58,11.0,113
+985,PRD-ride-0985,تنظيف 985,Product_0985,384,خدمة مشاركة الركوب,rideshare_service,ساعة,43.89,24.46,382
+986,PRD-past-0986,صابون 986,Product_0986,418,محل الحلويات,pastry_shop,كيس,143.87,62.49,470
+987,PRD-mexi-0987,فيتامين 987,Product_0987,432,مطعم مكسيكي,mexican_restaurant,ساعة,55.75,21.53,447
+988,PRD-scoo-0988,طاولة 988,Product_0988,393,تأجير دراجات نارية,scooter_rental,زجاجة,274.02,113.15,187
+989,PRD-educ-0989,قبعة 989,Product_0989,329,مدرسة ثانوية,education_secondary_school,كيس,302.02,219.28,365
+990,PRD-food-0990,أرز 990,Product_0990,253,مطعم,food_restaurant,ساعة,187.51,96.51,455
+991,PRD-reta-0991,سماعات 991,Product_0991,289,مكملات غذائية,retail_health_supplements,زجاجة,429.59,289.32,468
+992,PRD-tili-0992,قميص 992,Product_0992,408,خدمة الرخام والسيراميك,tiling_service,كيلو,346.36,247.46,377
+993,PRD-reta-0993,تدريب 993,Product_0993,269,حقائب وإكسسوارات,retail_fashion_bags,كيلو,486.8,380.44,439
+994,PRD-reta-0994,جوال 994,Product_0994,257,سوبر ماركت,retail_fnb_supermarket,جلسة,97.86,40.96,396
+995,PRD-reta-0995,مسكن 995,Product_0995,289,مكملات غذائية,retail_health_supplements,ساعة,145.68,109.19,205
+996,PRD-cour-0996,مرتبة 996,Product_0996,386,خدمة الرسائل السريعة,courier_service,ساعة,478.27,238.15,462
+997,PRD-kara-0997,صيانة 997,Product_0997,441,محل كاراوكي,karaoke,جلسة,268.43,121.31,77
+998,PRD-reta-0998,مياه معدنية 998,Product_0998,298,تجهيزات مكاتب,retail_home_office,خدمة,343.46,235.07,328
+999,PRD-indi-0999,شاحن 999,Product_0999,430,مطعم هندي,indian_restaurant,قطعة,70.91,37.82,319
+1000,PRD-spor-1000,قهوة 1000,Product_1000,443,حانة رياضية,sports_bar,كرتونة,150.47,109.03,75

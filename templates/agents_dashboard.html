@@ -349,7 +349,11 @@ let agents = [];
 let currentTab = 'overview';
 
 function money(n){ return Number(n||0).toLocaleString('ar-SA',{minimumFractionDigits:2,maximumFractionDigits:2}) }
-function esc(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+function esc(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;') }
+function mapUrl(lat, lng){
+  const q = `${lat ?? ''},${lng ?? ''}`;
+  return 'https://maps.google.com?q=' + encodeURIComponent(q);
+}
 function toast(msg){ /* relies on base template toast if available */ console.log(msg); alert(msg); }
 
 /* ─── TABS ─── */
@@ -471,7 +475,7 @@ async function loadMap(){
   // Google Maps iframe إن توفر
   document.getElementById('mapPinsList').innerHTML = r.agents.map(a=>
     `<div style="padding:6px 0;border-bottom:1px solid rgba(148,163,184,.1)">
-      <a href="https://maps.google.com?q=${a.latitude},${a.longitude}" target="_blank"
+      <a href="${mapUrl(a.latitude, a.longitude)}" target="_blank" rel="noopener noreferrer"
         style="color:#60a5fa;text-decoration:none;font-size:.82rem">
         📍 ${esc(a.full_name)} — اضغط لفتح الخريطة
       </a>
@@ -714,7 +718,7 @@ async function openCredModal(agentId, agentName){
     const info = document.getElementById('credCurrentInfo');
     if(r.username){
       info.innerHTML = `<span style="color:#4ade80">✅ لديه حساب</span> — اسم المستخدم: <b style="color:#dbeafe">${esc(r.username)}</b><br>
-        <span style="color:#94a3b8;font-size:.75rem">آخر دخول: ${r.last_login ? r.last_login.slice(0,16).replace('T',' ') : 'لم يسجّل دخولاً بعد'}</span>`;
+        <span style="color:#94a3b8;font-size:.75rem">آخر دخول: ${esc(r.last_login ? r.last_login.slice(0,16).replace('T',' ') : 'لم يسجّل دخولاً بعد')}</span>`;
       document.getElementById('credUsername').value = r.username;
     } else {
       info.innerHTML = '<span style="color:#f59e0b">⚠️ لم يُعيَّن حساب لهذا المندوب بعد</span>';

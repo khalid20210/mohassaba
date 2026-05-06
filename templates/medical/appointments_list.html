@@ -7,6 +7,8 @@
   <div><p class="page-subtitle">{{ appointments|length }} موعد</p></div>
   <div style="display:flex;gap:10px;">
     <a href="/medical/patients" class="btn btn-secondary">🏥 المرضى</a>
+    <a href="/medical/reports" class="btn btn-secondary">📊 التقارير</a>
+    <a href="/medical/doctors" class="btn btn-secondary">👨‍⚕️ الأطباء</a>
     <button class="btn btn-primary" onclick="document.getElementById('newApptModal').classList.add('show')">+ موعد جديد</button>
   </div>
 </div>
@@ -58,8 +60,9 @@
           <div style="display:flex;gap:4px;">
             <a href="/medical/appointments/{{ a.id }}" class="btn btn-secondary" style="padding:4px 10px;font-size:.78rem;">إدارة</a>
             {% if a.status=='scheduled' %}
-            <form method="post" action="/medical/appointments/{{ a.id }}/cancel" onsubmit="return confirm('إلغاء الموعد؟')">
-              <button type="submit" class="btn" style="padding:4px 10px;font-size:.78rem;background:#7f1d1d;color:#fca5a5;border:none;">إلغاء</button>
+            <form method="post" action="/medical/appointments/{{ a.id }}" onsubmit="return confirm('إلغاء الموعد؟')">
+              <input type="hidden" name="action" value="cancel">
+              <button type="submit" class="btn" style="padding:4px 10px;font-size:.78rem;background:#7f1d1d;color:#fca5a5;border:none;border-radius:6px;cursor:pointer;">إلغاء</button>
             </form>
             {% endif %}
           </div>
@@ -81,34 +84,44 @@
     </div>
     <form method="post" action="/medical/appointments/new">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="form-group">
-          <label class="form-label">معرف المريض *</label>
-          <input name="patient_id" class="form-input" type="number" placeholder="رقم المريض" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">معرف الطبيب</label>
-          <input name="doctor_id" class="form-input" type="number" placeholder="رقم الطبيب">
-        </div>
-        <div class="form-group">
-          <label class="form-label">التاريخ *</label>
-          <input name="date" type="date" class="form-input" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">الوقت</label>
-          <input name="time" type="time" class="form-input">
-        </div>
-        <div class="form-group">
-          <label class="form-label">نوع الزيارة</label>
-          <select name="type" class="form-input">
-            <option value="checkup">كشف عادي</option>
-            <option value="followup">متابعة</option>
-            <option value="emergency">طارئ</option>
-            <option value="consultation">استشارة</option>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label class="form-label">المريض *</label>
+          <select name="patient_id" class="form-input" required>
+            <option value="">— اختر مريض</option>
+            {% for pt in patients %}
+            <option value="{{ pt.id }}">{{ pt.patient_name }} {% if pt.file_number %}({{ pt.file_number }}){% endif %}</option>
+            {% endfor %}
           </select>
         </div>
         <div class="form-group">
+          <label class="form-label">الطبيب</label>
+          <select name="doctor_id" class="form-input">
+            <option value="">— غير محدد</option>
+            {% for doc in doctors %}
+            <option value="{{ doc.id }}">{{ doc.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">نوع الزيارة</label>
+          <select name="appointment_type" class="form-input">
+            <option value="كشف">كشف عادي</option>
+            <option value="متابعة">متابعة</option>
+            <option value="طارئ">طارئ</option>
+            <option value="استشارة">استشارة</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">التاريخ *</label>
+          <input name="appointment_date" type="date" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">الوقت</label>
+          <input name="appointment_time" type="time" class="form-input">
+        </div>
+        <div class="form-group">
           <label class="form-label">رسوم الزيارة (ر.س)</label>
-          <input name="fees" class="form-input" type="number" step="0.01" placeholder="0.00">
+          <input name="visit_fee" class="form-input" type="number" step="0.01" placeholder="0.00">
         </div>
       </div>
       <div class="form-group">

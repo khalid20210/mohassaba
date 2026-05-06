@@ -18,10 +18,11 @@ from modules.config import (
     ALLOWED_LOGO_EXT, BASE_DIR, INDUSTRY_TYPES,
     LOGO_FOLDER, STUB_PAGES, PLATFORM_NAME, SAAS_REGION,
     FLASK_ENV, DB_PATH, HEALTH_DB_TIMEOUT_MS, IS_PROD,
+    get_sidebar_key, SIDEBAR_CONFIG,
     REDIS_REQUIRED, QUEUE_REQUIRED
 )
 from modules.extensions import (
-    csrf_protect, get_db, seed_business_accounts, hash_password
+    csrf_protect, get_db, seed_business_accounts, hash_password, safe_sql_identifier
 )
 from modules.industry_seeds import seed_industry_defaults
 from modules.middleware import (
@@ -41,13 +42,136 @@ bp = Blueprint("core", __name__)
 LOGO_FOLDER.mkdir(exist_ok=True)
 
 
+PREMIUM_ADDONS = [
+    {
+        "code": "dual_offline_online_sync",
+        "title": "نظام التشغيل المزدوج الذكي (Offline/Online Sync Mode)",
+        "tagline": "استمرارية العمل تحت أي ظرف تقني",
+        "description": "خدمة سيادية مدفوعة تضمن استمرار البيع والتشغيل بدون انقطاع مع مزامنة مركزية آمنة.",
+        "features": [
+            "العمل بلا إنترنت: إصدار الفواتير، إضافة المنشآت الجديدة، وتسجيل الذمم دون شبكة.",
+            "المزامنة التلقائية عند عودة الإنترنت: رفع الفواتير والعملاء وتحديث المخزون والذمم تلقائياً.",
+            "تشفير محلي للبيانات المؤقتة على أجهزة المندوبين حتى اكتمال المزامنة.",
+        ],
+    },
+    {
+        "code": "delegate_sales_tracking_hub",
+        "title": "نظام إدارة المناديب والمبيعات الميدانية (Delegate Sales & Tracking Hub)",
+        "tagline": "فوترة ميدانية وتتبع لحظي وإدارة عهدة",
+        "description": "وحدة تشغيل ميداني كاملة تربط المندوب بالمخزون والتحصيل والإدارة المركزية.",
+        "features": [
+            "إصدار فاتورة ميدانية (كاش/شبكة/آجل) مع خصم المخزون تلقائياً.",
+            "ترحيل المديونية وجدولة السداد تلقائياً عند البيع الآجل.",
+            "توليد PDF وإرساله فوراً إلى العميل عبر الواتساب.",
+            "مزامنة المنشآت الجديدة مع لوحة الإدارة وتطبيق قفل بيانات يمنع تعديلها من المندوب.",
+            "رادار مبيعات + اتجاهات GPS لموقع العميل.",
+            "تتبع مسارات المندوبين وأوقات التوقف بخريطة حية للإدارة.",
+        ],
+    },
+    {
+        "code": "ai_eligibility_finance_engine",
+        "title": "محرك الأهلية والتمويل الذكي (AI Eligibility Engine)",
+        "tagline": "تقييم تمويلي مؤتمت بالذكاء الاصطناعي",
+        "description": "محرك يقيّم أهلية المنشأة للتمويل ويقدم تقديرات ملاءة وتمويل قابلة للتنفيذ.",
+        "features": [
+            "فحص آلي لمعايير 700,000 ريال/سنتين أو 5,000,000 ريال/سنة ونصف.",
+            "حاسبة ملاءة تتأكد أن الالتزامات لا تتجاوز 20% من الدخل.",
+            "تقدير مبلغ تمويل حتى 40% من الإيرادات المؤهلة.",
+        ],
+    },
+    {
+        "code": "fleet_operations_control",
+        "title": "نظام رقابة الأسطول والتشغيل (Fleet Operations Control)",
+        "tagline": "حوكمة تشغيل الأسطول والميدان",
+        "description": "لوحة رقابية للأسطول والسائقين لتقليل التكاليف ورفع الالتزام التشغيلي.",
+        "features": [
+            "إدارة صيانة/وقود/تأمين لكل مركبة بشكل مستقل.",
+            "حضور معزز: مطابقة GPS + صورة Selfie للسائق أثناء الحضور والانصراف.",
+        ],
+    },
+    {
+        "code": "ai_adversary_auditor",
+        "title": "المساعد الاستراتيجي الخصم (AI Adversary Auditor)",
+        "tagline": "اختبارات ضغط ذكية قبل التنفيذ",
+        "description": "ذكاء اصطناعي يعمل كخصم يفحص الخطط والميزانيات ويكشف المخاطر قبل التنفيذ الفعلي.",
+        "features": [
+            "مراجعة هجومية للخطط التشغيلية والمالية.",
+            "كشف الثغرات المحتملة وتقديم توصيات وقائية.",
+        ],
+    },
+    {
+        "code": "ai_creative_studio",
+        "title": "استوديو الإبداع والترويج المؤتمت (AI Creative Studio)",
+        "tagline": "تسويق ذكي مولد من بيانات المخزون",
+        "description": "استوديو محتوى مؤتمت يولد أصولاً تسويقية احترافية مباشرة من بيانات المنتجات.",
+        "features": [
+            "توليد فيديوهات دعائية سينمائية.",
+            "توليد أغانٍ ترويجية وتصاميم سوشل ميديا تلقائياً.",
+        ],
+    },
+    {
+        "code": "ocr_price_guard",
+        "title": "محرك القراءة الآلية وحماية الأسعار (OCR & Price Guard)",
+        "tagline": "قراءة فواتير ذكية مع إنذار ارتفاع الأسعار",
+        "description": "محرك OCR متقدم لالتقاط بيانات الشراء مع رادار مقارنة سعر تاريخي.",
+        "features": [
+            "استخراج تلقائي من PDF/صور لفواتير المشتريات.",
+            "تنبيه فوري عند اكتشاف زيادة سعر مقارنة بآخر شراء تاريخي.",
+        ],
+    },
+    {
+        "code": "smart_obligations_radar",
+        "title": "مركز التنبيهات والالتزامات الذكي (Smart Obligations Radar)",
+        "tagline": "إنذارات استباقية للالتزامات النظامية",
+        "description": "مركز متابعة موحد للالتزامات المالية والرسمية قبل مواعيد الاستحقاق.",
+        "features": [
+            "تنبيهات الزكاة والتأمينات (GOSI) والأقساط البنكية.",
+            "تنبيهات تجديد السجلات التجارية ورخص البلدية.",
+        ],
+    },
+    {
+        "code": "digital_incubator",
+        "title": "حاضنة ريادة الأعمال والإنتاج المنزلي (Digital Incubator)",
+        "tagline": "أدوات نمو دقيقة للمشاريع الصغيرة",
+        "description": "حزمة نمذجة وتسعير وتحليل موجهة للإنتاج المنزلي وريادة الأعمال المحلية.",
+        "features": [
+            "حساب تكاليف الإنتاج المنزلي بدقة.",
+            "تسعير ذكي للمنتجات اليدوية وتحليلات اتجاهات السوق المحلي.",
+        ],
+    },
+]
+
+
 def _column_exists(db, table: str, column: str) -> bool:
     """تحقق خفيف من وجود عمود قبل استخدامه في الاستعلامات الديناميكية."""
     try:
-        rows = db.execute(f"PRAGMA table_info({table})").fetchall()
+        safe_table = safe_sql_identifier(table)
+        rows = db.execute(f"PRAGMA table_info({safe_table})").fetchall()
         return any(r[1] == column for r in rows)
     except Exception:
         return False
+
+
+# ── تبديل اللغة ────────────────────────────────────────────────────────────────
+@bp.route("/set-lang/<lang>")
+def set_lang(lang):
+    """تعيين لغة الواجهة للمستخدم الحالي وتخزينها في الجلسة."""
+    from modules.i18n import SUPPORTED_LANGUAGES
+    if lang in SUPPORTED_LANGUAGES:
+        session["lang"] = lang
+        # حفظ في قاعدة البيانات إن كان المستخدم مسجّلاً
+        if g.user:
+            try:
+                db = get_db()
+                db.execute(
+                    "UPDATE users SET preferred_language = ? WHERE id = ?",
+                    (lang, g.user["id"])
+                )
+                db.commit()
+            except Exception:
+                pass  # العمود قد لا يكون موجوداً بعد — الجلسة تكفي
+    next_url = request.referrer or url_for("core.dashboard")
+    return redirect(next_url)
 
 
 @bp.route("/healthz")
@@ -109,9 +233,10 @@ def diagnostics():
         table_counts = {}
         for table in ["businesses", "users", "invoices", "products", "contacts"]:
             try:
-                cnt = db.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+                safe_table = safe_sql_identifier(table)
+                cnt = db.execute(f"SELECT COUNT(*) FROM {safe_table}").fetchone()[0]
                 table_counts[table] = cnt
-            except:
+            except Exception:
                 pass
         
         return jsonify({
@@ -214,6 +339,45 @@ def _get_industry_kpis(db, biz_id: int, industry_type: str, since30: str) -> dic
     pos_mode = terms.get("pos_mode", "standard")
     kpis     = {}
 
+    # مؤشرات مشتركة عبر كل الأنشطة: مبيعات اليوم حسب الكاشير/المندوب
+    kpis["sales_by_cashier_today"] = []
+    kpis["sales_by_agent_today"] = []
+    if _column_exists(db, "invoices", "created_by"):
+        kpis["sales_by_cashier_today"] = [dict(r) for r in db.execute("""
+            SELECT
+                COALESCE(u.full_name, 'مستخدم #' || CAST(i.created_by AS TEXT)) AS actor_name,
+                COUNT(i.id) AS invoices_count,
+                ROUND(COALESCE(SUM(i.total), 0), 2) AS sales_total
+            FROM invoices i
+            LEFT JOIN users u ON u.id = i.created_by
+            WHERE i.business_id=?
+              AND i.invoice_type IN ('sale','table')
+              AND i.status='paid'
+              AND DATE(COALESCE(i.invoice_date, i.created_at)) = DATE('now')
+              AND i.created_by IS NOT NULL
+            GROUP BY i.created_by
+            ORDER BY sales_total DESC
+            LIMIT 8
+        """, (biz_id,)).fetchall()]
+
+    if _table_exists(db, "agent_invoice_links") and _table_exists(db, "agents"):
+        kpis["sales_by_agent_today"] = [dict(r) for r in db.execute("""
+            SELECT
+                a.full_name AS actor_name,
+                COUNT(i.id) AS invoices_count,
+                ROUND(COALESCE(SUM(i.total), 0), 2) AS sales_total
+            FROM agent_invoice_links ail
+            JOIN agents a ON a.id = ail.agent_id AND a.business_id = ail.business_id
+            JOIN invoices i ON i.id = ail.invoice_id AND i.business_id = ail.business_id
+            WHERE ail.business_id=?
+              AND i.invoice_type IN ('sale','table')
+              AND i.status='paid'
+              AND DATE(COALESCE(i.invoice_date, i.created_at)) = DATE('now')
+            GROUP BY a.id
+            ORDER BY sales_total DESC
+            LIMIT 8
+        """, (biz_id,)).fetchall()]
+
     if pos_mode == "restaurant":
         # متوسط قيمة الطلب + أكثر الطاولات مبيعاً
         avg = db.execute("""
@@ -292,9 +456,45 @@ def _get_industry_kpis(db, biz_id: int, industry_type: str, since30: str) -> dic
             SELECT COALESCE(SUM(total),0) AS open_total
             FROM invoices WHERE business_id=? AND status IN ('draft','pending')
         """, (biz_id,)).fetchone()
+        projects_summary = {"total_projects": 0, "active_projects": 0, "completed_projects": 0, "completed_this_month": 0}
+        extracts_summary = {"extracts_this_month": 0, "invoiced_extracts_this_month": 0}
+        if _table_exists(db, "projects"):
+            p = db.execute("""
+                SELECT
+                    COUNT(*) AS total_projects,
+                    SUM(CASE WHEN project_status IN ('planning','in_progress','on_hold') THEN 1 ELSE 0 END) AS active_projects,
+                    SUM(CASE WHEN project_status='completed' THEN 1 ELSE 0 END) AS completed_projects,
+                    SUM(CASE WHEN project_status='completed'
+                               AND actual_end_date IS NOT NULL
+                               AND strftime('%Y-%m', actual_end_date)=strftime('%Y-%m','now')
+                             THEN 1 ELSE 0 END) AS completed_this_month
+                FROM projects
+                WHERE business_id=?
+            """, (biz_id,)).fetchone()
+            projects_summary = {
+                "total_projects": int((p["total_projects"] if p else 0) or 0),
+                "active_projects": int((p["active_projects"] if p else 0) or 0),
+                "completed_projects": int((p["completed_projects"] if p else 0) or 0),
+                "completed_this_month": int((p["completed_this_month"] if p else 0) or 0),
+            }
+        if _table_exists(db, "project_extracts"):
+            e = db.execute("""
+                SELECT
+                    COUNT(*) AS extracts_this_month,
+                    SUM(CASE WHEN status='invoiced' THEN 1 ELSE 0 END) AS invoiced_extracts_this_month
+                FROM project_extracts
+                WHERE business_id=?
+                  AND strftime('%Y-%m', extract_date)=strftime('%Y-%m','now')
+            """, (biz_id,)).fetchone()
+            extracts_summary = {
+                "extracts_this_month": int((e["extracts_this_month"] if e else 0) or 0),
+                "invoiced_extracts_this_month": int((e["invoiced_extracts_this_month"] if e else 0) or 0),
+            }
         kpis["open_invoices"]  = [dict(r) for r in open_invoices]
         kpis["top_clients"]    = [dict(r) for r in top_clients]
         kpis["total_open_debt"]= float(total_open["open_total"] or 0)
+        kpis["projects_summary"] = projects_summary
+        kpis["extracts_summary"] = extracts_summary
 
     elif pos_mode == "wholesale":
         # أكبر موزعين + حجم الشحنات + ديون متأخرة
@@ -499,6 +699,52 @@ def dashboard():
     chart_revexp = json.dumps({"revenue": float(rev_exp["revenue"] if rev_exp else 0),
                                 "expenses": float(rev_exp["expenses"] if rev_exp else 0)}, ensure_ascii=False)
 
+    pending_cancel_requests_count = 0
+    pending_cancel_requests_sla_breached_count = 0
+    if user_has_perm("all"):
+        try:
+            high_amount = int(db.execute(
+                "SELECT COALESCE(value,'5000') FROM settings WHERE business_id=? AND key='invoice_cancel_request_high_amount' LIMIT 1",
+                (biz_id,),
+            ).fetchone()[0] or 5000)
+            critical_amount = int(db.execute(
+                "SELECT COALESCE(value,'20000') FROM settings WHERE business_id=? AND key='invoice_cancel_request_critical_amount' LIMIT 1",
+                (biz_id,),
+            ).fetchone()[0] or 20000)
+            sla_critical = int(db.execute(
+                "SELECT COALESCE(value,'2') FROM settings WHERE business_id=? AND key='invoice_cancel_request_sla_critical_hours' LIMIT 1",
+                (biz_id,),
+            ).fetchone()[0] or 2)
+            sla_high = int(db.execute(
+                "SELECT COALESCE(value,'8') FROM settings WHERE business_id=? AND key='invoice_cancel_request_sla_high_hours' LIMIT 1",
+                (biz_id,),
+            ).fetchone()[0] or 8)
+            sla_normal = int(db.execute(
+                "SELECT COALESCE(value,'24') FROM settings WHERE business_id=? AND key='invoice_cancel_request_sla_normal_hours' LIMIT 1",
+                (biz_id,),
+            ).fetchone()[0] or 24)
+
+            pending_row = db.execute(
+                f"""SELECT
+                       COUNT(*) AS pending_count,
+                       SUM(CASE WHEN (
+                             (CASE
+                                WHEN i.total >= {critical_amount} THEN ((julianday('now') - julianday(r.created_at)) * 24.0) >= {sla_critical}
+                                WHEN i.total >= {high_amount} THEN ((julianday('now') - julianday(r.created_at)) * 24.0) >= {sla_high}
+                                ELSE ((julianday('now') - julianday(r.created_at)) * 24.0) >= {sla_normal}
+                              END)
+                           ) THEN 1 ELSE 0 END) AS breached_count
+                   FROM invoice_cancel_requests r
+                   JOIN invoices i ON i.id = r.invoice_id AND i.business_id = r.business_id
+                   WHERE r.business_id=? AND r.status='pending'""",
+                (biz_id,),
+            ).fetchone()
+            pending_cancel_requests_count = int((pending_row["pending_count"] if pending_row else 0) or 0)
+            pending_cancel_requests_sla_breached_count = int((pending_row["breached_count"] if pending_row else 0) or 0)
+        except Exception:
+            pending_cancel_requests_count = 0
+            pending_cancel_requests_sla_breached_count = 0
+
     stock_alerts = []
     reorder_suggestions = []
     if user_has_perm("reports") or user_has_perm("warehouse"):
@@ -535,6 +781,9 @@ def dashboard():
         "dashboard.html",
         stats=stats,
         dashboard_metrics=dashboard_metrics,
+        pending_cancel_requests_count=pending_cancel_requests_count,
+        pending_cancel_requests_sla_breached_count=pending_cancel_requests_sla_breached_count,
+        can_manage_cancel_requests=bool(user_has_perm("all")),
         last_entries=[dict(r) for r in last_entries],
         chart_daily=chart_daily,
         chart_top5=chart_top5,
@@ -611,6 +860,11 @@ def analytics():
 @bp.route("/onboarding", methods=["GET", "POST"])
 @login_required
 def onboarding():
+    import json as _json
+    _industry_json = _json.dumps(
+        [[k, v] for k, v in INDUSTRY_TYPES], ensure_ascii=False
+    )
+
     if request.method == "POST":
         guard = csrf_protect()
         if guard:
@@ -623,32 +877,15 @@ def onboarding():
 
         if not biz_name:
             flash("اسم المنشأة مطلوب", "error")
-            return render_template("onboarding.html")
+            return render_template("onboarding.html", industry_types_json=_industry_json)
 
         valid_types = [t[0] for t in INDUSTRY_TYPES]
         if industry_type not in valid_types:
-            # تطبيع أكواد الـ onboarding الجديدة إلى أنواع صالحة
-            if industry_type.startswith("svc_"):
-                industry_type = "services"
-            elif industry_type.startswith("con_"):
-                industry_type = "construction"
-            elif industry_type.startswith("mfg_"):
-                industry_type = "services"
-            elif industry_type.startswith("hos_cafe"):
-                industry_type = "food_cafe"
-            elif industry_type.startswith("hos_"):
-                industry_type = "food_restaurant"
-            elif industry_type.startswith("hlt_"):
-                industry_type = "medical"
-            elif industry_type.startswith("lgx_"):
-                industry_type = "services"
-            elif industry_type.startswith("retail_"):
-                industry_type = "retail"
-            elif industry_type.startswith("wholesale_"):
-                industry_type = "wholesale"
-            else:
+            # نقبل الكود التفصيلي الجديد إذا أمكن ربطه بفئة سيدبار معروفة
+            sidebar_key = get_sidebar_key(industry_type)
+            if sidebar_key not in SIDEBAR_CONFIG:
                 flash("الرجاء اختيار نشاط صحيح من القائمة لإتمام التهيئة.", "error")
-                return render_template("onboarding.html")
+                return render_template("onboarding.html", industry_types_json=_industry_json)
 
         industry_labels = {k: v for k, v in INDUSTRY_TYPES}
         industry_label = industry_labels.get(industry_type, industry_type)
@@ -681,7 +918,7 @@ def onboarding():
         except Exception:
             db.rollback()
             flash("حدث خطأ أثناء إنشاء المنشأة — يرجى المحاولة مرة أخرى", "error")
-            return render_template("onboarding.html")
+            return render_template("onboarding.html", industry_types_json=_industry_json)
         session.pop("needs_onboarding", None)
         flash(
             (
@@ -694,7 +931,7 @@ def onboarding():
         flash(f"مرحباً! تم إنشاء منشأة «{biz_name}» بنجاح ✓", "success")
         return redirect(url_for("core.dashboard"))
 
-    return render_template("onboarding.html")
+    return render_template("onboarding.html", industry_types_json=_industry_json)
 
 
 @bp.route("/settings", methods=["GET", "POST"])
@@ -704,11 +941,68 @@ def settings():
     biz_id = session["business_id"]
     can_edit_business = bool(user_has_perm("all") or user_has_perm("business_profile_edit"))
     can_skip_reason   = bool(user_has_perm("all") or user_has_perm("business_profile_reason_optional"))
+    can_manage_premium = bool(user_has_perm("all"))
 
     if request.method == "POST":
         guard = csrf_protect()
         if guard:
             return guard
+
+        action = (request.form.get("action") or "").strip()
+        if action == "toggle_premium_addon":
+            if not can_manage_premium:
+                flash("هذه الميزة متاحة للمالك فقط", "error")
+                return redirect(url_for("core.settings"))
+
+            addon_code = (request.form.get("premium_addon_code") or "").strip()
+            enable_flag = (request.form.get("enable") or "1").strip() == "1"
+            addon_codes = {item["code"] for item in PREMIUM_ADDONS}
+            if addon_code not in addon_codes:
+                flash("الخدمة المحددة غير صالحة", "error")
+                return redirect(url_for("core.settings"))
+
+            state_row = db.execute(
+                "SELECT value FROM settings WHERE business_id=? AND key='premium_addons_state' LIMIT 1",
+                (biz_id,),
+            ).fetchone()
+            try:
+                state_map = json.loads(state_row["value"]) if state_row and state_row["value"] else {}
+                if not isinstance(state_map, dict):
+                    state_map = {}
+            except Exception:
+                state_map = {}
+
+            old_state = dict(state_map)
+            state_map[addon_code] = 1 if enable_flag else 0
+
+            db.execute(
+                "INSERT OR REPLACE INTO settings (business_id, key, value) VALUES (?,?,?)",
+                (biz_id, "premium_addons_state", json.dumps(state_map, ensure_ascii=False)),
+            )
+            db.execute(
+                "INSERT OR REPLACE INTO settings (business_id, key, value) VALUES (?,?,?)",
+                (biz_id, "premium_addons_catalog_version", "v1"),
+            )
+
+            write_audit_log(
+                db,
+                biz_id,
+                "premium_addon_toggled",
+                entity_type="settings",
+                entity_id=biz_id,
+                old_value=json.dumps(old_state, ensure_ascii=False),
+                new_value=json.dumps(
+                    {"addon_code": addon_code, "enabled": bool(enable_flag), "state": state_map},
+                    ensure_ascii=False,
+                ),
+            )
+            db.commit()
+
+            flash(
+                f"✅ تم {'تفعيل' if enable_flag else 'تعطيل'} الخدمة المميزة بنجاح",
+                "success",
+            )
+            return redirect(url_for("core.settings"))
 
         if not can_edit_business:
             flash("ليس لديك صلاحية تعديل بيانات المنشأة", "error")
@@ -824,6 +1118,19 @@ def settings():
         "SELECT value FROM settings WHERE business_id=? AND key='invoice_prefix_sale'",
         (biz_id,)
     ).fetchone()
+    premium_state_row = db.execute(
+        "SELECT value FROM settings WHERE business_id=? AND key='premium_addons_state' LIMIT 1",
+        (biz_id,),
+    ).fetchone()
+    try:
+        premium_addons_state = (
+            json.loads(premium_state_row["value"])
+            if premium_state_row and premium_state_row["value"] else {}
+        )
+        if not isinstance(premium_addons_state, dict):
+            premium_addons_state = {}
+    except Exception:
+        premium_addons_state = {}
 
     return render_template(
         "settings.html",
@@ -831,6 +1138,9 @@ def settings():
         inv_prefix=inv_prefix["value"] if inv_prefix else "INV",
         can_edit_business=can_edit_business,
         can_skip_reason=can_skip_reason,
+        can_manage_premium=can_manage_premium,
+        premium_addons=PREMIUM_ADDONS,
+        premium_addons_state=premium_addons_state,
     )
 
 

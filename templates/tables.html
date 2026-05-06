@@ -36,11 +36,11 @@
 <div class="tables-grid">
   {% for table in tables %}
   <div class="table-card {{ table.status }}"
-       onclick="handleTableClick('{{ table.name }}',
+       onclick='handleTableClick({{ table.name | tojson }},
          {{ table.order.id if table.order else 'null' }},
-         '{{ table.status }}',
+         {{ table.status | tojson }},
          {{ table.order.total if table.order else 0 }},
-         {{ table.order.items_count if table.order else 0 }})">
+         {{ table.order.items_count if table.order else 0 }})'>
 
     <div class="table-num">{{ table.number }}</div>
     <div class="table-name">{{ table.name }}</div>
@@ -429,7 +429,7 @@ async function apiFetch(url) {
 function esc(s) {
   return String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 function showError(msg) { alert('⚠️ ' + (msg || 'حدث خطأ')); }

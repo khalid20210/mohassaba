@@ -7,13 +7,15 @@ from flask import Blueprint, render_template, request, jsonify, g, redirect, fla
 from functools import wraps
 import json
 from datetime import datetime
+from modules.extensions import safe_sql_identifier
 
 bp = Blueprint("wholesale", __name__, url_prefix="/wholesale")
 
 
 def _column_exists(db, table: str, column: str) -> bool:
     try:
-        rows = db.execute(f"PRAGMA table_info({table})").fetchall()
+        safe_table = safe_sql_identifier(table)
+        rows = db.execute(f"PRAGMA table_info({safe_table})").fetchall()
         return any((r[1] if not isinstance(r, dict) else r.get("name")) == column for r in rows)
     except Exception:
         return False

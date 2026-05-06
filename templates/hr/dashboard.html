@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}الموارد البشرية{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50" dir="rtl">
+
+  <!-- Header -->
+  <div class="bg-gradient-to-l from-indigo-700 to-indigo-500 text-white p-6 shadow-lg">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold">👨‍💼 الموارد البشرية</h1>
+        <p class="text-indigo-100 text-sm mt-1">إدارة الموظفين · الرواتب · الإجازات · السلف · الأصول · الموازنة</p>
+      </div>
+      <div class="text-indigo-100 text-sm">
+        {{ current_month }}
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto p-6">
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+      <a href="/hr/employees" class="bg-white rounded-xl shadow p-4 text-center hover:shadow-md transition">
+        <div class="text-3xl font-bold text-indigo-600">{{ stats.total_employees }}</div>
+        <div class="text-gray-500 text-sm mt-1">موظف نشط</div>
+      </a>
+      <a href="/hr/payroll" class="bg-white rounded-xl shadow p-4 text-center hover:shadow-md transition">
+        <div class="text-2xl font-bold text-green-600">{{ "{:,.0f}".format(stats.total_salary) }}</div>
+        <div class="text-gray-500 text-sm mt-1">إجمالي الرواتب</div>
+      </a>
+      <a href="/hr/leaves" class="bg-white rounded-xl shadow p-4 text-center hover:shadow-md transition">
+        <div class="text-3xl font-bold text-yellow-500">{{ stats.on_leave }}</div>
+        <div class="text-gray-500 text-sm mt-1">في إجازة الآن</div>
+      </a>
+      <a href="/hr/payroll" class="bg-white rounded-xl shadow p-4 text-center hover:shadow-md transition">
+        <div class="text-3xl font-bold text-red-500">{{ stats.pending_salary }}</div>
+        <div class="text-gray-500 text-sm mt-1">رواتب معلقة</div>
+      </a>
+      <a href="/hr/advances" class="bg-white rounded-xl shadow p-4 text-center hover:shadow-md transition">
+        <div class="text-2xl font-bold text-purple-600">{{ "{:,.0f}".format(stats.total_advances) }}</div>
+        <div class="text-gray-500 text-sm mt-1">سلف مستحقة</div>
+      </a>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <a href="/hr/employees" class="bg-indigo-600 text-white rounded-xl p-4 text-center hover:bg-indigo-700 transition shadow">
+        <div class="text-2xl">👥</div>
+        <div class="font-semibold mt-1">الموظفون</div>
+      </a>
+      <a href="/hr/payroll" class="bg-green-600 text-white rounded-xl p-4 text-center hover:bg-green-700 transition shadow">
+        <div class="text-2xl">💰</div>
+        <div class="font-semibold mt-1">الرواتب</div>
+      </a>
+      <a href="/hr/leaves" class="bg-yellow-500 text-white rounded-xl p-4 text-center hover:bg-yellow-600 transition shadow">
+        <div class="text-2xl">🏖️</div>
+        <div class="font-semibold mt-1">الإجازات</div>
+      </a>
+      <a href="/hr/advances" class="bg-purple-600 text-white rounded-xl p-4 text-center hover:bg-purple-700 transition shadow">
+        <div class="text-2xl">💳</div>
+        <div class="font-semibold mt-1">السلف</div>
+      </a>
+      <a href="/hr/assets" class="bg-orange-500 text-white rounded-xl p-4 text-center hover:bg-orange-600 transition shadow">
+        <div class="text-2xl">🏭</div>
+        <div class="font-semibold mt-1">الأصول الثابتة</div>
+      </a>
+      <a href="/hr/budget" class="bg-teal-600 text-white rounded-xl p-4 text-center hover:bg-teal-700 transition shadow">
+        <div class="text-2xl">📊</div>
+        <div class="font-semibold mt-1">الموازنة التقديرية</div>
+      </a>
+      <a href="/hr/reports" class="bg-gray-600 text-white rounded-xl p-4 text-center hover:bg-gray-700 transition shadow">
+        <div class="text-2xl">📈</div>
+        <div class="font-semibold mt-1">التقارير</div>
+      </a>
+      <a href="/hr/employees" class="bg-pink-600 text-white rounded-xl p-4 text-center hover:bg-pink-700 transition shadow">
+        <div class="text-2xl">➕</div>
+        <div class="font-semibold mt-1">موظف جديد</div>
+      </a>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+
+      <!-- Recent Employees -->
+      <div class="bg-white rounded-xl shadow p-5">
+        <h2 class="font-bold text-gray-700 text-lg mb-4">🆕 آخر الموظفين المضافين</h2>
+        {% if recent_employees %}
+        <div class="space-y-3">
+          {% for emp in recent_employees %}
+          <a href="/hr/employees/{{ emp.id }}" class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition">
+            <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm">
+              {{ emp.full_name[0] if emp.full_name else '?' }}
+            </div>
+            <div>
+              <div class="font-semibold text-gray-800 text-sm">{{ emp.full_name }}</div>
+              <div class="text-gray-400 text-xs">{{ emp.job_title or '' }} {% if emp.department %}· {{ emp.department }}{% endif %}</div>
+            </div>
+            <div class="mr-auto text-sm font-medium text-green-600">{{ "{:,.0f}".format(emp.base_salary or 0) }}</div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-400 text-center py-4">لا يوجد موظفون بعد</p>
+        {% endif %}
+        <a href="/hr/employees" class="block text-center text-indigo-600 text-sm mt-3 hover:underline">عرض جميع الموظفين ←</a>
+      </div>
+
+      <!-- This Month Payroll -->
+      <div class="bg-white rounded-xl shadow p-5">
+        <h2 class="font-bold text-gray-700 text-lg mb-4">💸 رواتب هذا الشهر ({{ current_month }})</h2>
+        {% if this_month_payroll %}
+        <div class="space-y-2">
+          {% for p in this_month_payroll %}
+          <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded text-sm">
+            <span class="font-medium text-gray-700">{{ p.full_name }}</span>
+            <span class="font-bold text-gray-900">{{ "{:,.2f}".format(p.net_salary or 0) }}</span>
+            <span class="px-2 py-0.5 rounded-full text-xs
+              {% if p.status == 'paid' %}bg-green-100 text-green-700
+              {% else %}bg-yellow-100 text-yellow-700{% endif %}">
+              {{ 'مدفوع' if p.status == 'paid' else 'معلق' }}
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-6">
+          <p class="text-gray-400 mb-3">لم يتم إعداد رواتب هذا الشهر بعد</p>
+          <form method="POST" action="/hr/payroll/run">
+            <input type="hidden" name="month" value="{{ current_month }}">
+            <button class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition text-sm">
+              ▶ تشغيل رواتب {{ current_month }}
+            </button>
+          </form>
+        </div>
+        {% endif %}
+        <a href="/hr/payroll" class="block text-center text-green-600 text-sm mt-3 hover:underline">إدارة الرواتب ←</a>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

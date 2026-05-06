@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}الأصول الثابتة{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50" dir="rtl">
+  <div class="bg-white border-b shadow-sm px-6 py-4">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2 text-sm">
+        <a href="/hr/" class="text-gray-400 hover:text-orange-600">الموارد البشرية</a> /
+        <h1 class="font-bold text-gray-800">🏭 الأصول الثابتة</h1>
+      </div>
+      <button onclick="document.getElementById('modal-asset').classList.remove('hidden')"
+        class="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-orange-600 transition">
+        ➕ إضافة أصل
+      </button>
+    </div>
+  </div>
+
+  <div class="max-w-6xl mx-auto p-6">
+
+    <!-- Summary -->
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+      <div class="bg-white rounded-xl shadow p-4 text-center">
+        <div class="text-xl font-bold text-gray-800">{{ "{:,.2f}".format(total_value) }}</div>
+        <div class="text-gray-400 text-sm">القيمة الدفترية الإجمالية (ريال)</div>
+      </div>
+      <div class="bg-orange-50 rounded-xl shadow p-4 text-center">
+        <div class="text-xl font-bold text-orange-600">{{ "{:,.2f}".format(total_depreciation) }}</div>
+        <div class="text-gray-400 text-sm">الإهلاك المتراكم</div>
+      </div>
+      <div class="bg-blue-50 rounded-xl shadow p-4 text-center">
+        <div class="text-xl font-bold text-blue-600">{{ assets|length }}</div>
+        <div class="text-gray-400 text-sm">عدد الأصول</div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white rounded-xl shadow overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b">
+          <tr>
+            <th class="text-right px-4 py-3 text-gray-600">اسم الأصل</th>
+            <th class="text-right px-4 py-3 text-gray-600">النوع</th>
+            <th class="text-right px-4 py-3 text-gray-600">تاريخ الشراء</th>
+            <th class="text-right px-4 py-3 text-gray-600">التكلفة</th>
+            <th class="text-right px-4 py-3 text-gray-600">الإهلاك السنوي</th>
+            <th class="text-right px-4 py-3 text-gray-600">الإهلاك المتراكم</th>
+            <th class="text-right px-4 py-3 text-gray-600">القيمة الحالية</th>
+            <th class="text-right px-4 py-3 text-gray-600">الحالة</th>
+            <th class="text-right px-4 py-3 text-gray-600">إهلاك</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for a in assets %}
+          <tr class="hover:bg-gray-50 transition">
+            <td class="px-4 py-3 font-medium text-gray-800">
+              {{ a.asset_name }}
+              {% if a.serial_number %}<div class="text-gray-400 text-xs">رقم: {{ a.serial_number }}</div>{% endif %}
+            </td>
+            <td class="px-4 py-3 text-gray-500">{{ a.asset_type }}</td>
+            <td class="px-4 py-3 text-gray-500">{{ a.purchase_date or '—' }}</td>
+            <td class="px-4 py-3 font-semibold">{{ "{:,.2f}".format(a.cost or 0) }}</td>
+            <td class="px-4 py-3 text-orange-500">{{ "{:,.2f}".format(a.annual_depreciation or 0) }}</td>
+            <td class="px-4 py-3 text-red-400">{{ "{:,.2f}".format(a.accumulated_depreciation or 0) }}</td>
+            <td class="px-4 py-3 font-bold text-green-700">{{ "{:,.2f}".format(a.current_value or 0) }}</td>
+            <td class="px-4 py-3">
+              <span class="px-2 py-1 rounded-full text-xs
+                {% if a.status=='نشط' %}bg-green-100 text-green-700
+                {% elif a.status=='مستغل' %}bg-blue-100 text-blue-700
+                {% else %}bg-gray-100 text-gray-500{% endif %}">
+                {{ a.status }}
+              </span>
+            </td>
+            <td class="px-4 py-3">
+              <form method="POST" action="/hr/assets/{{ a.id }}/depreciate">
+                <button class="bg-orange-400 text-white px-3 py-1 rounded text-xs hover:bg-orange-500">
+                  تسجيل إهلاك
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="9" class="text-center py-10 text-gray-400">لا توجد أصول ثابتة مسجلة</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal إضافة أصل -->
+<div id="modal-asset" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center" dir="rtl">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-screen overflow-y-auto">
+    <div class="flex items-center justify-between p-5 border-b">
+      <h2 class="font-bold text-lg">🏭 إضافة أصل ثابت</h2>
+      <button onclick="document.getElementById('modal-asset').classList.add('hidden')" class="text-gray-400 text-2xl">&times;</button>
+    </div>
+    <form method="POST" action="/hr/assets/new" class="p-5 space-y-3">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">اسم الأصل *</label>
+        <input name="asset_name" required class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="سيارة توصيل، طابعة...">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">النوع</label>
+          <select name="asset_type" class="w-full border rounded-lg px-3 py-2 text-sm">
+            <option>أثاث ومعدات</option>
+            <option>سيارات</option>
+            <option>أجهزة حاسوب</option>
+            <option>معدات مكتبية</option>
+            <option>عقارات</option>
+            <option>آلات وتجهيزات</option>
+            <option>أخرى</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">الرقم التسلسلي</label>
+          <input name="serial_number" class="w-full border rounded-lg px-3 py-2 text-sm">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">تاريخ الشراء</label>
+          <input type="date" name="purchase_date" class="w-full border rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">التكلفة</label>
+          <input type="number" name="cost" min="0" step="0.01" value="0" class="w-full border rounded-lg px-3 py-2 text-sm">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">العمر الإنتاجي (سنوات)</label>
+          <input type="number" name="useful_life" min="1" value="5" class="w-full border rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">الموقع</label>
+          <input name="location" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="المخزن، المكتب...">
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">الحالة</label>
+        <select name="status" class="w-full border rounded-lg px-3 py-2 text-sm">
+          <option>نشط</option>
+          <option>مستغل</option>
+          <option>خارج الخدمة</option>
+        </select>
+      </div>
+      <div class="flex gap-3 justify-end pt-2">
+        <button type="button" onclick="document.getElementById('modal-asset').classList.add('hidden')"
+          class="px-4 py-2 border rounded-lg text-gray-600">إلغاء</button>
+        <button type="submit" class="bg-orange-500 text-white px-5 py-2 rounded-lg hover:bg-orange-600 font-medium">
+          ✓ إضافة الأصل
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

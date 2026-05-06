@@ -12,8 +12,25 @@ from __future__ import annotations
 import sqlite3
 import logging
 import copy
+import random
 
 logger = logging.getLogger(__name__)
+
+
+def _generate_barcode() -> str:
+    """يولد باركود EAN-13 عشوائي صالح."""
+    digits = [random.randint(0, 9) for _ in range(12)]
+    total = sum(d * (1 if i % 2 == 0 else 3) for i, d in enumerate(digits))
+    check = (10 - (total % 10)) % 10
+    return "".join(str(d) for d in digits) + str(check)
+
+
+def _generate_sku(prefix: str, seq: int) -> str:
+    """يولد رقم تسلسلي للمنتج بصيغة PREFIX-0001.
+    مثال: RES-0001, CAF-0003, WHL-0010
+    """
+    prefix = (prefix or "PRD").upper().strip()
+    return f"{prefix}-{seq:04d}"
 
 
 def _detect_activity_family(industry_type: str) -> str:
@@ -45,7 +62,7 @@ def _activity_profile_settings(industry_type: str) -> dict:
             "quantity_min": "1",
             "quantity_decimals": "0",
             "allow_fractional_qty": "0",
-            "unit_examples": "كرتون,صندوق,باليت,دستة,ربطة",
+            "unit_examples": "كرتون,صندوق,باليت,ربطة,قطعة",
             "size_matrix_enabled": "1" if family == "wholesale_fashion" else "0",
         }
 
@@ -552,38 +569,90 @@ _SEEDS: dict[str, dict] = {
     # ■ جملة
     # ──────────────────────────────────────────────────────────────────────────
     "wholesale_fnb_distribution": {
-        "categories": ["حبوب وتموينات", "مشروبات", "زيوت وسمن", "معلبات"],
+        "categories": ["حبوب وتموينات", "مشروبات", "زيوت وسمن", "معلبات", "منظفات جملة"],
         "products": [
-            {"name": "أرز خام — كرتون", "category": "حبوب وتموينات","price": 280.0, "unit": "كرتون"},
-            {"name": "زيت نخيل — صندوق","category": "زيوت وسمن",   "price": 450.0, "unit": "صندوق"},
-            {"name": "مياه معدنية — باليت","category": "مشروبات",   "price": 850.0, "unit": "باليت"},
+            {"name": "أرز خام 50 كيلو — كرتون",    "category": "حبوب وتموينات","price": 280.0,  "unit": "كرتون"},
+            {"name": "سكر أبيض 50 كيلو — كيس",     "category": "حبوب وتموينات","price": 210.0,  "unit": "كيس"},
+            {"name": "طحين 50 كيلو — كيس",          "category": "حبوب وتموينات","price": 190.0,  "unit": "كيس"},
+            {"name": "زيت نخيل 1.5 لتر — صندوق 12","category": "زيوت وسمن",   "price": 450.0,  "unit": "صندوق"},
+            {"name": "سمن نباتي — صندوق 12",        "category": "زيوت وسمن",   "price": 380.0,  "unit": "صندوق"},
+            {"name": "مياه معدنية 0.5 لتر — باليت", "category": "مشروبات",     "price": 850.0,  "unit": "باليت"},
+            {"name": "مياه معدنية 1.5 لتر — كرتون", "category": "مشروبات",     "price": 95.0,   "unit": "كرتون"},
+            {"name": "عصير معلب — صندوق 24",        "category": "مشروبات",     "price": 180.0,  "unit": "صندوق"},
+            {"name": "تونة معلبة — كرتون 24",       "category": "معلبات",      "price": 240.0,  "unit": "كرتون"},
+            {"name": "صلصة طماطم — صندوق 12",       "category": "معلبات",      "price": 120.0,  "unit": "صندوق"},
+            {"name": "صابون بار — ربطة 72",         "category": "منظفات جملة", "price": 280.0,  "unit": "ربطة"},
+            {"name": "مسحوق غسيل 5 كيلو — كرتون",  "category": "منظفات جملة", "price": 350.0,  "unit": "كرتون"},
         ],
         "settings": {"pos_mode": "wholesale", "invoice_prefix": "WHL"},
     },
     "wholesale_fnb_general": {
-        "categories": ["مواد غذائية جملة", "مشروبات جملة", "تموينات جملة"],
+        "categories": ["مواد غذائية جملة", "مشروبات جملة", "تموينات جملة", "بقوليات", "بهارات جملة"],
         "products": [
-            {"name": "أرز 50 كيلو",      "category": "مواد غذائية جملة","price": 320.0, "unit": "كيس"},
-            {"name": "سكر 50 كيلو",      "category": "تموينات جملة",    "price": 210.0, "unit": "كيس"},
-            {"name": "مياه كرتون 12",    "category": "مشروبات جملة",    "price": 18.0,  "unit": "كرتون"},
+            {"name": "أرز 50 كيلو",              "category": "مواد غذائية جملة","price": 320.0, "unit": "كيس"},
+            {"name": "سكر 50 كيلو",              "category": "تموينات جملة",    "price": 210.0, "unit": "كيس"},
+            {"name": "طحين 50 كيلو",             "category": "تموينات جملة",    "price": 195.0, "unit": "كيس"},
+            {"name": "مياه كرتون 12 زجاجة",     "category": "مشروبات جملة",    "price": 18.0,  "unit": "كرتون"},
+            {"name": "مياه باليت كامل",          "category": "مشروبات جملة",    "price": 750.0, "unit": "باليت"},
+            {"name": "عدس أحمر 25 كيلو",        "category": "بقوليات",         "price": 145.0, "unit": "كيس"},
+            {"name": "فول حبوب 25 كيلو",        "category": "بقوليات",         "price": 130.0, "unit": "كيس"},
+            {"name": "بهارات مشكلة — كرتون",    "category": "بهارات جملة",     "price": 280.0, "unit": "كرتون"},
+            {"name": "هيل مطحون — كرتون",       "category": "بهارات جملة",     "price": 350.0, "unit": "كرتون"},
+            {"name": "ملح طعام — كرتون 24",     "category": "تموينات جملة",    "price": 48.0,  "unit": "كرتون"},
         ],
         "settings": {"pos_mode": "wholesale", "invoice_prefix": "WHL"},
     },
     "wholesale_electronics_general": {
-        "categories": ["أجهزة إلكترونية", "إكسسوارات", "شاشات وتلفزيون"],
+        "categories": ["أجهزة إلكترونية", "إكسسوارات", "شاشات وتلفزيون", "بطاريات وشحن", "أسلاك وتوصيل"],
         "products": [
-            {"name": "شاشة 43 بوصة كرتون", "category": "شاشات وتلفزيون","price": 1200.0, "unit": "جهاز"},
-            {"name": "سماعات جملة",         "category": "إكسسوارات",     "price": 85.0,   "unit": "قطعة"},
+            {"name": "شاشة 43 بوصة — كرتون",     "category": "شاشات وتلفزيون","price": 1200.0, "unit": "كرتون"},
+            {"name": "شاشة 55 بوصة — كرتون",     "category": "شاشات وتلفزيون","price": 1800.0, "unit": "كرتون"},
+            {"name": "سماعة بلوتوث — صندوق 6",   "category": "إكسسوارات",     "price": 480.0,  "unit": "صندوق"},
+            {"name": "شاحن سريع — ربطة 12",      "category": "بطاريات وشحن",  "price": 360.0,  "unit": "ربطة"},
+            {"name": "كابل USB-C — ربطة 24",     "category": "أسلاك وتوصيل",  "price": 180.0,  "unit": "ربطة"},
+            {"name": "بطارية AA — كرتون 24 علبة","category": "بطاريات وشحن",  "price": 480.0,  "unit": "كرتون"},
+            {"name": "كفر جوال — صندوق 20",      "category": "إكسسوارات",     "price": 280.0,  "unit": "صندوق"},
         ],
         "settings": {"pos_mode": "wholesale", "invoice_prefix": "WEL"},
     },
     "wholesale_auto_parts": {
-        "categories": ["فلاتر", "زيوت", "بطاريات", "إطارات"],
+        "categories": ["فلاتر", "زيوت وسوائل", "بطاريات", "إطارات", "كهربائيات سيارات"],
         "products": [
-            {"name": "فلاتر زيت — كرتون", "category": "فلاتر",   "price": 450.0, "unit": "كرتون"},
-            {"name": "زيت محرك 4L × 6",   "category": "زيوت",   "price": 480.0, "unit": "كرتون"},
+            {"name": "فلتر زيت — كرتون 24",      "category": "فلاتر",              "price": 450.0,  "unit": "كرتون"},
+            {"name": "فلتر هواء — كرتون 12",     "category": "فلاتر",              "price": 360.0,  "unit": "كرتون"},
+            {"name": "فلتر مكيف — كرتون 12",     "category": "فلاتر",              "price": 280.0,  "unit": "كرتون"},
+            {"name": "زيت محرك 4L — كرتون 6",   "category": "زيوت وسوائل",       "price": 480.0,  "unit": "كرتون"},
+            {"name": "سائل فرامل — كرتون 12",    "category": "زيوت وسوائل",       "price": 240.0,  "unit": "كرتون"},
+            {"name": "بطارية 70 أمبير — صندوق",  "category": "بطاريات",            "price": 1400.0, "unit": "صندوق"},
+            {"name": "إطار 205/55R16 — 4 إطارات","category": "إطارات",             "price": 1120.0, "unit": "ربطة"},
+            {"name": "مصباح أمامي LED — ربطة",   "category": "كهربائيات سيارات",  "price": 320.0,  "unit": "ربطة"},
         ],
         "settings": {"pos_mode": "wholesale", "invoice_prefix": "WAP"},
+    },
+    "wholesale_fashion_general": {
+        "categories": ["ملابس رجالي جملة", "ملابس نسائي جملة", "ملابس أطفال جملة", "إكسسوارات جملة"],
+        "products": [
+            {"name": "قميص رجالي — كرتون 24",    "category": "ملابس رجالي جملة",  "price": 960.0,  "unit": "كرتون"},
+            {"name": "تيشيرت قطن — ربطة 12",     "category": "ملابس رجالي جملة",  "price": 540.0,  "unit": "ربطة"},
+            {"name": "جينز رجالي — صندوق 12",    "category": "ملابس رجالي جملة",  "price": 840.0,  "unit": "صندوق"},
+            {"name": "عباية سوداء — صندوق 12",   "category": "ملابس نسائي جملة",  "price": 1800.0, "unit": "صندوق"},
+            {"name": "حجاب شيفون — ربطة 24",     "category": "ملابس نسائي جملة",  "price": 480.0,  "unit": "ربطة"},
+            {"name": "لبس أطفال 3 قطع — كرتون",  "category": "ملابس أطفال جملة",  "price": 720.0,  "unit": "كرتون"},
+            {"name": "جوارب رجالي — ربطة 12",    "category": "إكسسوارات جملة",    "price": 180.0,  "unit": "ربطة"},
+            {"name": "حزام جلد — ربطة 12",       "category": "إكسسوارات جملة",    "price": 360.0,  "unit": "ربطة"},
+        ],
+        "settings": {"pos_mode": "wholesale", "invoice_prefix": "WFA"},
+    },
+    "wholesale_construction_materials": {
+        "categories": ["إسمنت وبناء", "حديد وصلب", "بلاط وسيراميك", "عزل ومواد"],
+        "products": [
+            {"name": "إسمنت — باليت 50 كيس",     "category": "إسمنت وبناء",   "price": 1250.0, "unit": "باليت"},
+            {"name": "حديد تسليح 12 مم — طن",    "category": "حديد وصلب",     "price": 3200.0, "unit": "طن"},
+            {"name": "بلاط 60×60 — باليت 44 م²", "category": "بلاط وسيراميك","price": 2800.0, "unit": "باليت"},
+            {"name": "لفة عازل مائي — كرتون 5",  "category": "عزل ومواد",     "price": 450.0,  "unit": "كرتون"},
+            {"name": "دهان خارجي 18 لتر — صندوق","category": "عزل ومواد",     "price": 680.0,  "unit": "صندوق"},
+        ],
+        "settings": {"pos_mode": "wholesale", "invoice_prefix": "WCM"},
     },
 
     # ──────────────────────────────────────────────────────────────────────────
@@ -1379,6 +1448,8 @@ for _src, _dst in [
     ("retail_fnb_produce",  "retail_fnb_grocery"),
     ("retail_fnb_dates",    "retail_fnb_roaster"),
     ("retail_fnb_beverages","retail_fnb_grocery"),
+    ("retail_fnb_fish", "retail_fnb_grocery"),
+    ("retail_fnb_poultry", "retail_fnb_butcher"),
     ("retail_fashion_bags", "retail_fashion_shoes"),
     ("retail_fashion_optics","retail_fashion_watches"),
     ("retail_fashion_fabric","retail_home_stationery"),
@@ -1386,11 +1457,27 @@ for _src, _dst in [
     ("retail_construction_flooring","retail_construction_materials"),
     ("retail_auto_accessories","retail_auto_parts"),
     ("retail_auto_workshop","retail_auto_parts"),
+    ("retail_auto_showroom", "retail_auto_parts"),
     ("retail_home_carpet","retail_home_furniture"),
     ("retail_home_office","retail_home_stationery"),
+    ("retail_home_curtains", "retail_home_furniture"),
+    ("retail_home_lighting", "retail_construction_electrical"),
+    ("retail_specialized_books", "retail_home_stationery"),
+    ("retail_specialized_art", "retail_home_stationery"),
+    ("retail_specialized_music", "retail_electronics_entertainment"),
+    ("retail_specialized_baby", "retail_specialized_toys"),
+    ("retail_specialized_wedding", "retail_specialized_flowers"),
     ("retail_specialized_camping","retail_specialized_sports"),
     ("retail_electronics_entertainment","retail_electronics_computers"),
     ("retail_health_medical","retail_health_pharmacy"),
+    ("wholesale_fnb_fish", "wholesale_fnb_distribution"),
+    ("wholesale_fnb_frozen", "wholesale_fnb_distribution"),
+    ("wholesale_fnb_dairy", "wholesale_fnb_distribution"),
+    ("wholesale_fnb_poultry", "wholesale_fnb_distribution"),
+    ("wholesale_construction_steel", "wholesale_construction_materials"),
+    ("wholesale_construction_glass", "wholesale_construction_materials"),
+    ("wholesale_home_lighting", "wholesale_construction_electrical"),
+    ("wholesale_specialized_baby", "wholesale_specialized_toys"),
     ("medical_complex", "medical"),
 ]:
     _GROUP_MAP[_src] = _dst
@@ -1398,6 +1485,12 @@ for _src, _dst in [
 for _src, _dst in list(_GROUP_MAP.items()):
     if _dst not in _SEEDS:
         _GROUP_MAP[_src] = "default"
+
+# توليد مفاتيح بذور مشتقة للأنشطة الجديدة التي ترث نفس باقة النشاط الأساسي
+# هذا يحافظ على تكامل _SEEDS مع INDUSTRY_TYPES ويمنع سقوط الفحوصات عند إضافة نشاط جديد
+for _src, _dst in list(_GROUP_MAP.items()):
+    if _src not in _SEEDS and _dst in _SEEDS:
+        _SEEDS[_src] = _SEEDS[_dst]
 
 
 def _get_seed(industry_type: str) -> dict:
@@ -1528,6 +1621,9 @@ def _seed_categories_and_products(
     categories = seed.get("categories", [])
     products   = seed.get("products",   [])
 
+    # استخراج البادئة من إعدادات النشاط لبناء SKU تسلسلي
+    sku_prefix = seed.get("settings", {}).get("invoice_prefix", "PRD")
+
     # ── التصنيفات ──────────────────────────────────────────────────────────
     cat_id_map: dict[str, int] = {}  # name → id
 
@@ -1550,6 +1646,21 @@ def _seed_categories_and_products(
             cat_id_map[cat_name] = cur.lastrowid
             categories_inserted += 1
 
+    # ── الرقم التسلسلي: يبدأ من آخر رقم موجود لهذه المنشأة + البادئة ──────
+    last_seq_row = db.execute(
+        """SELECT sku FROM product_inventory
+           WHERE business_id=? AND sku LIKE ?
+           ORDER BY sku DESC LIMIT 1""",
+        (biz_id, f"{sku_prefix}-%")
+    ).fetchone()
+    if last_seq_row and last_seq_row["sku"]:
+        try:
+            seq_counter = int(last_seq_row["sku"].split("-")[-1]) + 1
+        except (ValueError, IndexError):
+            seq_counter = 1
+    else:
+        seq_counter = 1
+
     # ── المنتجات ──────────────────────────────────────────────────────────
     for p in products:
         name         = p.get("name", "")
@@ -1571,20 +1682,44 @@ def _seed_categories_and_products(
         if exists:
             continue
 
+        sku_val     = _generate_sku(sku_prefix, seq_counter)
+        barcode_val = _generate_barcode()
+        purchase_price = round(price * 0.7, 2)
+
         db.execute(
             """INSERT INTO products
                (business_id, name, product_type, category_id, category_name,
-                sale_price, purchase_price, track_stock, is_pos, is_active)
-               VALUES (?,?,?,?,?,?,?,?,?,1)""",
+                sale_price, purchase_price, track_stock, is_pos, is_active, barcode)
+               VALUES (?,?,?,?,?,?,?,?,?,1,?)""",
             (
                 biz_id, name, product_type,
                 cat_id, category,
-                price, round(price * 0.7, 2),   # تكلفة تقريبية = 70% من السعر
-                1 if product_type == "product" else 0,   # الخدمات لا تتبع مخزون
+                price, purchase_price,
+                1 if product_type == "product" else 0,
                 is_pos,
+                barcode_val,
             )
         )
         products_inserted += 1
+
+        # جلب id المنتج المُضاف
+        prod_row = db.execute(
+            "SELECT id FROM products WHERE business_id=? AND name=? LIMIT 1",
+            (biz_id, name)
+        ).fetchone()
+        if not prod_row:
+            continue
+        prod_id = prod_row["id"]
+
+        # إضافة سجل في product_inventory مع SKU تسلسلي
+        db.execute(
+            """INSERT OR IGNORE INTO product_inventory
+               (business_id, product_id, sku, barcode, current_qty, min_qty, max_qty,
+                unit_cost, unit_price, created_at, updated_at)
+               VALUES (?,?,?,?,0,5,500,?,?,datetime('now'),datetime('now'))""",
+            (biz_id, prod_id, sku_val, barcode_val, purchase_price, price)
+        )
+        seq_counter += 1
 
         # إذا كان منتجاً (وليس خدمة)، أضف رصيد صفري في المستودع الافتراضي
         if product_type == "product":
@@ -1593,19 +1728,14 @@ def _seed_categories_and_products(
                 (biz_id,)
             ).fetchone()
             if warehouse:
-                product_id = db.execute(
-                    "SELECT id FROM products WHERE business_id=? AND name=? LIMIT 1",
-                    (biz_id, name)
-                ).fetchone()
-                if product_id:
-                    cur = db.execute(
-                        """INSERT OR IGNORE INTO stock
-                           (business_id, product_id, warehouse_id, quantity, avg_cost)
-                           VALUES (?,?,?,0,0)""",
-                        (biz_id, product_id["id"], warehouse["id"])
-                    )
-                    if getattr(cur, "rowcount", 0) > 0:
-                        stock_rows_inserted += 1
+                cur = db.execute(
+                    """INSERT OR IGNORE INTO stock
+                       (business_id, product_id, warehouse_id, quantity, avg_cost)
+                       VALUES (?,?,?,0,0)""",
+                    (biz_id, prod_id, warehouse["id"])
+                )
+                if getattr(cur, "rowcount", 0) > 0:
+                    stock_rows_inserted += 1
 
     return {
         "categories_inserted": categories_inserted,

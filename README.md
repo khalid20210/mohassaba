@@ -46,6 +46,26 @@ python run_production.py
 - `X-Request-ID` لكل طلب لتتبع الأعطال
 - Rate limiting أساسي لتخفيف ضغط الهجمات/الانفجارات المرورية
 
+## تسجيل اجتماعي حقيقي (OAuth)
+لتمكين تسجيل الدخول عبر Google / Apple / Microsoft أضف مفاتيح المزود في ملف `.env`:
+
+```env
+GOOGLE_OAUTH_CLIENT_ID=
+GOOGLE_OAUTH_CLIENT_SECRET=
+
+APPLE_OAUTH_CLIENT_ID=
+APPLE_OAUTH_CLIENT_SECRET=
+
+MICROSOFT_OAUTH_CLIENT_ID=
+MICROSOFT_OAUTH_CLIENT_SECRET=
+MICROSOFT_OAUTH_TENANT=common
+```
+
+ملاحظات:
+- `MICROSOFT_OAUTH_TENANT=common` مناسب للتجربة أو SaaS متعدد العملاء.
+- Apple يتطلب `client_secret` بصيغة JWT (تولده من Apple Developer).
+- بعد ضبط القيم أعد تشغيل التطبيق.
+
 ## مسار التوسع الموصى به
 1. المرحلة الحالية: SQLite مضبوط ومحصّن للتشغيل المستقر.
 2. المرحلة التالية: PostgreSQL + Redis + Queue.

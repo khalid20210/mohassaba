@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="light">
+<html lang="{{ lang }}" dir="{{ text_dir }}" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}محاسبة{% endblock %} — نظام المحاسبة</title>
+  <title>{% block title %}{{ t('app_short') }}{% endblock %} — {{ t('app_name') }}</title>
   <!-- PWA -->
   <link rel="manifest" href="/static/manifest.json">
   <meta name="theme-color" content="#3b82f6">
@@ -58,7 +58,7 @@
             <a href="{{ item.url }}"
                {% if request.path == item.url %}class="active"{% endif %}>
               <span class="nav-icon">{{ item.icon }}</span>
-              {{ item.label }}
+              {% if lang == 'en' and item.label_en %}{{ item.label_en }}{% else %}{{ item.label }}{% endif %}
             </a>
           </li>
         {% endfor %}
@@ -71,10 +71,10 @@
         <div class="avatar">{{ (current_user.full_name or current_user.username)[0] }}</div>
         <div class="user-meta">
           <strong>{{ current_user.full_name or current_user.username }}</strong>
-          <span>{{ current_user.role_name or 'مستخدم' }}</span>
+          <span>{{ current_user.role_name or t('role_user') }}</span>
         </div>
       </div>
-      <a href="{{ url_for('auth_logout') }}" class="logout-btn">تسجيل الخروج</a>
+      <a href="{{ url_for('auth_logout') }}" class="logout-btn">{{ t('logout') }}</a>
     </div>
 
   </aside>
@@ -85,24 +85,37 @@
     <!-- Topbar -->
     <header class="topbar">
       <div style="display:flex; align-items:center; gap:12px;">
-        <button class="hamburger" id="hamburger" aria-label="القائمة">☰</button>
+        <button class="hamburger" id="hamburger" aria-label="{{ t('menu') }}">&#9776;</button>
         <span class="topbar-title">{% block page_title %}{% endblock %}</span>
       </div>
       <div class="topbar-right">
         <!-- زر تبديل الوضع الليلي/النهاري -->
-        <button id="themeToggleBtn" onclick="toggleTheme()" title="تبديل الوضع" style="
+        <button id="themeToggleBtn" onclick="toggleTheme()" title="{{ t('toggle_theme') }}" class="theme-toggle-btn" aria-label="{{ t('toggle_theme') }}">
+          <span class="theme-icon" id="themeIcon">🌙</span>
+          <span class="theme-label" id="themeLabel">ليلي</span>
+        </button>
+        <!-- زر تبديل اللغة -->
+        {% if lang == 'ar' %}
+        <a href="{{ url_for('core.set_lang', lang='en') }}" title="Switch to English" style="
           background:none;border:1px solid var(--border);border-radius:8px;
-          padding:5px 10px;cursor:pointer;font-size:.9rem;
-          color:var(--text-muted);transition:all .2s;line-height:1;
-        ">☀️</button>
+          padding:5px 10px;font-size:.8rem;font-weight:700;
+          color:var(--text-muted);text-decoration:none;
+        ">EN</a>
+        {% else %}
+        <a href="{{ url_for('core.set_lang', lang='ar') }}" title="تبديل للعربية" style="
+          background:none;border:1px solid var(--border);border-radius:8px;
+          padding:5px 10px;font-size:.8rem;font-weight:700;
+          color:var(--text-muted);text-decoration:none;
+        ">عر</a>
+        {% endif %}
         <!-- زر تثبيت التطبيق PWA -->
-        <button id="pwaInstallBtn" onclick="triggerPwaInstall()" title="تثبيت التطبيق على جهازك" style="
+        <button id="pwaInstallBtn" onclick="triggerPwaInstall()" title="{{ t('install_app') }}" style="
           display:none; align-items:center; gap:5px;
           background:rgba(59,130,246,.15); border:1px solid rgba(59,130,246,.4);
           color:#93c5fd; border-radius:8px; padding:5px 11px;
           font-size:.77rem; font-weight:600; cursor:pointer; font-family:inherit;
           transition:background .15s;">
-          📲 تثبيت
+          📲 {{ t('install') }}
         </button>
         <span class="topbar-biz-badge">
           {% for k, v in industry_types if k == current_business.industry_type %}{{ v }}{% endfor %}
@@ -153,7 +166,7 @@
   display:none; position:fixed; bottom:0; left:0; right:0;
   background:#ef4444; color:#fff; text-align:center;
   padding:8px; font-size:.85rem; z-index:9999;
-  animation:slideUp .3s ease;">📡 أنت حاليًا بدون اتصال — بعض الميزات غير متاحة</div>
+  animation:slideUp .3s ease;">📡 {{ t('offline_msg') }}</div>
 
 <!-- ── تسجيل Service Worker ─────────────────────── -->
 <script>
@@ -217,20 +230,32 @@ window.addEventListener('offline', setOnlineStatus);
 setOnlineStatus();
 
 // ── Dark / Light Mode ────────────────────────────────────────────
-function toggleTheme(){
+function applyTheme(theme) {
   var html = document.documentElement;
-  var current = html.getAttribute('data-theme') || 'light';
-  var next = current === 'dark' ? 'light' : 'dark';
-  html.setAttribute('data-theme', next);
-  localStorage.setItem('jenan_theme', next);
-  var btn = document.getElementById('themeToggleBtn');
-  if(btn) btn.textContent = next === 'dark' ? '☀️' : '🌙';
+  html.setAttribute('data-theme', theme);
+  localStorage.setItem('jenan_theme', theme);
+  var icon  = document.getElementById('themeIcon');
+  var label = document.getElementById('themeLabel');
+  var lang  = document.documentElement.lang || 'ar';
+  var labels = {
+    ar: { dark: 'ليلي', light: 'نهاري' },
+    en: { dark: 'Night', light: 'Day' }
+  };
+  var l = labels[lang] || labels.ar;
+  if (icon)  icon.textContent  = theme === 'dark' ? '☀️' : '🌙';
+  if (label) label.textContent = theme === 'dark' ? l.light : l.dark;
+  // meta theme-color للمتصفح
+  var meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = theme === 'dark' ? '#0f172a' : '#3b82f6';
 }
-// تحديث أيقونة الزر عند التحميل
+function toggleTheme(){
+  var current = document.documentElement.getAttribute('data-theme') || 'light';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+// تطبيق الثيم عند تحميل الصفحة
 (function(){
-  var t = document.documentElement.getAttribute('data-theme') || 'light';
-  var btn = document.getElementById('themeToggleBtn');
-  if(btn) btn.textContent = t === 'dark' ? '☀️' : '🌙';
+  var saved = localStorage.getItem('jenan_theme') || 'light';
+  applyTheme(saved);
 })();
 </script>
 </body>

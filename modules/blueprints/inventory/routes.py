@@ -125,17 +125,21 @@ def dashboard():
     stats = db.execute("""
         SELECT 
             COUNT(*) as total_products,
-            COALESCE(SUM(current_qty), 0) as total_units,
-            COALESCE(SUM(current_qty * unit_cost), 0) as total_value
-        FROM product_inventory
-        WHERE business_id = ?
+            COALESCE(SUM(pi.current_qty), 0) as total_units,
+            COALESCE(SUM(pi.current_qty * COALESCE(pi.unit_cost, p.purchase_price, 0)), 0) as total_value
+        FROM product_inventory pi
+        LEFT JOIN products p ON pi.product_id = p.id
+        WHERE pi.business_id = ?
     """, (business_id,)).fetchone()
     
     # الأصناف منخفضة المخزون
     low_stock = db.execute("""
-        SELECT id, sku, current_qty, min_qty, unit_price
-        FROM product_inventory
-        WHERE business_id = ? AND current_qty <= min_qty
+        SELECT pi.id, COALESCE(p.name, pi.sku) AS name,
+               pi.current_qty, pi.min_qty,
+               COALESCE(pi.unit_price, p.sale_price, 0) AS unit_price
+        FROM product_inventory pi
+        LEFT JOIN products p ON pi.product_id = p.id
+        WHERE pi.business_id = ? AND pi.current_qty <= pi.min_qty
         LIMIT 10
     """, (business_id,)).fetchall()
     
@@ -199,23 +203,33 @@ def list_products():
     page = int(request.args.get("page", 1))
     per_page = 20
     
-    # بناء الـ Query
-    query = "SELECT * FROM product_inventory WHERE business_id = ?"
+    # بناء الـ Query — ربط product_inventory بجدول products للحصول على الاسم والسعر
+    base = """
+        SELECT pi.*,
+               COALESCE(p.name, pi.sku) AS name,
+               COALESCE(p.category_name, '') AS category_name,
+               COALESCE(pi.unit_price, p.sale_price, 0) AS sell_price,
+               COALESCE(pi.unit_cost, p.purchase_price, 0) AS cost_price,
+               COALESCE(pi.barcode, p.barcode) AS barcode
+        FROM product_inventory pi
+        LEFT JOIN products p ON pi.product_id = p.id
+        WHERE pi.business_id = ?
+    """
     params = [business_id]
     
     if search:
-        query += " AND (sku LIKE ? OR location LIKE ?)"
+        base += " AND (p.name LIKE ? OR pi.sku LIKE ? OR pi.barcode LIKE ? OR p.barcode LIKE ?)"
         search_term = f"%{search}%"
-        params.extend([search_term, search_term])
+        params.extend([search_term, search_term, search_term, search_term])
     
     if status == "low_stock":
-        query += " AND current_qty <= min_qty"
+        base += " AND pi.current_qty <= pi.min_qty"
     elif status == "overstock":
-        query += " AND current_qty >= max_qty"
+        base += " AND pi.current_qty >= pi.max_qty"
     elif status == "expiring":
-        query += " AND expiry_date IS NOT NULL AND expiry_date <= datetime('now', '+30 days')"
+        base += " AND pi.expiry_date IS NOT NULL AND pi.expiry_date <= datetime('now', '+30 days')"
     
-    query += " ORDER BY sku ASC LIMIT ? OFFSET ?"
+    query = base + " ORDER BY COALESCE(p.name, pi.sku) ASC LIMIT ? OFFSET ?"
     params.extend([per_page, (page - 1) * per_page])
     
     products = db.execute(query, params).fetchall()
@@ -232,6 +246,7 @@ def list_products():
         "search": search,
         "status": status,
     })
+
 
 
 @bp.route("/products/<int:product_id>")

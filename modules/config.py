@@ -159,7 +159,6 @@ INDUSTRY_TYPES = [
     ("retail_home_stationery",  "مكتبات وقرطاسية"),
     ("retail_home_office",      "تجهيزات مكاتب وأثاث مكتبي"),
     # ── تجزئة — أنشطة متخصصة ─────────────────────────────────────────
-    ("retail_specialized_tobacco", "معسلات ومستلزمات تدخين"),
     ("retail_specialized_flowers", "زهور وتغليف هدايا"),
     ("retail_specialized_toys",    "ألعاب أطفال وهدايا"),
     ("retail_specialized_pets",    "مستلزمات حيوانات أليفة"),
@@ -215,7 +214,6 @@ INDUSTRY_TYPES = [
     ("wholesale_home_stationery", "جملة قرطاسية ومستلزمات مكتبية"),
     ("wholesale_home_office",     "جملة تجهيزات مكاتب"),
     # ── جملة — أنشطة متخصصة ─────────────────────────────────────────
-    ("wholesale_specialized_tobacco", "جملة معسلات ومستلزمات تدخين"),
     ("wholesale_specialized_flowers", "جملة زهور وتغليف هدايا"),
     ("wholesale_specialized_toys",    "جملة ألعاب أطفال وهدايا"),
     ("wholesale_specialized_pets",    "جملة مستلزمات حيوانات أليفة"),
@@ -225,81 +223,313 @@ INDUSTRY_TYPES = [
     ("food_restaurant", "مطعم"),
     ("food_cafe",       "كافيه"),
     ("food_coffeeshop", "مقهى"),
-    # ── قطاعات خدمية ─────────────────────────────────────────────────
+    # ── قطاعات خدمية — أساسية ────────────────────────────────────────
     ("medical_complex", "مجمع طبي / عيادات"),
     ("construction", "مقاولات وتشغيل"),
     ("car_rental",   "تأجير سيارات"),
     ("medical",      "خدمات صحية"),
     ("services",     "خدمات عامة"),
+
+    # ── تجزئة — غذاء (إضافات) ─────────────────────────────────────────
+    ("retail_fnb_fish",     "محلات أسماك ومأكولات بحرية"),
+    ("retail_fnb_poultry",  "محلات دجاج وطيور"),
+
+    # ── تجزئة — منزل (إضافات) ────────────────────────────────────────
+    ("retail_home_curtains",  "ستائر وديكور نوافذ"),
+    ("retail_home_lighting",  "إنارة وثريات منزلية"),
+
+    # ── تجزئة — متخصص (إضافات) ───────────────────────────────────────
+    ("retail_specialized_books",   "مكتبات وكتب"),
+    ("retail_specialized_art",     "أدوات فنية ورسم"),
+    ("retail_specialized_music",   "آلات موسيقية"),
+    ("retail_specialized_baby",    "مستلزمات أطفال رضع"),
+    ("retail_specialized_wedding", "تجهيزات أفراح ومناسبات"),
+
+    # ── تجزئة — سيارات (إضافات) ──────────────────────────────────────
+    ("retail_auto_showroom", "معرض سيارات"),
+
+    # ── جملة — غذاء (إضافات) ─────────────────────────────────────────
+    ("wholesale_fnb_fish",    "سمك وأسماك — جملة"),
+    ("wholesale_fnb_frozen",  "مجمدات وأغذية مجمدة — جملة"),
+    ("wholesale_fnb_dairy",   "ألبان وأجبان — جملة"),
+    ("wholesale_fnb_poultry", "دجاج وطيور — جملة"),
+
+    # ── جملة — بناء (إضافات) ─────────────────────────────────────────
+    ("wholesale_construction_steel", "حديد وصلب — جملة"),
+    ("wholesale_construction_glass", "زجاج وألمنيوم — جملة"),
+
+    # ── جملة — منزل (إضافات) ─────────────────────────────────────────
+    ("wholesale_home_lighting",   "إنارة وثريات — جملة"),
+    ("wholesale_specialized_baby", "مستلزمات أطفال — جملة"),
+
+    # ── تقديم الطعام (إضافات) ────────────────────────────────────────
+    ("food_fast_food",   "وجبات سريعة"),
+    ("food_shawarma",    "شاورما ومشاوي"),
+    ("food_pizza",       "بيتزا ومأكولات إيطالية"),
+    ("food_catering",    "خدمات ضيافة وتموين"),
+    ("food_cloud_kitchen", "مطبخ سحابي"),
+    ("food_pastry",      "حلويات ومعجنات"),
+    ("food_juice",       "عصائر ومشروبات طازجة"),
+    ("food_ice_cream",   "آيس كريم وحلويات مثلجة"),
+    ("food_food_court",  "فود كورت ومجمع أكل"),
+
+    # ── خدمات متخصصة ─────────────────────────────────────────────────
+    ("services_cleaning",      "نظافة وتنظيف"),
+    ("services_laundry",       "غسيل ومصبغة"),
+    ("services_printing",      "طباعة ونسخ وتصوير"),
+    ("services_photography",   "تصوير وأستوديو"),
+    ("services_advertising",   "إعلانات وتسويق"),
+    ("services_it_support",    "دعم تقني وشبكات"),
+    ("services_software",      "برمجيات وتطبيقات"),
+    ("services_accounting_firm", "مكتب محاسبة وتدقيق"),
+    ("services_legal",         "مكتب محاماة واستشارات قانونية"),
+    ("services_consulting",    "استشارات إدارية وأعمال"),
+    ("services_training",      "تدريب وتطوير مهني"),
+    ("services_translation",   "ترجمة ولغات"),
+    ("services_travel",        "سياحة وسفر"),
+    ("services_hajj_umrah",    "خدمات حج وعمرة"),
+    ("services_event",         "تنظيم فعاليات ومناسبات"),
+    ("services_security_guard", "حراسة وأمن"),
+    ("services_maintenance",   "صيانة عامة وإصلاح"),
+    ("services_landscaping",   "زراعة وتنسيق حدائق"),
+    ("services_pest_control",  "مكافحة حشرات وقوارض"),
+    ("services_beauty_salon_f", "صالون نسائي"),
+    ("services_beauty_salon_m", "صالون رجالي وحلاقة"),
+    ("services_spa",           "سبا ومراكز عناية"),
+    ("services_fitness",       "نوادي رياضية ولياقة بدنية"),
+    ("services_driving_school", "مدارس تعليم قيادة"),
+    ("services_manpower",      "استقدام واستخدام عمالة"),
+
+    # ── رعاية صحية متخصصة ───────────────────────────────────────────
+    ("medical_dental",          "عيادة أسنان"),
+    ("medical_optical_clinic",  "عيادة بصريات وعيون"),
+    ("medical_physiotherapy",   "علاج طبيعي وإعادة تأهيل"),
+    ("medical_veterinary",      "طب بيطري"),
+    ("medical_laboratory",      "مختبر تحاليل طبية"),
+    ("medical_radiology",       "مركز أشعة وتصوير طبي"),
+    ("medical_pharmacy_clinic", "صيدلية وعيادة"),
+
+    # ── تعليم وتدريب ─────────────────────────────────────────────────
+    ("education_school",          "مدرسة أهلية"),
+    ("education_nursery",         "حضانة وروضة أطفال"),
+    ("education_training_center", "مركز تدريب مهني"),
+    ("education_tutoring",        "مركز تقوية دراسية"),
+    ("education_language",        "مركز تعليم لغات"),
+    ("education_quran",           "مركز تحفيظ قرآن"),
+
+    # ── عقارات ───────────────────────────────────────────────────────
+    ("real_estate_agency",     "وساطة عقارية"),
+    ("real_estate_developer",  "تطوير عقاري"),
+    ("real_estate_management", "إدارة عقارات وأملاك"),
+
+    # ── نقل ومواصلات ─────────────────────────────────────────────────
+    ("transport_freight",    "شحن ونقل بضائع"),
+    ("transport_courier",    "بريد سريع وتوصيل"),
+    ("transport_moving",     "نقل عفش وأثاث"),
+    ("transport_passenger",  "نقل ركاب وحافلات"),
+    ("transport_taxi",       "تاكسي ونقل خاص"),
+
+    # ── ضيافة وسياحة ─────────────────────────────────────────────────
+    ("hospitality_hotel",         "فندق وإقامة"),
+    ("hospitality_furnished_apt", "شقق مفروشة"),
+    ("hospitality_resort",        "منتجع سياحي"),
+    ("hospitality_chalet",        "استراحة وشاليه"),
+
+    # ── خدمات سيارات ─────────────────────────────────────────────────
+    ("auto_service_carwash", "غسيل سيارات"),
+    ("auto_service_repair",  "تصليح وصيانة سيارات"),
+    ("auto_service_paint",   "دهان وهيكلة سيارات"),
+
+    # ── صناعة ووُرش ──────────────────────────────────────────────────
+    ("industrial_factory",  "مصنع وتصنيع"),
+    ("industrial_workshop", "ورشة صناعية"),
+
+    # ── زراعة وإنتاج ─────────────────────────────────────────────────
+    ("agriculture_general",   "مزارع وإنتاج زراعي"),
+    ("agriculture_dates",     "مزارع النخيل والتمور"),
+    ("agriculture_poultry",   "مزارع الدواجن والبيض"),
+    ("agriculture_fish",      "مزارع الأسماك والأحياء البحرية"),
+    ("agriculture_greenhouses","البيوت المحمية والخضار المائية"),
+    ("agriculture_honey",     "تربية النحل وإنتاج العسل"),
+    ("agriculture_supply",    "مستلزمات زراعية ومبيدات"),
+
+    # ── تجزئة — إضافات متخصصة ────────────────────────────────────────
+    ("retail_specialized_quran",       "مستلزمات دينية ومصاحف"),
+    ("retail_specialized_organic",     "منتجات عضوية وطبيعية"),
+    ("retail_specialized_gift_shop",   "محل هدايا وتحف"),
+    ("retail_specialized_car_care",    "مستلزمات العناية بالسيارات"),
+    ("retail_specialized_printing",    "طباعة وتصميم — تجزئة"),
+    ("retail_specialized_craft",       "أدوات حرف يدوية"),
+    ("retail_specialized_aquarium",    "مستلزمات أسماك وديكور مائي"),
+
+    # ── جملة — إضافات متخصصة ─────────────────────────────────────────
+    ("wholesale_fnb_oil",              "زيوت وسمن — جملة"),
+    ("wholesale_fnb_sugar_flour",      "سكر ودقيق — جملة"),
+    ("wholesale_fnb_spices",           "بهارات وتوابل — جملة"),
+    ("wholesale_construction_cement",  "إسمنت وجبس — جملة"),
+    ("wholesale_construction_tiles",   "بلاط وسيراميك — جملة"),
+    ("wholesale_specialized_gifts",    "هدايا وتحف — جملة"),
+    ("wholesale_specialized_medical",  "مستلزمات طبية — جملة"),
+    ("wholesale_specialized_cleaning", "مواد تنظيف وعقيم — جملة"),
+    ("wholesale_specialized_paper",    "ورق وتغليف — جملة"),
+
+    # ── خدمات — إضافات ───────────────────────────────────────────────
+    ("services_recruitment",          "خدمات توظيف واستشارات HR"),
+    ("services_architecture",         "هندسة وتصميم معماري"),
+    ("services_interior_design",      "تصميم داخلي وديكور"),
+    ("services_engineering",          "مكاتب استشارات هندسية"),
+    ("services_surveying",            "مساحة وتقييم عقاري"),
+    ("services_medical_equipment",    "صيانة أجهزة طبية"),
+    ("services_funeral",              "خدمات جنائزية ومقابر"),
+    ("services_charity",              "جمعيات خيرية وغير ربحية"),
+    ("services_government",           "جهات حكومية وشبه حكومية"),
+    ("services_embassies",            "سفارات وقنصليات"),
+    ("services_media",                "إعلام وإنتاج تلفزيوني"),
+    ("services_music_studio",         "استوديو موسيقى وتسجيل"),
+    ("services_gaming",               "ألعاب إلكترونية وE-Sports"),
+    ("services_e_commerce",           "تجارة إلكترونية"),
+    ("services_dropshipping",         "دروب شيبينج"),
+    ("services_crypto",               "خدمات العملات الرقمية"),
+    ("services_auction",              "مزادات علنية"),
+    ("services_telecom",              "اتصالات وخدمات رقمية"),
+    ("services_insurance",            "تأمين ووساطة مالية"),
+    ("services_finance",              "خدمات مالية ومصرفية"),
+    ("services_exchange",             "صرافة وحوالات مالية"),
+
+    # ── صحة — إضافات ─────────────────────────────────────────────────
+    ("medical_dermatology",           "عيادة جلدية وتجميل"),
+    ("medical_orthopedic",            "عيادة عظام"),
+    ("medical_pediatrics",            "عيادة أطفال"),
+    ("medical_gynaecology",           "نساء وتوليد"),
+    ("medical_psychiatry",            "طب نفسي وإرشاد"),
+    ("medical_cardiology",            "قلب وأوعية دموية"),
+    ("medical_ent",                   "أنف وأذن وحنجرة"),
+    ("medical_urology",               "مسالك بولية"),
+    ("medical_nutrition",             "تغذية وإيتكس سمنة"),
+    ("medical_home_care",             "رعاية صحية منزلية"),
+
+    # ── نقل ومواصلات — إضافات ────────────────────────────────────────
+    ("transport_logistics",           "لوجستيات وإدارة سلسلة التوريد"),
+    ("transport_customs",             "تخليص جمركي"),
+    ("transport_shipping",            "شحن بحري وجوي"),
+    ("transport_rental_trucks",       "تأجير شاحنات ومعدات ثقيلة"),
+
+    # ── ضيافة وسياحة — إضافات ────────────────────────────────────────
+    ("hospitality_camping",           "مخيمات وسياحة برية"),
+    ("hospitality_motel",             "موتيل واستراحات الطريق"),
+    ("hospitality_tourism_office",    "مكتب سياحة وحجوزات"),
+
+    # ── صناعة — إضافات ───────────────────────────────────────────────
+    ("industrial_printing_press",     "مطبعة وطباعة صناعية"),
+    ("industrial_packaging",          "تعبئة وتغليف صناعي"),
+    ("industrial_recycling",          "تدوير ونفايات"),
+    ("industrial_food_production",    "إنتاج غذائي وتصنيع"),
+    ("industrial_chemical",           "صناعات كيماوية"),
+    ("industrial_metal",              "حدادة وتشكيل معادن"),
+    ("industrial_wood",               "نجارة وصناعة أثاث"),
+    ("industrial_construction_contracting", "مقاولات وتشييد"),
 ]
 
 
 def get_sidebar_key(industry_type: str) -> str:
-    """تُحوّل الكود التفصيلي إلى مفتاح السيدبار"""
-    if industry_type.startswith("retail_"):    return "retail"
-    if industry_type.startswith("wholesale_"): return "wholesale"
-    if industry_type.startswith("food_"):      return "restaurant"
-    if industry_type.startswith("medical_"):   return "medical"
-    if industry_type in ("restaurant", "cafe", "coffeeshop"): return "restaurant"
-    if industry_type == "medical_complex":     return "medical"
-    return industry_type
+    """تُحوّل الكود التفصيلي (القديم والجديد) إلى مفتاح السيدبار."""
+    code = (industry_type or "").strip().lower()
+
+    # أكواد التهيئة الجديدة (مشهد onboarding التفصيلي)
+    if code.startswith("svc_mnt_auto") or code.startswith("svc_trv_car"):
+        return "car_rental"
+    if code.startswith("svc_trv_hotel"):
+        return "restaurant"
+    if code.startswith("svc_"):
+        return "services"
+    if code.startswith("con_") or code.startswith("mfg_"):
+        return "construction"
+    if code.startswith("hos_cafe") or code.startswith(("hos_fastfood", "hos_traditional", "hos_cloud", "hos_buffet", "hos_truck")):
+        return "restaurant"
+    if code.startswith(("hos_hotel", "hos_apartments", "hos_resort", "hos_events")):
+        return "services"
+    if code.startswith("hlt_pharmacy"):
+        return "retail"
+    if code.startswith("hlt_"):
+        return "medical"
+    if code.startswith("lgx_"):
+        return "services"
+
+    # الأكواد القياسية
+    if code.startswith("retail_"):       return "retail"
+    if code.startswith("wholesale_"):    return "wholesale"
+    if code.startswith("food_"):         return "restaurant"
+    if code.startswith("medical_"):      return "medical"
+    if code.startswith("services_"):     return "services"
+    if code.startswith("education_"):    return "services"
+    if code.startswith("real_estate_"):  return "services"
+    if code.startswith("transport_"):    return "services"
+    if code.startswith("hospitality_"):  return "services"
+    if code.startswith("auto_service_"): return "services"
+    if code.startswith("industrial_"):   return "services"
+    if code.startswith("agriculture_"):  return "services"
+    if code in ("restaurant", "cafe", "coffeeshop"): return "restaurant"
+    if code == "medical_complex":        return "medical"
+    return code
 
 
 SIDEBAR_CONFIG = {
     "_common": [
-        {"key": "dashboard", "label": "لوحة التحكم",      "icon": "🏠", "url": "/dashboard"},
-        {"key": "contacts",  "label": "العملاء والموردين", "icon": "👥", "url": "/contacts"},
-        {"key": "analytics", "label": "تحليل المبيعات",   "icon": "📊", "url": "/analytics"},
-        {"key": "reports",   "label": "التقارير",          "icon": "📈", "url": "/reports"},
-        {"key": "reminders", "label": "التنبيهات",        "icon": "🔔", "url": "/reminders"},
-        {"key": "settings",  "label": "الإعدادات",        "icon": "⚙️", "url": "/settings"},
+        {"key": "dashboard",  "label": "لوحة التحكم",       "label_en": "Dashboard",          "icon": "🏠", "url": "/dashboard"},
+        {"key": "contacts",  "label": "العملاء والموردين",  "label_en": "Contacts",           "icon": "👥", "url": "/contacts"},
+        {"key": "hr",        "label": "الموارد البشرية",    "label_en": "Human Resources",    "icon": "👨‍💼", "url": "/hr/"},
+        {"key": "accounting","label": "المحاسبة",           "label_en": "Accounting",         "icon": "📒", "url": "/accounting"},
+        {"key": "analytics", "label": "تحليل المبيعات",    "label_en": "Sales Analytics",    "icon": "📊", "url": "/analytics"},
+        {"key": "reports",   "label": "التقارير",           "label_en": "Reports",            "icon": "📈", "url": "/reports"},
+        {"key": "reminders", "label": "التنبيهات",          "label_en": "Reminders",          "icon": "🔔", "url": "/reminders"},
+        {"key": "settings",  "label": "الإعدادات",          "label_en": "Settings",           "icon": "⚙️", "url": "/settings"},
     ],
     "retail": [
-        {"key": "pos",       "label": "نقاط البيع",    "icon": "🛒", "url": "/pos"},
-        {"key": "inventory", "label": "المخزون",       "icon": "📦", "url": "/inventory"},
-        {"key": "purchases", "label": "المشتريات",     "icon": "🛍️", "url": "/purchases"},
-        {"key": "expenses",  "label": "المصاريف",      "icon": "💸", "url": "/expenses"},
-        {"key": "barcode",   "label": "إدارة الباركود","icon": "📷", "url": "/barcode"},
-        {"key": "invoices",  "label": "الفواتير",      "icon": "🧾", "url": "/invoices"},
+        {"key": "pos",       "label": "نقاط البيع",     "label_en": "Point of Sale",      "icon": "🛒", "url": "/pos"},
+        {"key": "inventory", "label": "المخزون",        "label_en": "Inventory",          "icon": "📦", "url": "/inventory"},
+        {"key": "purchases", "label": "المشتريات",      "label_en": "Purchases",          "icon": "🛍️", "url": "/purchases"},
+        {"key": "expenses",  "label": "المصاريف",       "label_en": "Expenses",           "icon": "💸", "url": "/expenses"},
+        {"key": "barcode",   "label": "إدارة الباركود", "label_en": "Barcode",            "icon": "📷", "url": "/barcode"},
+        {"key": "invoices",  "label": "الفواتير",       "label_en": "Invoices",           "icon": "🧾", "url": "/invoices"},
     ],
     "restaurant": [
-        {"key": "kitchen",  "label": "شاشة المطبخ",   "icon": "👨‍🍳", "url": "/kitchen"},
-        {"key": "tables",   "label": "إدارة الطاولات", "icon": "🍽️",  "url": "/tables"},
-        {"key": "recipes",  "label": "الوصفات",        "icon": "📋",  "url": "/recipes"},
-        {"key": "invoices", "label": "الفواتير",       "icon": "🧾",  "url": "/invoices"},
+        {"key": "kitchen",  "label": "شاشة المطبخ",    "label_en": "Kitchen Display",    "icon": "👨‍🍳", "url": "/kitchen"},
+        {"key": "tables",   "label": "إدارة الطاولات",  "label_en": "Tables",             "icon": "🍽️",  "url": "/tables"},
+        {"key": "recipes",  "label": "الوصفات",         "label_en": "Recipes",            "icon": "📋",  "url": "/recipes"},
+        {"key": "invoices", "label": "الفواتير",        "label_en": "Invoices",           "icon": "🧾",  "url": "/invoices"},
     ],
     "construction": [
-        {"key": "projects",   "label": "المشاريع",     "icon": "🏗️",  "url": "/projects/"},
-        {"key": "equipment",  "label": "المعدات",      "icon": "🔧",  "url": "/projects/equipment"},
-        {"key": "extracts",   "label": "المستخلصات",   "icon": "🧾",  "url": "/extracts"},
-        {"key": "invoices",   "label": "الفواتير",     "icon": "🧾",  "url": "/invoices/"},
+        {"key": "projects",   "label": "المشاريع",      "label_en": "Projects",           "icon": "🏗️",  "url": "/projects/"},
+        {"key": "equipment",  "label": "المعدات",       "label_en": "Equipment",          "icon": "🔧",  "url": "/projects/equipment"},
+        {"key": "extracts",   "label": "المستخلصات",    "label_en": "Extracts",           "icon": "🧾",  "url": "/extracts"},
+        {"key": "invoices",   "label": "الفواتير",      "label_en": "Invoices",           "icon": "🧾",  "url": "/invoices/"},
     ],
     "car_rental": [
-        {"key": "fleet",      "label": "الأسطول",       "icon": "🚗", "url": "/rental/fleet"},
-        {"key": "contracts",  "label": "عقود الإيجار",  "icon": "📄", "url": "/rental/contracts"},
-        {"key": "maintenance","label": "الصيانة",       "icon": "🔧", "url": "/rental/maintenance"},
-        {"key": "invoices",   "label": "الفواتير",      "icon": "🧾", "url": "/invoices/"},
+        {"key": "fleet",       "label": "الأسطول",      "label_en": "Fleet",              "icon": "🚗", "url": "/rental/fleet"},
+        {"key": "contracts",   "label": "عقود الإيجار", "label_en": "Rental Contracts",   "icon": "📄", "url": "/rental/contracts"},
+        {"key": "maintenance", "label": "الصيانة",      "label_en": "Maintenance",        "icon": "🔧", "url": "/rental/maintenance"},
+        {"key": "invoices",    "label": "الفواتير",     "label_en": "Invoices",           "icon": "🧾", "url": "/invoices/"},
     ],
     "medical": [
-        {"key": "patients",      "label": "المرضى",       "icon": "🏥", "url": "/medical/patients"},
-        {"key": "appointments",  "label": "المواعيد",     "icon": "📅", "url": "/medical/appointments"},
-        {"key": "prescriptions", "label": "الوصفات الطبية", "icon": "💊", "url": "/medical/patients"},
-        {"key": "invoices",      "label": "الفواتير",     "icon": "🧾", "url": "/invoices/"},
+        {"key": "patients",      "label": "المرضى",          "label_en": "Patients",       "icon": "🏥", "url": "/medical/patients"},
+        {"key": "appointments",  "label": "المواعيد",        "label_en": "Appointments",   "icon": "📅", "url": "/medical/appointments"},
+        {"key": "prescriptions", "label": "الوصفات الطبية",  "label_en": "Prescriptions",  "icon": "💊", "url": "/medical/patients"},
+        {"key": "invoices",      "label": "الفواتير",        "label_en": "Invoices",       "icon": "🧾", "url": "/invoices/"},
     ],
     "wholesale": [
-        {"key": "wholesale_orders", "label": "الطلبات",       "icon": "🛒", "url": "/wholesale/orders"},
-        {"key": "quotes",           "label": "عروض الأسعار",   "icon": "🧮", "url": "/wholesale/quotes"},
-        {"key": "receipts",         "label": "سندات القبض",    "icon": "💵", "url": "/wholesale/receipts"},
-        {"key": "inventory",        "label": "المخزون",       "icon": "📦", "url": "/inventory/"},
-        {"key": "purchases",        "label": "المشتريات",     "icon": "🛍️", "url": "/purchases"},
-        {"key": "expenses",         "label": "المصاريف",      "icon": "💸", "url": "/expenses"},
-        {"key": "invoices",         "label": "الفواتير",      "icon": "🧾", "url": "/invoices/"},
-        {"key": "pricing",          "label": "قوائم الأسعار", "icon": "💰", "url": "/wholesale/pricing"},
+        {"key": "wholesale_orders", "label": "الطلبات",       "label_en": "Orders",         "icon": "🛒", "url": "/wholesale/orders"},
+        {"key": "quotes",           "label": "عروض الأسعار",   "label_en": "Quotations",     "icon": "🧮", "url": "/wholesale/quotes"},
+        {"key": "receipts",         "label": "سندات القبض",    "label_en": "Receipts",       "icon": "💵", "url": "/wholesale/receipts"},
+        {"key": "inventory",        "label": "المخزون",        "label_en": "Inventory",      "icon": "📦", "url": "/inventory/"},
+        {"key": "purchases",        "label": "المشتريات",      "label_en": "Purchases",      "icon": "🛍️", "url": "/purchases"},
+        {"key": "expenses",         "label": "المصاريف",       "label_en": "Expenses",       "icon": "💸", "url": "/expenses"},
+        {"key": "invoices",         "label": "الفواتير",       "label_en": "Invoices",       "icon": "🧾", "url": "/invoices/"},
+        {"key": "pricing",          "label": "قوائم الأسعار",  "label_en": "Price Lists",    "icon": "💰", "url": "/wholesale/pricing"},
     ],
     "services": [
-        {"key": "jobs",      "label": "أوامر العمل",   "icon": "📋", "url": "/services/jobs"},
-        {"key": "invoices",  "label": "الفواتير",      "icon": "🧾", "url": "/invoices/"},
-        {"key": "contracts", "label": "العقود",        "icon": "📄", "url": "/services/contracts"},
+        {"key": "jobs",      "label": "أوامر العمل",   "label_en": "Work Orders",        "icon": "📋", "url": "/services/jobs"},
+        {"key": "invoices",  "label": "الفواتير",      "label_en": "Invoices",           "icon": "🧾", "url": "/invoices/"},
+        {"key": "contracts", "label": "العقود",        "label_en": "Contracts",          "icon": "📄", "url": "/services/contracts"},
     ],
 }
 SIDEBAR_CONFIG["cafe"]           = SIDEBAR_CONFIG["restaurant"]
@@ -359,6 +589,8 @@ SIDEBAR_PERM = {
     "appointments":    "sales",
     "prescriptions":   "sales",
     "jobs":            "sales",
+    "hr":              None,
+    "accounting":      "accounting",
 }
 
 # صفحات stub — فقط الصفحات التي لم يُبنَ لها blueprint بعد
@@ -388,12 +620,22 @@ def _build_industry_route_guards() -> dict[str, set | None]:
     retail_types     = {t for t, _ in INDUSTRY_TYPES if t.startswith("retail_")} | {"retail"}
     wholesale_types  = {t for t, _ in INDUSTRY_TYPES if t.startswith("wholesale_")} | {"wholesale"}
     medical_types    = {t for t, _ in INDUSTRY_TYPES if t == "medical" or t.startswith("medical_")}
+    services_types   = (
+        {t for t, _ in INDUSTRY_TYPES if t == "services" or t.startswith("services_")}
+        | {t for t, _ in INDUSTRY_TYPES if t.startswith("education_")}
+        | {t for t, _ in INDUSTRY_TYPES if t.startswith("real_estate_")}
+        | {t for t, _ in INDUSTRY_TYPES if t.startswith("transport_")}
+        | {t for t, _ in INDUSTRY_TYPES if t.startswith("hospitality_")}
+        | {t for t, _ in INDUSTRY_TYPES if t.startswith("auto_service_")}
+        | {t for t, _ in INDUSTRY_TYPES if t.startswith("industrial_")}
+        | {t for t, _ in INDUSTRY_TYPES if t.startswith("agriculture_")}
+    )
     return {
         "/medical":   medical_types,
         "/rental":    {"car_rental"},
         "/projects":  {"construction"},
         "/extracts":  {"construction"},
-        "/services":  {"services"},
+        "/services":  services_types,
         "/wholesale": wholesale_types,
         "/kitchen":   restaurant_types,
         "/tables":    restaurant_types,

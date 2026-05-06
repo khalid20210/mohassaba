@@ -31,11 +31,15 @@
       </div>
       <div>
         <label class="form-label">الرقم الضريبي</label>
-        <input type="text" name="tax_number" class="form-input">
+        <input type="text" name="tax_number" class="form-input" required>
       </div>
       <div>
         <label class="form-label">رقم السجل التجاري</label>
-        <input type="text" name="commercial_reg" class="form-input">
+        <input type="text" name="commercial_reg" class="form-input" pattern="\d{10}" required>
+      </div>
+      <div style="grid-column:1/-1;">
+        <label class="form-label">مرجع شهادة الضريبة *</label>
+        <input type="text" name="tax_certificate_ref" class="form-input" required placeholder="رقم الشهادة أو مرجع التحقق">
       </div>
     </div>
     <div style="margin-top:24px;display:flex;gap:12px;">

@@ -113,8 +113,8 @@
           </span>
         </div>
         <div class="member-actions">
-          <button class="btn-icon" title="صلاحيات" onclick="openUserPerms({{m.id}},'{{m.full_name|replace("'","\\'")}}',{{m.role_perms or '{}'}})">🛡️</button>
-          <button class="btn-icon" title="تعديل" onclick="openEditMember({{m.id}},'{{m.full_name|replace("'","\\'")}}','{{m.username}}','{{m.phone or ''}}',{{m.role_id or 'null'}},{{m.is_active}})">✏️</button>
+          <button class="btn-icon" title="صلاحيات" onclick='openUserPerms({{ m.id | tojson }}, {{ (m.full_name or "") | tojson }}, {{ (m.role_perms or "{}") | tojson }})'>🛡️</button>
+          <button class="btn-icon" title="تعديل" onclick='openEditMember({{ m.id | tojson }}, {{ (m.full_name or "") | tojson }}, {{ (m.username or "") | tojson }}, {{ (m.phone or "") | tojson }}, {{ (m.role_id if m.role_id is not none else none) | tojson }}, {{ m.is_active | tojson }})'>✏️</button>
         </div>
       </div>
       {% else %}
@@ -148,7 +148,7 @@
           </div>
         </div>
         <div style="display:flex;gap:6px">
-          <button class="btn-icon" onclick="openRoleModal({{r.id}},'{{r.name|replace("'","\\'")}}',{{r.permissions}})">✏️</button>
+          <button class="btn-icon" onclick='openRoleModal({{ r.id | tojson }}, {{ (r.name or "") | tojson }}, {{ (r.permissions or "{}") | tojson }})'>✏️</button>
           {% if not r.is_system %}
           <button class="btn-icon" style="color:#ef4444" onclick="deleteRole({{r.id}})">🗑️</button>
           {% endif %}
@@ -264,6 +264,18 @@
 <script>
 const PERM_KEYS = {{ perm_labels.keys() | list | tojson }};
 
+function parsePerms(value) {
+  if (!value) return {};
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return {};
+    }
+  }
+  return value;
+}
+
 // ─── Member Modal ─────────────────────────────────────────────────────────────
 function openMemberModal() {
   document.getElementById('memberModalTitle').textContent = 'إضافة عضو جديد';
@@ -333,6 +345,7 @@ async function saveMember() {
 
 // ─── User Perms Modal ─────────────────────────────────────────────────────────
 function openUserPerms(id, name, perms) {
+  perms = parsePerms(perms);
   document.getElementById('userPermsId').value = id;
   document.getElementById('userPermsName').textContent = name;
   // إعادة ضبط
@@ -380,6 +393,7 @@ async function saveUserPerms() {
 
 // ─── Role Modal ───────────────────────────────────────────────────────────────
 function openRoleModal(id, name, perms) {
+  perms = parsePerms(perms);
   document.getElementById('roleEditId').value = id || '';
   document.getElementById('roleModalTitle').textContent = id ? 'تعديل الدور' : 'دور جديد';
   document.getElementById('roleName').value = name || '';

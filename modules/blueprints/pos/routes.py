@@ -4,6 +4,7 @@ blueprints/pos/routes.py — نقطة البيع (POS)
 import random
 import sqlite3
 import time
+import json
 from datetime import datetime, timedelta
 
 from flask import (
@@ -13,10 +14,11 @@ from flask import (
 
 from modules.config import CHECKOUT_LOCK_TIMEOUT_MS, CHECKOUT_LOCK_TTL_MS, CHECKOUT_MAX_RETRIES
 from modules.extensions import (
-    get_db, get_account_id, next_entry_number, next_invoice_number
+    get_db, get_account_id, next_entry_number, next_invoice_number, safe_sql_identifier
 )
 from modules.middleware import onboarding_required, require_perm, user_has_perm, write_audit_log
 from modules.runtime_services import acquire_business_lock, release_business_lock
+from modules.security_hardening import register_security_incident
 from modules.terminology import get_terms
 from modules.unit_localization import get_market_packaging_terms
 from modules.validators import validate, V, SCHEMA_POS_CHECKOUT
@@ -35,7 +37,8 @@ def _table_exists(db, table_name):
 
 def _column_exists(db, table_name, column_name):
     try:
-        rows = db.execute(f"PRAGMA table_info({table_name})").fetchall()
+        safe_table = safe_sql_identifier(table_name)
+        rows = db.execute(f"PRAGMA table_info({safe_table})").fetchall()
         return any(r[1] == column_name for r in rows)
     except Exception:
         return False
@@ -69,6 +72,49 @@ def _ensure_pos_shift_tables(db):
             db.execute("ALTER TABLE invoices ADD COLUMN pos_shift_id INTEGER")
         except Exception:
             pass
+
+
+def _setting_int(db, business_id: int, key: str, default: int) -> int:
+    row = db.execute(
+        "SELECT value FROM settings WHERE business_id=? AND key=? LIMIT 1",
+        (business_id, key),
+    ).fetchone()
+    if not row or row["value"] is None:
+        return default
+    try:
+        return int(float(str(row["value"]).strip()))
+    except Exception:
+        return default
+
+
+def _setting_float(db, business_id: int, key: str, default: float) -> float:
+    row = db.execute(
+        "SELECT value FROM settings WHERE business_id=? AND key=? LIMIT 1",
+        (business_id, key),
+    ).fetchone()
+    if not row or row["value"] is None:
+        return default
+    try:
+        return float(str(row["value"]).strip())
+    except Exception:
+        return default
+
+
+def _ensure_invoice_return_links_table(db):
+    db.execute(
+        """CREATE TABLE IF NOT EXISTS invoice_return_links (
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
+               business_id INTEGER NOT NULL,
+               source_invoice_id INTEGER NOT NULL,
+               return_invoice_id INTEGER NOT NULL,
+               created_by INTEGER,
+               created_at TEXT NOT NULL DEFAULT (datetime('now')),
+               UNIQUE(return_invoice_id)
+           )"""
+    )
+    db.execute(
+        "CREATE INDEX IF NOT EXISTS idx_invoice_return_links_src ON invoice_return_links(business_id, source_invoice_id)"
+    )
 
 
 def _active_shift(db, biz_id, user_id):
@@ -293,7 +339,7 @@ def _resolve_quantity_policy(industry_type: str, pos_mode: str) -> dict:
             "qty_step": 1,
             "qty_min": 1,
             "qty_decimals": 0,
-            "unit_examples": ["كرتون", "صندوق", "باليت", "دستة", "ربطة"],
+            "unit_examples": ["كرتون", "صندوق", "باليت", "ربطة", "قطعة"],
             "variant_examples": [],
         }
         if industry_type.startswith("wholesale_fashion_"):
@@ -361,6 +407,8 @@ def pos():
     pos_mode      = terms.get("pos_mode", "standard")
     qty_policy    = _resolve_quantity_policy(industry_type, pos_mode)
     country_code  = ((g.country_profile or {}).get("country_code") or "SA").upper()
+    return_window_hours = max(1, _setting_int(db, biz_id, "pos_return_window_hours", 72))
+    return_high_threshold = max(0.0, _setting_float(db, biz_id, "pos_return_high_value_threshold", 1000.0))
     wholesale_packaging_terms = (
         get_market_packaging_terms(country_code, language="ar")
         if pos_mode == "wholesale"
@@ -395,6 +443,12 @@ def pos():
         "T_variant":       terms.get("variant", "نوع / مقاس"),
         "T_work_order":    terms.get("work_order", "أمر عمل"),
         "T_unit":          terms.get("unit", "وحدة"),
+        "security_policies": {
+            "return_window_hours": return_window_hours,
+            "return_high_value_threshold": return_high_threshold,
+            "return_requires_evidence": True,
+            "no_sale_reason_min_len": 8,
+        },
     }}
 
     return render_template(
@@ -423,6 +477,10 @@ def api_pos_config():
     pos_mode      = terms.get("pos_mode", "standard")
     qty_policy    = _resolve_quantity_policy(industry_type, pos_mode)
     country_code  = ((g.country_profile or {}).get("country_code") or "SA").upper()
+    db = get_db()
+    biz_id = session["business_id"]
+    return_window_hours = max(1, _setting_int(db, biz_id, "pos_return_window_hours", 72))
+    return_high_threshold = max(0.0, _setting_float(db, biz_id, "pos_return_high_value_threshold", 1000.0))
     wholesale_packaging_terms = (
         get_market_packaging_terms(country_code, language="ar")
         if pos_mode == "wholesale"
@@ -463,6 +521,12 @@ def api_pos_config():
             "quantity":   terms.get("quantity", "الكمية"),
             "price":      terms.get("price", "السعر"),
             "total":      terms.get("total", "الإجمالي"),
+        },
+        "security_policies": {
+            "return_window_hours": return_window_hours,
+            "return_high_value_threshold": return_high_threshold,
+            "return_requires_evidence": True,
+            "no_sale_reason_min_len": 8,
         },
     })
     return jsonify({"success": True, "config": config})
@@ -678,6 +742,71 @@ def api_pos_shift_close():
         },
         "message": "تم إغلاق الوردية بنجاح",
     })
+
+
+@bp.route("/api/pos/drawer/no-sale", methods=["POST"])
+@onboarding_required
+def api_pos_no_sale_drawer_open():
+    """فتح درج الكاشير بدون عملية بيع مع توثيق سبب إلزامي."""
+    db = get_db()
+    biz_id = session["business_id"]
+    user_id = session["user_id"]
+    payload = request.get_json(silent=True) or {}
+
+    shift = _active_shift(db, biz_id, user_id)
+    if not shift:
+        return jsonify({"success": False, "error": "لا توجد وردية مفتوحة"}), 400
+
+    reason = (payload.get("reason") or "").strip()[:500]
+    if len(reason) < 8:
+        return jsonify({"success": False, "error": "سبب فتح الدرج إلزامي (8 أحرف على الأقل)"}), 400
+
+    drawer_name = (payload.get("drawer_name") or "main").strip()[:40]
+    reference = (payload.get("reference") or "").strip()[:120]
+    now = datetime.now()
+
+    write_audit_log(
+        db,
+        biz_id,
+        action="pos_no_sale_drawer_open",
+        entity_type="pos_shift",
+        entity_id=shift["id"],
+        new_value=json.dumps(
+            {
+                "drawer": drawer_name,
+                "reason": reason,
+                "reference": reference,
+                "opened_by": user_id,
+                "opened_at": now.strftime("%Y-%m-%d %H:%M:%S"),
+            },
+            ensure_ascii=False,
+        ),
+    )
+
+    # تكرار فتح الدرج بدون بيع خلال 24 ساعة مؤشر خطر.
+    repeated = db.execute(
+        """SELECT COUNT(*) AS c FROM audit_logs
+           WHERE business_id=? AND action='pos_no_sale_drawer_open'
+             AND datetime(created_at) >= datetime('now', '-1 day')""",
+        (biz_id,),
+    ).fetchone()
+    if int(repeated["c"] or 0) >= 5:
+        register_security_incident(
+            db,
+            biz_id,
+            "excessive_no_sale_drawer_open",
+            payload={
+                "count_24h": int(repeated["c"] or 0),
+                "triggered_by": user_id,
+                "shift_id": shift["id"],
+                "reason": reason,
+            },
+            severity="medium",
+            agent_id=user_id,
+        )
+
+    db.commit()
+    return jsonify({"success": True, "message": "تم توثيق فتح الدرج بدون بيع"})
 
 
 @bp.route("/api/pos/reports/daily")
@@ -1078,6 +1207,333 @@ def api_pos_checkout():
         return jsonify({"success": False, "error": "حدث خطأ أثناء حفظ الفاتورة"}), 500
     finally:
         release_business_lock(biz_id, _lock_token)
+
+
+@bp.route("/api/pos/return", methods=["POST"])
+@onboarding_required
+def api_pos_return():
+    """إنشاء مرتجع POS مرتبط بفاتورة بيع أصلية مع ضوابط منع الاحتيال."""
+    db = get_db()
+    biz_id = session["business_id"]
+    user_id = session["user_id"]
+    data = request.get_json(silent=True) or {}
+
+    try:
+        source_invoice_id = int(data.get("source_invoice_id"))
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "error": "رقم الفاتورة الأصلية غير صالح"}), 400
+
+    items = data.get("items") or []
+    if not isinstance(items, list) or not items:
+        return jsonify({"success": False, "error": "يجب إرسال أصناف المرتجع"}), 400
+
+    reason = (data.get("reason") or "").strip()[:500]
+    if len(reason) < 8:
+        return jsonify({"success": False, "error": "سبب المرتجع إلزامي (8 أحرف على الأقل)"}), 400
+
+    evidence_ref = (data.get("evidence_ref") or "").strip()[:120]
+    if len(evidence_ref) < 6:
+        return jsonify({"success": False, "error": "مرجع الإثبات إلزامي لعملية المرتجع"}), 400
+
+    source = db.execute(
+        """SELECT id, invoice_number, invoice_type, status, invoice_date, created_at,
+                  warehouse_id, party_id, party_name, payment_method
+           FROM invoices
+           WHERE id=? AND business_id=?""",
+        (source_invoice_id, biz_id),
+    ).fetchone()
+    if not source:
+        return jsonify({"success": False, "error": "الفاتورة الأصلية غير موجودة"}), 404
+    if source["invoice_type"] != "sale":
+        return jsonify({"success": False, "error": "المرتجع مسموح فقط لفواتير البيع"}), 400
+    if source["status"] == "cancelled":
+        return jsonify({"success": False, "error": "لا يمكن إنشاء مرتجع لفاتورة ملغية"}), 400
+
+    return_window_hours = max(1, _setting_int(db, biz_id, "pos_return_window_hours", 72))
+    src_created_raw = source["created_at"] or f"{source['invoice_date']} 00:00:00"
+    try:
+        src_created = datetime.strptime(str(src_created_raw)[:19], "%Y-%m-%d %H:%M:%S")
+    except Exception:
+        src_created = datetime.now() - timedelta(hours=9999)
+
+    if datetime.now() > (src_created + timedelta(hours=return_window_hours)) and not user_has_perm("all"):
+        register_security_incident(
+            db,
+            biz_id,
+            "return_after_window_denied",
+            payload={
+                "source_invoice_id": source_invoice_id,
+                "source_invoice_number": source["invoice_number"],
+                "window_hours": return_window_hours,
+                "attempted_by": user_id,
+            },
+            severity="high",
+            agent_id=user_id,
+        )
+        db.commit()
+        return jsonify({"success": False, "error": "تجاوزت نافذة المرتجع وتتطلب موافقة مدير النظام"}), 403
+
+    _ensure_invoice_return_links_table(db)
+
+    sold_rows = db.execute(
+        """SELECT product_id,
+                  ROUND(COALESCE(SUM(quantity),0),3) AS sold_qty,
+                  ROUND(COALESCE(SUM(total),0),2) AS sold_total,
+                  ROUND(COALESCE(AVG(unit_price),0),4) AS avg_price,
+                  ROUND(COALESCE(AVG(tax_rate),0),4) AS avg_tax_rate
+           FROM invoice_lines
+           WHERE invoice_id=?
+           GROUP BY product_id""",
+        (source_invoice_id,),
+    ).fetchall()
+    sold_map = {int(r["product_id"]): dict(r) for r in sold_rows if r["product_id"] is not None}
+    if not sold_map:
+        return jsonify({"success": False, "error": "الفاتورة الأصلية لا تحتوي أصنافاً قابلة للإرجاع"}), 400
+
+    returned_rows = db.execute(
+        """SELECT il.product_id, ROUND(COALESCE(SUM(il.quantity),0),3) AS returned_qty
+           FROM invoice_return_links rl
+           JOIN invoices ri
+             ON ri.id = rl.return_invoice_id
+            AND ri.business_id = rl.business_id
+            AND ri.invoice_type='sale_return'
+            AND ri.status<>'cancelled'
+           JOIN invoice_lines il ON il.invoice_id = ri.id
+           WHERE rl.business_id=? AND rl.source_invoice_id=?
+           GROUP BY il.product_id""",
+        (biz_id, source_invoice_id),
+    ).fetchall()
+    returned_map = {int(r["product_id"]): float(r["returned_qty"] or 0) for r in returned_rows if r["product_id"] is not None}
+
+    validated = []
+    subtotal = 0.0
+    tax_total = 0.0
+    warehouse_id = source["warehouse_id"]
+
+    for item in items:
+        try:
+            product_id = int(item.get("product_id"))
+            qty = float(item.get("quantity"))
+        except (TypeError, ValueError):
+            return jsonify({"success": False, "error": "بيانات صنف مرتجع غير صالحة"}), 400
+
+        if qty <= 0:
+            return jsonify({"success": False, "error": "كمية المرتجع يجب أن تكون أكبر من صفر"}), 400
+
+        src_line = sold_map.get(product_id)
+        if not src_line:
+            return jsonify({"success": False, "error": f"الصنف {product_id} غير موجود في الفاتورة الأصلية"}), 400
+
+        already_returned = float(returned_map.get(product_id, 0))
+        max_allowed = float(src_line["sold_qty"] or 0) - already_returned
+        if qty > max_allowed + 1e-9:
+            return jsonify({
+                "success": False,
+                "error": f"تجاوزت الكمية المسموحة للصنف {product_id}. المتاح للمرتجع: {max(0.0, max_allowed):.3f}",
+            }), 400
+
+        unit_price = float(src_line["avg_price"] or 0)
+        tax_rate = float(src_line["avg_tax_rate"] or 0)
+        line_sub = round(qty * unit_price, 4)
+        line_tax = round(line_sub * tax_rate / 100, 4)
+        line_total = round(line_sub + line_tax, 4)
+        subtotal += line_sub
+        tax_total += line_tax
+
+        product = db.execute(
+            "SELECT id, name, purchase_price FROM products WHERE id=? AND business_id=? AND is_active=1",
+            (product_id, biz_id),
+        ).fetchone()
+        if not product:
+            return jsonify({"success": False, "error": f"الصنف {product_id} غير متاح"}), 400
+
+        validated.append(
+            {
+                "product_id": product_id,
+                "description": product["name"],
+                "quantity": qty,
+                "unit_price": unit_price,
+                "tax_rate": tax_rate,
+                "tax_amount": line_tax,
+                "total": line_total,
+                "purchase_price": float(product["purchase_price"] or 0),
+            }
+        )
+
+    subtotal = round(subtotal, 2)
+    tax_total = round(tax_total, 2)
+    grand_total = round(subtotal + tax_total, 2)
+    if grand_total <= 0:
+        return jsonify({"success": False, "error": "إجمالي المرتجع غير صالح"}), 400
+
+    high_value_threshold = max(0.0, _setting_float(db, biz_id, "pos_return_high_value_threshold", 1000.0))
+    if grand_total >= high_value_threshold and not user_has_perm("all"):
+        register_security_incident(
+            db,
+            biz_id,
+            "high_value_return_requires_approval",
+            payload={
+                "source_invoice_id": source_invoice_id,
+                "source_invoice_number": source["invoice_number"],
+                "return_total": grand_total,
+                "threshold": high_value_threshold,
+                "attempted_by": user_id,
+            },
+            severity="high",
+            agent_id=user_id,
+        )
+        db.commit()
+        return jsonify({"success": False, "error": "قيمة المرتجع تتطلب موافقة مدير النظام"}), 403
+
+    today = datetime.now().strftime("%Y-%m-%d")
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return_inv_number = next_invoice_number(db, biz_id)
+
+    db.execute("BEGIN IMMEDIATE")
+    try:
+        db.execute(
+            """INSERT INTO invoices
+               (business_id, invoice_number, invoice_type, invoice_date,
+                party_id, party_name, warehouse_id,
+                subtotal, tax_amount, total, paid_amount, status,
+                payment_method, notes, created_by, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (
+                biz_id,
+                return_inv_number,
+                "sale_return",
+                today,
+                source["party_id"],
+                source["party_name"],
+                warehouse_id,
+                subtotal,
+                tax_total,
+                grand_total,
+                grand_total,
+                "paid",
+                source["payment_method"] or "cash",
+                f"مرتجع لفاتورة {source['invoice_number']} | السبب: {reason} | الدليل: {evidence_ref}",
+                user_id,
+                now,
+            ),
+        )
+        return_invoice_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+        db.execute(
+            """INSERT INTO invoice_return_links (business_id, source_invoice_id, return_invoice_id, created_by)
+               VALUES (?,?,?,?)""",
+            (biz_id, source_invoice_id, return_invoice_id, user_id),
+        )
+
+        for idx, item in enumerate(validated, start=1):
+            db.execute(
+                """INSERT INTO invoice_lines
+                   (invoice_id, product_id, description, quantity, unit_price, tax_rate, tax_amount, total, line_order)
+                   VALUES (?,?,?,?,?,?,?,?,?)""",
+                (
+                    return_invoice_id,
+                    item["product_id"],
+                    item["description"],
+                    item["quantity"],
+                    item["unit_price"],
+                    item["tax_rate"],
+                    item["tax_amount"],
+                    item["total"],
+                    idx,
+                ),
+            )
+
+            if warehouse_id:
+                db.execute(
+                    "INSERT OR IGNORE INTO stock (business_id,product_id,warehouse_id,quantity,avg_cost) VALUES (?,?,?,0,0)",
+                    (biz_id, item["product_id"], warehouse_id),
+                )
+                db.execute(
+                    "UPDATE stock SET quantity=quantity+?,last_updated=? WHERE product_id=? AND warehouse_id=?",
+                    (item["quantity"], now, item["product_id"], warehouse_id),
+                )
+                db.execute(
+                    """INSERT INTO stock_movements
+                       (business_id,product_id,warehouse_id,movement_type,
+                        quantity,unit_cost,reference_type,reference_id,notes,created_by)
+                       VALUES (?,?,?,?,?,?,?,?,?,?)""",
+                    (
+                        biz_id,
+                        item["product_id"],
+                        warehouse_id,
+                        "return",
+                        item["quantity"],
+                        item["purchase_price"],
+                        "invoice",
+                        return_invoice_id,
+                        f"مرتجع مبيعات من الفاتورة {source['invoice_number']}",
+                        user_id,
+                    ),
+                )
+
+        if source["party_id"] and source["payment_method"] == "credit" and _table_exists(db, "customer_transactions"):
+            _append_customer_tx(
+                db,
+                biz_id,
+                int(source["party_id"]),
+                "return",
+                grand_total,
+                f"مرتجع مبيعات من POS — فاتورة {return_inv_number}",
+                return_invoice_id,
+            )
+
+        write_audit_log(
+            db,
+            biz_id,
+            action="pos_sale_return",
+            entity_type="invoice",
+            entity_id=return_invoice_id,
+            new_value=json.dumps(
+                {
+                    "invoice_number": return_inv_number,
+                    "source_invoice_id": source_invoice_id,
+                    "source_invoice_number": source["invoice_number"],
+                    "total": grand_total,
+                    "items_count": len(validated),
+                    "reason": reason,
+                    "evidence_ref": evidence_ref,
+                },
+                ensure_ascii=False,
+            ),
+        )
+
+        if grand_total >= high_value_threshold:
+            register_security_incident(
+                db,
+                biz_id,
+                "high_value_return_executed",
+                payload={
+                    "return_invoice_id": return_invoice_id,
+                    "return_invoice_number": return_inv_number,
+                    "source_invoice_id": source_invoice_id,
+                    "total": grand_total,
+                    "threshold": high_value_threshold,
+                    "executed_by": user_id,
+                },
+                severity="high",
+                agent_id=user_id,
+            )
+
+        db.commit()
+    except Exception:
+        db.rollback()
+        return jsonify({"success": False, "error": "تعذر إتمام المرتجع حالياً"}), 500
+
+    return jsonify(
+        {
+            "success": True,
+            "invoice_id": return_invoice_id,
+            "invoice_number": return_inv_number,
+            "source_invoice_id": source_invoice_id,
+            "total": grand_total,
+            "message": f"تم تسجيل المرتجع بنجاح — {return_inv_number}",
+        }
+    )
 
 
 # ═══════════════════════════════════════════════════════════════
