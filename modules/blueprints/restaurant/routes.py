@@ -9,7 +9,7 @@ from flask import (
 )
 
 from modules.extensions import (
-    get_db, get_account_id, next_entry_number, next_invoice_number
+    get_db, get_account_id, csrf_protect, next_entry_number, next_invoice_number
 )
 from modules.middleware import login_required, onboarding_required
 from modules.validators import validate, V, SCHEMA_PRICING_UPDATE
@@ -86,6 +86,10 @@ def orders():
         )
 
     # POST: حفظ أمر بيع جملة
+    guard = csrf_protect()
+    if guard:
+        return guard
+
     customer_id    = request.form.get("customer_id",    "").strip()
     customer_name  = request.form.get("customer_name",  "").strip()
     order_date     = request.form.get("order_date",     "").strip()
@@ -167,6 +171,10 @@ def orders():
 
     try:
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # BEGIN IMMEDIATE: يمنع Race Condition عند توليد أرقام الأوامر المتزامن
+        db.execute("BEGIN IMMEDIATE")
+
         cnt = db.execute(
             "SELECT COUNT(*) FROM invoices WHERE business_id=? AND invoice_type='sale'", (biz_id,)
         ).fetchone()[0]
@@ -443,37 +451,48 @@ def api_tables_open():
         return jsonify({"success": False, "error": "اسم الطاولة مطلوب"}), 400
 
     db = get_db()
-    existing = db.execute(
-        """SELECT id FROM invoices
-           WHERE business_id=? AND party_name=? AND invoice_type='table'
-             AND status IN ('draft','partial','issued')""",
-        (biz_id, table_name)
-    ).fetchone()
-    if existing:
-        return jsonify({"success": False, "error": "الطاولة مشغولة",
-                        "invoice_id": existing["id"]}), 409
 
-    today = datetime.now().strftime("%Y-%m-%d")
-    cnt   = db.execute(
-        "SELECT COUNT(*) FROM invoices WHERE business_id=? AND invoice_type='table'", (biz_id,)
-    ).fetchone()[0]
-    inv_number = f"TBL-{cnt + 1:05d}"
+    try:
+        # BEGIN IMMEDIATE: يمنع فتح نفس الطاولة مرتين في وقت واحد
+        db.execute("BEGIN IMMEDIATE")
 
-    wh = db.execute(
-        "SELECT id FROM warehouses WHERE business_id=? AND is_default=1 LIMIT 1", (biz_id,)
-    ).fetchone()
-    warehouse_id = wh["id"] if wh else None
+        existing = db.execute(
+            """SELECT id FROM invoices
+               WHERE business_id=? AND party_name=? AND invoice_type='table'
+                 AND status IN ('draft','partial','issued')""",
+            (biz_id, table_name)
+        ).fetchone()
+        if existing:
+            db.rollback()
+            return jsonify({"success": False, "error": "الطاولة مشغولة",
+                            "invoice_id": existing["id"]}), 409
 
-    db.execute(
-        """INSERT INTO invoices
-           (business_id,invoice_number,invoice_type,invoice_date,
-            party_name,subtotal,tax_amount,total,paid_amount,
-            status,warehouse_id,created_by)
-           VALUES (?,?,'table',?,?,0,0,0,0,'draft',?,?)""",
-        (biz_id, inv_number, today, table_name, warehouse_id, user_id)
-    )
-    inv_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
-    db.commit()
+        today = datetime.now().strftime("%Y-%m-%d")
+        cnt   = db.execute(
+            "SELECT COUNT(*) FROM invoices WHERE business_id=? AND invoice_type='table'", (biz_id,)
+        ).fetchone()[0]
+        inv_number = f"TBL-{cnt + 1:05d}"
+
+        wh = db.execute(
+            "SELECT id FROM warehouses WHERE business_id=? AND is_default=1 LIMIT 1", (biz_id,)
+        ).fetchone()
+        warehouse_id = wh["id"] if wh else None
+
+        db.execute(
+            """INSERT INTO invoices
+               (business_id,invoice_number,invoice_type,invoice_date,
+                party_name,subtotal,tax_amount,total,paid_amount,
+                status,warehouse_id,created_by)
+               VALUES (?,?,'table',?,?,0,0,0,0,'draft',?,?)""",
+            (biz_id, inv_number, today, table_name, warehouse_id, user_id)
+        )
+        inv_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        import logging
+        logging.getLogger(__name__).error(f"Tables open error: {e}")
+        return jsonify({"success": False, "error": "حدث خطأ أثناء فتح الطاولة"}), 500
     return jsonify({"success": True, "invoice_id": inv_id, "invoice_number": inv_number})
 
 

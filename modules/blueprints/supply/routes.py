@@ -284,6 +284,9 @@ def purchases():
         today = datetime.now().strftime("%Y-%m-%d")
         now   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+        # BEGIN IMMEDIATE: يمنع Race Condition عند توليد أرقام الفواتير المتزامن
+        db.execute("BEGIN IMMEDIATE")
+
         prefix_row = db.execute(
             "SELECT value FROM settings WHERE business_id=? AND key='invoice_prefix_purchase'",
             (biz_id,)
@@ -454,14 +457,14 @@ _EXCEL_FOLDER.mkdir(parents=True, exist_ok=True)
 
 
 @bp.route("/excel-import")
-@require_perm("products")
+@require_perm("warehouse")
 def excel_import():
     """صفحة استيراد منتجات من Excel"""
     return render_template("excel_import.html")
 
 
 @bp.route("/api/excel-import/preview", methods=["POST"])
-@require_perm("products")
+@require_perm("warehouse")
 def api_excel_import_preview():
     """
     يستقبل ملف Excel، يُحلّله، يُشغّل validators على كل صف،
@@ -492,12 +495,16 @@ def api_excel_import_preview():
             import csv, io
             content = save_path.read_bytes()
             # حاول UTF-8 أولاً ثم arabic encodings
+            text = None
             for enc in ("utf-8-sig", "utf-8", "windows-1256", "cp1256"):
                 try:
                     text = content.decode(enc)
                     break
                 except UnicodeDecodeError:
                     continue
+            if text is None:
+                # fallback: latin-1 يُعيد كل بايت بلا أخطاء
+                text = content.decode("latin-1", errors="replace")
             reader = csv.DictReader(io.StringIO(text))
             headers = [h.strip() for h in (reader.fieldnames or [])]
             for row in reader:
@@ -594,7 +601,7 @@ def api_excel_import_preview():
 
 
 @bp.route("/api/excel-import/confirm", methods=["POST"])
-@require_perm("products")
+@require_perm("warehouse")
 def api_excel_import_confirm():
     """
     يستقبل الصفوف الصالحة المُعتمدة من المستخدم ويُضيفها للـ DB.
