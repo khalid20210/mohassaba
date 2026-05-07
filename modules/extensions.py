@@ -26,9 +26,10 @@ from .config import DB_PATH, UPLOAD_FOLDER, ALLOWED_EXT
 
 def get_db() -> sqlite3.Connection:
     if "db" not in g:
-        g.db = sqlite3.connect(DB_PATH)
+        g.db = sqlite3.connect(DB_PATH, timeout=5)
         g.db.row_factory = sqlite3.Row
         g.db.execute("PRAGMA foreign_keys = ON")
+        g.db.execute("PRAGMA busy_timeout = 5000")
     return g.db
 
 
@@ -36,6 +37,44 @@ def close_db(exc=None):
     db = g.pop("db", None)
     if db is not None:
         db.close()
+
+
+class InsufficientStockError(ValueError):
+    def __init__(self, product_name: str, available_qty: float, requested_qty: float):
+        self.product_name = product_name
+        self.available_qty = float(available_qty or 0)
+        self.requested_qty = float(requested_qty or 0)
+        super().__init__(product_name)
+
+
+def get_stock_quantity(
+    db: sqlite3.Connection,
+    business_id: int,
+    product_id: int,
+    warehouse_id: int | None,
+) -> float:
+    if not warehouse_id:
+        return 0.0
+    row = db.execute(
+        """SELECT quantity FROM stock
+           WHERE business_id=? AND product_id=? AND warehouse_id=?""",
+        (business_id, product_id, warehouse_id),
+    ).fetchone()
+    return float(row["quantity"] or 0) if row else 0.0
+
+
+def assert_stock_available(
+    db: sqlite3.Connection,
+    business_id: int,
+    product_id: int,
+    warehouse_id: int | None,
+    requested_qty: float,
+    product_name: str,
+) -> float:
+    available_qty = get_stock_quantity(db, business_id, product_id, warehouse_id)
+    if warehouse_id and available_qty < requested_qty:
+        raise InsufficientStockError(product_name, available_qty, requested_qty)
+    return available_qty
 
 
 # ─── كلمة المرور ──────────────────────────────────────────────────────────────

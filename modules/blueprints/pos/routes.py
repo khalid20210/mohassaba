@@ -9,9 +9,10 @@ from flask import (
 )
 
 from modules.extensions import (
-    get_db, get_account_id, next_entry_number, next_invoice_number
+    InsufficientStockError, assert_stock_available, get_account_id, get_db,
+    next_entry_number, next_invoice_number
 )
-from modules.middleware import onboarding_required, require_perm
+from modules.middleware import require_perm
 from modules.terminology import get_terms
 from modules.validators import validate, V, SCHEMA_POS_CHECKOUT
 from modules.zatca_queue import enqueue_invoice
@@ -181,7 +182,7 @@ def pos():
 
 
 @bp.route("/api/pos/config")
-@onboarding_required
+@require_perm("pos")
 def api_pos_config():
     """
     يُعيد كامل إعدادات واجهة POS بصيغة JSON.
@@ -220,7 +221,7 @@ def api_pos_config():
 
 
 @bp.route("/api/pos/search")
-@onboarding_required
+@require_perm("pos")
 def api_pos_search():
     biz_id         = session["business_id"]
     db             = get_db()
@@ -267,7 +268,7 @@ def api_pos_search():
 
 
 @bp.route("/api/pos/checkout", methods=["POST"])
-@onboarding_required
+@require_perm("pos")
 def api_pos_checkout():
     """
     إتمام عملية البيع:
@@ -307,9 +308,13 @@ def api_pos_checkout():
             (user_branch_id, biz_id)
         ).fetchone()
     elif requested_wh:
+        try:
+            requested_wh = int(requested_wh)
+        except (TypeError, ValueError):
+            return jsonify({"success": False, "error": "المستودع المحدد غير صالح"}), 400
         wh = db.execute(
             "SELECT id FROM warehouses WHERE id=? AND business_id=? AND is_active=1",
-            (int(requested_wh), biz_id)
+            (requested_wh, biz_id)
         ).fetchone()
     else:
         wh = db.execute(
@@ -386,6 +391,10 @@ def api_pos_checkout():
         invoice_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
 
         for idx, item in enumerate(validated):
+            assert_stock_available(
+                db, biz_id, item["product_id"], warehouse_id,
+                item["quantity"], item["description"]
+            )
             db.execute(
                 """INSERT INTO invoice_lines
                    (invoice_id, product_id, description, quantity, unit_price,
@@ -481,6 +490,14 @@ def api_pos_checkout():
             "message":        f"تمت عملية البيع بنجاح — فاتورة {inv_number}",
         })
 
+    except InsufficientStockError as e:
+        db.rollback()
+        return jsonify({
+            "success": False,
+            "error": f"المخزون غير كافٍ للصنف: {e.product_name}",
+            "available_qty": e.available_qty,
+            "requested_qty": e.requested_qty,
+        }), 409
     except Exception as e:
         db.rollback()
         import logging

@@ -7,8 +7,82 @@ from functools import wraps
 
 from flask import g, redirect, session, url_for, flash, request
 
-from .config import SIDEBAR_CONFIG, SIDEBAR_PERM, get_sidebar_key
+from .config import INDUSTRY_TYPES, SIDEBAR_CONFIG, SIDEBAR_PERM, get_sidebar_key
 from .extensions import get_db, generate_csrf_token
+
+_UI_TEXT = {
+    "app_name": {"ar": "محاسبة", "en": "Mohassaba"},
+    "app_subtitle": {"ar": "نظام المحاسبة", "en": "Accounting System"},
+    "default_role": {"ar": "مستخدم", "en": "User"},
+    "logout": {"ar": "تسجيل الخروج", "en": "Logout"},
+    "menu": {"ar": "القائمة", "en": "Menu"},
+    "offline_banner": {
+        "ar": "📡 أنت حاليًا بدون اتصال — بعض الميزات غير متاحة",
+        "en": "📡 You are offline — some features are unavailable",
+    },
+    "update_prompt": {
+        "ar": "🔄 يوجد تحديث جديد — هل تريد تطبيقه؟",
+        "en": "🔄 A new update is available — apply it now?",
+    },
+    "language_toggle": {"ar": "EN", "en": "ع"},
+}
+
+_SIDEBAR_LABELS_EN = {
+    "dashboard": "Dashboard",
+    "analytics": "Analytics",
+    "contacts": "Contacts",
+    "accounting": "Accounting",
+    "purchase-import": "Import Invoice",
+    "reports": "Reports",
+    "settings": "Settings",
+    "pos": "Point of Sale",
+    "inventory": "Inventory",
+    "purchases": "Purchases",
+    "barcode": "Barcodes",
+    "invoices": "Invoices",
+    "kitchen": "Kitchen",
+    "tables": "Tables",
+    "recipes": "Recipes",
+    "pricing": "Pricing",
+    "projects": "Projects",
+    "extracts": "Extracts",
+    "equipment": "Equipment",
+    "fleet": "Fleet",
+    "contracts": "Contracts",
+    "maintenance": "Maintenance",
+    "patients": "Patients",
+    "appointments": "Appointments",
+    "prescriptions": "Prescriptions",
+    "jobs": "Jobs",
+}
+
+_ROLE_LABELS_EN = {
+    "مدير": "Owner",
+    "مدير فرع": "Branch Manager",
+    "كاشير": "Cashier",
+    "محاسب": "Accountant",
+    "أمين مخزن": "Storekeeper",
+}
+
+
+def _get_lang() -> str:
+    lang = (request.args.get("lang") or session.get("lang") or "ar").strip().lower()
+    if lang not in {"ar", "en"}:
+        lang = "ar"
+    session["lang"] = lang
+    return lang
+
+
+def _t(key: str, lang: str) -> str:
+    return _UI_TEXT.get(key, {}).get(lang) or _UI_TEXT.get(key, {}).get("ar") or key
+
+
+def _industry_label(industry_type: str, lang: str) -> str:
+    if lang == "ar":
+        for k, v in INDUSTRY_TYPES:
+            if k == industry_type:
+                return v
+    return industry_type.replace("_", " ").replace("-", " ").title()
 
 
 # ─── التحقق من الصلاحية ───────────────────────────────────────────────────────
@@ -66,10 +140,13 @@ def require_perm(perm_key: str):
 def load_user():
     """حقن بيانات المستخدم والمنشأة في g قبل كل request"""
     import logging
+    lang = _get_lang()
     g.user         = None
     g.business     = None
     g.sidebar_items= []
     g.user_perms   = {}
+    g.lang         = lang
+    g.dir          = "rtl" if lang == "ar" else "ltr"
 
     user_id = session.get("user_id")
     if user_id:
@@ -123,14 +200,27 @@ def load_user():
                     if perm_needed is None or has_all or g.user_perms.get(perm_needed):
                         filtered.append(item)
 
-                settings_item = [x for x in filtered if x["key"] == "settings"]
-                rest_items    = [x for x in filtered if x["key"] != "settings"]
+                localized = []
+                for item in filtered:
+                    row = dict(item)
+                    if lang == "en":
+                        row["label"] = _SIDEBAR_LABELS_EN.get(item["key"], item["label"])
+                    localized.append(row)
+
+                settings_item = [x for x in localized if x["key"] == "settings"]
+                rest_items    = [x for x in localized if x["key"] != "settings"]
                 g.sidebar_items = rest_items + settings_item
 
 
 def inject_globals():
     """Context processor: يُضاف لكل القوالب"""
-    from .config import INDUSTRY_TYPES
+    lang = getattr(g, "lang", "ar")
+    role_name = ""
+    if g.user:
+        role_name = g.user["role_name"] or _t("default_role", lang)
+        if lang == "en":
+            role_name = _ROLE_LABELS_EN.get(role_name, role_name)
+
     return {
         "current_user":     g.user,
         "current_business": g.business,
@@ -141,6 +231,13 @@ def inject_globals():
         "now_date":         datetime.now().strftime("%Y-%m-%d"),
         "csrf_token":       generate_csrf_token(),
         "user_has_perm":    user_has_perm,
+        "current_lang":     lang,
+        "current_dir":      getattr(g, "dir", "rtl"),
+        "ui_text":          {k: _t(k, lang) for k in _UI_TEXT},
+        "current_role_label": role_name,
+        "current_industry_label": _industry_label(
+            g.business["industry_type"] if g.business else "", lang
+        ) if g.business else "",
     }
 
 

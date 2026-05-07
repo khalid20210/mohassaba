@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ current_lang }}" dir="{{ current_dir }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}محاسبة{% endblock %} — نظام المحاسبة</title>
+  <title>{% block title %}{{ ui_text.app_name }}{% endblock %} — {{ ui_text.app_subtitle }}</title>
   <!-- PWA -->
   <link rel="manifest" href="/static/manifest.json">
   <meta name="theme-color" content="#6366f1">
@@ -35,7 +35,7 @@
       <div class="logo-icon">م</div>
       <div class="logo-text">
         <strong>{{ current_business.name }}</strong>
-        <span>{% for k, v in industry_types if k == current_business.industry_type %}{{ v }}{% endfor %}</span>
+        <span>{{ current_industry_label }}</span>
       </div>
     </div>
 
@@ -63,10 +63,10 @@
         <div class="avatar">{{ (current_user.full_name or current_user.username)[0] }}</div>
         <div class="user-meta">
           <strong>{{ current_user.full_name or current_user.username }}</strong>
-          <span>{{ current_user.role_name or 'مستخدم' }}</span>
+          <span>{{ current_role_label }}</span>
         </div>
       </div>
-      <a href="{{ url_for('auth_logout') }}" class="logout-btn">تسجيل الخروج</a>
+      <a href="{{ url_for('auth_logout') }}" class="logout-btn">{{ ui_text.logout }}</a>
     </div>
 
   </aside>
@@ -77,12 +77,16 @@
     <!-- Topbar -->
     <header class="topbar">
       <div style="display:flex; align-items:center; gap:12px;">
-        <button class="hamburger" id="hamburger" aria-label="القائمة">☰</button>
+        <button class="hamburger" id="hamburger" aria-label="{{ ui_text.menu }}">☰</button>
         <span class="topbar-title">{% block page_title %}{% endblock %}</span>
       </div>
       <div class="topbar-right">
+        <a href="{{ request.path }}?lang={{ 'en' if current_lang == 'ar' else 'ar' }}"
+           style="display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:34px;padding:0 12px;border:1px solid #dbe2ea;border-radius:999px;text-decoration:none;color:#0f172a;background:#fff;font-weight:700;">
+          {{ ui_text.language_toggle }}
+        </a>
         <span class="topbar-biz-badge">
-          {% for k, v in industry_types if k == current_business.industry_type %}{{ v }}{% endfor %}
+          {{ current_industry_label }}
         </span>
         <span style="font-size:.82rem; color:#64748b;">
           {{ current_user.full_name or current_user.username }}
@@ -126,7 +130,7 @@
   display:none; position:fixed; bottom:0; left:0; right:0;
   background:#ef4444; color:#fff; text-align:center;
   padding:8px; font-size:.85rem; z-index:9999;
-  animation:slideUp .3s ease;">📡 أنت حاليًا بدون اتصال — بعض الميزات غير متاحة</div>
+  animation:slideUp .3s ease;">{{ ui_text.offline_banner }}</div>
 
 <!-- ── تسجيل Service Worker ─────────────────────── -->
 <script>
@@ -138,7 +142,7 @@ if ('serviceWorker' in navigator) {
           const nw = reg.installing;
           nw.addEventListener('statechange', () => {
             if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-              if (confirm('🔄 يوجد تحديث جديد — هل تريد تطبيقه؟')) {
+              if (confirm({{ ui_text.update_prompt|tojson }})) {
                 nw.postMessage('SKIP_WAITING');
                 location.reload();
               }

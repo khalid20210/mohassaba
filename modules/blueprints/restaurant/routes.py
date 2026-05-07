@@ -9,9 +9,10 @@ from flask import (
 )
 
 from modules.extensions import (
-    get_db, get_account_id, csrf_protect, next_entry_number, next_invoice_number
+    InsufficientStockError, assert_stock_available, csrf_protect, get_account_id,
+    get_db, next_entry_number
 )
-from modules.middleware import login_required, onboarding_required
+from modules.middleware import login_required, require_perm
 from modules.validators import validate, V, SCHEMA_PRICING_UPDATE
 from modules.zatca_queue import enqueue_invoice
 
@@ -23,7 +24,7 @@ bp = Blueprint("restaurant", __name__)
 # ════════════════════════════════════════════════════════════════════════════════
 
 @bp.route("/orders", methods=["GET", "POST"])
-@onboarding_required
+@require_perm("sales")
 def orders():
     db     = get_db()
     biz_id = session["business_id"]
@@ -205,6 +206,10 @@ def orders():
         inv_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
 
         for idx, item in enumerate(validated):
+            assert_stock_available(
+                db, biz_id, item["product_id"], warehouse_id,
+                item["quantity"], item["name"]
+            )
             line_tax = round(item["line_net"] * tax_pct / 100, 4)
             db.execute(
                 """INSERT INTO invoice_lines
@@ -280,6 +285,14 @@ def orders():
         flash(f"✓ تم إنشاء أمر البيع {order_number} وتوليد القيد المحاسبي", "success")
         return redirect(url_for("restaurant.orders"))
 
+    except InsufficientStockError as e:
+        db.rollback()
+        flash(
+            f"المخزون غير كافٍ للصنف {e.product_name} "
+            f"(المتاح {e.available_qty:g} / المطلوب {e.requested_qty:g})",
+            "error"
+        )
+        return redirect(url_for("restaurant.orders"))
     except Exception as e:
         db.rollback()
         import logging
@@ -293,7 +306,7 @@ def orders():
 # ════════════════════════════════════════════════════════════════════════════════
 
 @bp.route("/pricing")
-@onboarding_required
+@require_perm("purchases")
 def pricing():
     db     = get_db()
     biz_id = session["business_id"]
@@ -345,7 +358,7 @@ def pricing():
 
 
 @bp.route("/api/pricing/update", methods=["POST"])
-@onboarding_required
+@require_perm("purchases")
 def api_pricing_update():
     data       = request.get_json(force=True) or {}
     biz_id     = session["business_id"]
@@ -380,7 +393,7 @@ def api_pricing_update():
 # ════════════════════════════════════════════════════════════════════════════════
 
 @bp.route("/tables")
-@onboarding_required
+@require_perm("pos")
 def tables():
     db     = get_db()
     biz_id = session["business_id"]
@@ -440,7 +453,7 @@ def tables():
 
 
 @bp.route("/api/tables/open", methods=["POST"])
-@onboarding_required
+@require_perm("pos")
 def api_tables_open():
     data       = request.get_json(force=True) or {}
     biz_id     = session["business_id"]
@@ -496,7 +509,7 @@ def api_tables_open():
 
 
 @bp.route("/api/tables/add-item", methods=["POST"])
-@onboarding_required
+@require_perm("pos")
 def api_tables_add_item():
     data       = request.get_json(force=True) or {}
     biz_id     = session["business_id"]
@@ -506,6 +519,8 @@ def api_tables_add_item():
 
     if not invoice_id or not product_id:
         return jsonify({"success": False, "error": "بيانات ناقصة"}), 400
+    if quantity <= 0:
+        return jsonify({"success": False, "error": "الكمية يجب أن تكون أكبر من صفر"}), 400
 
     db  = get_db()
     inv = db.execute(
@@ -528,35 +543,43 @@ def api_tables_add_item():
         (int(invoice_id), int(product_id))
     ).fetchone()
 
-    if existing:
-        new_qty = float(existing["quantity"]) + quantity
-        db.execute(
-            "UPDATE invoice_lines SET quantity=?, total=? WHERE id=?",
-            (new_qty, round(new_qty * unit_price, 4), existing["id"])
-        )
-    else:
-        order_cnt = db.execute(
-            "SELECT COUNT(*) FROM invoice_lines WHERE invoice_id=?", (int(invoice_id),)
-        ).fetchone()[0]
-        db.execute(
-            """INSERT INTO invoice_lines
-               (invoice_id,product_id,description,quantity,unit_price,total,line_order)
-               VALUES (?,?,?,?,?,?,?)""",
-            (int(invoice_id), int(product_id), product["name"],
-             quantity, unit_price, round(quantity * unit_price, 4), order_cnt + 1)
-        )
+    try:
+        db.execute("BEGIN IMMEDIATE")
 
-    totals   = db.execute("SELECT SUM(total) AS s FROM invoice_lines WHERE invoice_id=?",
-                          (int(invoice_id),)).fetchone()
-    subtotal = round(float(totals["s"] or 0), 2)
-    db.execute("UPDATE invoices SET subtotal=?, total=? WHERE id=?",
-               (subtotal, subtotal, int(invoice_id)))
-    db.commit()
-    return jsonify({"success": True, "subtotal": subtotal, "item_name": product["name"]})
+        if existing:
+            new_qty = float(existing["quantity"]) + quantity
+            db.execute(
+                "UPDATE invoice_lines SET quantity=?, total=? WHERE id=?",
+                (new_qty, round(new_qty * unit_price, 4), existing["id"])
+            )
+        else:
+            order_cnt = db.execute(
+                "SELECT COUNT(*) FROM invoice_lines WHERE invoice_id=?", (int(invoice_id),)
+            ).fetchone()[0]
+            db.execute(
+                """INSERT INTO invoice_lines
+                   (invoice_id,product_id,description,quantity,unit_price,total,line_order)
+                   VALUES (?,?,?,?,?,?,?)""",
+                (int(invoice_id), int(product_id), product["name"],
+                 quantity, unit_price, round(quantity * unit_price, 4), order_cnt + 1)
+            )
+
+        totals = db.execute("SELECT SUM(total) AS s FROM invoice_lines WHERE invoice_id=?",
+                            (int(invoice_id),)).fetchone()
+        subtotal = round(float(totals["s"] or 0), 2)
+        db.execute("UPDATE invoices SET subtotal=?, total=? WHERE id=?",
+                   (subtotal, subtotal, int(invoice_id)))
+        db.commit()
+        return jsonify({"success": True, "subtotal": subtotal, "item_name": product["name"]})
+    except Exception as e:
+        db.rollback()
+        import logging
+        logging.getLogger(__name__).error(f"Tables add item error: {e}")
+        return jsonify({"success": False, "error": "حدث خطأ أثناء تعديل الطلب"}), 500
 
 
 @bp.route("/api/tables/remove-item", methods=["POST"])
-@onboarding_required
+@require_perm("pos")
 def api_tables_remove_item():
     data       = request.get_json(force=True) or {}
     biz_id     = session["business_id"]
@@ -574,19 +597,26 @@ def api_tables_remove_item():
     if not inv:
         return jsonify({"success": False, "error": "لا يمكن تعديل طلب أُرسل للمطبخ"}), 403
 
-    db.execute("DELETE FROM invoice_lines WHERE id=? AND invoice_id=?",
-               (int(line_id), int(invoice_id)))
-    totals   = db.execute("SELECT SUM(total) AS s FROM invoice_lines WHERE invoice_id=?",
-                          (int(invoice_id),)).fetchone()
-    subtotal = round(float(totals["s"] or 0), 2)
-    db.execute("UPDATE invoices SET subtotal=?, total=? WHERE id=?",
-               (subtotal, subtotal, int(invoice_id)))
-    db.commit()
-    return jsonify({"success": True, "subtotal": subtotal})
+    try:
+        db.execute("BEGIN IMMEDIATE")
+        db.execute("DELETE FROM invoice_lines WHERE id=? AND invoice_id=?",
+                   (int(line_id), int(invoice_id)))
+        totals = db.execute("SELECT SUM(total) AS s FROM invoice_lines WHERE invoice_id=?",
+                            (int(invoice_id),)).fetchone()
+        subtotal = round(float(totals["s"] or 0), 2)
+        db.execute("UPDATE invoices SET subtotal=?, total=? WHERE id=?",
+                   (subtotal, subtotal, int(invoice_id)))
+        db.commit()
+        return jsonify({"success": True, "subtotal": subtotal})
+    except Exception as e:
+        db.rollback()
+        import logging
+        logging.getLogger(__name__).error(f"Tables remove item error: {e}")
+        return jsonify({"success": False, "error": "حدث خطأ أثناء تعديل الطلب"}), 500
 
 
 @bp.route("/api/tables/send-kitchen", methods=["POST"])
-@onboarding_required
+@require_perm("pos")
 def api_tables_send_kitchen():
     data       = request.get_json(force=True) or {}
     biz_id     = session["business_id"]
@@ -615,7 +645,7 @@ def api_tables_send_kitchen():
 
 
 @bp.route("/api/tables/checkout", methods=["POST"])
-@onboarding_required
+@require_perm("pos")
 def api_tables_checkout():
     data           = request.get_json(force=True) or {}
     biz_id         = session["business_id"]
@@ -674,6 +704,10 @@ def api_tables_checkout():
             for line in lines:
                 if not line["product_id"]:
                     continue
+                assert_stock_available(
+                    db, biz_id, int(line["product_id"]), wh_id,
+                    float(line["quantity"]), line["description"] or "الصنف"
+                )
                 db.execute(
                     "INSERT OR IGNORE INTO stock (business_id,product_id,warehouse_id,quantity,avg_cost) VALUES (?,?,?,0,0)",
                     (biz_id, line["product_id"], wh_id)
@@ -747,6 +781,14 @@ def api_tables_checkout():
             "message":        f"تم إغلاق {inv['party_name']} وتوليد القيد المحاسبي ✓",
         })
 
+    except InsufficientStockError as e:
+        db.rollback()
+        return jsonify({
+            "success": False,
+            "error": f"المخزون غير كافٍ للصنف: {e.product_name}",
+            "available_qty": e.available_qty,
+            "requested_qty": e.requested_qty,
+        }), 409
     except Exception as e:
         db.rollback()
         import logging
@@ -755,7 +797,7 @@ def api_tables_checkout():
 
 
 @bp.route("/api/tables/order-lines/<int:invoice_id>")
-@onboarding_required
+@require_perm("pos")
 def api_tables_order_lines(invoice_id):
     biz_id = session["business_id"]
     db     = get_db()
@@ -781,7 +823,7 @@ def api_tables_order_lines(invoice_id):
 # ════════════════════════════════════════════════════════════════════════════════
 
 @bp.route("/kitchen")
-@onboarding_required
+@require_perm("pos")
 def kitchen():
     db     = get_db()
     biz_id = session["business_id"]
@@ -807,7 +849,7 @@ def kitchen():
 
 
 @bp.route("/api/kitchen/done", methods=["POST"])
-@onboarding_required
+@require_perm("pos")
 def api_kitchen_done():
     data       = request.get_json(force=True) or {}
     biz_id     = session["business_id"]

@@ -14,9 +14,9 @@ from modules.config import BASE_DIR, UPLOAD_FOLDER
 from modules.extensions import (
     _allowed_file, _extract_text_from_image, _extract_text_from_pdf,
     _parse_invoice_lines, csrf_protect, get_db,
-    get_account_id, next_entry_number, next_invoice_number
+    get_account_id, next_entry_number
 )
-from modules.middleware import onboarding_required, require_perm
+from modules.middleware import require_perm
 from modules.ocr_limits import ocr_protected
 from modules.validators import validate, V
 
@@ -32,7 +32,7 @@ def purchase_import():
 
 
 @bp.route("/api/purchase-import/upload", methods=["POST"])
-@onboarding_required
+@require_perm("purchases")
 @ocr_protected
 def api_purchase_import_upload():
     biz_id = session["business_id"]
@@ -70,7 +70,7 @@ def api_purchase_import_upload():
 
 
 @bp.route("/api/purchase-import/confirm", methods=["POST"])
-@onboarding_required
+@require_perm("purchases")
 def api_purchase_import_confirm():
     data     = request.get_json(force=True) or {}
     biz_id   = session["business_id"]
@@ -82,71 +82,88 @@ def api_purchase_import_confirm():
     if not lines:
         return jsonify({"success": False, "error": "لا توجد بنود"}), 400
 
-    inv_num  = next_invoice_number(db, biz_id).replace("INV", "PUR")
-    subtotal = sum(float(l.get("qty", 0)) * float(l.get("price", 0)) for l in lines)
-    db.execute(
-        """INSERT INTO invoices
-           (business_id, invoice_type, invoice_number, party_name,
-            subtotal, tax_amount, total, status, created_at)
-           VALUES (?,?,?,?,?,0,?,?,?)""",
-        (biz_id, "purchase", inv_num, supplier, subtotal, subtotal, "paid",
-         datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    )
-    inv_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+    try:
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        db.execute("BEGIN IMMEDIATE")
 
-    wh    = db.execute("SELECT id FROM warehouses WHERE business_id=? LIMIT 1", (biz_id,)).fetchone()
-    wh_id = wh["id"] if wh else None
-
-    for idx, line in enumerate(lines, 1):
-        pid   = line.get("product_id")
-        qty   = float(line.get("qty", 0))
-        price = float(line.get("price", 0))
-        if not pid or qty <= 0:
-            continue
-        prod = db.execute(
-            "SELECT id, name FROM products WHERE id=? AND business_id=?",
-            (int(pid), biz_id)
+        prefix_row = db.execute(
+            "SELECT value FROM settings WHERE business_id=? AND key='invoice_prefix_purchase'",
+            (biz_id,)
         ).fetchone()
-        if not prod:
-            continue
+        prefix = prefix_row["value"] if prefix_row else "PUR"
+        cnt = db.execute(
+            "SELECT COUNT(*) FROM invoices WHERE business_id=? AND invoice_type='purchase'",
+            (biz_id,)
+        ).fetchone()[0]
+        inv_num = f"{prefix}-{cnt + 1:05d}"
+        subtotal = sum(float(l.get("qty", 0)) * float(l.get("price", 0)) for l in lines)
+
         db.execute(
-            """INSERT INTO invoice_lines
-               (invoice_id, product_id, description, quantity, unit_price, total, line_order)
-               VALUES (?,?,?,?,?,?,?)""",
-            (inv_id, pid, prod["name"], qty, price, qty * price, idx)
+            """INSERT INTO invoices
+               (business_id, invoice_type, invoice_number, party_name,
+                subtotal, tax_amount, total, status, created_at)
+               VALUES (?,?,?,?,?,0,?,?,?)""",
+            (biz_id, "purchase", inv_num, supplier, subtotal, subtotal, "paid", now)
         )
-        if wh_id:
-            existing = db.execute(
-                "SELECT id, quantity FROM stock WHERE product_id=? AND warehouse_id=?",
-                (pid, wh_id)
+        inv_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+        wh = db.execute("SELECT id FROM warehouses WHERE business_id=? LIMIT 1", (biz_id,)).fetchone()
+        wh_id = wh["id"] if wh else None
+
+        for idx, line in enumerate(lines, 1):
+            pid   = line.get("product_id")
+            qty   = float(line.get("qty", 0))
+            price = float(line.get("price", 0))
+            if not pid or qty <= 0:
+                continue
+            prod = db.execute(
+                "SELECT id, name FROM products WHERE id=? AND business_id=?",
+                (int(pid), biz_id)
             ).fetchone()
-            if existing:
-                db.execute("UPDATE stock SET quantity=quantity+? WHERE id=?",
-                           (qty, existing["id"]))
-            else:
+            if not prod:
+                continue
+            db.execute(
+                """INSERT INTO invoice_lines
+                   (invoice_id, product_id, description, quantity, unit_price, total, line_order)
+                   VALUES (?,?,?,?,?,?,?)""",
+                (inv_id, pid, prod["name"], qty, price, qty * price, idx)
+            )
+            if wh_id:
+                existing = db.execute(
+                    "SELECT id, quantity FROM stock WHERE product_id=? AND warehouse_id=?",
+                    (pid, wh_id)
+                ).fetchone()
+                if existing:
+                    db.execute("UPDATE stock SET quantity=quantity+? WHERE id=?",
+                               (qty, existing["id"]))
+                else:
+                    db.execute(
+                        "INSERT INTO stock (business_id, product_id, warehouse_id, quantity) VALUES (?,?,?,?)",
+                        (biz_id, pid, wh_id, qty)
+                    )
                 db.execute(
-                    "INSERT INTO stock (business_id, product_id, warehouse_id, quantity) VALUES (?,?,?,?)",
-                    (biz_id, pid, wh_id, qty)
+                    """INSERT INTO stock_movements
+                       (business_id, product_id, warehouse_id, movement_type, quantity, reference_id, created_at)
+                       VALUES (?,?,?,?,?,?,?)""",
+                    (biz_id, pid, wh_id, "purchase", qty, inv_id, now)
                 )
             db.execute(
-                """INSERT INTO stock_movements
-                   (business_id, product_id, warehouse_id, movement_type, quantity, reference_id, created_at)
-                   VALUES (?,?,?,?,?,?,?)""",
-                (biz_id, pid, wh_id, "purchase", qty, inv_id,
-                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                "UPDATE products SET purchase_price=? WHERE id=? AND business_id=?",
+                (price, pid, biz_id)
             )
-        db.execute(
-            "UPDATE products SET purchase_price=? WHERE id=? AND business_id=?",
-            (price, pid, biz_id)
-        )
 
-    db.commit()
-    return jsonify({
-        "success":       True,
-        "invoice_id":    inv_id,
-        "invoice_number": inv_num,
-        "message":       f"✓ تم إنشاء فاتورة {inv_num} وتحديث المخزون",
-    })
+        db.commit()
+        return jsonify({
+            "success":       True,
+            "invoice_id":    inv_id,
+            "invoice_number": inv_num,
+            "message":       f"✓ تم إنشاء فاتورة {inv_num} وتحديث المخزون",
+        })
+    except Exception as e:
+        db.rollback()
+        import logging
+        logging.getLogger(__name__).error(f"Purchase import confirm error: {e}")
+        return jsonify({"success": False, "error": "حدث خطأ أثناء تثبيت فاتورة الشراء"}), 500
 
 
 @bp.route("/purchases", methods=["GET", "POST"])
