@@ -9,7 +9,9 @@ from modules import create_app
 app = create_app()
 
 if __name__ == "__main__":
-    debug = os.getenv("FLASK_DEBUG", "1").lower() in ("1", "true", "yes", "on")
+    flask_env = os.getenv("FLASK_ENV", "development").lower()
+    debug_default = "0" if flask_env == "production" else "1"
+    debug = os.getenv("FLASK_DEBUG", debug_default).lower() in ("1", "true", "yes", "on")
     host = os.getenv("FLASK_RUN_HOST", "0.0.0.0")
     port = int(os.getenv("PORT", os.getenv("FLASK_RUN_PORT", "5001")))
     app.run(debug=debug, host=host, port=port)
