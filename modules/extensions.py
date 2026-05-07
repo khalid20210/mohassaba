@@ -26,7 +26,7 @@ from .config import DB_PATH, UPLOAD_FOLDER, ALLOWED_EXT
 
 def get_db() -> sqlite3.Connection:
     if "db" not in g:
-        g.db = sqlite3.connect(DB_PATH, timeout=5)
+        g.db = sqlite3.connect(DB_PATH)
         g.db.row_factory = sqlite3.Row
         g.db.execute("PRAGMA foreign_keys = ON")
         g.db.execute("PRAGMA busy_timeout = 5000")

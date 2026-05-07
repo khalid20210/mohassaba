@@ -24,7 +24,7 @@ _UI_TEXT = {
         "ar": "🔄 يوجد تحديث جديد — هل تريد تطبيقه؟",
         "en": "🔄 A new update is available — apply it now?",
     },
-    "language_toggle": {"ar": "EN", "en": "ع"},
+    "language_toggle": {"ar": "EN", "en": "AR"},
 }
 
 _SIDEBAR_LABELS_EN = {
