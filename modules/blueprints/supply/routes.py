@@ -284,7 +284,7 @@ def purchases():
         today = datetime.now().strftime("%Y-%m-%d")
         now   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # BEGIN IMMEDIATE: يمنع Race Condition عند توليد أرقام الفواتير المتزامن
+        # BEGIN IMMEDIATE: يمنع Race Condition عند توليد أرقام الفواتير المتزامنة
         db.execute("BEGIN IMMEDIATE")
 
         prefix_row = db.execute(

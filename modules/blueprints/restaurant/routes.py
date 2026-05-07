@@ -172,7 +172,7 @@ def orders():
     try:
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # BEGIN IMMEDIATE: يمنع Race Condition عند توليد أرقام الأوامر المتزامن
+        # BEGIN IMMEDIATE: يمنع Race Condition عند توليد أرقام الأوامر المتزامنة
         db.execute("BEGIN IMMEDIATE")
 
         cnt = db.execute(
@@ -463,7 +463,6 @@ def api_tables_open():
             (biz_id, table_name)
         ).fetchone()
         if existing:
-            db.rollback()
             return jsonify({"success": False, "error": "الطاولة مشغولة",
                             "invoice_id": existing["id"]}), 409
 
