@@ -138,6 +138,9 @@ def _register_endpoint_aliases(app):
         "api_pos_config":   "pos.api_pos_config",
         # restaurant
         "orders":                   "restaurant.orders",
+        "api_order_detail":         "restaurant.api_order_detail",
+        "api_order_cancel":         "restaurant.api_order_cancel",
+        "api_order_payment":        "restaurant.api_order_payment",
         "pricing":                  "restaurant.pricing",
         "api_pricing_update":       "restaurant.api_pricing_update",
         "tables":                   "restaurant.tables",

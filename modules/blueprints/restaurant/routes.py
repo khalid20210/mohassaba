@@ -74,6 +74,7 @@ def orders():
         ).fetchall()
 
         total_pages = max(1, (total + per_page - 1) // per_page)
+        now_date = datetime.now().strftime("%Y-%m-%d")
         return render_template(
             "orders.html",
             invoices=invoices_list,
@@ -83,6 +84,7 @@ def orders():
             total_pages=total_pages,
             total=total,
             q=q,
+            now_date=now_date,
         )
 
     # POST: حفظ أمر بيع جملة
@@ -280,9 +282,221 @@ def orders():
         return redirect(url_for("restaurant.orders"))
 
 
-# ════════════════════════════════════════════════════════════════════════════════
-# PRICING — إدارة قوائم الأسعار
-# ════════════════════════════════════════════════════════════════════════════════
+# ── API: تفاصيل أمر البيع ──────────────────────────────────────────────────────
+
+@bp.route("/api/orders/<int:order_id>")
+@onboarding_required
+def api_order_detail(order_id):
+    biz_id = session["business_id"]
+    db     = get_db()
+
+    inv = db.execute(
+        """SELECT i.*, u.full_name AS created_by_name
+           FROM invoices i
+           LEFT JOIN users u ON u.id = i.created_by
+           WHERE i.id=? AND i.business_id=? AND i.invoice_type='sale'""",
+        (order_id, biz_id)
+    ).fetchone()
+    if not inv:
+        return jsonify({"success": False, "error": "الأمر غير موجود"}), 404
+
+    lines = db.execute(
+        """SELECT il.id, il.product_id, il.description, il.quantity, il.unit_price,
+                  il.discount_pct, il.discount_amount, il.tax_rate, il.tax_amount, il.total
+           FROM invoice_lines il WHERE il.invoice_id=? ORDER BY il.line_order""",
+        (order_id,)
+    ).fetchall()
+
+    return jsonify({
+        "success": True,
+        "order":   dict(inv),
+        "lines":   [dict(l) for l in lines],
+    })
+
+
+# ── API: إلغاء أمر البيع ──────────────────────────────────────────────────────
+
+@bp.route("/api/orders/<int:order_id>/cancel", methods=["POST"])
+@onboarding_required
+def api_order_cancel(order_id):
+    biz_id  = session["business_id"]
+    user_id = session["user_id"]
+    db      = get_db()
+
+    inv = db.execute(
+        """SELECT * FROM invoices
+           WHERE id=? AND business_id=? AND invoice_type='sale'
+             AND status NOT IN ('cancelled')""",
+        (order_id, biz_id)
+    ).fetchone()
+    if not inv:
+        return jsonify({"success": False, "error": "الأمر غير موجود أو مُلغى مسبقاً"}), 404
+
+    lines = db.execute(
+        """SELECT il.*, p.purchase_price FROM invoice_lines il
+           LEFT JOIN products p ON p.id=il.product_id
+           WHERE il.invoice_id=?""",
+        (order_id,)
+    ).fetchall()
+
+    wh_id      = inv["warehouse_id"]
+    today      = datetime.now().strftime("%Y-%m-%d")
+    now        = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    grand_total = float(inv["total"] or 0)
+
+    try:
+        db.execute("BEGIN IMMEDIATE")
+
+        # عكس حركة المخزون (أعِد الكميات)
+        if wh_id:
+            for line in lines:
+                if not line["product_id"]:
+                    continue
+                db.execute(
+                    "INSERT OR IGNORE INTO stock (business_id,product_id,warehouse_id,quantity,avg_cost) VALUES (?,?,?,0,0)",
+                    (biz_id, line["product_id"], wh_id)
+                )
+                db.execute(
+                    "UPDATE stock SET quantity=quantity+?,last_updated=? WHERE product_id=? AND warehouse_id=?",
+                    (float(line["quantity"]), now, line["product_id"], wh_id)
+                )
+                db.execute(
+                    """INSERT INTO stock_movements
+                       (business_id,product_id,warehouse_id,movement_type,
+                        quantity,unit_cost,reference_type,reference_id,created_by)
+                       VALUES (?,?,?,'return',?,?,'invoice',?,?)""",
+                    (biz_id, line["product_id"], wh_id,
+                     float(line["quantity"]), float(line["purchase_price"] or 0),
+                     order_id, user_id)
+                )
+
+        # قيد عكسي إذا كان هناك قيد محاسبي
+        if inv["journal_entry_id"] and grand_total > 0:
+            sales_acc_id = get_account_id(db, biz_id, "4101")
+            debit_code   = "1103" if (inv["due_date"] or inv["status"] == "partial") else "1101"
+            debit_acc_id = get_account_id(db, biz_id, debit_code)
+            if debit_acc_id and sales_acc_id:
+                rev_num = next_entry_number(db, biz_id)
+                db.execute(
+                    """INSERT INTO journal_entries
+                       (business_id,entry_number,entry_date,description,
+                        reference_type,reference_id,total_debit,total_credit,is_posted,created_by)
+                       VALUES (?,?,?,?,?,?,?,?,1,?)""",
+                    (biz_id, rev_num, today,
+                     f"قيد عكسي — إلغاء {inv['invoice_number']}",
+                     "invoice", order_id, grand_total, grand_total, user_id)
+                )
+                rev_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+                db.execute(
+                    "INSERT INTO journal_entry_lines (entry_id,account_id,description,debit,credit,line_order) VALUES (?,?,?,?,?,?)",
+                    (rev_id, sales_acc_id, f"إلغاء إيرادات — {inv['invoice_number']}", grand_total, 0, 1)
+                )
+                db.execute(
+                    "INSERT INTO journal_entry_lines (entry_id,account_id,description,debit,credit,line_order) VALUES (?,?,?,?,?,?)",
+                    (rev_id, debit_acc_id, f"عكس قبض — {inv['invoice_number']}", 0, grand_total, 2)
+                )
+
+        db.execute(
+            "UPDATE invoices SET status='cancelled' WHERE id=? AND business_id=?",
+            (order_id, biz_id)
+        )
+        db.commit()
+        return jsonify({"success": True, "message": f"تم إلغاء الأمر {inv['invoice_number']} ✓"})
+
+    except Exception as e:
+        db.rollback()
+        import logging
+        logging.getLogger(__name__).error(f"Order cancel error: {e}")
+        return jsonify({"success": False, "error": "حدث خطأ أثناء الإلغاء"}), 500
+
+
+# ── API: تسجيل دفعة على أمر آجل ──────────────────────────────────────────────
+
+@bp.route("/api/orders/<int:order_id>/payment", methods=["POST"])
+@onboarding_required
+def api_order_payment(order_id):
+    biz_id  = session["business_id"]
+    user_id = session["user_id"]
+    db      = get_db()
+    data    = request.get_json(force=True) or {}
+
+    amount  = float(data.get("amount", 0) or 0)
+    method  = data.get("method", "cash")
+    note    = (data.get("note") or "").strip()
+
+    if amount <= 0:
+        return jsonify({"success": False, "error": "المبلغ يجب أن يكون أكبر من صفر"}), 400
+
+    inv = db.execute(
+        """SELECT * FROM invoices
+           WHERE id=? AND business_id=? AND invoice_type='sale'
+             AND status IN ('partial','issued','draft')""",
+        (order_id, biz_id)
+    ).fetchone()
+    if not inv:
+        return jsonify({"success": False, "error": "الأمر غير موجود أو مغلق"}), 404
+
+    grand_total  = float(inv["total"] or 0)
+    paid_so_far  = float(inv["paid_amount"] or 0)
+    remaining    = round(grand_total - paid_so_far, 4)
+
+    if amount > remaining + 0.001:
+        return jsonify({"success": False, "error": f"المبلغ أكبر من المتبقي ({remaining:.2f})"}), 400
+
+    new_paid   = round(paid_so_far + amount, 2)
+    new_status = "paid" if new_paid >= grand_total - 0.001 else "partial"
+
+    cash_code    = "1102" if method == "bank" else "1101"
+    cash_acc_id  = get_account_id(db, biz_id, cash_code)
+    ar_acc_id    = get_account_id(db, biz_id, "1103")  # ذمم مدينة
+
+    if not cash_acc_id or not ar_acc_id:
+        return jsonify({"success": False, "error": "شجرة الحسابات غير مكتملة"}), 400
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    try:
+        je_num = next_entry_number(db, biz_id)
+        customer_name = inv["party_name"] or "عميل"
+        db.execute(
+            """INSERT INTO journal_entries
+               (business_id,entry_number,entry_date,description,
+                reference_type,reference_id,total_debit,total_credit,is_posted,created_by)
+               VALUES (?,?,?,?,?,?,?,?,1,?)""",
+            (biz_id, je_num, today,
+             f"تحصيل دفعة — {inv['invoice_number']} | {customer_name}" + (f" | {note}" if note else ""),
+             "invoice", order_id, amount, amount, user_id)
+        )
+        je_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+        cash_label = "نقداً" if method == "cash" else "تحويل بنكي"
+        db.execute(
+            "INSERT INTO journal_entry_lines (entry_id,account_id,description,debit,credit,line_order) VALUES (?,?,?,?,?,?)",
+            (je_id, cash_acc_id, cash_label, amount, 0, 1)
+        )
+        db.execute(
+            "INSERT INTO journal_entry_lines (entry_id,account_id,description,debit,credit,line_order) VALUES (?,?,?,?,?,?)",
+            (je_id, ar_acc_id, f"تحصيل ذمم — {inv['invoice_number']}", 0, amount, 2)
+        )
+
+        db.execute(
+            "UPDATE invoices SET paid_amount=?, status=? WHERE id=? AND business_id=?",
+            (new_paid, new_status, order_id, biz_id)
+        )
+        db.commit()
+        return jsonify({
+            "success":    True,
+            "new_paid":   new_paid,
+            "remaining":  round(grand_total - new_paid, 2),
+            "new_status": new_status,
+            "message":    f"تم تسجيل الدفعة {amount:.2f} ✓",
+        })
+
+    except Exception as e:
+        db.rollback()
+        import logging
+        logging.getLogger(__name__).error(f"Order payment error: {e}")
+        return jsonify({"success": False, "error": "حدث خطأ أثناء تسجيل الدفعة"}), 500
 
 @bp.route("/pricing")
 @onboarding_required

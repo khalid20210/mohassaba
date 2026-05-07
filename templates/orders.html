@@ -149,6 +149,7 @@
           <th class="num-col">المدفوع</th>
           <th>طريقة الدفع</th>
           <th>الحالة</th>
+          <th style="width:130px">إجراءات</th>
         </tr>
       </thead>
       <tbody>
@@ -176,6 +177,26 @@
               {% else %}ملغي{% endif %}
             </span>
           </td>
+          <td>
+            <div style="display:flex;gap:4px;flex-wrap:wrap">
+              <button class="btn btn-secondary btn-sm"
+                      onclick="viewOrder({{ inv.id }}, '{{ inv.invoice_number }}')"
+                      title="عرض التفاصيل">🔍</button>
+              <a class="btn btn-secondary btn-sm"
+                 href="/invoice/{{ inv.id }}/print"
+                 target="_blank" title="طباعة">🖨</a>
+              {% if inv.status not in ('paid','cancelled') %}
+              <button class="btn btn-secondary btn-sm"
+                      onclick="openPayment({{ inv.id }}, '{{ inv.invoice_number }}', {{ '%.2f' | format(inv.total - (inv.paid_amount or 0)) }})"
+                      title="تسجيل دفعة" style="color:#16a34a">💰</button>
+              {% endif %}
+              {% if inv.status != 'cancelled' %}
+              <button class="btn btn-secondary btn-sm"
+                      onclick="cancelOrder({{ inv.id }}, '{{ inv.invoice_number }}')"
+                      title="إلغاء" style="color:#dc2626">🗑</button>
+              {% endif %}
+            </div>
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -202,6 +223,60 @@
     <button class="btn btn-primary btn-sm" onclick="toggleForm()">إنشاء أول أمر بيع</button>
   </div>
   {% endif %}
+</div>
+{% endblock %}
+
+<!-- ═══════════════════════════════════════════════════════
+     Modal: تفاصيل الأمر
+═══════════════════════════════════════════════════════ -->
+<div id="orderDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;overflow:auto">
+  <div class="card" style="max-width:700px;margin:40px auto;padding:0">
+    <div class="card-header">
+      <h4 id="detailTitle">📋 تفاصيل الأمر</h4>
+      <button class="btn-icon-close" onclick="closeDetailModal()">✕</button>
+    </div>
+    <div class="card-body" id="detailBody" style="min-height:120px">
+      <p style="text-align:center;color:#6b7280">جاري التحميل...</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     Modal: تسجيل دفعة
+═══════════════════════════════════════════════════════ -->
+<div id="paymentModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;overflow:auto">
+  <div class="card" style="max-width:420px;margin:100px auto;padding:0">
+    <div class="card-header">
+      <h4 id="paymentTitle">💰 تسجيل دفعة</h4>
+      <button class="btn-icon-close" onclick="closePaymentModal()">✕</button>
+    </div>
+    <div class="card-body">
+      <input type="hidden" id="payOrderId">
+      <div class="form-group">
+        <label class="form-label">المبلغ المتبقي</label>
+        <input type="text" id="payRemaining" class="form-control" readonly>
+      </div>
+      <div class="form-group">
+        <label class="form-label">المبلغ المدفوع <span class="required-star">*</span></label>
+        <input type="number" id="payAmount" class="form-control" min="0.01" step="0.01" placeholder="أدخل المبلغ">
+      </div>
+      <div class="form-group">
+        <label class="form-label">طريقة الدفع</label>
+        <select id="payMethod" class="form-control">
+          <option value="cash">💵 نقداً</option>
+          <option value="bank">🏦 تحويل بنكي</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ملاحظة</label>
+        <input type="text" id="payNote" class="form-control" placeholder="اختياري">
+      </div>
+      <div class="form-actions">
+        <button class="btn-success" onclick="submitPayment()">✅ حفظ الدفعة</button>
+        <button class="btn btn-secondary" onclick="closePaymentModal()">إلغاء</button>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
@@ -349,5 +424,113 @@ function updateSaveBtn() {
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+/* ─── عرض تفاصيل الأمر ────────────────────────────────────────────── */
+function viewOrder(id, num) {
+  document.getElementById('detailTitle').textContent = `📋 تفاصيل الأمر — ${num}`;
+  document.getElementById('detailBody').innerHTML    = '<p style="text-align:center;color:#6b7280">جاري التحميل...</p>';
+  document.getElementById('orderDetailModal').style.display = 'block';
+
+  fetch(`/api/orders/${id}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.success) {
+        document.getElementById('detailBody').innerHTML = `<p style="color:red">${escHtml(data.error)}</p>`;
+        return;
+      }
+      const o     = data.order;
+      const lines = data.lines;
+      let html = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:16px;font-size:.9rem">
+          <div><span style="color:#6b7280">العميل:</span> <strong>${escHtml(o.party_name || '—')}</strong></div>
+          <div><span style="color:#6b7280">التاريخ:</span> ${escHtml(o.invoice_date || '—')}</div>
+          <div><span style="color:#6b7280">الإجمالي:</span> <strong>${parseFloat(o.total||0).toFixed(2)} ${CURRENCY}</strong></div>
+          <div><span style="color:#6b7280">المدفوع:</span> ${parseFloat(o.paid_amount||0).toFixed(2)} ${CURRENCY}</div>
+          ${o.due_date ? `<div><span style="color:#6b7280">استحقاق:</span> ${escHtml(o.due_date)}</div>` : ''}
+          ${o.notes    ? `<div style="grid-column:1/-1"><span style="color:#6b7280">ملاحظات:</span> ${escHtml(o.notes)}</div>` : ''}
+        </div>
+        <div class="table-responsive">
+          <table class="data-table" style="font-size:.85rem">
+            <thead><tr>
+              <th>المنتج</th><th class="num-col">الكمية</th>
+              <th class="num-col">السعر</th><th class="num-col">خصم%</th>
+              <th class="num-col">الإجمالي</th>
+            </tr></thead>
+            <tbody>`;
+      lines.forEach(l => {
+        html += `<tr>
+          <td>${escHtml(l.description)}</td>
+          <td class="num-col">${parseFloat(l.quantity).toFixed(3)}</td>
+          <td class="num-col">${parseFloat(l.unit_price).toFixed(2)}</td>
+          <td class="num-col">${parseFloat(l.discount_pct||0).toFixed(1)}%</td>
+          <td class="num-col"><strong>${parseFloat(l.total).toFixed(2)}</strong></td>
+        </tr>`;
+      });
+      html += `</tbody></table></div>`;
+      document.getElementById('detailBody').innerHTML = html;
+    })
+    .catch(() => {
+      document.getElementById('detailBody').innerHTML = '<p style="color:red">حدث خطأ في التحميل</p>';
+    });
+}
+
+function closeDetailModal() {
+  document.getElementById('orderDetailModal').style.display = 'none';
+}
+
+/* ─── إلغاء أمر ────────────────────────────────────────────────────── */
+function cancelOrder(id, num) {
+  if (!confirm(`هل أنت متأكد من إلغاء الأمر ${num}؟\nلا يمكن التراجع عن هذا الإجراء.`)) return;
+  fetch(`/api/orders/${id}/cancel`, { method: 'POST', headers: {'Content-Type':'application/json'} })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) { alert(data.message); location.reload(); }
+      else              { alert('خطأ: ' + data.error); }
+    })
+    .catch(() => alert('حدث خطأ في الاتصال'));
+}
+
+/* ─── تسجيل دفعة ────────────────────────────────────────────────────── */
+function openPayment(id, num, remaining) {
+  document.getElementById('payOrderId').value          = id;
+  document.getElementById('paymentTitle').textContent  = `💰 تسجيل دفعة — ${num}`;
+  document.getElementById('payRemaining').value        = `${parseFloat(remaining).toFixed(2)} ${CURRENCY}`;
+  document.getElementById('payAmount').value           = parseFloat(remaining).toFixed(2);
+  document.getElementById('payNote').value             = '';
+  document.getElementById('paymentModal').style.display = 'block';
+}
+
+function closePaymentModal() {
+  document.getElementById('paymentModal').style.display = 'none';
+}
+
+function submitPayment() {
+  const id     = document.getElementById('payOrderId').value;
+  const amount = parseFloat(document.getElementById('payAmount').value || 0);
+  const method = document.getElementById('payMethod').value;
+  const note   = document.getElementById('payNote').value;
+
+  if (!amount || amount <= 0) { alert('أدخل مبلغاً صحيحاً'); return; }
+
+  fetch(`/api/orders/${id}/payment`, {
+    method:  'POST',
+    headers: {'Content-Type':'application/json'},
+    body:    JSON.stringify({ amount, method, note }),
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) { alert(data.message); closePaymentModal(); location.reload(); }
+      else              { alert('خطأ: ' + data.error); }
+    })
+    .catch(() => alert('حدث خطأ في الاتصال'));
+}
+
+/* ─── إغلاق modals عند النقر خارجها ───────────────────────────────── */
+document.addEventListener('click', function(e) {
+  const detailModal  = document.getElementById('orderDetailModal');
+  const paymentModal = document.getElementById('paymentModal');
+  if (e.target === detailModal)  closeDetailModal();
+  if (e.target === paymentModal) closePaymentModal();
+});
 </script>
 {% endblock %}
