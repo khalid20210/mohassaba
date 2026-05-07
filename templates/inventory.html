@@ -201,13 +201,15 @@ const MOV_TYPES = {
   'transfer_in':    '➡️ تحويل وارد',
   'transfer_out':   '⬅️ تحويل صادر',
 };
+const API_INVENTORY_BASE   = '{{ url_for("api_inventory_movements", product_id=0) }}'.replace('/0', '');
+const API_INVENTORY_ADJUST = '{{ url_for("api_inventory_adjust") }}';
 
 function viewMovements(id, name) {
   document.getElementById('movTitle').textContent = `📊 حركات: ${name}`;
   document.getElementById('movBody').innerHTML    = '<p style="text-align:center;color:#6b7280">جاري التحميل...</p>';
   document.getElementById('movModal').style.display = 'block';
 
-  fetch(`/api/inventory/movements/${id}`)
+  fetch(`${API_INVENTORY_BASE}/${id}`)
     .then(r => r.json())
     .then(data => {
       if (!data.success) {
@@ -257,7 +259,7 @@ function submitAdjust() {
   const note    = document.getElementById('adjNote').value;
   if (isNaN(qty) || qty < 0) { alert('أدخل كمية صحيحة'); return; }
 
-  fetch('/api/inventory/adjust', {
+  fetch(API_INVENTORY_ADJUST, {
     method:  'POST',
     headers: {'Content-Type':'application/json'},
     body:    JSON.stringify({ product_id: id, quantity: qty, note }),

@@ -183,7 +183,7 @@
                       onclick="viewOrder({{ inv.id }}, '{{ inv.invoice_number }}')"
                       title="عرض التفاصيل">🔍</button>
               <a class="btn btn-secondary btn-sm"
-                 href="/invoice/{{ inv.id }}/print"
+                 href="{{ url_for('invoice_print', inv_id=inv.id) }}"
                  target="_blank" title="طباعة">🖨</a>
               {% if inv.status not in ('paid','cancelled') %}
               <button class="btn btn-secondary btn-sm"
@@ -283,8 +283,9 @@
 {% block scripts %}
 <script>
 /* ─── بيانات المنتجات من السيرفر ─────────────────────────────── */
-const PRODUCTS = {{ products | tojson }};
-const CURRENCY = '{{ (current_business.currency if current_business else "ر.ي") | e }}';
+const PRODUCTS  = {{ products | tojson }};
+const CURRENCY  = '{{ (current_business.currency if current_business else "ر.ي") | e }}';
+const API_ORDERS_BASE = '{{ url_for("api_order_detail", order_id=0) }}'.replace('/0', '');
 
 /* ─── مؤشر عدد الصفوف ─────────────────────────────────────────── */
 let lineCount = 0;
@@ -431,7 +432,7 @@ function viewOrder(id, num) {
   document.getElementById('detailBody').innerHTML    = '<p style="text-align:center;color:#6b7280">جاري التحميل...</p>';
   document.getElementById('orderDetailModal').style.display = 'block';
 
-  fetch(`/api/orders/${id}`)
+  fetch(`${API_ORDERS_BASE}/${id}`)
     .then(r => r.json())
     .then(data => {
       if (!data.success) {
@@ -481,7 +482,7 @@ function closeDetailModal() {
 /* ─── إلغاء أمر ────────────────────────────────────────────────────── */
 function cancelOrder(id, num) {
   if (!confirm(`هل أنت متأكد من إلغاء الأمر ${num}؟\nلا يمكن التراجع عن هذا الإجراء.`)) return;
-  fetch(`/api/orders/${id}/cancel`, { method: 'POST', headers: {'Content-Type':'application/json'} })
+  fetch(`${API_ORDERS_BASE}/${id}/cancel`, { method: 'POST', headers: {'Content-Type':'application/json'} })
     .then(r => r.json())
     .then(data => {
       if (data.success) { alert(data.message); location.reload(); }
@@ -512,7 +513,7 @@ function submitPayment() {
 
   if (!amount || amount <= 0) { alert('أدخل مبلغاً صحيحاً'); return; }
 
-  fetch(`/api/orders/${id}/payment`, {
+  fetch(`${API_ORDERS_BASE}/${id}/payment`, {
     method:  'POST',
     headers: {'Content-Type':'application/json'},
     body:    JSON.stringify({ amount, method, note }),
