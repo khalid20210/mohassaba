@@ -440,11 +440,14 @@ def api_order_payment(order_id):
     paid_so_far  = float(inv["paid_amount"] or 0)
     remaining    = round(grand_total - paid_so_far, 4)
 
-    if amount > remaining + 0.001:
+    # تسامح ضئيل لتجاوز أخطاء الفاصلة العائمة
+    _FLOAT_TOLERANCE = 0.001
+
+    if amount > remaining + _FLOAT_TOLERANCE:
         return jsonify({"success": False, "error": f"المبلغ أكبر من المتبقي ({remaining:.2f})"}), 400
 
     new_paid   = round(paid_so_far + amount, 2)
-    new_status = "paid" if new_paid >= grand_total - 0.001 else "partial"
+    new_status = "paid" if new_paid >= grand_total - _FLOAT_TOLERANCE else "partial"
 
     cash_code    = "1102" if method == "bank" else "1101"
     cash_acc_id  = get_account_id(db, biz_id, cash_code)
