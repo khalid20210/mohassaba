@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+{% block title %}المخزون{% endblock %}
+{% block page_title %}إدارة المخزون{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">📦 إدارة المخزون</h2>
+    <p class="page-subtitle">مستويات المخزون الحالية وحركاته وتنبيهات النقص</p>
+  </div>
+</div>
+
+<!-- ═══ بطاقات الإجماليات ═══ -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px">
+  <div class="card" style="padding:16px;text-align:center">
+    <div style="font-size:1.6rem;font-weight:700;color:#4f46e5">{{ summary.total_products or 0 }}</div>
+    <div style="font-size:.85rem;color:#6b7280">إجمالي المنتجات</div>
+  </div>
+  <div class="card" style="padding:16px;text-align:center">
+    <div style="font-size:1.6rem;font-weight:700;color:#059669">{{ '%.1f' | format(summary.total_units or 0) }}</div>
+    <div style="font-size:.85rem;color:#6b7280">إجمالي الوحدات</div>
+  </div>
+  <div class="card" style="padding:16px;text-align:center">
+    <div style="font-size:1.6rem;font-weight:700;color:#0891b2">{{ '%.2f' | format(summary.total_value or 0) }}</div>
+    <div style="font-size:.85rem;color:#6b7280">قيمة المخزون</div>
+  </div>
+  {% if summary.low_stock_count %}
+  <div class="card" style="padding:16px;text-align:center;border:1px solid #fca5a5;background:#fef2f2">
+    <div style="font-size:1.6rem;font-weight:700;color:#dc2626">{{ summary.low_stock_count }}</div>
+    <div style="font-size:.85rem;color:#dc2626">تنبيهات نقص</div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ═══ فلاتر البحث ═══ -->
+<div class="card" style="padding:16px 20px;margin-bottom:16px">
+  <form method="get" action="{{ url_for('inventory') }}" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+    <div class="form-group" style="margin:0;flex:1;min-width:180px">
+      <input type="text" name="q" class="form-control" placeholder="🔍 بحث بالاسم أو الباركود..."
+             value="{{ q }}">
+    </div>
+    {% if categories %}
+    <div class="form-group" style="margin:0">
+      <select name="cat" class="form-control">
+        <option value="">كل الفئات</option>
+        {% for c in categories %}
+        <option value="{{ c.category_name }}" {% if cat == c.category_name %}selected{% endif %}>
+          {{ c.category_name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    {% if warehouses|length > 1 %}
+    <div class="form-group" style="margin:0">
+      <select name="wh" class="form-control">
+        <option value="">كل المستودعات</option>
+        {% for w in warehouses %}
+        <option value="{{ w.id }}" {% if wh_filter == w.id|string %}selected{% endif %}>{{ w.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    <div class="form-group" style="margin:0">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.9rem">
+        <input type="checkbox" name="low" value="1" {% if low_stock %}checked{% endif %}>
+        ⚠️ تنبيهات النقص فقط
+      </label>
+    </div>
+    <button type="submit" class="btn btn-primary">بحث</button>
+    {% if q or cat or wh_filter or low_stock %}
+    <a href="{{ url_for('inventory') }}" class="btn btn-secondary">إعادة تعيين</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- ═══ جدول المخزون ═══ -->
+{% if stock_rows %}
+<div class="card">
+  <div class="card-header">
+    <h4>📋 قائمة المخزون</h4>
+    <span class="badge-total">{{ total }} منتج</span>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>المنتج</th>
+          <th>الباركود</th>
+          <th>الفئة</th>
+          <th class="num-col">الكمية</th>
+          <th class="num-col">الحد الأدنى</th>
+          <th class="num-col">سعر الشراء</th>
+          <th class="num-col">قيمة المخزون</th>
+          <th>التوزيع على المستودعات</th>
+          <th style="width:80px">إجراءات</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in stock_rows %}
+        {% set is_low = row.total_qty <= row.min_stock and row.min_stock > 0 %}
+        <tr {% if is_low %}style="background:#fef2f2"{% endif %}>
+          <td>
+            <strong>{{ row.name }}</strong>
+            {% if is_low %}
+            <span style="color:#dc2626;font-size:.75rem;margin-right:4px">⚠️ نقص</span>
+            {% endif %}
+          </td>
+          <td class="muted-cell" style="font-size:.82rem">{{ row.barcode or '—' }}</td>
+          <td class="muted-cell" style="font-size:.82rem">{{ row.category_name or '—' }}</td>
+          <td class="num-col {% if is_low %}text-danger{% endif %}">
+            <strong>{{ '%.3f' | format(row.total_qty) }}</strong>
+            {% if row.unit %}<span class="muted-cell" style="font-size:.78rem"> {{ row.unit }}</span>{% endif %}
+          </td>
+          <td class="num-col muted-cell">{{ '%.2f' | format(row.min_stock) if row.min_stock else '—' }}</td>
+          <td class="num-col muted-cell">{{ '%.2f' | format(row.purchase_price) }}</td>
+          <td class="num-col">{{ '%.2f' | format(row.stock_value) }}</td>
+          <td class="muted-cell" style="font-size:.8rem">{{ row.wh_detail or '—' }}</td>
+          <td>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-secondary btn-sm"
+                      onclick="viewMovements({{ row.id }}, '{{ row.name | replace("'", "\\'") }}')"
+                      title="عرض الحركات">📊</button>
+              <button class="btn btn-secondary btn-sm"
+                      onclick="openAdjust({{ row.id }}, '{{ row.name | replace("'", "\\'") }}', {{ row.total_qty }})"
+                      title="تعديل الكمية">✏️</button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if total_pages > 1 %}
+  <div class="pagination" style="padding:14px 20px">
+    {% if page > 1 %}<a href="{{ url_for('inventory', page=page-1, q=q, cat=cat, wh=wh_filter, low=low_stock) }}" class="page-btn">← السابق</a>{% endif %}
+    <span class="page-info">{{ page }} / {{ total_pages }}</span>
+    {% if page < total_pages %}<a href="{{ url_for('inventory', page=page+1, q=q, cat=cat, wh=wh_filter, low=low_stock) }}" class="page-btn">التالي →</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% else %}
+<div class="empty-state" style="margin-top:24px">
+  <div class="empty-icon">📦</div>
+  <h3>لا توجد بيانات مخزون</h3>
+  <p>أضف منتجات وفواتير شراء لتتبع المخزون تلقائياً.</p>
+</div>
+{% endif %}
+
+<!-- ═══ Modal حركات المخزون ═══ -->
+<div id="movModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;overflow:auto">
+  <div class="card" style="max-width:650px;margin:40px auto;padding:0">
+    <div class="card-header">
+      <h4 id="movTitle">📊 حركات المخزون</h4>
+      <button class="btn-icon-close" onclick="closeMovModal()">✕</button>
+    </div>
+    <div class="card-body" id="movBody"><p style="text-align:center;color:#6b7280">جاري التحميل...</p></div>
+  </div>
+</div>
+
+<!-- ═══ Modal تعديل الكمية ═══ -->
+<div id="adjModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;overflow:auto">
+  <div class="card" style="max-width:380px;margin:120px auto;padding:0">
+    <div class="card-header">
+      <h4 id="adjTitle">✏️ تعديل الكمية</h4>
+      <button class="btn-icon-close" onclick="closeAdjModal()">✕</button>
+    </div>
+    <div class="card-body">
+      <input type="hidden" id="adjProductId">
+      <div class="form-group">
+        <label class="form-label">الكمية الحالية</label>
+        <input type="text" id="adjCurrentQty" class="form-control" readonly>
+      </div>
+      <div class="form-group">
+        <label class="form-label required">الكمية الجديدة *</label>
+        <input type="number" id="adjNewQty" class="form-control" min="0" step="0.001">
+      </div>
+      <div class="form-group">
+        <label class="form-label">سبب التعديل</label>
+        <input type="text" id="adjNote" class="form-control" placeholder="مثال: جرد نهاية الشهر">
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-success" onclick="submitAdjust()">✅ حفظ</button>
+        <button class="btn btn-secondary" onclick="closeAdjModal()">إلغاء</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const MOV_TYPES = {
+  'purchase':       '🛍️ شراء',
+  'sale':           '💰 بيع',
+  'return':         '↩️ مرتجع',
+  'adjustment':     '✏️ تعديل',
+  'initial_import': '📥 استيراد',
+  'transfer_in':    '➡️ تحويل وارد',
+  'transfer_out':   '⬅️ تحويل صادر',
+};
+
+function viewMovements(id, name) {
+  document.getElementById('movTitle').textContent = `📊 حركات: ${name}`;
+  document.getElementById('movBody').innerHTML    = '<p style="text-align:center;color:#6b7280">جاري التحميل...</p>';
+  document.getElementById('movModal').style.display = 'block';
+
+  fetch(`/api/inventory/movements/${id}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.success) {
+        document.getElementById('movBody').innerHTML = `<p style="color:red">${data.error}</p>`;
+        return;
+      }
+      if (!data.movements.length) {
+        document.getElementById('movBody').innerHTML = '<p style="text-align:center;color:#6b7280">لا توجد حركات مسجلة</p>';
+        return;
+      }
+      let html = `<div class="table-responsive"><table class="data-table" style="font-size:.85rem">
+        <thead><tr><th>النوع</th><th class="num-col">الكمية</th><th class="num-col">التكلفة</th><th>المستودع</th><th>التاريخ</th></tr></thead><tbody>`;
+      data.movements.forEach(m => {
+        const qty_cls = parseFloat(m.quantity) < 0 ? 'text-danger' : 'text-success';
+        html += `<tr>
+          <td>${MOV_TYPES[m.movement_type] || m.movement_type}</td>
+          <td class="num-col ${qty_cls}"><strong>${parseFloat(m.quantity) > 0 ? '+' : ''}${parseFloat(m.quantity).toFixed(3)}</strong></td>
+          <td class="num-col">${parseFloat(m.unit_cost||0).toFixed(2)}</td>
+          <td class="muted-cell">${m.warehouse_name || '—'}</td>
+          <td class="muted-cell" style="font-size:.8rem">${(m.created_at||'').substring(0,16)}</td>
+        </tr>`;
+      });
+      html += '</tbody></table></div>';
+      document.getElementById('movBody').innerHTML = html;
+    })
+    .catch(() => {
+      document.getElementById('movBody').innerHTML = '<p style="color:red">حدث خطأ في التحميل</p>';
+    });
+}
+
+function closeMovModal() { document.getElementById('movModal').style.display = 'none'; }
+
+function openAdjust(id, name, qty) {
+  document.getElementById('adjTitle').textContent      = `✏️ تعديل: ${name}`;
+  document.getElementById('adjProductId').value        = id;
+  document.getElementById('adjCurrentQty').value       = parseFloat(qty).toFixed(3);
+  document.getElementById('adjNewQty').value           = parseFloat(qty).toFixed(3);
+  document.getElementById('adjNote').value             = '';
+  document.getElementById('adjModal').style.display    = 'block';
+}
+
+function closeAdjModal() { document.getElementById('adjModal').style.display = 'none'; }
+
+function submitAdjust() {
+  const id      = document.getElementById('adjProductId').value;
+  const qty     = parseFloat(document.getElementById('adjNewQty').value);
+  const note    = document.getElementById('adjNote').value;
+  if (isNaN(qty) || qty < 0) { alert('أدخل كمية صحيحة'); return; }
+
+  fetch('/api/inventory/adjust', {
+    method:  'POST',
+    headers: {'Content-Type':'application/json'},
+    body:    JSON.stringify({ product_id: id, quantity: qty, note }),
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) { alert(data.message); closeAdjModal(); location.reload(); }
+      else              { alert('خطأ: ' + data.error); }
+    })
+    .catch(() => alert('حدث خطأ في الاتصال'));
+}
+
+document.addEventListener('click', function(e) {
+  if (e.target === document.getElementById('movModal'))  closeMovModal();
+  if (e.target === document.getElementById('adjModal'))  closeAdjModal();
+});
+</script>
+{% endblock %}

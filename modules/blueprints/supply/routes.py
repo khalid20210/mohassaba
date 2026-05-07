@@ -720,3 +720,393 @@ def api_excel_import_confirm():
             + (f" — {len(errors_out)} صف تجاهلناه" if errors_out else "")
         ),
     })
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CONTACTS — إدارة العملاء والموردين
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@bp.route("/contacts", methods=["GET", "POST"])
+@require_perm("contacts")
+def contacts():
+    db     = get_db()
+    biz_id = session["business_id"]
+
+    if request.method == "POST":
+        guard = csrf_protect()
+        if guard:
+            return guard
+
+        action  = request.form.get("action", "create")
+        c_id    = request.form.get("contact_id", "").strip()
+        name    = request.form.get("name", "").strip()
+        c_type  = request.form.get("contact_type", "customer")
+        phone   = request.form.get("phone", "").strip()
+        email   = request.form.get("email", "").strip()
+        address = request.form.get("address", "").strip()
+        tax_num = request.form.get("tax_number", "").strip()
+
+        if action == "delete" and c_id:
+            db.execute(
+                "UPDATE contacts SET is_active=0 WHERE id=? AND business_id=?",
+                (int(c_id), biz_id)
+            )
+            db.commit()
+            flash("تم حذف جهة الاتصال ✓", "success")
+            return redirect(url_for("supply.contacts"))
+
+        if not name:
+            flash("الاسم مطلوب", "error")
+            return redirect(url_for("supply.contacts"))
+
+        if c_type not in ("customer", "supplier", "both"):
+            c_type = "customer"
+
+        if action == "edit" and c_id:
+            db.execute(
+                """UPDATE contacts
+                   SET name=?, contact_type=?, phone=?, email=?, address=?, tax_number=?
+                   WHERE id=? AND business_id=?""",
+                (name, c_type, phone or None, email or None,
+                 address or None, tax_num or None, int(c_id), biz_id)
+            )
+            db.commit()
+            flash(f"تم تعديل «{name}» ✓", "success")
+        else:
+            db.execute(
+                """INSERT INTO contacts
+                   (business_id, contact_type, name, phone, email, address, tax_number, is_active)
+                   VALUES (?,?,?,?,?,?,?,1)""",
+                (biz_id, c_type, name, phone or None, email or None,
+                 address or None, tax_num or None)
+            )
+            db.commit()
+            flash(f"تم إضافة «{name}» ✓", "success")
+
+        return redirect(url_for("supply.contacts"))
+
+    # GET
+    page     = max(1, int(request.args.get("page", 1)))
+    per_page = 25
+    offset   = (page - 1) * per_page
+    q        = request.args.get("q", "").strip()
+    c_filter = request.args.get("type", "")
+
+    where  = "WHERE c.business_id=? AND c.is_active=1"
+    params = [biz_id]
+    if c_filter in ("customer", "supplier", "both"):
+        where  += " AND c.contact_type=?"
+        params.append(c_filter)
+    if q:
+        where  += " AND (c.name LIKE ? OR c.phone LIKE ? OR c.email LIKE ?)"
+        params += [f"%{q}%", f"%{q}%", f"%{q}%"]
+
+    total = db.execute(
+        f"SELECT COUNT(*) FROM contacts c {where}", params
+    ).fetchone()[0]
+
+    contacts_list = db.execute(
+        f"""SELECT c.id, c.contact_type, c.name, c.phone, c.email,
+                   c.address, c.tax_number, c.opening_balance,
+                   c.created_at,
+                   COALESCE(SUM(CASE WHEN i.invoice_type IN ('sale','table') AND i.status='paid'
+                                THEN i.total ELSE 0 END),0) AS total_sales,
+                   COALESCE(SUM(CASE WHEN i.invoice_type='purchase' AND i.status='paid'
+                                THEN i.total ELSE 0 END),0) AS total_purchases
+            FROM contacts c
+            LEFT JOIN invoices i ON i.party_id=c.id AND i.business_id=c.business_id
+            {where}
+            GROUP BY c.id
+            ORDER BY c.name
+            LIMIT ? OFFSET ?""",
+        params + [per_page, offset]
+    ).fetchall()
+
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    return render_template(
+        "contacts.html",
+        contacts=contacts_list,
+        page=page,
+        total_pages=total_pages,
+        total=total,
+        q=q,
+        type_filter=c_filter,
+    )
+
+
+@bp.route("/api/contacts/<int:contact_id>")
+@require_perm("contacts")
+def api_contact_detail(contact_id):
+    biz_id = session["business_id"]
+    db     = get_db()
+    row = db.execute(
+        "SELECT * FROM contacts WHERE id=? AND business_id=? AND is_active=1",
+        (contact_id, biz_id)
+    ).fetchone()
+    if not row:
+        return jsonify({"success": False, "error": "جهة الاتصال غير موجودة"}), 404
+    return jsonify({"success": True, "contact": dict(row)})
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# INVENTORY — إدارة المخزون
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@bp.route("/inventory")
+@require_perm("warehouse")
+def inventory():
+    db     = get_db()
+    biz_id = session["business_id"]
+
+    page     = max(1, int(request.args.get("page", 1)))
+    per_page = 30
+    offset   = (page - 1) * per_page
+    q        = request.args.get("q", "").strip()
+    cat      = request.args.get("cat", "").strip()
+    wh_filter= request.args.get("wh", "").strip()
+    low_stock= request.args.get("low", "")
+
+    where  = "WHERE p.business_id=? AND p.is_active=1"
+    params = [biz_id]
+    if q:
+        where  += " AND (p.name LIKE ? OR p.barcode LIKE ?)"
+        params += [f"%{q}%", f"%{q}%"]
+    if cat:
+        where  += " AND p.category_name=?"
+        params.append(cat)
+    if wh_filter:
+        where  += " AND s.warehouse_id=?"
+        params.append(int(wh_filter))
+    if low_stock:
+        where  += " AND p.min_stock > 0 AND COALESCE(s.quantity,0) <= p.min_stock"
+
+    total = db.execute(
+        f"""SELECT COUNT(DISTINCT p.id)
+            FROM products p
+            LEFT JOIN stock s ON s.product_id=p.id
+            {where}""",
+        params
+    ).fetchone()[0]
+
+    stock_rows = db.execute(
+        f"""SELECT p.id, p.name, p.barcode, p.category_name,
+                   p.purchase_price, p.sale_price, p.min_stock, p.unit,
+                   COALESCE(SUM(s.quantity), 0) AS total_qty,
+                   COALESCE(SUM(s.quantity * s.avg_cost), 0) AS stock_value,
+                   GROUP_CONCAT(w.name || ':' || CAST(COALESCE(s.quantity,0) AS TEXT), ' | ') AS wh_detail
+            FROM products p
+            LEFT JOIN stock s ON s.product_id=p.id
+            LEFT JOIN warehouses w ON w.id=s.warehouse_id
+            {where}
+            GROUP BY p.id
+            ORDER BY p.category_name, p.name
+            LIMIT ? OFFSET ?""",
+        params + [per_page, offset]
+    ).fetchall()
+
+    warehouses = db.execute(
+        "SELECT id, name FROM warehouses WHERE business_id=? AND is_active=1 ORDER BY name",
+        (biz_id,)
+    ).fetchall()
+
+    categories = db.execute(
+        "SELECT DISTINCT category_name FROM products WHERE business_id=? AND is_active=1 AND category_name IS NOT NULL ORDER BY category_name",
+        (biz_id,)
+    ).fetchall()
+
+    # إجماليات
+    summary = db.execute(
+        """SELECT COUNT(DISTINCT p.id) AS total_products,
+                  COALESCE(SUM(s.quantity), 0) AS total_units,
+                  COALESCE(SUM(s.quantity * s.avg_cost), 0) AS total_value,
+                  COUNT(CASE WHEN p.min_stock > 0 AND COALESCE(s.quantity,0) <= p.min_stock THEN 1 END) AS low_stock_count
+           FROM products p
+           LEFT JOIN stock s ON s.product_id=p.id
+           WHERE p.business_id=? AND p.is_active=1""",
+        (biz_id,)
+    ).fetchone()
+
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    return render_template(
+        "inventory.html",
+        stock_rows=stock_rows,
+        warehouses=warehouses,
+        categories=categories,
+        summary=dict(summary) if summary else {},
+        page=page,
+        total_pages=total_pages,
+        total=total,
+        q=q,
+        cat=cat,
+        wh_filter=wh_filter,
+        low_stock=low_stock,
+    )
+
+
+@bp.route("/api/inventory/movements/<int:product_id>")
+@require_perm("warehouse")
+def api_inventory_movements(product_id):
+    biz_id = session["business_id"]
+    db     = get_db()
+
+    product = db.execute(
+        "SELECT id, name FROM products WHERE id=? AND business_id=?",
+        (product_id, biz_id)
+    ).fetchone()
+    if not product:
+        return jsonify({"success": False, "error": "المنتج غير موجود"}), 404
+
+    movements = db.execute(
+        """SELECT sm.movement_type, sm.quantity, sm.unit_cost,
+                  sm.reference_type, sm.created_at,
+                  w.name AS warehouse_name,
+                  u.full_name AS created_by_name
+           FROM stock_movements sm
+           LEFT JOIN warehouses w ON w.id=sm.warehouse_id
+           LEFT JOIN users u ON u.id=sm.created_by
+           WHERE sm.product_id=? AND sm.business_id=?
+           ORDER BY sm.created_at DESC LIMIT 50""",
+        (product_id, biz_id)
+    ).fetchall()
+
+    return jsonify({
+        "success":   True,
+        "product":   dict(product),
+        "movements": [dict(m) for m in movements],
+    })
+
+
+@bp.route("/api/inventory/adjust", methods=["POST"])
+@require_perm("warehouse")
+def api_inventory_adjust():
+    """تعديل يدوي للمخزون (جرد)"""
+    data       = request.get_json(force=True) or {}
+    biz_id     = session["business_id"]
+    user_id    = session["user_id"]
+    product_id = data.get("product_id")
+    new_qty    = data.get("quantity")
+    note       = (data.get("note") or "تعديل جرد يدوي").strip()
+
+    if product_id is None or new_qty is None:
+        return jsonify({"success": False, "error": "بيانات ناقصة"}), 400
+
+    new_qty = float(new_qty)
+    if new_qty < 0:
+        return jsonify({"success": False, "error": "الكمية لا يمكن أن تكون سالبة"}), 400
+
+    db = get_db()
+    product = db.execute(
+        "SELECT id, name FROM products WHERE id=? AND business_id=?",
+        (int(product_id), biz_id)
+    ).fetchone()
+    if not product:
+        return jsonify({"success": False, "error": "المنتج غير موجود"}), 404
+
+    wh = db.execute(
+        "SELECT id FROM warehouses WHERE business_id=? AND is_default=1 LIMIT 1", (biz_id,)
+    ).fetchone()
+    if not wh:
+        return jsonify({"success": False, "error": "لا يوجد مستودع افتراضي"}), 400
+
+    wh_id = wh["id"]
+    now   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    old_row = db.execute(
+        "SELECT quantity FROM stock WHERE product_id=? AND warehouse_id=?",
+        (int(product_id), wh_id)
+    ).fetchone()
+    old_qty = float(old_row["quantity"]) if old_row else 0.0
+    diff    = new_qty - old_qty
+
+    db.execute(
+        "INSERT OR IGNORE INTO stock (business_id,product_id,warehouse_id,quantity,avg_cost) VALUES (?,?,?,0,0)",
+        (biz_id, int(product_id), wh_id)
+    )
+    db.execute(
+        "UPDATE stock SET quantity=?,last_updated=? WHERE product_id=? AND warehouse_id=?",
+        (new_qty, now, int(product_id), wh_id)
+    )
+    if diff != 0:
+        db.execute(
+            """INSERT INTO stock_movements
+               (business_id,product_id,warehouse_id,movement_type,quantity,
+                notes,reference_type,created_by)
+               VALUES (?,?,?,'adjustment',?,?,'manual',?)""",
+            (biz_id, int(product_id), wh_id, diff, note, user_id)
+        )
+    db.commit()
+    return jsonify({
+        "success":  True,
+        "old_qty":  old_qty,
+        "new_qty":  new_qty,
+        "message":  f"تم تعديل مخزون «{product['name']}» إلى {new_qty:.2f} ✓",
+    })
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# INVOICES — كل الفواتير
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@bp.route("/invoices")
+@onboarding_required
+def invoices():
+    db     = get_db()
+    biz_id = session["business_id"]
+
+    page      = max(1, int(request.args.get("page", 1)))
+    per_page  = 25
+    offset    = (page - 1) * per_page
+    q         = request.args.get("q", "").strip()
+    inv_type  = request.args.get("type", "")
+    status    = request.args.get("status", "")
+    date_from = request.args.get("from", "")
+    date_to   = request.args.get("to", "")
+
+    where  = "WHERE i.business_id=?"
+    params = [biz_id]
+
+    if inv_type:
+        where  += " AND i.invoice_type=?"
+        params.append(inv_type)
+    if status:
+        where  += " AND i.status=?"
+        params.append(status)
+    if date_from:
+        where  += " AND DATE(i.invoice_date) >= ?"
+        params.append(date_from)
+    if date_to:
+        where  += " AND DATE(i.invoice_date) <= ?"
+        params.append(date_to)
+    if q:
+        where  += " AND (i.invoice_number LIKE ? OR i.party_name LIKE ?)"
+        params += [f"%{q}%", f"%{q}%"]
+
+    total = db.execute(
+        f"SELECT COUNT(*) FROM invoices i {where}", params
+    ).fetchone()[0]
+
+    invoices_list = db.execute(
+        f"""SELECT i.id, i.invoice_number, i.invoice_type, i.invoice_date,
+                   i.party_name, i.subtotal, i.tax_amount, i.total,
+                   i.paid_amount, i.status, i.notes, i.created_at,
+                   u.full_name AS created_by_name
+            FROM invoices i
+            LEFT JOIN users u ON u.id=i.created_by
+            {where}
+            ORDER BY i.id DESC LIMIT ? OFFSET ?""",
+        params + [per_page, offset]
+    ).fetchall()
+
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    return render_template(
+        "invoices.html",
+        invoices=invoices_list,
+        page=page,
+        total_pages=total_pages,
+        total=total,
+        q=q,
+        inv_type=inv_type,
+        status_filter=status,
+        date_from=date_from,
+        date_to=date_to,
+    )

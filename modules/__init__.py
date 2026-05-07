@@ -131,6 +131,12 @@ def _register_endpoint_aliases(app):
         "excel_import":                 "supply.excel_import",
         "api_excel_import_preview":     "supply.api_excel_import_preview",
         "api_excel_import_confirm":     "supply.api_excel_import_confirm",
+        "contacts":                     "supply.contacts",
+        "api_contact_detail":           "supply.api_contact_detail",
+        "inventory":                    "supply.inventory",
+        "api_inventory_movements":      "supply.api_inventory_movements",
+        "api_inventory_adjust":         "supply.api_inventory_adjust",
+        "invoices":                     "supply.invoices",
         # pos
         "pos":              "pos.pos",
         "api_pos_search":   "pos.api_pos_search",

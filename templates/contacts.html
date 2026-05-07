@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}العملاء والموردون{% endblock %}
+{% block page_title %}العملاء والموردون{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">👥 العملاء والموردون</h2>
+    <p class="page-subtitle">إدارة قاعدة بيانات العملاء والموردين</p>
+  </div>
+  <button class="btn btn-primary" onclick="openAddModal()">➕ إضافة جهة اتصال</button>
+</div>
+
+<!-- ═══ فلاتر البحث ═══ -->
+<div class="card" style="padding:16px 20px;margin-bottom:16px">
+  <form method="get" action="{{ url_for('contacts') }}" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+    <div class="form-group" style="margin:0;flex:1;min-width:180px">
+      <input type="text" name="q" class="form-control" placeholder="🔍 بحث بالاسم أو الهاتف..."
+             value="{{ q }}">
+    </div>
+    <div class="form-group" style="margin:0">
+      <select name="type" class="form-control">
+        <option value="">الكل</option>
+        <option value="customer" {% if type_filter=='customer' %}selected{% endif %}>عملاء</option>
+        <option value="supplier" {% if type_filter=='supplier' %}selected{% endif %}>موردون</option>
+        <option value="both"     {% if type_filter=='both' %}selected{% endif %}>عملاء + موردون</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">بحث</button>
+    {% if q or type_filter %}
+    <a href="{{ url_for('contacts') }}" class="btn btn-secondary">إعادة تعيين</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- ═══ إحصائيات مختصرة ═══ -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px">
+  <div class="card" style="padding:14px;text-align:center">
+    <div style="font-size:1.5rem;font-weight:700;color:#4f46e5">{{ total }}</div>
+    <div style="font-size:.85rem;color:#6b7280">إجمالي جهات الاتصال</div>
+  </div>
+</div>
+
+{% if contacts %}
+<div class="card">
+  <div class="card-header">
+    <h4>📋 قائمة جهات الاتصال</h4>
+    <span class="badge-total">{{ total }} جهة</span>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>الاسم</th>
+          <th>النوع</th>
+          <th>الهاتف</th>
+          <th>البريد</th>
+          <th>الرقم الضريبي</th>
+          <th class="num-col">إجمالي المبيعات</th>
+          <th class="num-col">إجمالي المشتريات</th>
+          <th style="width:100px">إجراءات</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in contacts %}
+        <tr>
+          <td><strong>{{ c.name }}</strong></td>
+          <td>
+            <span class="status-badge {% if c.contact_type=='customer' %}status-paid{% elif c.contact_type=='supplier' %}status-partial{% else %}status-draft{% endif %}">
+              {% if c.contact_type=='customer' %}عميل
+              {% elif c.contact_type=='supplier' %}مورد
+              {% else %}عميل+مورد{% endif %}
+            </span>
+          </td>
+          <td class="muted-cell">{{ c.phone or '—' }}</td>
+          <td class="muted-cell" style="font-size:.82rem">{{ c.email or '—' }}</td>
+          <td class="muted-cell" style="font-size:.82rem">{{ c.tax_number or '—' }}</td>
+          <td class="num-col">{{ '%.2f' | format(c.total_sales) }}</td>
+          <td class="num-col">{{ '%.2f' | format(c.total_purchases) }}</td>
+          <td>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-secondary btn-sm"
+                      onclick='editContact({{ c.id }}, {{ c | tojson | replace("&#39;", "\u0027") }})'
+                      title="تعديل">✏️</button>
+              <form method="post" action="{{ url_for('contacts') }}" style="margin:0"
+                    onsubmit="return confirm('هل أنت متأكد من حذف «{{ c.name }}»؟')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="contact_id" value="{{ c.id }}">
+                <button type="submit" class="btn btn-secondary btn-sm" title="حذف" style="color:#dc2626">🗑</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if total_pages > 1 %}
+  <div class="pagination" style="padding:14px 20px">
+    {% if page > 1 %}<a href="{{ url_for('contacts', page=page-1, q=q, type=type_filter) }}" class="page-btn">← السابق</a>{% endif %}
+    <span class="page-info">{{ page }} / {{ total_pages }}</span>
+    {% if page < total_pages %}<a href="{{ url_for('contacts', page=page+1, q=q, type=type_filter) }}" class="page-btn">التالي →</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% else %}
+<div class="empty-state" style="margin-top:24px">
+  <div class="empty-icon">👥</div>
+  <h3>لا توجد جهات اتصال بعد</h3>
+  <p>اضغط "إضافة جهة اتصال" لإضافة أول عميل أو مورد.</p>
+</div>
+{% endif %}
+
+<!-- ═══ Modal الإضافة/التعديل ═══ -->
+<div id="contactModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;overflow:auto">
+  <div class="card" style="max-width:520px;margin:60px auto;padding:0">
+    <div class="card-header">
+      <h4 id="modalTitle">➕ إضافة جهة اتصال</h4>
+      <button class="btn-icon-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="card-body">
+      <form method="post" action="{{ url_for('contacts') }}" id="contactForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="action" id="formAction" value="create">
+        <input type="hidden" name="contact_id" id="formContactId">
+
+        <div class="form-grid-2">
+          <div class="form-group" style="grid-column:1/-1">
+            <label class="form-label required">الاسم *</label>
+            <input type="text" name="name" id="fName" class="form-control"
+                   placeholder="الاسم الكامل" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">النوع</label>
+            <select name="contact_type" id="fType" class="form-control">
+              <option value="customer">عميل</option>
+              <option value="supplier">مورد</option>
+              <option value="both">عميل + مورد</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">رقم الهاتف</label>
+            <input type="text" name="phone" id="fPhone" class="form-control"
+                   placeholder="05xxxxxxxx">
+          </div>
+          <div class="form-group">
+            <label class="form-label">البريد الإلكتروني</label>
+            <input type="email" name="email" id="fEmail" class="form-control"
+                   placeholder="example@email.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">الرقم الضريبي</label>
+            <input type="text" name="tax_number" id="fTax" class="form-control"
+                   placeholder="300000000000003">
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label class="form-label">العنوان</label>
+            <input type="text" name="address" id="fAddress" class="form-control"
+                   placeholder="المدينة، الحي، الشارع...">
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-success">💾 حفظ</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">إلغاء</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openAddModal() {
+  document.getElementById('modalTitle').textContent = '➕ إضافة جهة اتصال';
+  document.getElementById('formAction').value    = 'create';
+  document.getElementById('formContactId').value = '';
+  ['fName','fPhone','fEmail','fTax','fAddress'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('fType').value = 'customer';
+  document.getElementById('contactModal').style.display = 'block';
+}
+
+function editContact(id, data) {
+  document.getElementById('modalTitle').textContent   = '✏️ تعديل جهة الاتصال';
+  document.getElementById('formAction').value         = 'edit';
+  document.getElementById('formContactId').value      = id;
+  document.getElementById('fName').value    = data.name    || '';
+  document.getElementById('fType').value    = data.contact_type || 'customer';
+  document.getElementById('fPhone').value   = data.phone   || '';
+  document.getElementById('fEmail').value   = data.email   || '';
+  document.getElementById('fTax').value     = data.tax_number || '';
+  document.getElementById('fAddress').value = data.address || '';
+  document.getElementById('contactModal').style.display = 'block';
+}
+
+function closeModal() {
+  document.getElementById('contactModal').style.display = 'none';
+}
+
+document.addEventListener('click', function(e) {
+  if (e.target === document.getElementById('contactModal')) closeModal();
+});
+</script>
+{% endblock %}

@@ -21,6 +21,7 @@
     </div>
 
     <form method="post" enctype="multipart/form-data" action="{{ url_for('purchases') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
       <!-- معلومات الفاتورة الأساسية -->
       <div class="form-grid-2">
@@ -165,7 +166,7 @@
           <th class="num-col">الإجمالي</th>
           <th>الحالة</th>
           <th>الملاحظات</th>
-          <th>QR</th>
+          <th style="width:110px">إجراءات</th>
         </tr>
       </thead>
       <tbody>
@@ -186,10 +187,14 @@
           </td>
           <td class="muted-cell">{{ inv.notes or '—' }}</td>
           <td>
-            <button class="btn btn-sm btn-outline" style="padding:3px 8px;font-size:.75rem"
-              onclick="showZatcaQr({{ inv.id }}, '{{ inv.invoice_number }}')">
-              🟢 QR
-            </button>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-secondary btn-sm"
+                      onclick="showZatcaQr({{ inv.id }}, '{{ inv.invoice_number }}')"
+                      title="QR Code">🟢</button>
+              <a class="btn btn-secondary btn-sm"
+                 href="{{ url_for('invoice_print', inv_id=inv.id) }}"
+                 target="_blank" title="طباعة">🖨</a>
+            </div>
           </td>
         </tr>
         {% endfor %}

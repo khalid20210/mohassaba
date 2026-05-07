@@ -224,16 +224,25 @@ SIDEBAR_PERM = {
     "inventory":       "warehouse",
     "purchases":       "purchases",
     "barcode":         "warehouse",
-    "invoices":        "sales",
+    "invoices":        None,
     "kitchen":         "pos",
     "tables":          "pos",
     "recipes":         "pos",
     "pricing":         "purchases",
+    "projects":        None,
+    "extracts":        None,
+    "equipment":       None,
+    "fleet":           None,
+    "contracts":       None,
+    "maintenance":     None,
+    "patients":        None,
+    "appointments":    None,
+    "prescriptions":   None,
+    "jobs":            None,
 }
 
 # صفحات stub
 STUB_PAGES = [
-    "inventory", "invoices", "contacts",
     "barcode",
     "recipes", "projects", "extracts",
     "equipment", "fleet", "contracts", "maintenance",

@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}الفواتير{% endblock %}
+{% block page_title %}الفواتير{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">🧾 الفواتير</h2>
+    <p class="page-subtitle">سجل جميع الفواتير (مبيعات، مشتريات، طاولات)</p>
+  </div>
+</div>
+
+<!-- ═══ فلاتر البحث ═══ -->
+<div class="card" style="padding:16px 20px;margin-bottom:16px">
+  <form method="get" action="{{ url_for('invoices') }}" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+    <div class="form-group" style="margin:0;flex:1;min-width:200px">
+      <input type="text" name="q" class="form-control" placeholder="🔍 رقم الفاتورة أو اسم العميل..."
+             value="{{ q }}">
+    </div>
+    <div class="form-group" style="margin:0">
+      <select name="type" class="form-control">
+        <option value="">كل الأنواع</option>
+        <option value="sale"     {% if inv_type=='sale' %}selected{% endif %}>مبيعات</option>
+        <option value="purchase" {% if inv_type=='purchase' %}selected{% endif %}>مشتريات</option>
+        <option value="table"    {% if inv_type=='table' %}selected{% endif %}>مطعم</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin:0">
+      <select name="status" class="form-control">
+        <option value="">كل الحالات</option>
+        <option value="paid"      {% if status_filter=='paid' %}selected{% endif %}>مدفوعة</option>
+        <option value="partial"   {% if status_filter=='partial' %}selected{% endif %}>جزئية</option>
+        <option value="draft"     {% if status_filter=='draft' %}selected{% endif %}>مسودة</option>
+        <option value="cancelled" {% if status_filter=='cancelled' %}selected{% endif %}>ملغاة</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin:0">
+      <input type="date" name="from" class="form-control" value="{{ date_from }}" title="من تاريخ">
+    </div>
+    <div class="form-group" style="margin:0">
+      <input type="date" name="to"   class="form-control" value="{{ date_to }}"   title="إلى تاريخ">
+    </div>
+    <button type="submit" class="btn btn-primary">بحث</button>
+    {% if q or inv_type or status_filter or date_from or date_to %}
+    <a href="{{ url_for('invoices') }}" class="btn btn-secondary">إعادة تعيين</a>
+    {% endif %}
+  </form>
+</div>
+
+{% if invoices %}
+<div class="card">
+  <div class="card-header">
+    <h4>📋 قائمة الفواتير</h4>
+    <span class="badge-total">{{ total }} فاتورة</span>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>رقم الفاتورة</th>
+          <th>النوع</th>
+          <th>التاريخ</th>
+          <th>الطرف</th>
+          <th class="num-col">الإجمالي</th>
+          <th class="num-col">المدفوع</th>
+          <th class="num-col">المتبقي</th>
+          <th>الحالة</th>
+          <th style="width:90px">إجراءات</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inv in invoices %}
+        {% set remaining = inv.total - (inv.paid_amount or 0) %}
+        <tr>
+          <td><strong>{{ inv.invoice_number }}</strong></td>
+          <td>
+            <span class="status-badge
+              {% if inv.invoice_type=='sale' %}status-paid
+              {% elif inv.invoice_type=='purchase' %}status-partial
+              {% else %}status-draft{% endif %}"
+              style="font-size:.75rem">
+              {% if inv.invoice_type=='sale' %}🛒 بيع
+              {% elif inv.invoice_type=='purchase' %}🛍️ شراء
+              {% elif inv.invoice_type=='table' %}🍽️ مطعم
+              {% else %}{{ inv.invoice_type }}{% endif %}
+            </span>
+          </td>
+          <td class="muted-cell">{{ inv.invoice_date }}</td>
+          <td>{{ inv.party_name or '—' }}</td>
+          <td class="num-col"><strong>{{ '%.2f' | format(inv.total) }}</strong></td>
+          <td class="num-col">{{ '%.2f' | format(inv.paid_amount or 0) }}</td>
+          <td class="num-col {% if remaining > 0.01 %}text-danger{% endif %}">
+            {{ '%.2f' | format(remaining) if remaining > 0.01 else '—' }}
+          </td>
+          <td>
+            <span class="status-badge
+              {% if inv.status == 'paid' %}status-paid
+              {% elif inv.status == 'partial' %}status-partial
+              {% elif inv.status == 'draft' %}status-draft
+              {% else %}status-cancelled{% endif %}">
+              {% if inv.status == 'paid' %}✓ مدفوعة
+              {% elif inv.status == 'partial' %}جزئية
+              {% elif inv.status == 'draft' %}مسودة
+              {% elif inv.status == 'cancelled' %}ملغاة
+              {% elif inv.status == 'issued' %}جاهزة
+              {% else %}{{ inv.status }}{% endif %}
+            </span>
+          </td>
+          <td>
+            <div style="display:flex;gap:4px">
+              <a class="btn btn-secondary btn-sm"
+                 href="{{ url_for('invoice_print', inv_id=inv.id) }}"
+                 target="_blank" title="طباعة">🖨</a>
+              <button class="btn btn-secondary btn-sm"
+                      onclick="showZatcaQr({{ inv.id }}, '{{ inv.invoice_number }}')"
+                      title="QR Code">🟢</button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if total_pages > 1 %}
+  <div class="pagination" style="padding:14px 20px">
+    {% if page > 1 %}<a href="{{ url_for('invoices', page=page-1, q=q, type=inv_type, status=status_filter, **{'from': date_from, 'to': date_to}) }}" class="page-btn">← السابق</a>{% endif %}
+    <span class="page-info">{{ page }} / {{ total_pages }}</span>
+    {% if page < total_pages %}<a href="{{ url_for('invoices', page=page+1, q=q, type=inv_type, status=status_filter, **{'from': date_from, 'to': date_to}) }}" class="page-btn">التالي →</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% else %}
+<div class="empty-state" style="margin-top:24px">
+  <div class="empty-icon">🧾</div>
+  <h3>لا توجد فواتير</h3>
+  <p>لم يتم العثور على فواتير بالمعايير المحددة.</p>
+  {% if q or inv_type or status_filter or date_from or date_to %}
+  <a href="{{ url_for('invoices') }}" class="btn btn-secondary">مسح الفلاتر</a>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- ═══ Modal QR Code ═══ -->
+<div id="zatcaModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;overflow:auto">
+  <div class="card" style="max-width:360px;margin:100px auto;padding:0">
+    <div class="card-header">
+      <h4>🟢 QR Code — ZATCA</h4>
+      <button class="btn-icon-close" onclick="document.getElementById('zatcaModal').style.display='none'">✕</button>
+    </div>
+    <div class="card-body" style="text-align:center;padding:24px">
+      <div id="qrContainer">جاري التحميل...</div>
+      <p id="qrInvNum" style="margin-top:12px;font-size:.9rem;color:#6b7280"></p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showZatcaQr(invId, invNum) {
+  document.getElementById('qrContainer').innerHTML = 'جاري التحميل...';
+  document.getElementById('qrInvNum').textContent  = invNum;
+  document.getElementById('zatcaModal').style.display = 'block';
+
+  fetch(`/api/invoice/${invId}/zatca-qr`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.success && data.qr_data) {
+        document.getElementById('qrContainer').innerHTML =
+          `<img src="data:image/png;base64,${data.qr_data}" alt="QR"
+                style="width:200px;height:200px;image-rendering:pixelated"
+                onerror="this.replaceWith(document.createTextNode('QR: ' + '${data.qr_data.substring(0,20)}...'))">`;
+      } else {
+        document.getElementById('qrContainer').textContent = data.error || 'تعذّر توليد الكود';
+      }
+    })
+    .catch(() => {
+      document.getElementById('qrContainer').textContent = 'حدث خطأ';
+    });
+}
+
+document.addEventListener('click', function(e) {
+  if (e.target === document.getElementById('zatcaModal'))
+    document.getElementById('zatcaModal').style.display = 'none';
+});
+</script>
+{% endblock %}
