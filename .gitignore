@@ -17,6 +17,8 @@ instance/
 .secret_key
 *.log
 *.db
+*.db-wal
+*.db-shm
 database.db
 !database/accounting.db
 uploads/*
