@@ -4,13 +4,18 @@ blueprints/owner/routes.py
 السيادة المطلقة للمالك: أرباح، رقابة، موارد بشرية، API Keys، وضع العرض
 """
 import hashlib
+import io
+import csv
 import json
+import os
+import re
 import secrets
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from flask import Blueprint, jsonify, redirect, render_template, request, session, url_for, flash
 
-from modules.extensions import get_db, safe_sql_identifier
+from modules.extensions import get_db, safe_sql_identifier, csrf_protect
 from modules.middleware import owner_required, write_audit_log
 
 bp = Blueprint("owner", __name__, url_prefix="/owner")
@@ -31,6 +36,125 @@ def _column_exists(db, table_name: str, column_name: str) -> bool:
         return any(r[1] == column_name for r in rows)
     except Exception:
         return False
+
+
+def _detect_activity_family(industry_type: str) -> str:
+    industry_type = (industry_type or "").strip().lower()
+    if industry_type.startswith("wholesale_") or industry_type == "wholesale":
+        if industry_type.startswith("wholesale_fashion_"):
+            return "wholesale_fashion"
+        if industry_type.startswith("wholesale_fnb_"):
+            return "wholesale_food"
+        return "wholesale_general"
+
+    if industry_type.startswith("retail_fnb_"):
+        return "retail_food"
+    if industry_type.startswith("retail_fashion_"):
+        return "retail_fashion"
+    if industry_type.startswith("retail_") or industry_type == "retail":
+        return "retail_general"
+    return "general"
+
+
+def _normalize_col_name(value: str) -> str:
+    return (value or "").strip().lower().replace("_", "").replace("-", "").replace(" ", "")
+
+
+def _extract_first(row: dict, aliases: list[str]) -> str:
+    normalized = {_normalize_col_name(k): (v or "") for k, v in row.items()}
+    for alias in aliases:
+        val = normalized.get(_normalize_col_name(alias), "")
+        if isinstance(val, str) and val.strip():
+            return val.strip()
+    return ""
+
+
+def _to_float(val) -> float:
+    raw = (str(val or "").strip().replace(",", ""))
+    if not raw:
+        return 0.0
+    try:
+        return float(raw)
+    except Exception:
+        return 0.0
+
+
+def _default_category_for_activity(activity_family: str, name: str, description: str) -> str:
+    txt = f"{name} {description}".lower()
+
+    if activity_family in {"retail_food", "wholesale_food"}:
+        if any(k in txt for k in ["قهوة", "coffee", "شاي", "tea", "مشروب", "drink"]):
+            return "مشروبات"
+        if any(k in txt for k in ["حلويات", "حلو", "cake", "chocolate"]):
+            return "حلويات"
+        return "مواد غذائية"
+
+    if activity_family in {"retail_fashion", "wholesale_fashion"}:
+        if any(k in txt for k in ["حذاء", "shoe", "شنطة", "bag"]):
+            return "اكسسوارات"
+        return "ملابس"
+
+    if activity_family.startswith("wholesale"):
+        return "جملة عامة"
+    return "منتجات عامة"
+
+
+def _read_uploaded_product_rows(file_storage):
+    filename = (file_storage.filename or "").lower()
+    payload = file_storage.read()
+
+    if filename.endswith(".csv") or filename.endswith(".txt"):
+        text = payload.decode("utf-8-sig", errors="replace")
+        first_line = text.splitlines()[0] if text.splitlines() else ""
+        delimiter = ";" if first_line.count(";") > first_line.count(",") else ","
+        reader = csv.DictReader(io.StringIO(text), delimiter=delimiter)
+        return [dict(r or {}) for r in reader]
+
+    if filename.endswith(".xlsx"):
+        try:
+            import openpyxl
+        except Exception as exc:
+            raise ValueError("رفع XLSX يحتاج تثبيت openpyxl") from exc
+
+        wb = openpyxl.load_workbook(io.BytesIO(payload), data_only=True)
+        ws = wb.active
+        rows = list(ws.iter_rows(values_only=True))
+        if not rows:
+            return []
+
+        headers = [str(h or "").strip() for h in rows[0]]
+        out = []
+        for values in rows[1:]:
+            item = {}
+            for i, h in enumerate(headers):
+                item[h] = "" if i >= len(values) or values[i] is None else str(values[i]).strip()
+            out.append(item)
+        return out
+
+    raise ValueError("صيغة ملف غير مدعومة. استخدم CSV أو XLSX")
+
+
+def _normalize_uploaded_product(row: dict, activity_family: str):
+    name = _extract_first(row, ["الاسم", "اسم المنتج", "name", "product name"])
+    if not name:
+        return None
+
+    barcode = _extract_first(row, ["الباركود", "barcode", "ean", "sku"]) or ""
+    barcode = barcode.replace(" ", "").replace('"', "")
+
+    price = _to_float(_extract_first(row, ["السعر", "سعر البيع", "sale_price", "price"]))
+    description = _extract_first(row, ["الوصف", "description", "desc"]) or ""
+    category_name = _extract_first(row, ["صنف المنتج", "التصنيف", "category", "category_name"])
+    if not category_name:
+        category_name = _default_category_for_activity(activity_family, name, description)
+
+    return {
+        "name": name,
+        "barcode": barcode,
+        "price": price,
+        "description": description,
+        "category_name": category_name,
+    }
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -284,6 +408,132 @@ def owner_dashboard():
         operational_snapshot=operational_snapshot,
         display_mode=display_mode,
     )
+
+
+@bp.route("/products/upload", methods=["POST"])
+@owner_required
+def upload_products_file():
+    db = get_db()
+    biz_id = session["business_id"]
+
+    guard = csrf_protect()
+    if guard:
+        return guard
+
+    uploaded = request.files.get("products_file")
+    if not uploaded or not (uploaded.filename or "").strip():
+        flash("اختر ملف المنتجات أولاً", "error")
+        return redirect(url_for("owner.owner_dashboard"))
+
+    try:
+        raw_rows = _read_uploaded_product_rows(uploaded)
+    except ValueError as exc:
+        flash(str(exc), "error")
+        return redirect(url_for("owner.owner_dashboard"))
+    except Exception:
+        flash("فشل قراءة الملف، تأكد من صحة التنسيق", "error")
+        return redirect(url_for("owner.owner_dashboard"))
+
+    business_row = db.execute(
+        "SELECT industry_type FROM businesses WHERE id=?",
+        (biz_id,)
+    ).fetchone()
+    activity_family = _detect_activity_family((business_row["industry_type"] if business_row else "retail") or "retail")
+
+    inserted = 0
+    updated = 0
+    skipped = 0
+    seen_keys = set()
+
+    for raw in raw_rows:
+        item = _normalize_uploaded_product(raw or {}, activity_family)
+        if not item:
+            skipped += 1
+            continue
+
+        key = f"bc:{item['barcode']}" if item["barcode"] else f"nm:{item['name'].strip().lower()}"
+        if key in seen_keys:
+            skipped += 1
+            continue
+        seen_keys.add(key)
+
+        if item["barcode"]:
+            existing = db.execute(
+                "SELECT id FROM products WHERE business_id=? AND barcode=?",
+                (biz_id, item["barcode"])
+            ).fetchone()
+        else:
+            existing = db.execute(
+                """SELECT id FROM products
+                   WHERE business_id=?
+                     AND LOWER(TRIM(name))=LOWER(TRIM(?))
+                     AND (barcode IS NULL OR barcode='')
+                   LIMIT 1""",
+                (biz_id, item["name"])
+            ).fetchone()
+
+        if existing:
+            db.execute(
+                """UPDATE products
+                   SET name=?,
+                       description=?,
+                       category_name=?,
+                       sale_price=?,
+                       can_sell=1,
+                       is_pos=1,
+                       updated_at=datetime('now')
+                   WHERE id=?""",
+                (
+                    item["name"],
+                    item["description"],
+                    item["category_name"],
+                    item["price"],
+                    existing["id"],
+                )
+            )
+            updated += 1
+        else:
+            db.execute(
+                """INSERT INTO products (
+                       business_id, barcode, name, description,
+                       category_name, sale_price, purchase_price,
+                       can_sell, can_purchase, track_stock, is_pos,
+                       product_type, is_active
+                   ) VALUES (?, ?, ?, ?, ?, ?, 0, 1, 1, 1, 1, 'product', 1)""",
+                (
+                    biz_id,
+                    item["barcode"] or None,
+                    item["name"],
+                    item["description"],
+                    item["category_name"],
+                    item["price"],
+                )
+            )
+            inserted += 1
+
+    db.commit()
+    write_audit_log(
+        db,
+        biz_id,
+        action="owner_products_uploaded",
+        entity_type="products_file",
+        new_value=json.dumps(
+            {
+                "inserted": inserted,
+                "updated": updated,
+                "skipped": skipped,
+                "activity_family": activity_family,
+                "filename": uploaded.filename,
+            },
+            ensure_ascii=False,
+        ),
+    )
+
+    flash(
+        f"تم دمج الملف فوراً: إضافة {inserted} | تحديث {updated} | تخطي {skipped} (اختصاص: {activity_family})",
+        "success",
+    )
+    return redirect(url_for("owner.owner_dashboard"))
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -722,3 +972,369 @@ def chart_data():
             for r in payroll_chart
         ],
     })
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# OAuth Social Login Settings
+# ══════════════════════════════════════════════════════════════════════════════
+
+_ENV_PATH = Path(__file__).resolve().parents[3] / ".env"
+
+_OAUTH_KEYS = [
+    ("GOOGLE_OAUTH_CLIENT_ID",      "Google Client ID"),
+    ("GOOGLE_OAUTH_CLIENT_SECRET",  "Google Client Secret"),
+    ("MICROSOFT_OAUTH_CLIENT_ID",   "Microsoft Client ID"),
+    ("MICROSOFT_OAUTH_CLIENT_SECRET","Microsoft Client Secret"),
+    ("PUBLIC_BASE_URL",             "رابط التطبيق العام (Tunnel / Domain)"),
+]
+
+
+def _read_env_file() -> dict:
+    """قراءة ملف .env وإرجاع dict بالقيم."""
+    result = {}
+    if not _ENV_PATH.exists():
+        return result
+    for line in _ENV_PATH.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" in line:
+            k, _, v = line.partition("=")
+            result[k.strip()] = v.strip().strip('"').strip("'")
+    return result
+
+
+def _write_env_key(key: str, value: str):
+    """كتابة/تحديث مفتاح واحد في ملف .env بشكل آمن."""
+    if not _ENV_PATH.exists():
+        _ENV_PATH.write_text(f"{key}={value}\n", encoding="utf-8")
+        return
+
+    content = _ENV_PATH.read_text(encoding="utf-8")
+    pattern = re.compile(rf"^{re.escape(key)}\s*=.*$", re.MULTILINE)
+
+    if pattern.search(content):
+        new_content = pattern.sub(f"{key}={value}", content)
+    else:
+        new_content = content.rstrip("\n") + f"\n{key}={value}\n"
+
+    _ENV_PATH.write_text(new_content, encoding="utf-8")
+
+
+def _mask(val: str) -> str:
+    if not val:
+        return ""
+    if len(val) <= 8:
+        return "••••"
+    return val[:4] + "••••••••" + val[-4:]
+
+
+@bp.route("/oauth-settings", methods=["GET", "POST"])
+@owner_required
+def oauth_settings():
+    """صفحة إعداد تسجيل الدخول عبر Google / Microsoft."""
+    if request.method == "POST":
+        csrf_protect()
+        for key, _ in _OAUTH_KEYS:
+            val = request.form.get(key, "").strip()
+            if val:  # لا تمسح القيم الموجودة إن كان الحقل فارغاً
+                _write_env_key(key, val)
+                os.environ[key] = val  # تحديث فوري في هذه الجلسة
+
+        write_audit_log(
+            db=get_db(),
+            action="oauth_settings_updated",
+            actor_id=session.get("user_id"),
+            actor_name=session.get("user_name", "Owner"),
+            actor_role="owner",
+            business_id=session.get("business_id"),
+            details="تم تحديث إعدادات OAuth"
+        )
+        flash("✅ تم حفظ الإعدادات — أعد تشغيل التطبيق لتفعيل التغييرات", "success")
+        return redirect(url_for("owner.oauth_settings"))
+
+    env = _read_env_file()
+    # دمج مع os.environ (الأولوية لما في الذاكرة)
+    for k, _ in _OAUTH_KEYS:
+        if k not in env and os.environ.get(k):
+            env[k] = os.environ[k]
+
+    # تحضير بيانات العرض
+    keys_info = []
+    for key, label in _OAUTH_KEYS:
+        val = env.get(key, "")
+        keys_info.append({
+            "key":       key,
+            "label":     label,
+            "masked":    _mask(val),
+            "is_set":    bool(val),
+            "is_secret": "SECRET" in key,
+        })
+
+    # حساب روابط OAuth callback (للعرض في الصفحة)
+    base = env.get("PUBLIC_BASE_URL", "").rstrip("/") or request.host_url.rstrip("/")
+    google_callback    = base + "/auth/social/google/callback"
+    microsoft_callback = base + "/auth/social/microsoft/callback"
+
+    return render_template(
+        "owner_oauth_settings.html",
+        keys_info=keys_info,
+        google_callback=google_callback,
+        microsoft_callback=microsoft_callback,
+        google_ready=bool(env.get("GOOGLE_OAUTH_CLIENT_ID") and env.get("GOOGLE_OAUTH_CLIENT_SECRET")),
+        microsoft_ready=bool(env.get("MICROSOFT_OAUTH_CLIENT_ID") and env.get("MICROSOFT_OAUTH_CLIENT_SECRET")),
+    )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  دمج الأنشطة الفرعية — Merge Sub-Activities
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _get_sector_prefix(industry_type: str) -> str:
+    """استخراج القطاع الرئيسي من كود النشاط."""
+    code = (industry_type or "").strip().lower()
+    for prefix in ("retail_", "wholesale_", "ecommerce_", "food_", "hospitality_",
+                   "medical_", "industrial_", "agriculture_", "transport_",
+                   "services_", "education_", "real_estate_", "auto_service_"):
+        if code.startswith(prefix):
+            return prefix.rstrip("_")
+    if code in ("retail", "wholesale", "restaurant", "cafe"):
+        return code
+    return code.split("_")[0] if "_" in code else code
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ■ إدارة طلبات التسجيل (موافقة / رفض)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@bp.route("/registrations")
+@owner_required
+def registrations_page():
+    """قائمة بجميع طلبات التسجيل المعلّقة وتاريخ الموافقات."""
+    db = get_db()
+
+    # تأكد من وجود العمود
+    try:
+        db.execute("ALTER TABLE businesses ADD COLUMN account_status TEXT DEFAULT 'approved'")
+        db.commit()
+    except Exception:
+        pass
+
+    pending = db.execute("""
+        SELECT b.id AS biz_id, b.name AS biz_name, b.created_at, b.country_code,
+               u.username, u.full_name, u.email
+        FROM businesses b
+        JOIN users u ON u.business_id = b.id
+        WHERE b.account_status = 'pending'
+        ORDER BY b.created_at DESC
+    """).fetchall()
+
+    history = db.execute("""
+        SELECT b.id AS biz_id, b.name AS biz_name, b.created_at, b.country_code,
+               b.account_status,
+               u.username, u.full_name, u.email
+        FROM businesses b
+        JOIN users u ON u.business_id = b.id
+        WHERE b.account_status IN ('approved','rejected')
+        ORDER BY b.created_at DESC
+        LIMIT 50
+    """).fetchall()
+
+    return render_template("owner_registrations.html",
+                           pending=pending, history=history)
+
+
+@bp.route("/registrations/approve", methods=["POST"])
+@owner_required
+def approve_registration():
+    """موافقة على طلب تسجيل — تفعيل الحساب."""
+    guard = csrf_protect()
+    if guard:
+        return guard
+
+    db     = get_db()
+    biz_id = request.form.get("biz_id", "").strip()
+    if not biz_id or not biz_id.isdigit():
+        flash("طلب غير صالح", "error")
+        return redirect(url_for("owner.registrations_page"))
+
+    biz_id = int(biz_id)
+    db.execute(
+        "UPDATE businesses SET account_status='approved', is_active=1 WHERE id=?",
+        (biz_id,)
+    )
+    db.execute("UPDATE users SET is_active=1 WHERE business_id=?", (biz_id,))
+    db.commit()
+    write_audit_log(db, biz_id, "registration_approved",
+                    entity_type="business", entity_id=biz_id)
+    flash("تمت الموافقة وتفعيل الحساب بنجاح.", "success")
+    return redirect(url_for("owner.registrations_page"))
+
+
+@bp.route("/registrations/reject", methods=["POST"])
+@owner_required
+def reject_registration():
+    """رفض طلب تسجيل."""
+    guard = csrf_protect()
+    if guard:
+        return guard
+
+    db     = get_db()
+    biz_id = request.form.get("biz_id", "").strip()
+    if not biz_id or not biz_id.isdigit():
+        flash("طلب غير صالح", "error")
+        return redirect(url_for("owner.registrations_page"))
+
+    biz_id = int(biz_id)
+    db.execute("UPDATE businesses SET account_status='rejected' WHERE id=?", (biz_id,))
+    db.commit()
+    write_audit_log(db, biz_id, "registration_rejected",
+                    entity_type="business", entity_id=biz_id)
+    flash("تم رفض الطلب.", "info")
+    return redirect(url_for("owner.registrations_page"))
+
+
+@bp.route("/activities")
+@owner_required
+def activities_page():
+    """صفحة دمج الأنشطة الفرعية — عرض الأنشطة المتاحة من نفس القطاع."""
+    from modules.config import INDUSTRY_TYPES, get_sidebar_key
+    db     = get_db()
+    biz_id = session["business_id"]
+
+    # ── تأكد من وجود عمود merged_activities ─────────────────────────────
+    try:
+        db.execute("ALTER TABLE businesses ADD COLUMN merged_activities TEXT DEFAULT '[]'")
+        db.commit()
+    except Exception:
+        pass  # العمود موجود بالفعل
+
+    biz = db.execute(
+        "SELECT industry_type, merged_activities FROM businesses WHERE id=?", (biz_id,)
+    ).fetchone()
+
+    primary = (biz["industry_type"] if biz else "retail") or "retail"
+    try:
+        merged = json.loads(biz["merged_activities"] or "[]") if biz else []
+    except Exception:
+        merged = []
+
+    # ── الأنشطة من نفس القطاع الرئيسي ─────────────────────────────────
+    sector = get_sidebar_key(primary)
+    all_same_sector = [
+        (code, label)
+        for code, label in INDUSTRY_TYPES
+        if get_sidebar_key(code) == sector and code != primary
+    ]
+
+    # إحصاء المنتجات والتصنيفات لكل نشاط
+    cat_count   = db.execute("SELECT COUNT(*) FROM categories WHERE business_id=?",  (biz_id,)).fetchone()[0]
+    prod_count  = db.execute("SELECT COUNT(*) FROM products  WHERE business_id=?",  (biz_id,)).fetchone()[0]
+
+    industry_labels = {k: v for k, v in INDUSTRY_TYPES}
+
+    return render_template(
+        "owner_activities.html",
+        primary=primary,
+        primary_label=industry_labels.get(primary, primary),
+        merged=merged,
+        all_same_sector=all_same_sector,
+        sector=sector,
+        cat_count=cat_count,
+        prod_count=prod_count,
+        industry_labels=industry_labels,
+    )
+
+
+@bp.route("/activities/merge", methods=["POST"])
+@owner_required
+def merge_activities():
+    """تنفيذ دمج الأنشطة المختارة — يُضيف تصنيفاتها ومنتجاتها فوراً."""
+    from modules.config import INDUSTRY_TYPES
+    from modules.industry_seeds import seed_industry_defaults
+
+    guard = csrf_protect()
+    if guard:
+        return guard
+
+    db     = get_db()
+    biz_id = session["business_id"]
+
+    # ── تأكد من وجود عمود merged_activities ─────────────────────────────
+    try:
+        db.execute("ALTER TABLE businesses ADD COLUMN merged_activities TEXT DEFAULT '[]'")
+        db.commit()
+    except Exception:
+        pass
+
+    biz = db.execute(
+        "SELECT industry_type, merged_activities FROM businesses WHERE id=?", (biz_id,)
+    ).fetchone()
+    primary = (biz["industry_type"] if biz else "retail") or "retail"
+    try:
+        merged = json.loads(biz["merged_activities"] or "[]") if biz else []
+    except Exception:
+        merged = []
+
+    valid_codes = {k for k, _ in INDUSTRY_TYPES}
+    selected    = request.form.getlist("activities")
+
+    total_cats  = 0
+    total_prods = 0
+    newly_added = []
+
+    for code in selected:
+        if code not in valid_codes or code == primary or code in merged:
+            continue
+        result = seed_industry_defaults(db, biz_id, code)
+        total_cats  += result.get("categories_inserted", 0)
+        total_prods += result.get("products_inserted", 0)
+        merged.append(code)
+        newly_added.append(code)
+
+    if newly_added:
+        db.execute(
+            "UPDATE businesses SET merged_activities=? WHERE id=?",
+            (json.dumps(merged, ensure_ascii=False), biz_id)
+        )
+        db.commit()
+        write_audit_log(db, biz_id, action="merge_activities", entity_type="business",
+                        entity_id=biz_id, details=json.dumps({"added": newly_added}, ensure_ascii=False))
+        flash(f"✅ تم دمج {len(newly_added)} نشاط — أُضيف {total_cats} تصنيف و{total_prods} منتج فوراً", "success")
+    else:
+        flash("لم يتم اختيار أنشطة جديدة للدمج.", "info")
+
+    return redirect(url_for("owner.activities_page"))
+
+
+@bp.route("/activities/remove", methods=["POST"])
+@owner_required
+def remove_merged_activity():
+    """إلغاء ربط نشاط مدموج (لا يحذف المنتجات)."""
+    guard = csrf_protect()
+    if guard:
+        return guard
+
+    db     = get_db()
+    biz_id = session["business_id"]
+    code   = request.form.get("code", "").strip()
+
+    biz = db.execute(
+        "SELECT merged_activities FROM businesses WHERE id=?", (biz_id,)
+    ).fetchone()
+    try:
+        merged = json.loads(biz["merged_activities"] or "[]") if biz else []
+    except Exception:
+        merged = []
+
+    if code in merged:
+        merged.remove(code)
+        db.execute(
+            "UPDATE businesses SET merged_activities=? WHERE id=?",
+            (json.dumps(merged, ensure_ascii=False), biz_id)
+        )
+        db.commit()
+        flash(f"🗑️ تم إلغاء ربط النشاط. المنتجات المضافة لا تزال محفوظة.", "info")
+
+    return redirect(url_for("owner.activities_page"))
+

@@ -740,10 +740,11 @@ body {
   .jb-form-wrap { max-width: 360px; }
 }
 </style>
+{% if ux_custom_css %}<style>{{ ux_custom_css }}</style>{% endif %}
 {% endblock %}
 
 {% block auth_content %}
-<div class="jb-auth-root">
+<div class="jb-auth-root" {% if ux_login_bg_url %}style="background-image:url('{{ ux_login_bg_url }}');background-size:cover;background-position:center"{% endif %}>
   <div class="jb-theater">
 
     <div class="jb-theater-top">
@@ -780,6 +781,25 @@ body {
             <div class="jb-features" id="featureList">
               <div class="jb-feature"><strong>تحميل المزايا</strong>جارٍ تجهيز عرض النشاط الحالي...</div>
             </div>
+
+            <!-- ─── الشارات التسويقية الديناميكية ─── -->
+            {% if marketing_badges %}
+            <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:10px" id="marketingBadgesRow">
+              {% for b in marketing_badges %}
+              <span style="
+                display:inline-flex;align-items:center;gap:5px;
+                background:{{ b.badge_bg }};color:{{ b.badge_color }};
+                padding:5px 13px;border-radius:100px;
+                font-size:.78rem;font-weight:700;
+                box-shadow:0 2px 8px rgba(0,0,0,.25);
+                animation:badgePop .4s ease {{ loop.index0 * 0.1 }}s both;
+              ">{{ b.badge_icon or '🔥' }} {{ b.badge_text }}</span>
+              {% endfor %}
+            </div>
+            <style>
+            @keyframes badgePop{from{opacity:0;transform:scale(.8) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}
+            </style>
+            {% endif %}
           </div>
 
           <div class="jb-metric-column">

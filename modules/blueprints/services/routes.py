@@ -57,13 +57,16 @@ def list_jobs():
     return render_template("services/jobs_list.html", jobs=jobs)
 
 
-@bp.route("/jobs/new", methods=["POST"])
+@bp.route("/jobs/new", methods=["GET", "POST"])
 @require_perm("sales")
 def create_job():
     """إنشاء أمر عمل"""
     from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
+    
+    if request.method == "GET":
+        return redirect("/services/jobs?open_new=1")
     
     data = request.form
     
@@ -152,16 +155,26 @@ def list_contracts():
     return render_template("services/contracts_list.html", contracts=contracts)
 
 
-@bp.route("/contracts/new", methods=["POST"])
+@bp.route("/contracts/new", methods=["GET", "POST"])
 @require_perm("sales")
 def create_contract():
     """إنشاء عقد"""
     from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
-    
+
+    if request.method == "GET":
+        return redirect("/services/contracts?open_new=1")
+
     data = request.form
-    
+
+    # توليد رقم العقد تلقائياً
+    cnt = db.execute(
+        "SELECT COUNT(*)+1 AS n FROM service_contracts WHERE business_id=?",
+        (business_id,)
+    ).fetchone()
+    contract_number = data.get("number") or f"SVC-{(cnt['n'] if cnt else 1):05d}"
+
     db.execute("""
         INSERT INTO service_contracts (
             business_id, contract_number, client_id, contract_type,
@@ -170,17 +183,17 @@ def create_contract():
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', datetime('now'))
     """, (
         business_id,
-        data.get("number"),
+        contract_number,
         data.get("client_id"),
         data.get("type"),
         data.get("start_date"),
         data.get("end_date"),
-        float(data.get("value", 0)),
+        float(data.get("value", 0) or 0),
         data.get("billing"),
         data.get("description"),
     ))
     db.commit()
-    
+
     flash("تم إنشاء العقد", "success")
     return redirect("/services/contracts")
 

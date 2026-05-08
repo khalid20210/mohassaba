@@ -92,14 +92,18 @@ def list_patients():
         insurance_cos=insurance_cos)
 
 
-@bp.route("/patients/new", methods=["POST"])
+@bp.route("/patients/new", methods=["GET", "POST"])
 @require_perm("sales")
 def add_patient():
     from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
-    d = request.form
 
+    # GET: إعادة توجيه لصفحة قائمة المرضى (النموذج موجود كـ modal)
+    if request.method == "GET":
+        return redirect("/medical/patients?open_new=1")
+
+    d = request.form
     file_number = _next_file_number(db, business_id)
 
     try:

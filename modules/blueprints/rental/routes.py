@@ -57,14 +57,17 @@ def list_fleet():
     return render_template("rental/fleet_list.html", vehicles=vehicles)
 
 
-@bp.route("/fleet/new", methods=["POST"])
+@bp.route("/fleet/new", methods=["GET", "POST"])
 @require_perm("sales")
 def add_vehicle():
     """إضافة سيارة جديدة"""
     from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
-    
+
+    if request.method == "GET":
+        return redirect("/rental/fleet?open_new=1")
+
     data = request.form
     
     db.execute("""
@@ -114,14 +117,17 @@ def list_contracts():
     return render_template("rental/contracts_list.html", contracts=contracts)
 
 
-@bp.route("/contracts/new", methods=["POST"])
+@bp.route("/contracts/new", methods=["GET", "POST"])
 @require_perm("sales")
 def create_contract():
     """إنشاء عقد إيجار"""
     from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
-    
+
+    if request.method == "GET":
+        return redirect("/rental/contracts?open_new=1")
+
     data = request.form
     daily_rate = float(data.get("daily_rate", 0))
     

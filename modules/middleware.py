@@ -134,19 +134,28 @@ def owner_required(f):
 
 
 def admin_required(f):
-    """ديكوراتور: يسمح فقط لـ الأدمن (role = 'admin')"""
+    """ديكوراتور: يسمح فقط لمالك البرنامج (is_platform_admin=1)"""
     @wraps(f)
     def decorated(*args, **kwargs):
         if "user_id" not in session:
             return redirect(url_for("auth.auth_login"))
-        
-        if not g.user or g.user.get("role") != "admin":
-            flash("هذه الصفحة مخصصة للأدمن فقط", "error")
+
+        is_platform_admin = (
+            g.user
+            and (
+                g.user.get("is_platform_admin") == 1
+                or g.user.get("username") == "admin"
+                or g.user.get("level") == "owner"
+            )
+        )
+
+        if not is_platform_admin:
+            flash("هذه الصفحة مخصصة لمالك البرنامج فقط", "error")
             if "user_id" in session:
                 return redirect(url_for("core.dashboard"))
             else:
                 return redirect(url_for("auth.auth_login"))
-        
+
         return f(*args, **kwargs)
     return decorated
 
@@ -260,6 +269,21 @@ def load_user():
                 rest_items    = [x for x in filtered if x["key"] != "settings"]
                 g.sidebar_items = rest_items + settings_item
 
+                # ── تطبيق تخصيصات القائمة الجانبية من لوحة المالك ──────────
+                try:
+                    overrides_rows = db.execute(
+                        "SELECT item_key, is_enabled FROM platform_sidebar_overrides WHERE sector_key=?",
+                        (sidebar_key,)
+                    ).fetchall()
+                    if overrides_rows:
+                        overrides = {r[0] if not isinstance(r, dict) else r["item_key"]:
+                                     (r[1] if not isinstance(r, dict) else r["is_enabled"])
+                                     for r in overrides_rows}
+                        g.sidebar_items = [item for item in g.sidebar_items
+                                           if overrides.get(item["key"], 1)]
+                except Exception:
+                    pass  # الجدول غير موجود بعد — تجاهل
+
             # ── بروفايل الدولة (عملة + ضريبة) ──────────────────────────
             try:
                 from modules.country_engine import get_business_country
@@ -367,20 +391,83 @@ def inject_globals():
     """Context processor: يُضاف لكل القوالب"""
     from .config import INDUSTRY_TYPES
     lang = getattr(g, "lang", DEFAULT_LANGUAGE)
+
+    # ── إعدادات المنصة الديناميكية ──────────────────────────────────────────
+    platform_name       = "Jinan Biz"
+    platform_logo_url   = ""
+    platform_announcement = ""
+    platform_tagline    = ""
+    try:
+        from .db_adapter import get_db_adapter
+        _db = get_db_adapter()
+        # إنشاء جدول platform_settings إن لم يوجد
+        _db.execute("""
+            CREATE TABLE IF NOT EXISTS platform_settings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                setting_key TEXT UNIQUE NOT NULL,
+                setting_value TEXT,
+                updated_at DATETIME DEFAULT (datetime('now'))
+            )
+        """)
+        if hasattr(_db, 'commit'):
+            _db.commit()
+        def _get_ps(key, default=""):
+            row = _db.execute(
+                "SELECT setting_value FROM platform_settings WHERE setting_key=?", (key,)
+            ).fetchone()
+            if row:
+                v = row[0] if not isinstance(row, dict) else row.get("setting_value", "")
+                return v or default
+            return default
+        platform_name         = _get_ps("platform_name", "Jinan Biz")
+        platform_logo_url     = _get_ps("platform_logo_url", "")
+        platform_announcement = _get_ps("platform_announcement", "")
+        platform_tagline      = _get_ps("platform_tagline", "")
+    except Exception:
+        pass
+
+    # ── إعدادات UX المخصصة ─────────────────────────────────────────────────
+    ux_login_bg_url    = ""
+    ux_register_bg_url = ""
+    ux_custom_css      = ""
+    ux_font_family     = ""
+    try:
+        from .db_adapter import get_db_adapter as _gda
+        _db2 = _gda()
+        def _ux(k):
+            r = _db2.execute("SELECT setting_value FROM platform_settings WHERE setting_key=?", (k,)).fetchone()
+            return (r[0] if r and not isinstance(r, dict) else (r.get("setting_value","") if r else "")) or ""
+        ux_login_bg_url    = _ux("ux_login_bg_url")
+        ux_register_bg_url = _ux("ux_register_bg_url")
+        ux_custom_css      = _ux("ux_custom_css")
+        ux_font_family     = _ux("ux_font_family")
+    except Exception:
+        pass
+
     return {
-        "current_user":     g.user,
-        "current_business": g.business,
-        "sidebar_items":    g.sidebar_items,
-        "user_perms":       g.user_perms,
-        "industry_types":   INDUSTRY_TYPES,
-        "request":          request,
-        "now_date":         datetime.now().strftime("%Y-%m-%d"),
-        "csrf_token":       generate_csrf_token(),
-        "user_has_perm":    user_has_perm,
-        "country_profile":  g.country_profile,
-        "lang":             lang,
-        "is_rtl":           lang == "ar",
-        "text_dir":         "rtl" if lang == "ar" else "ltr",
+        "current_user":         g.user,
+        "current_business":     g.business,
+        "sidebar_items":        g.sidebar_items,
+        "user_perms":           g.user_perms,
+        "industry_types":       INDUSTRY_TYPES,
+        "request":              request,
+        "now_date":             datetime.now().strftime("%Y-%m-%d"),
+        "csrf_token":           generate_csrf_token(),
+        "user_has_perm":        user_has_perm,
+        "country_profile":      g.country_profile,
+        "lang":                 lang,
+        "is_rtl":               lang == "ar",
+        "text_dir":             "rtl" if lang == "ar" else "ltr",
+        # محتوى المنصة الديناميكي
+        "platform_name":        platform_name,
+        "platform_logo_url":    platform_logo_url,
+        "platform_announcement":platform_announcement,
+        "platform_tagline":     platform_tagline,
+        # UX مخصص
+        "ux_login_bg_url":      ux_login_bg_url,
+        "ux_register_bg_url":   ux_register_bg_url,
+        "ux_custom_css":        ux_custom_css,
+        "ux_font_family":       ux_font_family,
     }
 
 

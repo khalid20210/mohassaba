@@ -101,10 +101,38 @@ def _activity_profile_settings(industry_type: str) -> dict:
 
 
 def _shared_service_templates() -> list[dict]:
-    """خدمات مشتركة لكل الأنشطة بدون استثناء."""
+    """خدمات مشتركة لكل الأنشطة بدون استثناء — محاسبية + تشغيلية (مجانية بالكامل)."""
     return [
-        {"name": "خدمة توصيل", "category": "خدمات مشتركة", "price": 20.0, "unit": "طلب", "product_type": "service"},
-        {"name": "خدمة دعم فني", "category": "خدمات مشتركة", "price": 35.0, "unit": "جلسة", "product_type": "service"},
+        # ── خدمات تشغيلية عامة ──
+        {"name": "خدمة توصيل", "category": "خدمات مشتركة", "price": 0.0, "unit": "طلب", "product_type": "service"},
+        {"name": "خدمة دعم فني", "category": "خدمات مشتركة", "price": 0.0, "unit": "جلسة", "product_type": "service"},
+
+        # ── 1. مسك الدفاتر وإدخال البيانات ──
+        {"name": "مسك الدفاتر وإدخال البيانات", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "شهر", "product_type": "service"},
+
+        # ── 2. القوائم والتقارير المالية ──
+        {"name": "قائمة الدخل (الأرباح والخسائر)", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "تقرير", "product_type": "service"},
+        {"name": "الميزانية العمومية (المركز المالي)", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "تقرير", "product_type": "service"},
+        {"name": "قائمة التدفقات النقدية", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "تقرير", "product_type": "service"},
+
+        # ── 3. الخدمات الضريبية والزكوية ──
+        {"name": "إقرار ضريبة القيمة المضافة VAT", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "ربع سنوي", "product_type": "service"},
+        {"name": "إقرار الزكاة وضريبة الدخل", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "سنوي", "product_type": "service"},
+
+        # ── 4. التسويات والمطابقات البنكية ──
+        {"name": "المطابقة البنكية الشهرية", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "شهر", "product_type": "service"},
+
+        # ── 5. إدارة الذمم المدينة والدائنة ──
+        {"name": "إدارة الذمم المدينة والدائنة", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "شهر", "product_type": "service"},
+
+        # ── 6. إدارة الرواتب والأجور ──
+        {"name": "كشف الرواتب والأجور (Payroll)", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "شهر", "product_type": "service"},
+
+        # ── 7. إدارة الأصول الثابتة وإهلاكاتها ──
+        {"name": "إدارة الأصول الثابتة وإهلاكاتها", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "سنوي", "product_type": "service"},
+
+        # ── 8. الموازنات التقديرية ──
+        {"name": "إعداد الموازنة التقديرية السنوية", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "سنوي", "product_type": "service"},
     ]
 
 
@@ -130,7 +158,6 @@ def _activity_service_templates(industry_type: str) -> list[dict]:
     if family in {"wholesale_general", "wholesale_food", "wholesale_fashion"}:
         services.extend([
             {"name": "خدمة شحن طلبيات", "category": "خدمات الجملة", "price": 150.0, "unit": "شحنة", "product_type": "service"},
-            {"name": "تحميل وتنزيل", "category": "خدمات الجملة", "price": 75.0, "unit": "طلب", "product_type": "service"},
         ])
         return services
 

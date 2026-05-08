@@ -5,11 +5,92 @@ Inventory Management System: Products, Stock Tracking, Alerts, Barcode Integrati
 
 import json
 import sqlite3
+import csv
+import io
 from datetime import datetime, timedelta
-from flask import Blueprint, render_template, request, jsonify, g, redirect, flash
+from flask import Blueprint, render_template, request, jsonify, g, redirect, flash, Response
 from functools import wraps
 
 bp = Blueprint("inventory", __name__, url_prefix="/inventory")
+
+
+def _norm_col(col: str) -> str:
+    return (col or "").strip().lower().replace("_", "").replace("-", "").replace(" ", "")
+
+
+def _first_val(row: dict, aliases: list[str]) -> str:
+    normalized = {_norm_col(k): (v or "") for k, v in row.items()}
+    for alias in aliases:
+        val = normalized.get(_norm_col(alias), "")
+        if isinstance(val, str) and val.strip():
+            return val.strip()
+    return ""
+
+
+def _to_float(value) -> float:
+    raw = str(value or "").strip().replace(",", "")
+    if not raw:
+        return 0.0
+    try:
+        return float(raw)
+    except Exception:
+        return 0.0
+
+
+def _read_products_file(file_storage):
+    filename = (file_storage.filename or "").lower()
+    payload = file_storage.read()
+
+    if filename.endswith(".csv") or filename.endswith(".txt"):
+        text = payload.decode("utf-8-sig", errors="replace")
+        first = text.splitlines()[0] if text.splitlines() else ""
+        delimiter = ";" if first.count(";") > first.count(",") else ","
+        reader = csv.DictReader(io.StringIO(text), delimiter=delimiter)
+        return [dict(r or {}) for r in reader]
+
+    if filename.endswith(".xlsx"):
+        try:
+            import openpyxl
+        except Exception as exc:
+            raise ValueError("صيغة XLSX تحتاج مكتبة openpyxl") from exc
+
+        wb = openpyxl.load_workbook(io.BytesIO(payload), data_only=True)
+        ws = wb.active
+        rows = list(ws.iter_rows(values_only=True))
+        if not rows:
+            return []
+
+        headers = [str(h or "").strip() for h in rows[0]]
+        out = []
+        for values in rows[1:]:
+            item = {}
+            for i, h in enumerate(headers):
+                item[h] = "" if i >= len(values) or values[i] is None else str(values[i]).strip()
+            out.append(item)
+        return out
+
+    raise ValueError("صيغة غير مدعومة. استخدم CSV أو XLSX")
+
+
+def _normalize_uploaded_product(row: dict):
+    name = _first_val(row, ["الاسم", "اسم المنتج", "name", "product name"])
+    if not name:
+        return None
+
+    barcode = _first_val(row, ["الباركود", "barcode", "ean", "sku"]).replace(" ", "")
+    sell_price = _to_float(_first_val(row, ["السعر", "سعر البيع", "price", "sale_price"]))
+    cost_price = _to_float(_first_val(row, ["سعر الشراء", "cost", "purchase_price"]))
+    qty = _to_float(_first_val(row, ["الكمية", "quantity", "qty"]))
+    description = _first_val(row, ["الوصف", "description", "desc"])
+
+    return {
+        "name": name,
+        "barcode": barcode,
+        "sell_price": sell_price,
+        "cost_price": cost_price,
+        "qty": qty,
+        "description": description,
+    }
 
 
 def _normalize_movement_type(raw_type: str):
@@ -197,7 +278,7 @@ def list_products():
     business_id = g.business["id"]
     
     # فلاتر
-    search = request.args.get("search", "")
+    search = request.args.get("search", "") or request.args.get("q", "")
     category = request.args.get("category", "")
     status = request.args.get("status", "")  # 'all', 'low_stock', 'overstock', 'expiring'
     page = int(request.args.get("page", 1))
@@ -248,6 +329,207 @@ def list_products():
     })
 
 
+@bp.route("/products/export.csv")
+@require_perm("warehouse")
+def export_products_csv():
+    """تصدير قائمة المنتجات الحالية بصيغة CSV"""
+    from modules.extensions import get_db
+
+    db = get_db()
+    business_id = g.business["id"]
+    rows = db.execute(
+        """SELECT
+               COALESCE(p.name, pi.sku) AS name,
+               COALESCE(pi.barcode, p.barcode, '') AS barcode,
+               COALESCE(pi.unit_price, p.sale_price, 0) AS price,
+               COALESCE(pi.current_qty, 0) AS quantity,
+               COALESCE(pi.notes, p.description, '') AS description
+           FROM product_inventory pi
+           LEFT JOIN products p ON p.id = pi.product_id
+           WHERE pi.business_id = ?
+           ORDER BY COALESCE(p.name, pi.sku) ASC""",
+        (business_id,),
+    ).fetchall()
+
+    out = io.StringIO()
+    writer = csv.writer(out)
+    writer.writerow(["الاسم", "الباركود", "السعر", "الكمية", "الوصف"])
+    for r in rows:
+        writer.writerow([
+            r["name"] or "",
+            r["barcode"] or "",
+            r["price"] or 0,
+            r["quantity"] or 0,
+            r["description"] or "",
+        ])
+
+    filename = f"products_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    response = Response(out.getvalue(), mimetype="text/csv; charset=utf-8")
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    return response
+
+
+@bp.route("/products/import", methods=["POST"])
+@require_perm("warehouse")
+def import_products_file():
+    """استيراد ودمج المنتجات من CSV/XLSX"""
+    from modules.extensions import get_db, csrf_protect
+
+    guard = csrf_protect()
+    if guard:
+        return guard
+
+    db = get_db()
+    business_id = g.business["id"]
+    uploaded = request.files.get("products_file")
+
+    if not uploaded or not (uploaded.filename or "").strip():
+        flash("اختر ملف المنتجات أولاً", "error")
+        return redirect("/inventory/products")
+
+    try:
+        raw_rows = _read_products_file(uploaded)
+    except ValueError as exc:
+        flash(str(exc), "error")
+        return redirect("/inventory/products")
+    except Exception:
+        flash("تعذر قراءة الملف. تأكد من التنسيق", "error")
+        return redirect("/inventory/products")
+
+    inserted = 0
+    updated = 0
+    skipped = 0
+    seen = set()
+
+    for raw in raw_rows:
+        item = _normalize_uploaded_product(raw or {})
+        if not item:
+            skipped += 1
+            continue
+
+        key = f"bc:{item['barcode']}" if item["barcode"] else f"nm:{item['name'].strip().lower()}"
+        if key in seen:
+            skipped += 1
+            continue
+        seen.add(key)
+
+        existing_product = None
+        if item["barcode"]:
+            existing_product = db.execute(
+                "SELECT id FROM products WHERE business_id=? AND barcode=? LIMIT 1",
+                (business_id, item["barcode"]),
+            ).fetchone()
+
+        if not existing_product:
+            existing_product = db.execute(
+                "SELECT id FROM products WHERE business_id=? AND LOWER(name)=LOWER(?) LIMIT 1",
+                (business_id, item["name"]),
+            ).fetchone()
+
+        if existing_product:
+            product_id = existing_product["id"]
+            db.execute(
+                """UPDATE products
+                   SET name=?,
+                       barcode=COALESCE(NULLIF(?,''), barcode),
+                       description=?,
+                       sale_price=?,
+                       purchase_price=?,
+                       updated_at=datetime('now')
+                   WHERE id=? AND business_id=?""",
+                (
+                    item["name"],
+                    item["barcode"],
+                    item["description"],
+                    item["sell_price"],
+                    item["cost_price"],
+                    product_id,
+                    business_id,
+                ),
+            )
+            updated += 1
+        else:
+            db.execute(
+                """INSERT INTO products (
+                       business_id, name, barcode, description,
+                       sale_price, purchase_price, can_sell, can_purchase,
+                       track_stock, is_pos, product_type, is_active
+                   ) VALUES (?, ?, ?, ?, ?, ?, 1, 1, 1, 1, 'product', 1)""",
+                (
+                    business_id,
+                    item["name"],
+                    item["barcode"] or None,
+                    item["description"],
+                    item["sell_price"],
+                    item["cost_price"],
+                ),
+            )
+            product_id = db.execute("SELECT last_insert_rowid() AS id").fetchone()["id"]
+            inserted += 1
+
+        inv = db.execute(
+            "SELECT id, current_qty FROM product_inventory WHERE business_id=? AND product_id=? LIMIT 1",
+            (business_id, product_id),
+        ).fetchone()
+
+        if inv:
+            new_qty = float(inv["current_qty"] or 0) + float(item["qty"] or 0)
+            db.execute(
+                """UPDATE product_inventory
+                   SET sku=COALESCE(sku, ?),
+                       barcode=COALESCE(NULLIF(?,''), barcode),
+                       unit_price=?,
+                       unit_cost=?,
+                       notes=COALESCE(NULLIF(?,''), notes),
+                       current_qty=?,
+                       updated_at=datetime('now')
+                   WHERE id=? AND business_id=?""",
+                (
+                    f"PRD-{product_id:05d}",
+                    item["barcode"],
+                    item["sell_price"],
+                    item["cost_price"],
+                    item["description"],
+                    new_qty,
+                    inv["id"],
+                    business_id,
+                ),
+            )
+        else:
+            db.execute(
+                """INSERT INTO product_inventory (
+                       business_id, product_id, sku, barcode, current_qty,
+                       min_qty, max_qty, unit_cost, unit_price, notes,
+                       created_at, updated_at
+                   ) VALUES (?, ?, ?, ?, ?, 10, 1000, ?, ?, ?, datetime('now'), datetime('now'))""",
+                (
+                    business_id,
+                    product_id,
+                    f"PRD-{product_id:05d}",
+                    item["barcode"] or None,
+                    item["qty"],
+                    item["cost_price"],
+                    item["sell_price"],
+                    item["description"],
+                ),
+            )
+
+    db.commit()
+    log_activity(
+        "inventory",
+        "products_import",
+        changes={
+            "inserted": inserted,
+            "updated": updated,
+            "skipped": skipped,
+            "filename": uploaded.filename,
+        },
+    )
+
+    flash(f"تم الاستيراد والدمج: إضافة {inserted} | تحديث {updated} | تخطي {skipped}", "success")
+    return redirect("/inventory/products")
+
+
 
 @bp.route("/products/<int:product_id>")
 @require_perm("warehouse")
@@ -293,40 +575,123 @@ def view_product(product_id):
 @bp.route("/products/new", methods=["GET", "POST"])
 @require_perm("warehouse")
 def add_product():
-    """إضافة صنف جديد"""
+    """إضافة صنف جديد — نموذج شامل مع فئات وضريبة وتسلسل تلقائي"""
     from modules.extensions import get_db
-    
+
+    db = get_db()
+    business_id = g.business["id"]
+
     if request.method == "POST":
-        db = get_db()
-        business_id = g.business["id"]
-        
         data = request.form
-        
-        db.execute("""
-            INSERT INTO product_inventory (
-                business_id, sku, barcode, current_qty, min_qty, max_qty,
-                unit_cost, unit_price, location, supplier_id, notes, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+
+        # ── توليد الرقم التسلسلي (SKU) تلقائياً إن لم يُدخَل
+        sku = (data.get("sku") or "").strip()
+        if not sku:
+            count_row = db.execute(
+                "SELECT COUNT(*)+1 AS n FROM products WHERE business_id=?",
+                (business_id,)
+            ).fetchone()
+            seq = count_row["n"] if count_row else 1
+            sku = f"PRD-{seq:05d}"
+
+        name = (data.get("name") or "").strip()
+        if not name:
+            flash("اسم المنتج مطلوب", "error")
+            categories = db.execute(
+                "SELECT id, name FROM product_categories ORDER BY name"
+            ).fetchall()
+            return render_template("inventory/product_form.html", categories=categories, sku_preview=sku)
+
+        # أسعار الشراء مع/بدون ضريبة
+        cost_raw   = float(data.get("cost_price", 0) or 0)
+        cost_tax   = data.get("cost_has_tax") == "1"
+        VAT = 0.15
+        cost_price = cost_raw / (1 + VAT) if cost_tax else cost_raw
+
+        # أسعار البيع مع/بدون ضريبة
+        sell_raw   = float(data.get("sell_price", 0) or 0)
+        sell_tax   = data.get("sell_has_tax") == "1"
+        sell_price = sell_raw / (1 + VAT) if sell_tax else sell_raw
+
+        category_id   = data.get("category_id") or None
+        category_name = ""
+        if category_id:
+            cat = db.execute(
+                "SELECT name FROM product_categories WHERE id=?", (category_id,)
+            ).fetchone()
+            category_name = cat["name"] if cat else ""
+
+        # إدراج في جدول products أولاً
+        cur = db.execute("""
+            INSERT INTO products (
+                business_id, name, name_en, serial_number, barcode,
+                description, category_id, category_name,
+                purchase_price, sale_price,
+                can_purchase, can_sell, track_stock, is_pos, is_active,
+                notes, supplier_id, expiry_date, created_at, updated_at
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,1,1,1,1,1,?,?,?,datetime('now'),datetime('now'))
         """, (
             business_id,
-            data.get("sku"),
-            data.get("barcode"),
-            float(data.get("current_qty", 0)),
-            float(data.get("min_qty", 10)),
-            float(data.get("max_qty", 1000)),
-            float(data.get("unit_cost", 0)),
-            float(data.get("unit_price", 0)),
-            data.get("location"),
+            name,
+            data.get("name_en", "").strip(),
+            sku,
+            data.get("barcode", "").strip() or None,
+            data.get("description", "").strip(),
+            category_id,
+            category_name,
+            cost_price,
+            sell_price,
+            data.get("notes", "").strip(),
             data.get("supplier_id") or None,
-            data.get("notes"),
+            data.get("expiry_date") or None,
+        ))
+        product_id = cur.lastrowid
+
+        # إدراج في product_inventory
+        init_qty = float(data.get("initial_qty", 0) or 0)
+        min_qty  = float(data.get("min_qty", 5) or 5)
+        max_qty  = float(data.get("max_qty", 1000) or 1000)
+        location = data.get("location", "").strip()
+
+        db.execute("""
+            INSERT INTO product_inventory (
+                business_id, product_id, sku, barcode,
+                current_qty, min_qty, max_qty,
+                unit_cost, unit_price,
+                location, notes,
+                created_at, updated_at
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,datetime('now'),datetime('now'))
+        """, (
+            business_id, product_id, sku,
+            data.get("barcode", "").strip() or None,
+            init_qty, min_qty, max_qty,
+            cost_price, sell_price,
+            location or None,
+            data.get("notes", "").strip(),
         ))
         db.commit()
-        
-        log_activity("inventory", "add_product", data.get("sku"))
-        flash("تم إضافة الصنف بنجاح", "success")
+
+        if init_qty <= min_qty:
+            _upsert_low_stock_alert(db, business_id, product_id, sku, init_qty, min_qty)
+
+        log_activity("inventory", "add_product", product_id, {"name": name, "sku": sku})
+        flash(f"✅ تم إضافة المنتج «{name}» بنجاح — الرقم: {sku}", "success")
         return redirect("/inventory/products")
-    
-    return render_template("inventory/product_form.html")
+
+    # GET: تحميل الفئات وتوليد SKU مبدئي للمعاينة
+    categories = db.execute(
+        "SELECT id, name FROM product_categories ORDER BY name"
+    ).fetchall()
+    count_row = db.execute(
+        "SELECT COUNT(*)+1 AS n FROM products WHERE business_id=?",
+        (business_id,)
+    ).fetchone()
+    seq = count_row["n"] if count_row else 1
+    sku_preview = f"PRD-{seq:05d}"
+
+    return render_template("inventory/product_form.html",
+                           categories=categories,
+                           sku_preview=sku_preview)
 
 
 @bp.route("/products/<int:product_id>/edit", methods=["POST"])

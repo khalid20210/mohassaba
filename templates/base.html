@@ -13,6 +13,12 @@
   <meta name="apple-mobile-web-app-title" content="محاسبة">
   <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <!-- ثيم مخصص من لوحة المالك — يُعيد ضبط CSS variables -->
+  <link rel="stylesheet" href="/admin/theme.css">
+  <!-- خط مخصص من لوحة المالك -->
+  {% if ux_font_family %}
+  <style>body,*{font-family:'{{ ux_font_family }}',Tahoma,sans-serif!important}</style>
+  {% endif %}
   <!-- تطبيق الثيم قبل رسم الصفحة لتجنب الوميض -->
   <script>
     (function(){
@@ -21,8 +27,22 @@
     })();
   </script>
   {% block head %}{% endblock %}
+  <!-- CSS مخصص من لوحة المالك (آخر شيء يُحقن) -->
+  {% if ux_custom_css %}<style id="jb-custom-css">{{ ux_custom_css }}</style>{% endif %}
 </head>
 <body>
+
+{% if platform_announcement %}
+<div id="jb-announcement" style="
+  background:linear-gradient(90deg,#1e40af,#7c3aed);
+  color:#fff;text-align:center;padding:7px 16px;
+  font-size:.84rem;font-weight:600;position:relative;z-index:9999;
+">
+  📢 {{ platform_announcement }}
+  <button onclick="document.getElementById('jb-announcement').style.display='none'"
+    style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:1rem;cursor:pointer">✕</button>
+</div>
+{% endif %}
 
 {% if current_user and current_business and request.endpoint != 'core.onboarding' %}
 <!-- ═══════════════════════════════════════════════════════════
@@ -40,7 +60,13 @@
 
     <!-- الشعار + اسم المنشأة -->
     <div class="sidebar-logo">
+      {% if platform_logo_url %}
+      <img src="{{ platform_logo_url }}" alt="{{ platform_name }}"
+           style="height:32px;border-radius:5px;object-fit:contain;margin-left:6px"
+           onerror="this.style.display='none'">
+      {% else %}
       <div class="logo-icon">م</div>
+      {% endif %}
       <div class="logo-text">
         <strong>{{ current_business.name }}</strong>
         <span>{% for k, v in industry_types if k == current_business.industry_type %}{{ v }}{% endfor %}</span>
@@ -147,6 +173,76 @@
 
   </div><!-- /main-content -->
 </div><!-- /app-layout -->
+
+{% if current_user and current_business and request.endpoint != 'core.onboarding' %}
+<!-- ── شريط التنقل السفلي للموبايل ─────────────────── -->
+<nav class="bottom-nav" aria-label="تنقل سريع">
+  <div class="bottom-nav-inner">
+    <a href="{{ url_for('core.dashboard') }}"
+       class="bottom-nav-item {% if request.endpoint == 'core.dashboard' %}active{% endif %}">
+      <span class="nav-icon">🏠</span>
+      <span>الرئيسية</span>
+    </a>
+    {% if user_has_perm('invoices') %}
+    <a href="{{ url_for('invoices.list_invoices') if 'invoices' in request.url_rule.endpoint|default('',true) else url_for('invoices.list_invoices') }}"
+       class="bottom-nav-item {% if 'invoices' in (request.endpoint or '') %}active{% endif %}">
+      <span class="nav-icon">📄</span>
+      <span>فواتير</span>
+    </a>
+    {% endif %}
+    {% if user_has_perm('products') %}
+    <a href="/inventory/products"
+       class="bottom-nav-item {% if 'products' in (request.endpoint or '') %}active{% endif %}">
+      <span class="nav-icon">🛍️</span>
+      <span>منتجات</span>
+    </a>
+    {% endif %}
+    <a href="#"
+       class="bottom-nav-item {% if 'customer' in (request.endpoint or '') %}active{% endif %}"
+       id="bnav-more-btn"
+       onclick="toggleBottomMenu(event)">
+      <span class="nav-icon">☰</span>
+      <span>المزيد</span>
+    </a>
+  </div>
+</nav>
+
+<!-- قائمة "المزيد" المنبثقة -->
+<div id="bnav-more-menu" style="
+  display:none; position:fixed; bottom:56px; left:0; right:0;
+  background:var(--card-bg); border-top:1px solid var(--border);
+  z-index:199; padding:12px 16px;
+  display:none; flex-wrap:wrap; gap:10px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,.15);
+" aria-label="قائمة التنقل الإضافية">
+  {% for item in sidebar_items %}
+  <a href="{{ item.url or '#' }}"
+     style="display:flex;align-items:center;gap:8px;padding:10px 14px;
+            border:1px solid var(--border);border-radius:10px;
+            background:var(--bg);color:var(--text);text-decoration:none;
+            font-size:.82rem;font-weight:500;min-width:140px;flex:1">
+    <span>{{ item.icon or '▪' }}</span>
+    <span>{{ item.label }}</span>
+  </a>
+  {% endfor %}
+</div>
+<script>
+function toggleBottomMenu(e) {
+  e.preventDefault();
+  var m = document.getElementById('bnav-more-menu');
+  if (!m) return;
+  m.style.display = (m.style.display === 'none' || m.style.display === '') ? 'flex' : 'none';
+}
+document.addEventListener('click', function(e) {
+  var btn = document.getElementById('bnav-more-btn');
+  var menu = document.getElementById('bnav-more-menu');
+  if (!menu || !btn) return;
+  if (!btn.contains(e.target) && !menu.contains(e.target)) {
+    menu.style.display = 'none';
+  }
+});
+</script>
+{% endif %}
 
 {% else %}
   <!-- صفحات Auth والتهيئة بدون sidebar -->
@@ -258,5 +354,64 @@ function toggleTheme(){
   applyTheme(saved);
 })();
 </script>
+
+{% if current_user %}
+<!-- ══ نظام الإشعارات الداخلية (In-App Notifications) ══ -->
+<div id="jb-notif-stack" style="
+  position:fixed;bottom:20px;left:20px;z-index:9999;
+  display:flex;flex-direction:column;gap:8px;max-width:340px;
+"></div>
+<script>
+(function(){
+  const stack = document.getElementById('jb-notif-stack');
+  const COLORS = {
+    info:    {bg:'#1e3a5f',border:'#2563eb',icon:'ℹ️',text:'#93c5fd'},
+    success: {bg:'#064e3b',border:'#059669',icon:'✅',text:'#6ee7b7'},
+    warning: {bg:'#451a03',border:'#d97706',icon:'⚠️',text:'#fdba74'},
+    error:   {bg:'#7f1d1d',border:'#dc2626',icon:'🚨',text:'#fca5a5'},
+  };
+
+  function showNotif(n) {
+    const c = COLORS[n.ntype] || COLORS.info;
+    const el = document.createElement('div');
+    el.style.cssText = `background:${c.bg};border:1px solid ${c.border};border-radius:10px;
+      padding:12px 14px;color:${c.text};font-family:inherit;font-size:.84rem;
+      box-shadow:0 4px 20px rgba(0,0,0,.4);display:flex;gap:10px;align-items:flex-start;
+      animation:jbSlideIn .3s ease;max-width:340px`;
+    el.innerHTML = `
+      <span style="font-size:1.2rem;flex-shrink:0">${c.icon}</span>
+      <div style="flex:1">
+        <div style="font-weight:700;margin-bottom:2px">${n.title}</div>
+        ${n.body ? `<div style="font-size:.78rem;opacity:.8">${n.body}</div>` : ''}
+      </div>
+      <button onclick="dismissNotif(${n.id},this.parentElement)"
+        style="background:none;border:none;color:${c.text};cursor:pointer;font-size:1rem;flex-shrink:0;opacity:.7;padding:0">✕</button>`;
+    stack.appendChild(el);
+    // إزالة تلقائية بعد 7 ثوانٍ
+    setTimeout(() => dismissNotif(n.id, el), 7000);
+  }
+
+  window.dismissNotif = function(id, el) {
+    if (!el || !el.parentElement) return;
+    el.style.animation = 'jbSlideOut .25s ease forwards';
+    setTimeout(() => el.remove(), 250);
+    fetch(`/admin/notifications/mark-read/${id}`, {method:'POST',headers:{'Content-Type':'application/json'}});
+  };
+
+  // تحميل الإشعارات بعد ثانية
+  setTimeout(function(){
+    fetch('/admin/notifications/active')
+      .then(r => r.ok ? r.json() : [])
+      .then(list => { list.slice(0,3).forEach((n,i) => setTimeout(()=>showNotif(n), i*600)); })
+      .catch(()=>{});
+  }, 1200);
+})();
+</script>
+<style>
+@keyframes jbSlideIn{from{transform:translateX(-30px);opacity:0}to{transform:none;opacity:1}}
+@keyframes jbSlideOut{to{transform:translateX(-30px);opacity:0}}
+</style>
+{% endif %}
+
 </body>
 </html>

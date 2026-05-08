@@ -90,6 +90,14 @@ input:checked+.toggle-slider::before{transform:translateX(-20px)}
 
 /* ══ Charts ═════════════════════════════════════════════════════════════ */
 .chart-wrap{position:relative;height:220px}
+
+/* ══ Product Upload ═════════════════════════════════════════════════════ */
+.upload-box{background:linear-gradient(145deg,#0b1220,#111827);border:1px dashed rgba(96,165,250,.45);border-radius:14px;padding:14px}
+.upload-grid{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
+@media(max-width:800px){.upload-grid{grid-template-columns:1fr}}
+.upload-help{color:#94a3b8;font-size:.75rem;line-height:1.7;margin-top:8px}
+.upload-input{width:100%;background:#0f172a;border:1px solid rgba(148,163,184,.25);border-radius:10px;padding:9px;color:#e2e8f0}
+.upload-btn{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-weight:800;cursor:pointer}
 </style>
 {% endblock %}
 
@@ -236,6 +244,32 @@ input:checked+.toggle-slider::before{transform:translateX(-20px)}
       <div class="ow-kv"><span class="k">عدد العملاء/الموردين</span><span class="v">{{ operational_snapshot.contacts_count }}</span></div>
     </div>
 
+    {# ── بطاقة طلبات التسجيل ─────────────────────────────────────── #}
+    <div class="ow-card" style="border-color:rgba(245,158,11,.45)">
+      <h3 class="ow-card-title">🔑 طلبات التسجيل</h3>
+      <p style="color:#94a3b8;font-size:.8rem;line-height:1.6;margin:0 0 14px">
+        راجع طلبات الانضمام الجديدة وافعّل الحسابات التي تختارها.<br>
+        لا يستطيع أحد الدخول قبل موافقتك الشخصية.
+      </p>
+      <a href="{{ url_for('owner.registrations_page') }}"
+         style="display:block;text-align:center;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border-radius:10px;padding:10px 0;font-weight:800;font-size:.9rem;text-decoration:none;">
+        🔑 إدارة طلبات التسجيل
+      </a>
+    </div>
+
+    {# ── بطاقة دمج الأنشطة ───────────────────────────────────────── #}
+    <div class="ow-card" style="border-color:rgba(139,92,246,.35)">
+      <h3 class="ow-card-title">🔀 دمج الأنشطة الفرعية</h3>
+      <p style="color:#94a3b8;font-size:.8rem;line-height:1.6;margin:0 0 14px">
+        هل تبيع ملابس رجالي <strong>ونسائي</strong> معاً؟ أو خضار <strong>وفواكه</strong> في نفس المتجر؟<br>
+        ادمج الأنشطة الفرعية لدمج منتجاتها وتصنيفاتها فوراً في نشاط واحد موحّد.
+      </p>
+      <a href="{{ url_for('owner.activities_page') }}"
+         style="display:block;text-align:center;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border-radius:10px;padding:10px 0;font-weight:800;font-size:.9rem;text-decoration:none;">
+        🔀 إدارة ودمج الأنشطة
+      </a>
+    </div>
+
     <div class="ow-card">
       <h3 class="ow-card-title">🧭 اختصار تنفيذي للمالك</h3>
       <ul class="db-side-list" style="margin-top:8px">
@@ -243,6 +277,25 @@ input:checked+.toggle-slider::before{transform:translateX(-20px)}
         <li>حالة المقاولات في سطر واحد: نشط، مكتمل، ومخرجات الشهر.</li>
         <li>نبض تشغيلي موحد: فواتير اليوم + الذمم + حجم البيانات الأساسية.</li>
       </ul>
+    </div>
+  </div>
+
+  {# ── رفع ملف المنتجات ودمج فوري حسب النشاط ──────────────────────────── #}
+  <div class="ow-card" style="margin-bottom:20px">
+    <h3 class="ow-card-title">📤 رفع منتجات ودمج مباشر حسب الاختصاص</h3>
+    <div class="upload-box">
+      <form method="POST" action="{{ url_for('owner.upload_products_file') }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="upload-grid">
+          <input class="upload-input" type="file" name="products_file" accept=".csv,.xlsx,.txt" required>
+          <button class="upload-btn" type="submit">رفع ودمج الآن</button>
+        </div>
+      </form>
+      <div class="upload-help">
+        الأعمدة المطلوبة: الاسم، الباركود، السعر، الوصف.<br>
+        يدعم CSV/XLSX، ويتم الدمج فوراً: إذا الباركود موجود يتم تحديث المنتج، وإذا جديد يتم إنشاؤه تلقائياً.<br>
+        عند عدم وجود تصنيف في الملف، النظام يضع تصنيف افتراضي مناسب لنشاط المنشأة تلقائياً.
+      </div>
     </div>
   </div>
 
@@ -358,6 +411,20 @@ input:checked+.toggle-slider::before{transform:translateX(-20px)}
         <p style="color:#64748b;font-size:.82rem;text-align:center;margin-top:20px">لا توجد نشاطات مسجلة بعد</p>
       {% endif %}
     </div>
+  </div>
+
+  {# ── بطاقة OAuth ── #}
+  <div class="ow-card" style="margin-top:20px">
+    <h3 class="ow-card-title">🔐 تسجيل الدخول الاجتماعي (Google / Microsoft)</h3>
+    <p style="color:#64748b;font-size:.82rem;margin-bottom:14px">ربط حسابات Google وMicrosoft لتفعيل تسجيل الدخول بنقرة واحدة</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      <span id="badge-google" style="padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:700;background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.3)">🟢 Google — يحتاج مفاتيح</span>
+      <span id="badge-ms"     style="padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:700;background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.3)">🔵 Microsoft — يحتاج مفاتيح</span>
+    </div>
+    <a href="{{ url_for('owner.oauth_settings') }}"
+       style="display:inline-block;padding:9px 20px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border-radius:10px;font-size:.85rem;font-weight:700;text-decoration:none">
+      ⚙️ إعداد تسجيل الدخول الاجتماعي
+    </a>
   </div>
 
 </div>{# .ow-wrap #}

@@ -1,83 +1,338 @@
 {% extends "base.html" %}
-{% block title %}منتج جديد{% endblock %}
+{% block title %}إضافة منتج جديد{% endblock %}
 {% block page_title %}📦 إضافة منتج{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <div>
-    <a href="/inventory/products" style="color:#94a3b8;font-size:.85rem;">← قائمة المنتجات</a>
-    <h1 class="page-title" style="margin-top:4px;">إضافة منتج جديد</h1>
+<style>
+/* ═══ Product Form — Full Page Redesign ═══ */
+.pf-back{color:#60a5fa;font-size:.85rem;text-decoration:none;display:inline-flex;align-items:center;gap:6px;margin-bottom:20px;transition:color .2s;}
+.pf-back:hover{color:#93c5fd;}
+.pf-hero{background:linear-gradient(135deg,rgba(14,165,233,.15),rgba(99,102,241,.1),rgba(16,185,129,.08));
+  border:1px solid rgba(56,189,248,.2);border-radius:20px;padding:28px 32px;margin-bottom:28px;
+  display:flex;align-items:center;gap:20px;}
+.pf-hero-icon{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#0ea5e9,#6366f1);
+  display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0;
+  box-shadow:0 8px 24px rgba(14,165,233,.3);}
+.pf-hero-text h1{font-size:1.5rem;font-weight:800;color:#f1f5f9;margin:0 0 4px;}
+.pf-hero-text p{color:#94a3b8;font-size:.9rem;margin:0;}
+.sku-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(16,185,129,.15);
+  border:1px solid rgba(16,185,129,.3);border-radius:20px;padding:4px 14px;
+  font-family:monospace;font-size:.85rem;color:#34d399;margin-top:8px;}
+.pf-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+.pf-section{background:linear-gradient(145deg,rgba(30,41,59,.9),rgba(15,23,42,.6));
+  border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px;grid-column:1/-1;}
+.pf-section.half{grid-column:span 1;}
+.pf-section-title{font-size:.78rem;font-weight:700;color:#64748b;text-transform:uppercase;
+  letter-spacing:.08em;margin-bottom:18px;padding-bottom:10px;
+  border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:8px;}
+.pf-section-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:.95rem;flex-shrink:0;}
+.pf-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.pf-row.cols3{grid-template-columns:1fr 1fr 1fr;}
+.pf-field{display:flex;flex-direction:column;gap:6px;}
+.pf-field.full{grid-column:1/-1;}
+.pf-label{font-size:.78rem;font-weight:600;color:#64748b;display:flex;align-items:center;gap:6px;}
+.pf-label .req{color:#ef4444;}
+.pf-input{width:100%;padding:12px 16px;background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#f1f5f9;
+  font-size:.92rem;transition:all .2s;box-sizing:border-box;}
+.pf-input:focus{outline:none;border-color:#0ea5e9;background:rgba(14,165,233,.06);
+  box-shadow:0 0 0 3px rgba(14,165,233,.12);}
+.pf-input::placeholder{color:#334155;}
+.pf-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%2364748b' viewBox='0 0 20 20'%3E%3Cpath d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:left 12px center;background-size:16px;padding-left:36px;}
+.pf-textarea{resize:vertical;min-height:80px;}
+.price-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;padding:18px;transition:border-color .2s;}
+.price-card.purchase{border-color:rgba(251,191,36,.15);}
+.price-card.purchase:hover{border-color:rgba(251,191,36,.3);}
+.price-card.sale{border-color:rgba(16,185,129,.15);}
+.price-card.sale:hover{border-color:rgba(16,185,129,.3);}
+.price-card-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.price-card-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;font-size:1.1rem;flex-shrink:0;}
+.price-card.purchase .price-card-icon{background:rgba(251,191,36,.15);}
+.price-card.sale .price-card-icon{background:rgba(16,185,129,.15);}
+.price-card-title{font-size:.88rem;font-weight:700;color:#e2e8f0;}
+.price-card-sub{font-size:.75rem;color:#64748b;}
+.tax-toggle{display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+  border-radius:8px;cursor:pointer;margin-top:10px;transition:background .2s;}
+.tax-toggle:hover{background:rgba(255,255,255,.06);}
+.tax-toggle input[type=checkbox]{width:18px;height:18px;accent-color:#0ea5e9;cursor:pointer;}
+.tax-toggle-label{font-size:.84rem;color:#94a3b8;user-select:none;}
+.tax-info{font-size:.75rem;color:#475569;margin-top:6px;padding:6px 10px;
+  background:rgba(255,255,255,.02);border-radius:6px;border-right:3px solid #334155;}
+.sku-field-wrap{position:relative;}
+.sku-field-wrap .pf-input{padding-left:42px;}
+.sku-auto-badge{position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  font-size:.7rem;color:#34d399;background:rgba(16,185,129,.15);
+  padding:2px 6px;border-radius:4px;white-space:nowrap;line-height:1.4;}
+.pf-actions{display:flex;gap:12px;justify-content:flex-end;padding:20px 24px;
+  background:rgba(15,23,42,.8);border-top:1px solid rgba(255,255,255,.06);
+  position:sticky;bottom:0;z-index:10;backdrop-filter:blur(8px);
+  border-radius:0 0 20px 20px;margin-top:24px;}
+.btn-save{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;
+  background:linear-gradient(135deg,#0ea5e9,#6366f1);border:none;border-radius:12px;
+  color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 16px rgba(14,165,233,.3);}
+.btn-save:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(14,165,233,.4);}
+.btn-cancel{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;color:#94a3b8;font-size:.95rem;font-weight:600;
+  text-decoration:none;transition:all .2s;}
+.btn-cancel:hover{background:rgba(255,255,255,.1);color:#f1f5f9;}
+@media(max-width:768px){
+  .pf-grid{grid-template-columns:1fr;}
+  .pf-section.half{grid-column:1/-1;}
+  .pf-row,.pf-row.cols3{grid-template-columns:1fr 1fr;}
+  .pf-hero{padding:16px;gap:14px;}
+  .pf-hero-icon{width:48px;height:48px;font-size:1.4rem;}
+  .pf-hero-text h1{font-size:1.1rem;}
+  .pf-actions{position:relative;border-radius:12px;margin-top:16px;}
+}
+@media(max-width:480px){
+  .pf-row,.pf-row.cols3{grid-template-columns:1fr;}
+}
+</style>
+
+<a href="/inventory/products" class="pf-back">← العودة لقائمة المنتجات</a>
+
+<div class="pf-hero">
+  <div class="pf-hero-icon">📦</div>
+  <div class="pf-hero-text">
+    <h1>إضافة منتج جديد</h1>
+    <p>أدخل بيانات المنتج الشاملة — الاسم والفئة والأسعار والمخزون</p>
+    <div class="sku-badge">🔢 الرقم التسلسلي التلقائي: <strong>{{ sku_preview }}</strong></div>
   </div>
 </div>
 
-<div class="card" style="max-width:700px;margin:0 auto;">
-  <form action="/inventory/products/new" method="post">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      <div style="grid-column:1/-1;">
-        <label class="form-label">اسم المنتج *</label>
-        <input type="text" name="name" class="form-input" required placeholder="أدخل اسم المنتج">
+<form action="/inventory/products/new" method="post" id="productForm">
+  <div class="pf-grid">
+
+    <!-- ══ المعلومات الأساسية ══ -->
+    <div class="pf-section">
+      <div class="pf-section-title">
+        <div class="pf-section-icon" style="background:rgba(14,165,233,.15);">ℹ️</div>
+        المعلومات الأساسية
       </div>
-      <div>
-        <label class="form-label">SKU (رمز المنتج)</label>
-        <input type="text" name="sku" class="form-input" placeholder="مثال: SKU-001">
-      </div>
-      <div>
-        <label class="form-label">الباركود</label>
-        <input type="text" name="barcode" class="form-input" placeholder="مثال: 6281234567890">
-      </div>
-      <div>
-        <label class="form-label">الكمية الابتدائية</label>
-        <input type="number" name="initial_qty" class="form-input" value="0" min="0" step="0.01">
-      </div>
-      <div>
-        <label class="form-label">وحدة القياس</label>
-        <select name="unit" class="form-input">
-          <option value="قطعة">قطعة</option>
-          <option value="كجم">كجم</option>
-          <option value="لتر">لتر</option>
-          <option value="متر">متر</option>
-          <option value="صندوق">صندوق</option>
-          <option value="كرتون">كرتون</option>
-          <option value="علبة">علبة</option>
-        </select>
-      </div>
-      <div>
-        <label class="form-label">الحد الأدنى للتنبيه</label>
-        <input type="number" name="min_qty" class="form-input" value="5" min="0" step="0.01">
-      </div>
-      <div>
-        <label class="form-label">سعر الشراء (ر.س)</label>
-        <input type="number" name="cost_price" class="form-input" value="0" min="0" step="0.01">
-      </div>
-      <div>
-        <label class="form-label">سعر البيع (ر.س)</label>
-        <input type="number" name="sell_price" class="form-input" value="0" min="0" step="0.01">
-      </div>
-      <div>
-        <label class="form-label">الموقع / الرف</label>
-        <input type="text" name="location" class="form-input" placeholder="مثال: رف A-3">
-      </div>
-      <div>
-        <label class="form-label">تاريخ انتهاء الصلاحية</label>
-        <input type="date" name="expiry_date" class="form-input">
-      </div>
-      <div>
-        <label class="form-label">الرقم التسلسلي</label>
-        <input type="text" name="serial_number" class="form-input" placeholder="اختياري">
-      </div>
-      <div>
-        <label class="form-label">المورد</label>
-        <input type="text" name="supplier_id" class="form-input" placeholder="رقم المورد (اختياري)">
-      </div>
-      <div style="grid-column:1/-1;">
-        <label class="form-label">ملاحظات</label>
-        <textarea name="notes" class="form-input" rows="2" placeholder="أي ملاحظات إضافية..."></textarea>
+      <div class="pf-row">
+        <div class="pf-field full">
+          <label class="pf-label">اسم المنتج <span class="req">*</span></label>
+          <input type="text" name="name" class="pf-input" required
+                 placeholder="أدخل اسم المنتج باللغة العربية" autocomplete="off">
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">اسم المنتج (إنجليزي)</label>
+          <input type="text" name="name_en" class="pf-input"
+                 placeholder="Product name in English" dir="ltr">
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">الفئة / القسم</label>
+          <select name="category_id" class="pf-input pf-select">
+            <option value="">— اختر الفئة —</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">الرقم التسلسلي (SKU) <span style="color:#94a3b8;font-size:.7rem;">(اتركه فارغاً للتوليد التلقائي)</span></label>
+          <div class="sku-field-wrap">
+            <span class="sku-auto-badge">تلقائي</span>
+            <input type="text" name="sku" class="pf-input"
+                   placeholder="{{ sku_preview }}" dir="ltr">
+          </div>
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">الباركود</label>
+          <input type="text" name="barcode" class="pf-input"
+                 placeholder="مثال: 6281234567890" dir="ltr">
+        </div>
+        <div class="pf-field full">
+          <label class="pf-label">وصف المنتج</label>
+          <textarea name="description" class="pf-input pf-textarea"
+                    placeholder="وصف مختصر للمنتج..."></textarea>
+        </div>
       </div>
     </div>
-    <div style="margin-top:24px;display:flex;gap:12px;">
-      <button type="submit" class="btn btn-primary">💾 حفظ المنتج</button>
-      <a href="/inventory/products" class="btn btn-secondary">إلغاء</a>
+
+    <!-- ══ سعر الشراء ══ -->
+    <div class="pf-section half">
+      <div class="pf-section-title">
+        <div class="pf-section-icon" style="background:rgba(251,191,36,.15);">🛒</div>
+        سعر الشراء
+      </div>
+      <div class="price-card purchase">
+        <div class="price-card-header">
+          <div class="price-card-icon">💳</div>
+          <div>
+            <div class="price-card-title">سعر الشراء من المورد</div>
+            <div class="price-card-sub">السعر الذي تدفعه عند الشراء</div>
+          </div>
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">المبلغ (ر.س)</label>
+          <input type="number" name="cost_price" id="costRaw" class="pf-input"
+                 value="0" min="0" step="0.01"
+                 oninput="calcCostNet()" style="font-size:1.15rem;font-weight:700;color:#fbbf24;">
+        </div>
+        <label class="tax-toggle">
+          <input type="checkbox" name="cost_has_tax" value="1" id="costTax" onchange="calcCostNet()">
+          <span class="tax-toggle-label">💡 السعر يشمل ضريبة القيمة المضافة (15%)</span>
+        </label>
+        <div class="tax-info" id="costNetInfo">
+          السعر بدون ضريبة: <strong id="costNet" style="color:#fbbf24;">0.00</strong> ر.س
+        </div>
+      </div>
     </div>
-  </form>
-</div>
+
+    <!-- ══ سعر البيع ══ -->
+    <div class="pf-section half">
+      <div class="pf-section-title">
+        <div class="pf-section-icon" style="background:rgba(16,185,129,.15);">💰</div>
+        سعر البيع
+      </div>
+      <div class="price-card sale">
+        <div class="price-card-header">
+          <div class="price-card-icon">🏷️</div>
+          <div>
+            <div class="price-card-title">سعر البيع للعميل</div>
+            <div class="price-card-sub">السعر الذي يدفعه العميل</div>
+          </div>
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">المبلغ (ر.س)</label>
+          <input type="number" name="sell_price" id="sellRaw" class="pf-input"
+                 value="0" min="0" step="0.01"
+                 oninput="calcSellNet()" style="font-size:1.15rem;font-weight:700;color:#34d399;">
+        </div>
+        <label class="tax-toggle">
+          <input type="checkbox" name="sell_has_tax" value="1" id="sellTax" onchange="calcSellNet()">
+          <span class="tax-toggle-label">💡 السعر يشمل ضريبة القيمة المضافة (15%)</span>
+        </label>
+        <div class="tax-info" id="sellNetInfo">
+          بدون ضريبة: <strong id="sellNet" style="color:#34d399;">0.00</strong> |
+          الضريبة: <strong id="sellVat" style="color:#f59e0b;">0.00</strong> ر.س
+        </div>
+        <div class="tax-info" style="margin-top:6px;border-color:#16a34a;">
+          هامش الربح: <strong id="profitMargin" style="color:#34d399;">—</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ بيانات المخزون ══ -->
+    <div class="pf-section">
+      <div class="pf-section-title">
+        <div class="pf-section-icon" style="background:rgba(139,92,246,.15);">📊</div>
+        بيانات المخزون
+      </div>
+      <div class="pf-row cols3">
+        <div class="pf-field">
+          <label class="pf-label">الكمية الابتدائية</label>
+          <input type="number" name="initial_qty" class="pf-input" value="0" min="0" step="0.001">
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">وحدة القياس</label>
+          <select name="unit" class="pf-input pf-select">
+            <option value="قطعة">قطعة</option>
+            <option value="كجم">كجم</option>
+            <option value="لتر">لتر</option>
+            <option value="متر">متر</option>
+            <option value="صندوق">صندوق</option>
+            <option value="كرتون">كرتون</option>
+            <option value="علبة">علبة</option>
+            <option value="درزن">درزن (12)</option>
+            <option value="جرام">جرام</option>
+            <option value="طن">طن</option>
+          </select>
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">الموقع / الرف</label>
+          <input type="text" name="location" class="pf-input" placeholder="مثال: رف A-3">
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">الحد الأدنى للتنبيه</label>
+          <input type="number" name="min_qty" class="pf-input" value="5" min="0" step="0.001">
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">الحد الأقصى</label>
+          <input type="number" name="max_qty" class="pf-input" value="1000" min="0" step="0.001">
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">تاريخ انتهاء الصلاحية</label>
+          <input type="date" name="expiry_date" class="pf-input">
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ معلومات إضافية ══ -->
+    <div class="pf-section">
+      <div class="pf-section-title">
+        <div class="pf-section-icon" style="background:rgba(239,68,68,.12);">📋</div>
+        معلومات إضافية
+      </div>
+      <div class="pf-row">
+        <div class="pf-field">
+          <label class="pf-label">المورد</label>
+          <input type="text" name="supplier_id" class="pf-input"
+                 placeholder="اسم المورد أو رقمه (اختياري)">
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">الرقم التسلسلي للوحدة (Serial)</label>
+          <input type="text" name="serial_number" class="pf-input"
+                 placeholder="اختياري" dir="ltr">
+        </div>
+        <div class="pf-field full">
+          <label class="pf-label">ملاحظات</label>
+          <textarea name="notes" class="pf-input pf-textarea"
+                    placeholder="أي ملاحظات إضافية..."></textarea>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- شريط الإجراءات -->
+  <div class="pf-actions">
+    <a href="/inventory/products" class="btn-cancel">❌ إلغاء</a>
+    <button type="submit" class="btn-save">💾 حفظ المنتج</button>
+  </div>
+</form>
+
+<script>
+const VAT = 0.15;
+function calcCostNet() {
+  const raw = parseFloat(document.getElementById('costRaw').value) || 0;
+  const hasTax = document.getElementById('costTax').checked;
+  const net = hasTax ? raw / (1 + VAT) : raw;
+  document.getElementById('costNet').textContent = net.toFixed(2);
+  updateMargin();
+}
+function calcSellNet() {
+  const raw = parseFloat(document.getElementById('sellRaw').value) || 0;
+  const hasTax = document.getElementById('sellTax').checked;
+  const net = hasTax ? raw / (1 + VAT) : raw;
+  const vat = hasTax ? (raw - net) : (raw * VAT);
+  document.getElementById('sellNet').textContent = net.toFixed(2);
+  document.getElementById('sellVat').textContent = vat.toFixed(2);
+  updateMargin();
+}
+function updateMargin() {
+  const costRaw = parseFloat(document.getElementById('costRaw').value) || 0;
+  const costHasTax = document.getElementById('costTax').checked;
+  const costNet = costHasTax ? costRaw / (1 + VAT) : costRaw;
+  const sellRaw = parseFloat(document.getElementById('sellRaw').value) || 0;
+  const sellHasTax = document.getElementById('sellTax').checked;
+  const sellNet = sellHasTax ? sellRaw / (1 + VAT) : sellRaw;
+  const el = document.getElementById('profitMargin');
+  if (costNet > 0 && sellNet > 0) {
+    const margin = ((sellNet - costNet) / costNet * 100).toFixed(1);
+    const profit = (sellNet - costNet).toFixed(2);
+    el.textContent = margin + '% (+ ' + profit + ' ر.س)';
+    el.style.color = parseFloat(margin) >= 0 ? '#34d399' : '#f87171';
+  } else { el.textContent = '—'; }
+}
+calcCostNet(); calcSellNet();
+</script>
 {% endblock %}

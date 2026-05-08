@@ -34,6 +34,16 @@ _SOCIAL_PROVIDER_LABELS = {
 }
 
 
+def _oauth_redirect_uri(provider: str) -> str:
+    """يبني Callback URI ثابتاً عبر PUBLIC_BASE_URL عند التشغيل عبر الإنترنت."""
+    provider = (provider or "").strip().lower()
+    path = f"/auth/social/{provider}/callback"
+    public_base = (os.environ.get("PUBLIC_BASE_URL", "") or "").strip().rstrip("/")
+    if public_base:
+        return f"{public_base}{path}"
+    return url_for("auth.auth_social_callback", provider=provider, _external=True)
+
+
 def _get_oauth_client(provider: str):
     """بناء عميل OAuth ديناميكياً اعتماداً على متغيرات البيئة."""
     provider = (provider or "").strip().lower()
@@ -486,7 +496,9 @@ def auth_login():
 
         db   = get_db()
         user = db.execute(
-            "SELECT * FROM users WHERE username = ? AND is_active = 1", (username,)
+            "SELECT u.*, b.account_status FROM users u "
+            "JOIN businesses b ON b.id = u.business_id "
+            "WHERE u.username = ?", (username,)
         ).fetchone()
 
         if not user or not check_password(user["password_hash"], password):
@@ -500,16 +512,48 @@ def auth_login():
                 pass
             return render_template("auth/login.html")
 
+        # ── فحص حالة الموافقة ────────────────────────────────────────────
+        status = (user["account_status"] or "approved") if user else "approved"
+        if status == "pending":
+            return render_template("auth/pending_approval.html",
+                                   username=username, full_name=user["full_name"])
+        if status == "rejected":
+            flash("تم رفض طلب تسجيلك. تواصل مع الإدارة لمزيد من المعلومات.", "error")
+            try:
+                from modules.blueprints.admin.routes import get_active_badges
+                _badges = get_active_badges(db, on_login=True)
+            except Exception:
+                _badges = []
+            return render_template("auth/login.html", marketing_badges=_badges)
+        if not user["is_active"]:
+            flash("هذا الحساب موقوف. تواصل مع الإدارة.", "error")
+            try:
+                from modules.blueprints.admin.routes import get_active_badges
+                _badges = get_active_badges(db, on_login=True)
+            except Exception:
+                _badges = []
+            return render_template("auth/login.html", marketing_badges=_badges)
+
         _login_attempts.pop(ip, None)
         return _complete_login_session(db, int(user["id"]), int(user["business_id"]))
 
-    return render_template("auth/login.html")
+    db = get_db()
+    try:
+        from modules.blueprints.admin.routes import get_active_badges
+        badges = get_active_badges(db, on_login=True)
+    except Exception:
+        badges = []
+    return render_template("auth/login.html", marketing_badges=badges)
 
 
 @bp.route("/auth/register", methods=["GET", "POST"])
 def auth_register():
     if session.get("user_id"):
         return redirect(url_for("core.dashboard"))
+
+    # ── وضع التجربة: إغلاق التسجيل ──────────────────────────────────────
+    if os.environ.get("REGISTRATION_CLOSED", "").lower() in ("1", "true", "yes"):
+        return render_template("registration_closed.html"), 503
 
     if request.method == "POST":
         guard = csrf_protect()
@@ -556,7 +600,7 @@ def auth_register():
 
         try:
             db.execute(
-                "INSERT INTO businesses (name, is_active, country_code) VALUES (?, 0, ?)",
+                "INSERT INTO businesses (name, is_active, country_code, account_status) VALUES (?, 0, ?, 'pending')",
                 (f"منشأة {username}", country_code)
             )
             biz_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
@@ -569,8 +613,8 @@ def auth_register():
 
             db.execute(
                 """INSERT INTO users
-                   (business_id, role_id, username, full_name, email, password_hash)
-                   VALUES (?,?,?,?,?,?)""",
+                   (business_id, role_id, username, full_name, email, password_hash, is_active)
+                   VALUES (?,?,?,?,?,?,0)""",
                 (biz_id, role_id, username, full_name, email, hash_password(password))
             )
             user_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
@@ -602,18 +646,10 @@ def auth_register():
         except Exception:
             pass  # الضريبة غير معيقة للتسجيل
 
-        # تسجيل الدخول التلقائي فور إنشاء الحساب + توجيه مباشر للتهيئة
-        session.clear()
-        session["user_id"]           = user_id
-        session["business_id"]       = biz_id
-        session["needs_onboarding"]  = True
-        session.permanent            = True
-        write_audit_log(db, biz_id, "register", entity_type="user", entity_id=user_id)
-        flash(
-            "مرحباً! اختر نشاطك التجاري لنبدأ تهيئة منصتك.",
-            "info",
-        )
-        return redirect(url_for("core.onboarding"))
+        # ── لا دخول تلقائي — الحساب بانتظار موافقة المالك ─────────────────
+        write_audit_log(db, biz_id, "register_pending", entity_type="user", entity_id=user_id)
+        return render_template("auth/pending_approval.html",
+                               username=username, full_name=full_name)
 
     # GET: جلب قائمة الدول للقالب
     try:
@@ -621,7 +657,13 @@ def auth_register():
         countries = list_countries(get_db())
     except Exception:
         countries = []
-    return render_template("auth/register.html", countries=countries, selected_country="SA")
+    try:
+        from modules.blueprints.admin.routes import get_active_badges
+        reg_badges = get_active_badges(get_db(), on_register=True)
+    except Exception:
+        reg_badges = []
+    return render_template("auth/register.html", countries=countries, selected_country="SA",
+                           marketing_badges=reg_badges)
 
 
 @bp.route("/auth/social/<provider>")
@@ -644,7 +686,7 @@ def auth_social(provider):
 
     session["oauth_provider"] = provider
     session["oauth_nonce"] = secrets.token_urlsafe(24)
-    redirect_uri = url_for("auth.auth_social_callback", provider=provider, _external=True)
+    redirect_uri = _oauth_redirect_uri(provider)
 
     if provider == "apple":
         return client.authorize_redirect(redirect_uri, nonce=session["oauth_nonce"])

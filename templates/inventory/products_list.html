@@ -8,7 +8,24 @@
     <h1 class="page-title">📦 المنتجات</h1>
     <p class="page-subtitle">{{ total }} منتج مسجل</p>
   </div>
-  <a href="/inventory/products/new" class="btn btn-primary">+ إضافة منتج</a>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+    <a href="/inventory/products/export.csv" class="btn btn-secondary">⬇️ تصدير CSV</a>
+    <a href="/inventory/products/new" class="btn btn-primary">+ إضافة منتج</a>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:16px;">
+  <form method="post" action="/inventory/products/import" enctype="multipart/form-data" style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div style="min-width:280px;flex:1;">
+      <label style="font-size:.8rem;color:#94a3b8;display:block;margin-bottom:4px;">استيراد منتجات (CSV / XLSX)</label>
+      <input type="file" name="products_file" accept=".csv,.xlsx,.txt" class="form-input" required>
+    </div>
+    <button type="submit" class="btn btn-primary">📥 استيراد ودمج</button>
+  </form>
+  <div style="margin-top:8px;color:#94a3b8;font-size:.8rem;">
+    الأعمدة المقترحة: الاسم، الباركود، السعر، الكمية، الوصف. الدمج يتم فوراً (تحديث الموجود وإضافة الجديد).
+  </div>
 </div>
 
 <!-- فلاتر البحث -->

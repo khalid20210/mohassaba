@@ -257,6 +257,8 @@
       <div class="sec-card" id="sec-hospitality" onclick="pickSector('hospitality')"><span class="sec-emoji">🍽️</span><div class="sec-name">ضيافة ومطاعم</div></div>
       <div class="sec-card" id="sec-healthcare" onclick="pickSector('healthcare')"><span class="sec-emoji">🏥</span><div class="sec-name">رعاية صحية</div></div>
       <div class="sec-card" id="sec-logistics" onclick="pickSector('logistics')"><span class="sec-emoji">🚛</span><div class="sec-name">لوجستيات ونقل</div></div>
+      <div class="sec-card" id="sec-ecommerce" onclick="pickSector('ecommerce')"><span class="sec-emoji">🛍️</span><div class="sec-name">تجارة إلكترونية</div></div>
+      <div class="sec-card" id="sec-education" onclick="pickSector('education')"><span class="sec-emoji">🎓</span><div class="sec-name">تعليم وتدريب</div></div>
     </div>
     <button class="ob-btn" id="btnBNext" disabled onclick="goToC()">
       <i class="fas fa-arrow-left"></i> التالي — اختر نشاطك التفصيلي
@@ -380,8 +382,10 @@ const EMOJI_PREFIX = [
   ['services_insurance','🛡️'],['services_exchange','💱'],['services_media','📺'],
   ['services_driving','🚗'],['services_manpower','👷'],['services_charity','❤️'],
   ['services_government','🏛️'],['services_','🏢'],['services','🏢'],
-  ['education_school','📖'],['education_nursery','🧸'],['education_training','🔧'],
-  ['education_tutor','📝'],['education_language','🗣️'],['education_quran','📿'],['education_','🎓'],
+  ['education_school','🏫'],['education_nursery','🧸'],['education_training','🔧'],
+  ['education_tutor','📝'],['education_language','🗣️'],['education_quran','📿'],
+  ['education_univ','🎓'],['education_online','💻'],['education_vocat','🛠️'],
+  ['education_arts','🎨'],['education_sport','⚽'],['education_coding','💻'],['education_','🎓'],
   ['real_estate_agency','🤝'],['real_estate_dev','🏢'],['real_estate_mgmt','🗝️'],['real_estate_','🏠'],
   ['auto_service_carwash','🚿'],['auto_service_repair','🔧'],['auto_service_paint','🎨'],['auto_service_','🚘'],
   ['transport_freight','🚛'],['transport_courier','📦'],['transport_moving','🚐'],
@@ -403,6 +407,8 @@ function getEmoji(code){
 function getSector(code){
   if(code==='retail'||code.startsWith('retail_'))return'retail';
   if(code==='wholesale'||code.startsWith('wholesale_'))return'wholesale';
+  if(code.startsWith('ecommerce_'))return'ecommerce';
+  if(code.startsWith('education_'))return'education';
   if(code.startsWith('food_')||code==='restaurant'||code==='cafe'||code==='coffeeshop')return'hospitality';
   if(code.startsWith('hospitality_'))return'hospitality';
   if(code==='medical'||code==='medical_complex'||code.startsWith('medical_'))return'healthcare';
@@ -411,7 +417,7 @@ function getSector(code){
   if(code.startsWith('agriculture_'))return'manufacturing';
   if(code.startsWith('transport_'))return'logistics';
   if(code==='car_rental'||code.startsWith('auto_service_'))return'services';
-  if(code==='services'||code.startsWith('services_')||code.startsWith('education_')||code.startsWith('real_estate_'))return'services';
+  if(code==='services'||code.startsWith('services_')||code.startsWith('real_estate_'))return'services';
   return null;// legacy غير مصنف — تجاهل
 }
 
@@ -426,8 +432,22 @@ const TAB_LABEL = {
   food:'طعام ومشروبات',hospitality:'إقامة وسياحة',
   // healthcare
   medical:'خدمات طبية',
+  // ecommerce
+  ecommerce_general:'متاجر عامة',ecommerce_fashion:'أزياء وملابس',
+  ecommerce_electronics:'إلكترونيات وتقنية',ecommerce_food:'طعام وتوصيل',
+  ecommerce_health_beauty:'صحة وجمال',ecommerce_home_decor:'أثاث وديكور',
+  ecommerce_books_courses:'كتب ودورات',ecommerce_handmade:'منتجات يدوية',
+  ecommerce_dropshipping:'دروب شيبينج',ecommerce_marketplace:'سوق إلكتروني',
+  ecommerce_subscription:'اشتراك شهري',ecommerce_digital_products:'منتجات رقمية',
+  // education
+  education_school:'مدارس',education_nursery:'حضانات ورياض',
+  education_training_center:'تدريب مهني',education_tutoring:'تقوية دراسية',
+  education_language:'تعليم لغات',education_quran:'تحفيظ قرآن',
+  education_university:'جامعات وكليات',education_online:'تعليم إلكتروني',
+  education_vocational:'تدريب حرفي',education_arts:'فنون وموسيقى',
+  education_sports_academy:'أكاديمية رياضية',education_coding:'برمجة وتقنية',
   // services
-  services:'خدمات عامة',education:'تعليم',real_estate:'عقارات',
+  services:'خدمات عامة',real_estate:'عقارات',
   auto_service:'خدمات سيارات',car_rental:'تأجير سيارات',
   // manufacturing
   industrial:'صناعة',agriculture:'زراعة',
@@ -449,8 +469,9 @@ function getTabKey(code,sector){
   if(sector==='contracting')return'contracting';
   if(sector==='manufacturing')return p[0]==='agriculture'?'agriculture':'industrial';
   if(sector==='logistics')return'transport';
+  if(sector==='ecommerce')return code;
+  if(sector==='education')return code;
   if(sector==='services'){
-    if(p[0]==='education')return'education';
     if(p[0]==='real')return'real_estate';
     if(p[0]==='auto')return'auto_service';
     if(code==='car_rental')return'car_rental';
@@ -473,7 +494,7 @@ for(const [code,label] of RAW_INDUSTRY){
   TABS_MAP[sector][tab]=TAB_LABEL[tab]||tab;
 }
 
-const SECTOR_TITLES={wholesale:"اختر نشاط الجملة",retail:"اختر نشاط التجزئة",services:"اختر نشاطك الخدمي",contracting:"اختر نشاط المقاولات",manufacturing:"اختر النشاط الصناعي",hospitality:"اختر نشاط الضيافة",healthcare:"اختر النشاط الصحي",logistics:"اختر نشاط اللوجستيات"};
+const SECTOR_TITLES={wholesale:"اختر نشاط الجملة",retail:"اختر نشاط التجزئة",services:"اختر نشاطك الخدمي",contracting:"اختر نشاط المقاولات",manufacturing:"اختر النشاط الصناعي",hospitality:"اختر نشاط الضيافة",healthcare:"اختر النشاط الصحي",logistics:"اختر نشاط اللوجستيات",ecommerce:"اختر نوع متجرك الإلكتروني",education:"اختر نشاطك التعليمي"};
 const LOG_MSGS=["[SYS] تحليل خصائص النشاط التجاري...","[DB] بناء هيكل دليل الحسابات...","[TAX] تكوين قواعد الضريبة والزكاة...","[INV] إنشاء نماذج الفواتير...","[CAT] تصنيف فئات المنتجات...","[WH] تهيئة المستودع الرئيسي...","[SEC] تطبيق بروتوكولات الأمان...","[RPT] بناء لوحة التحكم...","[POS] تفعيل نقطة البيع...","[USR] ضبط صلاحيات المستخدمين...","[SYNC] مزامنة الإعدادات...","[HASH] التحقق من سلامة البيانات...","[OK] اكتملت التهيئة بنجاح."];
 let selSector=null,selAct=null;
 let activityAnimDone=false;

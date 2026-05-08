@@ -1004,6 +1004,129 @@ def settings():
             )
             return redirect(url_for("core.settings"))
 
+        if action == "toggle_shared_service":
+            product_id = request.form.get("product_id", "").strip()
+            enable_flag = (request.form.get("enable") or "1").strip() == "1"
+            if not product_id.isdigit():
+                flash("معرف الخدمة غير صحيح", "error")
+                return redirect(url_for("core.settings"))
+            row = db.execute(
+                "SELECT id FROM products WHERE id=? AND business_id=? AND product_type='service'",
+                (int(product_id), biz_id)
+            ).fetchone()
+            if not row:
+                flash("الخدمة غير موجودة", "error")
+                return redirect(url_for("core.settings"))
+            db.execute(
+                "UPDATE products SET is_active=?, updated_at=datetime('now') WHERE id=? AND business_id=?",
+                (1 if enable_flag else 0, int(product_id), biz_id)
+            )
+            db.commit()
+            flash(
+                f"تم {'تفعيل' if enable_flag else 'تعطيل'} الخدمة بنجاح",
+                "success",
+            )
+            return redirect(url_for("core.settings") + "#shared-services-section")
+
+        if action == "apply_global_profit_margin":
+            if not can_edit_business:
+                flash("ليس لديك صلاحية تعديل الأسعار", "error")
+                return redirect(url_for("core.settings"))
+
+            margin_pct = request.form.get("margin_pct", "0").strip()
+            tax_mode = (request.form.get("tax_mode") or "without_tax").strip()
+            tax_pct_raw = request.form.get("tax_pct", "15").strip()
+
+            try:
+                margin_pct_val = float(margin_pct)
+            except Exception:
+                flash("نسبة هامش الربح غير صحيحة", "error")
+                return redirect(url_for("core.settings"))
+
+            if margin_pct_val < 0:
+                flash("هامش الربح يجب أن يكون 0 أو أكبر", "error")
+                return redirect(url_for("core.settings"))
+
+            try:
+                tax_pct_val = float(tax_pct_raw or "0")
+            except Exception:
+                tax_pct_val = 0.0
+
+            if tax_pct_val < 0:
+                tax_pct_val = 0.0
+
+            if tax_mode not in {"without_tax", "with_tax"}:
+                tax_mode = "without_tax"
+
+            margin_factor = 1.0 + (margin_pct_val / 100.0)
+            tax_factor = (1.0 + (tax_pct_val / 100.0)) if tax_mode == "with_tax" else 1.0
+
+            old_count_products = db.execute(
+                "SELECT COUNT(*) FROM products WHERE business_id=?",
+                (biz_id,)
+            ).fetchone()[0]
+            old_count_inventory = db.execute(
+                "SELECT COUNT(*) FROM product_inventory WHERE business_id=?",
+                (biz_id,)
+            ).fetchone()[0]
+
+            db.execute(
+                """UPDATE products
+                   SET sale_price = ROUND(
+                       CASE
+                           WHEN COALESCE(purchase_price, 0) > 0
+                               THEN purchase_price * ? * ?
+                           WHEN COALESCE(sale_price, 0) > 0
+                               THEN sale_price * ?
+                           ELSE sale_price
+                       END,
+                       2
+                   ),
+                   updated_at = datetime('now')
+                   WHERE business_id = ?""",
+                (margin_factor, tax_factor, tax_factor, biz_id)
+            )
+
+            db.execute(
+                """UPDATE product_inventory
+                   SET unit_price = ROUND(
+                       CASE
+                           WHEN COALESCE(unit_cost, 0) > 0
+                               THEN unit_cost * ? * ?
+                           WHEN COALESCE(unit_price, 0) > 0
+                               THEN unit_price * ?
+                           ELSE unit_price
+                       END,
+                       2
+                   ),
+                   updated_at = datetime('now')
+                   WHERE business_id = ?""",
+                (margin_factor, tax_factor, tax_factor, biz_id)
+            )
+
+            write_audit_log(
+                db,
+                biz_id,
+                "global_profit_margin_applied",
+                entity_type="settings",
+                entity_id=biz_id,
+                new_value=json.dumps({
+                    "margin_pct": margin_pct_val,
+                    "tax_mode": tax_mode,
+                    "tax_pct": tax_pct_val,
+                    "products_total": old_count_products,
+                    "inventory_total": old_count_inventory,
+                }, ensure_ascii=False)
+            )
+            db.commit()
+
+            tax_note = f"شامل ضريبة {tax_pct_val:.2f}%" if tax_mode == "with_tax" else "بدون ضريبة"
+            flash(
+                f"✅ تم تطبيق هامش ربح {margin_pct_val:.2f}% على جميع الأسعار ({tax_note})",
+                "success",
+            )
+            return redirect(url_for("core.settings"))
+
         if not can_edit_business:
             flash("ليس لديك صلاحية تعديل بيانات المنشأة", "error")
             return redirect(url_for("core.settings"))
@@ -1132,6 +1255,17 @@ def settings():
     except Exception:
         premium_addons_state = {}
 
+    # جلب الخدمات المحاسبية المشتركة الخاصة بهذه المنشأة
+    shared_services = db.execute(
+        """SELECT id, name, category_name, is_active
+           FROM products
+           WHERE business_id=? AND product_type='service'
+             AND category_name IN ('خدمات محاسبية مشتركة','خدمات مشتركة')
+           ORDER BY category_name, name""",
+        (biz_id,)
+    ).fetchall()
+    shared_services = [dict(r) for r in shared_services]
+
     return render_template(
         "settings.html",
         biz=dict(biz) if biz else {},
@@ -1141,6 +1275,7 @@ def settings():
         can_manage_premium=can_manage_premium,
         premium_addons=PREMIUM_ADDONS,
         premium_addons_state=premium_addons_state,
+        shared_services=shared_services,
     )
 
 

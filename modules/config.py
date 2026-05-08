@@ -315,8 +315,12 @@ INDUSTRY_TYPES = [
     ("education_training_center", "مركز تدريب مهني"),
     ("education_tutoring",        "مركز تقوية دراسية"),
     ("education_language",        "مركز تعليم لغات"),
-    ("education_quran",           "مركز تحفيظ قرآن"),
-
+    ("education_quran",           "مركز تحفيظ قرآن"),    ("education_university",      "جامعة وكلية أهلية"),
+    ("education_online",          "تعليم إلكتروني عن بعد"),
+    ("education_vocational",      "معهد تقني وحرفي"),
+    ("education_arts",            "مركز فنون وموسيقى"),
+    ("education_sports_academy",  "أكاديمية رياضية"),
+    ("education_coding",          "مركز تعليم برمجة وتقنية"),
     # ── عقارات ───────────────────────────────────────────────────────
     ("real_estate_agency",     "وساطة عقارية"),
     ("real_estate_developer",  "تطوير عقاري"),
@@ -387,14 +391,16 @@ INDUSTRY_TYPES = [
     ("services_media",                "إعلام وإنتاج تلفزيوني"),
     ("services_music_studio",         "استوديو موسيقى وتسجيل"),
     ("services_gaming",               "ألعاب إلكترونية وE-Sports"),
-    ("services_e_commerce",           "تجارة إلكترونية"),
-    ("services_dropshipping",         "دروب شيبينج"),
-    ("services_crypto",               "خدمات العملات الرقمية"),
-    ("services_auction",              "مزادات علنية"),
     ("services_telecom",              "اتصالات وخدمات رقمية"),
     ("services_insurance",            "تأمين ووساطة مالية"),
     ("services_finance",              "خدمات مالية ومصرفية"),
     ("services_exchange",             "صرافة وحوالات مالية"),
+    ("services_egovernment",          "مكتب خدمات حكومية إلكترونية"),
+    ("services_feasibility",          "دراسات جدوى اقتصادية"),
+    ("services_property_mgmt",        "إدارة أملاك وتشغيل"),
+    ("services_facilities",           "مقاولات صيانة وتشغيل"),
+    ("services_vehicle_inspection",   "فحص ومعاينة سيارات"),
+    ("services_notary",               "كتابة عدل وتوثيق"),
 
     # ── صحة — إضافات ─────────────────────────────────────────────────
     ("medical_dermatology",           "عيادة جلدية وتجميل"),
@@ -419,7 +425,21 @@ INDUSTRY_TYPES = [
     ("hospitality_motel",             "موتيل واستراحات الطريق"),
     ("hospitality_tourism_office",    "مكتب سياحة وحجوزات"),
 
-    # ── صناعة — إضافات ───────────────────────────────────────────────
+    # ── تجارة إلكترونية ───────────────────────────────────────────────────
+    ("ecommerce_general",             "متجر إلكتروني عام"),
+    ("ecommerce_fashion",             "متجر أزياء وملابس أونلاين"),
+    ("ecommerce_electronics",         "إلكترونيات وتقنية أونلاين"),
+    ("ecommerce_food",                "طلبات طعام وتوصيل"),
+    ("ecommerce_health_beauty",       "صحة وجمال أونلاين"),
+    ("ecommerce_home_decor",          "أثاث وديكور أونلاين"),
+    ("ecommerce_books_courses",       "كتب ودورات رقمية"),
+    ("ecommerce_handmade",            "منتجات يدوية وحرف"),
+    ("ecommerce_dropshipping",        "دروب شيبينج"),
+    ("ecommerce_marketplace",         "سوق إلكتروني متعدد البائعين"),
+    ("ecommerce_subscription",        "خدمات اشتراك شهري / صناديق"),
+    ("ecommerce_digital_products",    "منتجات رقمية وتطبيقات"),
+
+    # ── صناعة — إضافات ───────────────────────────────────────────────────
     ("industrial_printing_press",     "مطبعة وطباعة صناعية"),
     ("industrial_packaging",          "تعبئة وتغليف صناعي"),
     ("industrial_recycling",          "تدوير ونفايات"),
@@ -460,6 +480,8 @@ def get_sidebar_key(industry_type: str) -> str:
     if code.startswith("wholesale_"):    return "wholesale"
     if code.startswith("food_"):         return "restaurant"
     if code.startswith("medical_"):      return "medical"
+    if code.startswith("ecommerce_"):    return "ecommerce"
+    if code.startswith("education_"):    return "education"
     if code.startswith("services_"):     return "services"
     if code.startswith("education_"):    return "services"
     if code.startswith("real_estate_"):  return "services"
@@ -531,7 +553,19 @@ SIDEBAR_CONFIG = {
         {"key": "invoices",  "label": "الفواتير",      "label_en": "Invoices",           "icon": "🧾", "url": "/invoices/"},
         {"key": "contracts", "label": "العقود",        "label_en": "Contracts",          "icon": "📄", "url": "/services/contracts"},
     ],
-}
+    "ecommerce": [
+        {"key": "pos",       "label": "الطلبات",         "label_en": "Orders",             "icon": "🛒", "url": "/pos"},
+        {"key": "inventory", "label": "المخزون",         "label_en": "Inventory",          "icon": "📦", "url": "/inventory"},
+        {"key": "invoices",  "label": "الفواتير",        "label_en": "Invoices",           "icon": "🧾", "url": "/invoices/"},
+        {"key": "purchases", "label": "المشتريات",       "label_en": "Purchases",          "icon": "🛍️", "url": "/purchases"},
+        {"key": "expenses",  "label": "المصاريف",        "label_en": "Expenses",           "icon": "💸", "url": "/expenses"},
+        {"key": "barcode",   "label": "الباركود / SKU",  "label_en": "Barcode",            "icon": "📷", "url": "/barcode"},
+    ],    "education": [
+        {"key": "invoices",  "label": "الفواتير / الرسوم",  "label_en": "Invoices",           "icon": "🧾", "url": "/invoices/"},
+        {"key": "contacts",  "label": "الطلاب / الولياء",  "label_en": "Students",           "icon": "👨‍💼", "url": "/contacts"},
+        {"key": "expenses",  "label": "المصاريف التشغيلية",   "label_en": "Expenses",           "icon": "💸", "url": "/expenses"},
+        {"key": "jobs",      "label": "جدول الحصص",       "label_en": "Schedules",          "icon": "📅", "url": "/services/jobs"},
+    ],}
 SIDEBAR_CONFIG["cafe"]           = SIDEBAR_CONFIG["restaurant"]
 SIDEBAR_CONFIG["coffeeshop"]     = SIDEBAR_CONFIG["restaurant"]
 SIDEBAR_CONFIG["food_restaurant"]= SIDEBAR_CONFIG["restaurant"]

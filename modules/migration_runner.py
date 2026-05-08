@@ -84,6 +84,11 @@ def run_migrations(db_path: Path) -> None:
                             skipped += 1
                             continue
 
+                        # تجاهل فهارس على جداول غير موجودة بعد (تُنشأ ديناميكياً)
+                        if "no such table" in err_msg and normalized_stmt.startswith("create index"):
+                            skipped += 1
+                            continue
+
                         raise
 
                 conn.execute(

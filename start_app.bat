@@ -2,7 +2,8 @@
 chcp 65001 >nul
 title نظام المحاسبة
 
-SET APP_DIR=C:\Users\JEN21\OneDrive\سطح المكتب\محاسبه
+SET APP_DIR=%~dp0
+IF "%APP_DIR:~-1%"=="\" SET APP_DIR=%APP_DIR:~0,-1%
 SET PYTHON=%APP_DIR%\.venv\Scripts\python.exe
 SET SCRIPT=%APP_DIR%\run_production.py
 

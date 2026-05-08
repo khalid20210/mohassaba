@@ -19,6 +19,45 @@
 </div>
 {% endif %}
 
+<!-- ═══════════════ الخدمات المحاسبية المشتركة (مجانية) ═══════════════ -->
+<div class="card" id="shared-services-section" style="margin-bottom:20px;border:1px solid #d1fae5;box-shadow:0 10px 25px rgba(2,6,23,.06)">
+  <div class="card-header" style="background:linear-gradient(90deg,#065f46,#047857);color:#fff;border-radius:12px 12px 0 0">
+    <span class="card-title" style="color:#fff">🧾 الخدمات المحاسبية المشتركة — مجانية بالكامل</span>
+  </div>
+  <div style="padding:12px 20px 4px;color:var(--text-muted);font-size:.86rem">
+    جميع هذه الخدمات مجانية ومتاحة لكل الأنشطة. يمكنك تفعيل أو تعطيل أي خدمة في أي وقت بدون رسوم.
+  </div>
+
+  {% if shared_services %}
+  <div style="padding:12px 20px 20px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">
+      {% for svc in shared_services %}
+      <div style="border:1px solid {% if svc.is_active %}#6ee7b7{% else %}#e5e7eb{% endif %};border-radius:10px;padding:12px 16px;background:{% if svc.is_active %}#f0fdf4{% else %}#fafafa{% endif %};display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div>
+          <div style="font-weight:600;font-size:.9rem;color:{% if svc.is_active %}#065f46{% else %}#6b7280{% endif %}">{{ svc.name }}</div>
+          <div style="font-size:.76rem;color:var(--text-muted)">{{ svc.category_name }} — مجانية</div>
+        </div>
+        <form method="POST" action="{{ url_for('core.settings') }}#shared-services-section" style="display:flex;gap:6px;flex-shrink:0">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="action" value="toggle_shared_service">
+          <input type="hidden" name="product_id" value="{{ svc.id }}">
+          {% if svc.is_active %}
+          <input type="hidden" name="enable" value="0">
+          <button type="submit" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:7px;padding:5px 12px;font-size:.8rem;cursor:pointer;white-space:nowrap">⛔ تعطيل</button>
+          {% else %}
+          <input type="hidden" name="enable" value="1">
+          <button type="submit" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;border-radius:7px;padding:5px 12px;font-size:.8rem;cursor:pointer;white-space:nowrap">✅ تفعيل</button>
+          {% endif %}
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div style="padding:20px;color:var(--text-muted);font-size:.88rem">لا توجد خدمات مشتركة مسجلة لهذه المنشأة بعد.</div>
+  {% endif %}
+</div>
+
 <!-- ═══════════════ الخدمات المميزة (اشتراكات) ═══════════════ -->
 <div class="card" style="margin-bottom:20px;border:1px solid #d6e4ff;box-shadow:0 10px 25px rgba(2,6,23,.06)">
   <div class="card-header" style="background:linear-gradient(90deg,#0b132b,#1c2541);color:#fff;border-radius:12px 12px 0 0">
@@ -69,6 +108,49 @@
     {% else %}
     <div style="margin-top:10px;font-size:.82rem;color:#b45309">🔒 التفعيل والإلغاء متاحان للمالك فقط</div>
     {% endif %}
+  </div>
+</div>
+
+<!-- ═══════════════ تسعير جماعي بهامش ربح ═══════════════ -->
+<div class="card" style="margin-bottom:20px;border:1px solid #bbf7d0;box-shadow:0 10px 25px rgba(2,6,23,.06)">
+  <div class="card-header" style="background:linear-gradient(90deg,#064e3b,#065f46);color:#fff;border-radius:12px 12px 0 0">
+    <span class="card-title" style="color:#fff">💹 تسعير جماعي بهامش ربح</span>
+  </div>
+
+  <form method="POST" action="{{ url_for('core.settings') }}" style="padding:16px 20px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:end">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="action" value="apply_global_profit_margin">
+
+    <div class="form-group" style="margin:0">
+      <label class="form-label">نسبة هامش الربح %</label>
+      <input type="number" name="margin_pct" class="form-control" min="0" step="0.01" value="30" {% if not can_edit_business %}disabled{% endif %}>
+      <p class="field-hint">مثال: 30 يعني زيادة 30% على التكلفة</p>
+    </div>
+
+    <div class="form-group" style="margin:0">
+      <label class="form-label">طريقة الضريبة</label>
+      <select name="tax_mode" class="form-control" {% if not can_edit_business %}disabled{% endif %}>
+        <option value="without_tax" selected>بدون ضريبة</option>
+        <option value="with_tax">مع الضريبة</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="margin:0">
+      <label class="form-label">نسبة الضريبة % (عند الاختيار)</label>
+      <input type="number" name="tax_pct" class="form-control" min="0" step="0.01" value="15" {% if not can_edit_business %}disabled{% endif %}>
+    </div>
+
+    <div class="form-group" style="margin:0">
+      {% if can_edit_business %}
+      <button type="submit" class="btn btn-success" style="width:100%">⚡ تطبيق الهامش على كل المنتجات فوراً</button>
+      {% else %}
+      <button type="button" class="btn btn-secondary" style="width:100%" disabled>🔒 لا تملك صلاحية التعديل</button>
+      {% endif %}
+    </div>
+  </form>
+
+  <div style="padding:0 20px 16px;color:var(--text-muted);font-size:.82rem">
+    يطبّق على كل الأسعار مرة واحدة فوراً في جداول المنتجات والمخزون. يُفضّل أخذ نسخة احتياطية قبل التنفيذ.
   </div>
 </div>
 

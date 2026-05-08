@@ -68,11 +68,11 @@ def create_app():
     from .blueprints.services.routes   import bp as services_bp
     from .blueprints.invoices.routes   import bp as invoices_bp
     from .blueprints.recipes.routes    import bp as recipes_bp
-    from .blueprints.admin.routes      import bp as admin_bp
+    from .blueprints.admin.routes      import bp as admin_bp, api as api_v1_bp
     from .blueprints.receivables.routes import bp as receivables_bp
     from .blueprints.hr.routes         import bp as hr_bp
 
-    for bp in (auth_bp, core_bp, accounting_bp, supply_bp, pos_bp, restaurant_bp, workforce_bp, owner_bp, inventory_bp, contacts_bp, barcode_bp, medical_bp, construction_bp, rental_bp, wholesale_bp, services_bp, invoices_bp, recipes_bp, admin_bp, receivables_bp, hr_bp):
+    for bp in (auth_bp, core_bp, accounting_bp, supply_bp, pos_bp, restaurant_bp, workforce_bp, owner_bp, inventory_bp, contacts_bp, barcode_bp, medical_bp, construction_bp, rental_bp, wholesale_bp, services_bp, invoices_bp, recipes_bp, admin_bp, api_v1_bp, receivables_bp, hr_bp):
         app.register_blueprint(bp)
 
     # ── Jinja2 Custom Filters ─────────────────────────────────────────────────
