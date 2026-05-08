@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}مسح الباركود{% endblock %}
+{% block page_title %}📱 ماسح الباركود{% endblock %}
+
+{% block head %}
+<style>
+  #scan-area { background:rgba(0,0,0,.3); border:2px dashed rgba(56,189,248,.4); border-radius:12px; padding:40px; text-align:center; margin:20px 0; }
+  #scan-result { display:none; }
+  .scan-input-area { max-width:400px; margin:0 auto; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">📱 ماسح الباركود</h1>
+  <a href="/barcode/" class="btn btn-secondary">← الرجوع</a>
+</div>
+
+<div class="card scan-input-area">
+  <!-- إدخال يدوي للباركود -->
+  <div id="scan-area">
+    <div style="font-size:3rem;margin-bottom:16px;">📷</div>
+    <p style="color:#94a3b8;margin-bottom:20px;">امسح الباركود أو أدخله يدوياً</p>
+    <form id="scan-form" style="display:flex;gap:12px;justify-content:center;">
+      <input type="text" id="barcode-input" class="form-input" placeholder="أدخل/امسح الباركود هنا..." autofocus
+             style="max-width:260px;" autocomplete="off">
+      <button type="submit" class="btn btn-primary">بحث</button>
+    </form>
+  </div>
+
+  <!-- نتيجة المسح -->
+  <div id="scan-result" class="card" style="margin-top:16px;border:1px solid rgba(34,197,94,.3);">
+    <div id="result-content"></div>
+  </div>
+
+  <!-- سجل المسح الأخير -->
+  <div style="margin-top:24px;">
+    <h3 style="color:#94a3b8;font-size:.9rem;margin-bottom:12px;">آخر عمليات المسح</h3>
+    <div id="scan-log" style="font-size:.83rem;color:#64748b;">
+      <p>لا توجد عمليات مسح بعد...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const scanLog = [];
+
+function renderScanResult(found, productName, barcodeValue, sellPrice) {
+  const contentEl = document.getElementById('result-content');
+  const wrapper = document.createElement('div');
+  wrapper.style.padding = '12px';
+
+  if (found) {
+    wrapper.style.display = 'flex';
+    wrapper.style.alignItems = 'center';
+    wrapper.style.gap = '16px';
+
+    const icon = document.createElement('span');
+    icon.style.fontSize = '2rem';
+    icon.textContent = '✅';
+
+    const info = document.createElement('div');
+    const title = document.createElement('strong');
+    title.style.fontSize = '1.1rem';
+    title.textContent = productName || 'منتج';
+
+    const barcode = document.createElement('span');
+    barcode.style.color = '#94a3b8';
+    barcode.style.fontSize = '.85rem';
+    barcode.textContent = `الباركود: ${barcodeValue}`;
+
+    const price = document.createElement('span');
+    price.style.color = '#22c55e';
+    price.textContent = `السعر: ${sellPrice || '—'} ر.س`;
+
+    info.append(title, document.createElement('br'), barcode, document.createElement('br'), price);
+    wrapper.append(icon, info);
+  } else {
+    wrapper.style.color = '#ef4444';
+    wrapper.textContent = `❌ لم يُعثر على منتج بهذا الباركود: ${barcodeValue}`;
+  }
+
+  contentEl.replaceChildren(wrapper);
+}
+
+function renderScanLog() {
+  const logEl = document.getElementById('scan-log');
+  if (!scanLog.length) {
+    const empty = document.createElement('p');
+    empty.textContent = 'لا توجد عمليات مسح بعد...';
+    logEl.replaceChildren(empty);
+    return;
+  }
+
+  logEl.replaceChildren(...scanLog.slice(0, 5).map(s => {
+    const row = document.createElement('div');
+    row.style.padding = '4px 0';
+    row.style.borderBottom = '1px solid rgba(255,255,255,.05)';
+    const code = document.createElement('code');
+    code.textContent = s.val;
+    row.append(
+      document.createTextNode(`${s.found ? '✅' : '❌'} `),
+      code,
+      document.createTextNode(` — ${s.time}`),
+    );
+    return row;
+  }));
+}
+
+document.getElementById('scan-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const val = document.getElementById('barcode-input').value.trim();
+  if (!val) return;
+
+  try {
+    const res = await fetch('/barcode/api/scan', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ barcode_value: val, source: 'web' })
+    });
+    const data = await res.json();
+
+    const resultEl = document.getElementById('scan-result');
+    resultEl.style.display = 'block';
+    renderScanResult(data.found, data.product_name, val, data.sell_price);
+
+    // إضافة للسجل
+    scanLog.unshift({ val, time: new Date().toLocaleTimeString('ar'), found: data.found });
+    renderScanLog();
+
+    document.getElementById('barcode-input').value = '';
+    document.getElementById('barcode-input').focus();
+  } catch(err) {
+    console.error(err);
+  }
+});
+</script>
+{% endblock %}

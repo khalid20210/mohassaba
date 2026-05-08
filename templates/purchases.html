@@ -187,7 +187,7 @@
           <td class="muted-cell">{{ inv.notes or '—' }}</td>
           <td>
             <button class="btn btn-sm btn-outline" style="padding:3px 8px;font-size:.75rem"
-              onclick="showZatcaQr({{ inv.id }}, '{{ inv.invoice_number }}')">
+              onclick='showZatcaQr({{ inv.id }}, {{ inv.invoice_number | tojson }})'>
               🟢 QR
             </button>
           </td>
@@ -505,6 +505,15 @@ function handleDrop(e) {
 /* ─── ZATCA QR ───────────────────────────────────────────── */
 let zatcaQrInstance = null;
 
+function escHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 async function showZatcaQr(invId, invNum) {
   document.getElementById('zatcaSubtitle').textContent = 'فاتورة رقم: ' + invNum;
   const container = document.getElementById('zatcaQrContainer');
@@ -517,7 +526,7 @@ async function showZatcaQr(invId, invNum) {
   try {
     const res  = await fetch(`/api/invoice/${invId}/zatca-qr`);
     const data = await res.json();
-    if (!data.success) { container.innerHTML = '<p style="color:red">⚠️ ' + data.error + '</p>'; return; }
+    if (!data.success) { container.innerHTML = '<p style="color:red">⚠️ ' + escHtml(data.error) + '</p>'; return; }
 
     container.innerHTML = '';
     new QRCode(container, {
@@ -528,14 +537,14 @@ async function showZatcaQr(invId, invNum) {
     });
 
     infoBox.innerHTML = `
-      <div class="zatca-row"><span>البائع</span><strong>${data.seller}</strong></div>
-      <div class="zatca-row"><span>الرقم الضريبي</span><strong dir="ltr">${data.vat_number || '—'}</strong></div>
-      <div class="zatca-row"><span>التاريخ</span><strong>${data.timestamp}</strong></div>
+      <div class="zatca-row"><span>البائع</span><strong>${escHtml(data.seller)}</strong></div>
+      <div class="zatca-row"><span>الرقم الضريبي</span><strong dir="ltr">${escHtml(data.vat_number || '—')}</strong></div>
+      <div class="zatca-row"><span>التاريخ</span><strong>${escHtml(data.timestamp)}</strong></div>
       <div class="zatca-row"><span>الإجمالي</span><strong>${parseFloat(data.total||0).toFixed(2)} ر.س</strong></div>
       <div class="zatca-row"><span>الضريبة</span><strong>${parseFloat(data.vat||0).toFixed(2)} ر.س</strong></div>
     `;
   } catch(err) {
-    container.innerHTML = '<p style="color:red">⚠️ ' + err.message + '</p>';
+    container.innerHTML = '<p style="color:red">⚠️ ' + escHtml(err.message) + '</p>';
   }
 }
 

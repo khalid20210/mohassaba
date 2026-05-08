@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}المعاملات{% endblock %}
+{% block page_title %}💳 سجل المعاملات{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">💳 سجل المعاملات</h1>
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>العميل/المورد</th><th>النوع</th><th>المبلغ</th><th>الرصيد بعد</th><th>المرجع</th><th>التاريخ</th><th>ملاحظات</th></tr>
+    </thead>
+    <tbody>
+      {% for t in transactions %}
+      <tr>
+        <td><a href="/contacts/customers/{{ t.contact_id }}" style="color:#38bdf8;">{{ t.contact_name or '#' ~ t.contact_id }}</a></td>
+        <td>
+          {% if t.transaction_type == 'payment' %}💚 دفعة
+          {% elif t.transaction_type == 'credit' %}🔵 دائن
+          {% elif t.transaction_type == 'debit' %}🔴 مدين
+          {% else %}{{ t.transaction_type }}{% endif %}
+        </td>
+        <td style="font-weight:600;color:{% if t.amount > 0 %}#22c55e{% else %}#ef4444{% endif %};">
+          {{ "{:,.2f}".format(t.amount or 0) }}
+        </td>
+        <td>{{ "{:,.2f}".format(t.balance_after or 0) }}</td>
+        <td style="color:#64748b;font-size:.82rem;">{{ t.reference or '—' }}</td>
+        <td style="color:#64748b;font-size:.82rem;">{{ t.created_at[:16] if t.created_at else '—' }}</td>
+        <td style="color:#94a3b8;font-size:.82rem;">{{ t.notes or '—' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" style="text-align:center;color:#64748b;padding:40px;">لا توجد معاملات</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

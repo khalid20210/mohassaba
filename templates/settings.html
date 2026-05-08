@@ -9,7 +9,152 @@
   </div>
 </div>
 
-<form method="POST" action="{{ url_for('settings') }}" enctype="multipart/form-data">
+{% if not can_edit_business %}
+<div class="alert alert-warning" style="background:#fff8e1;border:1px solid #f59e0b;border-radius:10px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;gap:10px">
+  <span style="font-size:1.3rem">🔒</span>
+  <div>
+    <strong>وضع القراءة فقط</strong><br>
+    <span style="font-size:.85rem;color:#6b7280">ليس لديك صلاحية تعديل بيانات المنشأة. تواصل مع المدير لمنحك الصلاحية.</span>
+  </div>
+</div>
+{% endif %}
+
+<!-- ═══════════════ الخدمات المحاسبية المشتركة (مجانية) ═══════════════ -->
+<div class="card" id="shared-services-section" style="margin-bottom:20px;border:1px solid #d1fae5;box-shadow:0 10px 25px rgba(2,6,23,.06)">
+  <div class="card-header" style="background:linear-gradient(90deg,#065f46,#047857);color:#fff;border-radius:12px 12px 0 0">
+    <span class="card-title" style="color:#fff">🧾 الخدمات المحاسبية المشتركة — مجانية بالكامل</span>
+  </div>
+  <div style="padding:12px 20px 4px;color:var(--text-muted);font-size:.86rem">
+    جميع هذه الخدمات مجانية ومتاحة لكل الأنشطة. يمكنك تفعيل أو تعطيل أي خدمة في أي وقت بدون رسوم.
+  </div>
+
+  {% if shared_services %}
+  <div style="padding:12px 20px 20px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">
+      {% for svc in shared_services %}
+      <div style="border:1px solid {% if svc.is_active %}#6ee7b7{% else %}#e5e7eb{% endif %};border-radius:10px;padding:12px 16px;background:{% if svc.is_active %}#f0fdf4{% else %}#fafafa{% endif %};display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div>
+          <div style="font-weight:600;font-size:.9rem;color:{% if svc.is_active %}#065f46{% else %}#6b7280{% endif %}">{{ svc.name }}</div>
+          <div style="font-size:.76rem;color:var(--text-muted)">{{ svc.category_name }} — مجانية</div>
+        </div>
+        <form method="POST" action="{{ url_for('core.settings') }}#shared-services-section" style="display:flex;gap:6px;flex-shrink:0">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="action" value="toggle_shared_service">
+          <input type="hidden" name="product_id" value="{{ svc.id }}">
+          {% if svc.is_active %}
+          <input type="hidden" name="enable" value="0">
+          <button type="submit" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:7px;padding:5px 12px;font-size:.8rem;cursor:pointer;white-space:nowrap">⛔ تعطيل</button>
+          {% else %}
+          <input type="hidden" name="enable" value="1">
+          <button type="submit" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;border-radius:7px;padding:5px 12px;font-size:.8rem;cursor:pointer;white-space:nowrap">✅ تفعيل</button>
+          {% endif %}
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div style="padding:20px;color:var(--text-muted);font-size:.88rem">لا توجد خدمات مشتركة مسجلة لهذه المنشأة بعد.</div>
+  {% endif %}
+</div>
+
+<!-- ═══════════════ الخدمات المميزة (اشتراكات) ═══════════════ -->
+<div class="card" style="margin-bottom:20px;border:1px solid #d6e4ff;box-shadow:0 10px 25px rgba(2,6,23,.06)">
+  <div class="card-header" style="background:linear-gradient(90deg,#0b132b,#1c2541);color:#fff;border-radius:12px 12px 0 0">
+    <span class="card-title" style="color:#fff">🚀 الخدمات المميزة (Subscription Add-ons)</span>
+  </div>
+
+  <div style="padding:16px 20px 4px;color:var(--text-muted);font-size:.86rem">
+    جميع الخدمات التالية تمثل مصادر دخل مستقلة للمنصة ويمكن تفعيلها/تعطيلها بشكل فوري.
+  </div>
+
+  <div class="premium-grid" id="premiumGrid">
+    {% for addon in premium_addons %}
+      {% set is_enabled = (premium_addons_state.get(addon.code, 0) == 1) %}
+      <button type="button"
+              class="premium-card {% if is_enabled %}is-enabled{% endif %}"
+              data-code="{{ addon.code }}"
+              data-title="{{ addon.title }}"
+              data-tagline="{{ addon.tagline }}"
+              data-description="{{ addon.description }}"
+              data-features='{{ addon.features|tojson }}'>
+        <div class="premium-card-head">
+          <strong>{{ loop.index }}. {{ addon.title }}</strong>
+          <span class="premium-badge {% if is_enabled %}on{% else %}off{% endif %}">
+            {% if is_enabled %}مفعلة{% else %}غير مفعلة{% endif %}
+          </span>
+        </div>
+        <div class="premium-tagline">{{ addon.tagline }}</div>
+      </button>
+    {% endfor %}
+  </div>
+
+  <div class="premium-detail" id="premiumDetail">
+    <div class="premium-detail-title" id="premiumDetailTitle">اختر خدمة مميزة لعرض التفاصيل</div>
+    <div class="premium-detail-tagline" id="premiumDetailTagline"></div>
+    <p class="premium-detail-description" id="premiumDetailDescription"></p>
+    <ul class="premium-feature-list" id="premiumFeatureList"></ul>
+
+    {% if can_manage_premium %}
+    <form method="POST" action="{{ url_for('core.settings') }}" id="premiumToggleForm" style="display:flex;gap:10px;flex-wrap:wrap">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="action" value="toggle_premium_addon">
+      <input type="hidden" name="premium_addon_code" id="premiumAddonCode" value="">
+      <input type="hidden" name="enable" id="premiumEnable" value="1">
+      <button type="button" class="btn btn-success" id="premiumEnableBtn">✅ تفعيل الخدمة</button>
+      <button type="button" class="btn btn-secondary" id="premiumDisableBtn">⛔ تعطيل الخدمة</button>
+      <span id="premiumStatusInline" style="align-self:center;color:var(--text-muted);font-size:.83rem"></span>
+    </form>
+    {% else %}
+    <div style="margin-top:10px;font-size:.82rem;color:#b45309">🔒 التفعيل والإلغاء متاحان للمالك فقط</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ═══════════════ تسعير جماعي بهامش ربح ═══════════════ -->
+<div class="card" style="margin-bottom:20px;border:1px solid #bbf7d0;box-shadow:0 10px 25px rgba(2,6,23,.06)">
+  <div class="card-header" style="background:linear-gradient(90deg,#064e3b,#065f46);color:#fff;border-radius:12px 12px 0 0">
+    <span class="card-title" style="color:#fff">💹 تسعير جماعي بهامش ربح</span>
+  </div>
+
+  <form method="POST" action="{{ url_for('core.settings') }}" style="padding:16px 20px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:end">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="action" value="apply_global_profit_margin">
+
+    <div class="form-group" style="margin:0">
+      <label class="form-label">نسبة هامش الربح %</label>
+      <input type="number" name="margin_pct" class="form-control" min="0" step="0.01" value="30" {% if not can_edit_business %}disabled{% endif %}>
+      <p class="field-hint">مثال: 30 يعني زيادة 30% على التكلفة</p>
+    </div>
+
+    <div class="form-group" style="margin:0">
+      <label class="form-label">طريقة الضريبة</label>
+      <select name="tax_mode" class="form-control" {% if not can_edit_business %}disabled{% endif %}>
+        <option value="without_tax" selected>بدون ضريبة</option>
+        <option value="with_tax">مع الضريبة</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="margin:0">
+      <label class="form-label">نسبة الضريبة % (عند الاختيار)</label>
+      <input type="number" name="tax_pct" class="form-control" min="0" step="0.01" value="15" {% if not can_edit_business %}disabled{% endif %}>
+    </div>
+
+    <div class="form-group" style="margin:0">
+      {% if can_edit_business %}
+      <button type="submit" class="btn btn-success" style="width:100%">⚡ تطبيق الهامش على كل المنتجات فوراً</button>
+      {% else %}
+      <button type="button" class="btn btn-secondary" style="width:100%" disabled>🔒 لا تملك صلاحية التعديل</button>
+      {% endif %}
+    </div>
+  </form>
+
+  <div style="padding:0 20px 16px;color:var(--text-muted);font-size:.82rem">
+    يطبّق على كل الأسعار مرة واحدة فوراً في جداول المنتجات والمخزون. يُفضّل أخذ نسخة احتياطية قبل التنفيذ.
+  </div>
+</div>
+
+<form method="POST" action="{{ url_for('core.settings') }}" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
   <!-- ═══════════════ هوية المنشأة ═══════════════ -->
@@ -34,7 +179,8 @@
         <label class="form-label">شعار المنشأة (اختياري)</label>
         <input type="file" name="logo" id="logoInput" class="form-control"
                accept=".png,.jpg,.jpeg,.svg,.webp,.gif"
-               onchange="previewLogo(this)">
+               onchange="previewLogo(this)"
+               {% if not can_edit_business %}disabled{% endif %}>
         <p style="font-size:.75rem;color:var(--text-muted);margin-top:6px">
           PNG, JPG, SVG — يظهر في ترويسة كل فاتورة
         </p>
@@ -45,24 +191,27 @@
       <div class="form-group">
         <label class="form-label">الاسم التجاري <span class="required">*</span></label>
         <input type="text" name="business_name" class="form-control"
-               value="{{ biz.name or '' }}" required placeholder="اسم المنشأة كما هو في السجل">
+               value="{{ biz.name or '' }}" required placeholder="اسم المنشأة كما هو في السجل"
+               {% if not can_edit_business %}disabled{% endif %}>
       </div>
       <div class="form-group">
         <label class="form-label">الرقم الضريبي (VAT)</label>
         <input type="text" name="tax_number" class="form-control" dir="ltr"
                value="{{ biz.tax_number or '' }}"
                placeholder="300XXXXXXXXXX003 — 15 رقماً"
-               maxlength="20">
+               maxlength="20"
+               {% if not can_edit_business %}disabled{% endif %}>
         <p class="field-hint">يدخل تلقائياً في رمز ZATCA</p>
       </div>
       <div class="form-group">
         <label class="form-label">رقم السجل التجاري</label>
         <input type="text" name="cr_number" class="form-control" dir="ltr"
-               value="{{ biz.cr_number or '' }}" placeholder="10XXXXXXXX">
+               value="{{ biz.cr_number or '' }}" placeholder="10XXXXXXXX"
+               {% if not can_edit_business %}disabled{% endif %}>
       </div>
       <div class="form-group">
         <label class="form-label">العملة</label>
-        <select name="currency" class="form-control">
+        <select name="currency" class="form-control" {% if not can_edit_business %}disabled{% endif %}>
           {% for code, label in [('SAR','ريال سعودي — SAR'),('AED','درهم إماراتي — AED'),('USD','دولار أمريكي — USD'),('KWD','دينار كويتي — KWD'),('BHD','دينار بحريني — BHD'),('QAR','ريال قطري — QAR'),('OMR','ريال عُماني — OMR')] %}
           <option value="{{ code }}" {% if biz.currency == code %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
@@ -80,22 +229,26 @@
       <div class="form-group">
         <label class="form-label">رقم الجوال / الهاتف</label>
         <input type="tel" name="phone" class="form-control" dir="ltr"
-               value="{{ biz.phone or '' }}" placeholder="+966XXXXXXXXX">
+               value="{{ biz.phone or '' }}" placeholder="+966XXXXXXXXX"
+               {% if not can_edit_business %}disabled{% endif %}>
       </div>
       <div class="form-group">
         <label class="form-label">البريد الإلكتروني</label>
         <input type="email" name="email" class="form-control" dir="ltr"
-               value="{{ biz.email or '' }}" placeholder="info@example.com">
+               value="{{ biz.email or '' }}" placeholder="info@example.com"
+               {% if not can_edit_business %}disabled{% endif %}>
       </div>
       <div class="form-group">
         <label class="form-label">المدينة</label>
         <input type="text" name="city" class="form-control"
-               value="{{ biz.city or '' }}" placeholder="الرياض">
+               value="{{ biz.city or '' }}" placeholder="الرياض"
+               {% if not can_edit_business %}disabled{% endif %}>
       </div>
       <div class="form-group">
         <label class="form-label">العنوان التفصيلي</label>
         <input type="text" name="address" class="form-control"
-               value="{{ biz.address or '' }}" placeholder="حي النزهة، شارع الملك فهد">
+               value="{{ biz.address or '' }}" placeholder="حي النزهة، شارع الملك فهد"
+               {% if not can_edit_business %}disabled{% endif %}>
       </div>
     </div>
   </div>
@@ -109,11 +262,30 @@
       <div class="form-group">
         <label class="form-label">بادئة رقم الفاتورة</label>
         <input type="text" name="invoice_prefix" class="form-control" dir="ltr"
-               value="{{ inv_prefix }}" placeholder="INV" maxlength="10">
+               value="{{ inv_prefix }}" placeholder="INV" maxlength="10"
+               {% if not can_edit_business %}disabled{% endif %}>
         <p class="field-hint">مثال: INV → الفاتورة تكون INV-00001</p>
       </div>
     </div>
   </div>
+
+  <!-- ═══════════════ سبب التعديل ═══════════════ -->
+  {% if can_edit_business %}
+  <div class="card" style="margin-bottom:20px;border:2px solid {% if not can_skip_reason %}#f59e0b{% else %}var(--border){% endif %}">
+    <div class="card-header">
+      <span class="card-title">📝 سبب التعديل {% if not can_skip_reason %}<span style="color:#ef4444">*</span>{% endif %}</span>
+    </div>
+    <div style="padding:16px 20px">
+      <input type="text" name="change_reason" class="form-control"
+             placeholder="{% if not can_skip_reason %}سبب التعديل إلزامي{% else %}اختياري — وصف مختصر للتغيير{% endif %}"
+             {% if not can_skip_reason %}required{% endif %}
+             style="max-width:600px">
+      {% if not can_skip_reason %}
+      <p style="font-size:.78rem;color:#f59e0b;margin-top:6px">⚠️ صلاحيتك تتطلب ذكر سبب التعديل</p>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
 
   <!-- ═══════════════ معاينة رمز QR ═══════════════ -->
   <div class="card" style="margin-bottom:20px">
@@ -136,8 +308,12 @@
   </div>
 
   <div class="form-actions">
+    {% if can_edit_business %}
     <button type="submit" class="btn btn-success btn-lg">💾 حفظ الإعدادات</button>
-    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">إلغاء</a>
+    {% else %}
+    <button type="button" class="btn btn-secondary btn-lg" disabled title="ليس لديك صلاحية تعديل بيانات المنشأة">🔒 تعديل محظور</button>
+    {% endif %}
+    <a href="{{ url_for('core.dashboard') }}" class="btn btn-secondary">إلغاء</a>
   </div>
 </form>
 
@@ -146,13 +322,104 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script>
+const PREMIUM_STATE = {{ premium_addons_state|tojson }};
+
+function initPremiumServices() {
+  const cards = Array.from(document.querySelectorAll('.premium-card'));
+  if (!cards.length) return;
+
+  const titleEl = document.getElementById('premiumDetailTitle');
+  const tagEl   = document.getElementById('premiumDetailTagline');
+  const descEl  = document.getElementById('premiumDetailDescription');
+  const listEl  = document.getElementById('premiumFeatureList');
+  const codeEl  = document.getElementById('premiumAddonCode');
+  const statusInlineEl = document.getElementById('premiumStatusInline');
+
+  function renderCardState() {
+    cards.forEach(card => {
+      const code = card.dataset.code;
+      const enabled = Number(PREMIUM_STATE[code] || 0) === 1;
+      card.classList.toggle('is-enabled', enabled);
+      const badge = card.querySelector('.premium-badge');
+      if (!badge) return;
+      badge.textContent = enabled ? 'مفعلة' : 'غير مفعلة';
+      badge.classList.toggle('on', enabled);
+      badge.classList.toggle('off', !enabled);
+    });
+  }
+
+  function selectCard(card) {
+    cards.forEach(c => c.classList.remove('is-active'));
+    card.classList.add('is-active');
+
+    const code = card.dataset.code;
+    const title = card.dataset.title || '';
+    const tagline = card.dataset.tagline || '';
+    const description = card.dataset.description || '';
+    let features = [];
+    try {
+      features = JSON.parse(card.dataset.features || '[]');
+    } catch (e) {
+      features = [];
+    }
+
+    titleEl.textContent = title;
+    tagEl.textContent = tagline;
+    descEl.textContent = description;
+    listEl.innerHTML = '';
+    features.forEach(f => {
+      const li = document.createElement('li');
+      li.textContent = f;
+      listEl.appendChild(li);
+    });
+
+    if (codeEl) codeEl.value = code;
+    const enabled = Number(PREMIUM_STATE[code] || 0) === 1;
+    if (statusInlineEl) {
+      statusInlineEl.textContent = enabled
+        ? 'الحالة الحالية: مفعلة — يمكنك التعطيل عند الحاجة'
+        : 'الحالة الحالية: غير مفعلة — يمكنك التفعيل الآن';
+    }
+  }
+
+  cards.forEach(card => {
+    card.addEventListener('click', () => selectCard(card));
+  });
+
+  renderCardState();
+  selectCard(cards[0]);
+
+  const form = document.getElementById('premiumToggleForm');
+  const enableHidden = document.getElementById('premiumEnable');
+  const enableBtn = document.getElementById('premiumEnableBtn');
+  const disableBtn = document.getElementById('premiumDisableBtn');
+
+  if (form && enableHidden && enableBtn && disableBtn) {
+    enableBtn.addEventListener('click', () => {
+      if (!codeEl || !codeEl.value) return;
+      enableHidden.value = '1';
+      form.submit();
+    });
+    disableBtn.addEventListener('click', () => {
+      if (!codeEl || !codeEl.value) return;
+      enableHidden.value = '0';
+      form.submit();
+    });
+  }
+}
+
 function previewLogo(input) {
   if (!input.files[0]) return;
   const reader = new FileReader();
   reader.onload = e => {
     const wrap = document.getElementById('logoPreviewWrap');
-    wrap.innerHTML = `<img id="logoPreview" src="${e.target.result}"
-      style="width:100%;height:100%;object-fit:contain">`;
+    const img = document.createElement('img');
+    img.id = 'logoPreview';
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'contain';
+    img.src = String(e.target.result || '');
+    wrap.replaceChildren(img);
   };
   reader.readAsDataURL(input.files[0]);
 }
@@ -182,5 +449,111 @@ function previewLogo(input) {
     correctLevel: QRCode.CorrectLevel.M
   });
 })();
+
+initPremiumServices();
 </script>
+
+<style>
+.premium-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  padding: 12px 20px 4px;
+}
+
+.premium-card {
+  text-align: right;
+  border: 1px solid #dbe7ff;
+  background: linear-gradient(160deg, #f8fbff, #eef4ff);
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  transition: .2s ease;
+}
+
+.premium-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(30,64,175,.14);
+}
+
+.premium-card.is-active {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37,99,235,.16);
+}
+
+.premium-card.is-enabled {
+  background: linear-gradient(160deg, #effcf3, #e8f7ed);
+  border-color: #22c55e;
+}
+
+.premium-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.premium-card-head strong {
+  font-size: .84rem;
+  color: #0f172a;
+  line-height: 1.45;
+}
+
+.premium-badge {
+  font-size: .72rem;
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.premium-badge.on {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.premium-badge.off {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.premium-tagline {
+  margin-top: 6px;
+  font-size: .78rem;
+  color: #475569;
+}
+
+.premium-detail {
+  margin: 12px 20px 18px;
+  border: 1px solid #dbe7ff;
+  border-radius: 12px;
+  background: #fff;
+  padding: 14px;
+}
+
+.premium-detail-title {
+  font-weight: 800;
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.premium-detail-tagline {
+  margin-top: 4px;
+  color: #1d4ed8;
+  font-size: .85rem;
+}
+
+.premium-detail-description {
+  margin: 8px 0;
+  color: #334155;
+  font-size: .85rem;
+}
+
+.premium-feature-list {
+  margin: 0 0 12px;
+  padding-right: 18px;
+  color: #0f172a;
+  font-size: .84rem;
+  line-height: 1.75;
+}
+</style>
 {% endblock %}

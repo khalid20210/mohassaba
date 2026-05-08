@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}تسجيل الدخول — جنان بيز{% endblock %}
+{% block title %}{{ t('login_title') }}{% endblock %}
 
 {% block head %}
 <style>
@@ -689,6 +689,17 @@ body {
 
 .jb-divider span { color: rgba(160, 195, 240, .52); font-size: .72rem; }
 
+.jb-social-btns { display: flex; flex-direction: column; gap: 7px; margin-bottom: 4px; }
+.jb-social-btn {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  width: 100%; padding: 9px 14px; border-radius: 9px; text-decoration: none;
+  font-size: .78rem; font-weight: 700; color: #c8deff;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(80,140,220,.18);
+  transition: background .18s, border-color .18s, transform .12s;
+  font-family: 'Tajawal', 'Segoe UI', sans-serif;
+}
+.jb-social-btn:hover { background: rgba(255,255,255,.09); border-color: rgba(80,140,255,.35); transform: translateY(-1px); color: #fff; }
+
 .jb-reg-link {
   text-align: center;
   color: rgba(185, 215, 255, .66);
@@ -729,10 +740,11 @@ body {
   .jb-form-wrap { max-width: 360px; }
 }
 </style>
+{% if ux_custom_css %}<style>{{ ux_custom_css }}</style>{% endif %}
 {% endblock %}
 
 {% block auth_content %}
-<div class="jb-auth-root">
+<div class="jb-auth-root" {% if ux_login_bg_url %}style="background-image:url('{{ ux_login_bg_url }}');background-size:cover;background-position:center"{% endif %}>
   <div class="jb-theater">
 
     <div class="jb-theater-top">
@@ -769,6 +781,25 @@ body {
             <div class="jb-features" id="featureList">
               <div class="jb-feature"><strong>تحميل المزايا</strong>جارٍ تجهيز عرض النشاط الحالي...</div>
             </div>
+
+            <!-- ─── الشارات التسويقية الديناميكية ─── -->
+            {% if marketing_badges %}
+            <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:10px" id="marketingBadgesRow">
+              {% for b in marketing_badges %}
+              <span style="
+                display:inline-flex;align-items:center;gap:5px;
+                background:{{ b.badge_bg }};color:{{ b.badge_color }};
+                padding:5px 13px;border-radius:100px;
+                font-size:.78rem;font-weight:700;
+                box-shadow:0 2px 8px rgba(0,0,0,.25);
+                animation:badgePop .4s ease {{ loop.index0 * 0.1 }}s both;
+              ">{{ b.badge_icon or '🔥' }} {{ b.badge_text }}</span>
+              {% endfor %}
+            </div>
+            <style>
+            @keyframes badgePop{from{opacity:0;transform:scale(.8) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}
+            </style>
+            {% endif %}
           </div>
 
           <div class="jb-metric-column">
@@ -909,37 +940,52 @@ body {
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
         <div class="jb-field">
-          <label class="jb-label">اسم المستخدم</label>
-          <input type="text" name="username" class="jb-input" placeholder="أدخل اسم المستخدم" required autofocus value="{{ request.form.get('username', '') }}">
+          <label class="jb-label">{{ t('username') }}</label>
+          <input type="text" name="username" class="jb-input" placeholder="{{ t('username_placeholder') }}" required autofocus value="{{ request.form.get('username', '') }}">
         </div>
 
         <div class="jb-field">
-          <label class="jb-label">كلمة المرور</label>
+          <label class="jb-label">{{ t('password') }}</label>
           <div class="jb-pass-wrap">
-            <input type="password" id="jb-pass" name="password" class="jb-input" placeholder="أدخل كلمة المرور" required style="padding-left:42px">
-            <button type="button" class="jb-pass-toggle" onclick="togglePass()" title="إظهار/إخفاء">👁</button>
+            <input type="password" id="jb-pass" name="password" class="jb-input" placeholder="{{ t('password_placeholder') }}" required style="padding-left:42px">
+            <button type="button" class="jb-pass-toggle" onclick="togglePass()" title="{{ t('show_hide') }}">&#128065;</button>
           </div>
         </div>
 
         <div class="jb-meta">
           <label class="jb-remember">
             <input type="checkbox" name="remember">
-            <span>تذكرني</span>
+            <span>{{ t('remember_me') }}</span>
           </label>
-          <a href="{{ url_for('auth_forgot_password') }}" class="jb-forgot">نسيت كلمة المرور؟</a>
+          <a href="{{ url_for('auth_forgot_password') }}" class="jb-forgot">{{ t('forgot_password') }}</a>
         </div>
 
-        <button type="submit" class="jb-btn">تسجيل الدخول</button>
+        <button type="submit" class="jb-btn">{{ t('login_btn') }}</button>
       </form>
 
-      <div class="jb-divider"><span>أو</span></div>
+      <div class="jb-divider"><span>{{ t('or') }}</span></div>
 
-      <div class="jb-reg-link">
-        ليس لديك حساب؟
-        <a href="{{ url_for('auth_register') }}">أنشئ حسابك الآن</a>
+      <div class="jb-social-btns">
+        <a href="/auth/social/google" class="jb-social-btn">
+          <svg width="17" height="17" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.8 2.2 30.3 0 24 0 14.7 0 6.7 5.4 2.8 13.3l7.8 6.1C12.5 13 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 2.9-2.2 5.4-4.7 7l7.3 5.7c4.3-4 6.9-9.9 7.2-16.7z"/><path fill="#FBBC05" d="M10.6 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.1.7-4.6l-7.8-6.1A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.5 10.7l8.1-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.3-5.7c-2.2 1.5-5 2.3-8.6 2.3-6.2 0-11.5-4.2-13.4-9.9l-8.1 6.1C6.8 42.7 14.7 48 24 48z"/></svg>
+          المتابعة بـ Google
+        </a>
+        <a href="/auth/social/apple" class="jb-social-btn">
+          <svg width="17" height="17" viewBox="0 0 814 1000"><path fill="currentColor" d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 376.7 0 248.9 0 128.3 0 57.3 19.1 0 55.8 0c36.7 0 78 26.9 107.5 76.1 34.2 55.6 55.9 152.5 107.6 152.5 26.4 0 43.5-15.8 105-15.8 62 0 78.6 16.2 105 16.2 29.3 0 73.2-85.3 101.2-137.1l.1-.1zm-197-171.9c-5.4 26.9-12.5 53.3-27.3 76.4-24.6 38.5-60.5 69.2-93.5 69.2-5.2 0-11.6-2.1-18.5-5.9-5.9-3.3-12.8-7.9-16.2-14.1-3.2-5.8-2.4-12.5-.4-19.1 5.3-18.3 11.7-43.3 26.3-62.7 26.6-35.1 69.2-67.7 108.3-70.4 3 12.2 3.1 22.2 1.3 26.6z"/></svg>
+          المتابعة بـ Apple
+        </a>
+        <a href="/auth/social/microsoft" class="jb-social-btn">
+          <svg width="17" height="17" viewBox="0 0 23 23"><rect x="1" y="1" width="10" height="10" fill="#F25022"/><rect x="12" y="1" width="10" height="10" fill="#7FBA00"/><rect x="1" y="12" width="10" height="10" fill="#00A4EF"/><rect x="12" y="12" width="10" height="10" fill="#FFB900"/></svg>
+          Microsoft
+        </a>
       </div>
 
-      <button class="jb-pwa-btn" id="pwaInstallBtn">📲 تثبيت جنان بيز على جهازك</button>
+      <div class="jb-reg-link">
+        {{ t('no_account') }}
+        <a href="{{ url_for('auth_register') }}">{{ t('create_account') }}</a>
+      </div>
+
+      <button class="jb-pwa-btn" id="pwaInstallBtn">📲 {{ t('install_app_full') }}</button>
     </div>
   </div>
 </div>
@@ -1045,9 +1091,16 @@ function applyActivity(index) {
     document.getElementById('heroIcon').style.background = 'transparent';
 
     const icons = ['✦', '◈', '⬡'];
-    featureList.innerHTML = (item.features || []).map((f, idx) =>
-      '<div class="jb-feature"><span class="jb-feat-icon">' + icons[idx % 3] + '</span>' + f + '</div>'
-    ).join('');
+    featureList.replaceChildren(...(item.features || []).map((f, idx) => {
+      const featureEl = document.createElement('div');
+      featureEl.className = 'jb-feature';
+      const iconEl = document.createElement('span');
+      iconEl.className = 'jb-feat-icon';
+      iconEl.textContent = icons[idx % 3];
+      featureEl.appendChild(iconEl);
+      featureEl.appendChild(document.createTextNode(String(f || '')));
+      return featureEl;
+    }));
 
     const m1 = metrics[0] || { label: 'المؤشر الأول', value: 0, color: 'primary', suffix: '' };
     const m2 = metrics[1] || { label: 'المؤشر الثاني', value: 0, color: 'teal', suffix: '' };
@@ -1133,10 +1186,17 @@ function applyActivity(index) {
     const upcoming = [];
     for (let i = 1; i <= 5; i++) {
       const next = showcaseItems[(showcaseIndex + i) % showcaseItems.length];
-      const svgIcon = industryIconMap[next.key] || industryIconMap['standard'];
-      upcoming.push('<span class="jb-upcoming-item">' + svgIcon + ' ' + next.title + '</span>');
+      const itemEl = document.createElement('span');
+      itemEl.className = 'jb-upcoming-item';
+
+      const iconWrap = document.createElement('span');
+      iconWrap.setAttribute('aria-hidden', 'true');
+      iconWrap.innerHTML = industryIconMap[next.key] || industryIconMap['standard'];
+      itemEl.appendChild(iconWrap);
+      itemEl.appendChild(document.createTextNode(' ' + String(next.title || '')));
+      upcoming.push(itemEl);
     }
-    document.getElementById('upcomingActivities').innerHTML = upcoming.join('');
+    document.getElementById('upcomingActivities').replaceChildren(...upcoming);
     document.getElementById('showcaseProgress').style.width =
       (((showcaseIndex + 1) / showcaseItems.length) * 100).toFixed(2) + '%';
 

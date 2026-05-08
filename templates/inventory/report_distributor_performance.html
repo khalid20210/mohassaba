@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% block title %}تقرير أداء الموزعين{% endblock %}
+{% block page_title %}تقرير أداء الموزعين{% endblock %}
+
+{% block content %}
+<style>
+  .report-container { max-width: 1400px; margin: 0 auto; }
+  .filter-bar {
+    display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 16px; border-radius: 8px; color: white;
+  }
+  .filter-bar select { padding: 8px 12px; border-radius: 4px; border: none; }
+  .filter-bar button { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+  .filter-bar button:hover { background: rgba(255,255,255,0.3); }
+  .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .card-title { font-size: 18px; font-weight: bold; margin-bottom: 16px; color: #333; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #f0f0f0; padding: 12px; text-align: right; font-weight: bold; border-bottom: 2px solid #ddd; }
+  td { padding: 12px; border-bottom: 1px solid #eee; }
+  tr:hover { background: #f9f9f9; }
+  .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+  .badge-success { background: #10b981; color: white; }
+  .badge-warning { background: #f59e0b; color: white; }
+  .badge-danger { background: #ef4444; color: white; }
+  .value-high { color: #10b981; font-weight: bold; }
+  .value-medium { color: #f59e0b; font-weight: bold; }
+  .value-low { color: #ef4444; font-weight: bold; }
+  .progress-bar {
+    width: 100%; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, #10b981, #06b6d4); transition: width 0.3s;
+  }
+</style>
+
+<div class="report-container">
+  <!-- الفلاتر -->
+  <div class="filter-bar">
+    <label style="color: white; margin: 0;">الفترة الزمنية:</label>
+    <select onchange="window.location.href='?months=' + this.value" style="color: #333;">
+      <option value="1" {% if months == 1 %}selected{% endif %}>شهر واحد</option>
+      <option value="3" {% if months == 3 %}selected{% endif %}>3 أشهر</option>
+      <option value="6" {% if months == 6 %}selected{% endif %}>6 أشهر</option>
+      <option value="12" {% if months == 12 %}selected{% endif %}>سنة كاملة</option>
+    </select>
+  </div>
+
+  <!-- إحصائيات عامة -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
+    <div class="card">
+      <div style="font-size: 12px; color: #666;">إجمالي الموزعين</div>
+      <div style="font-size: 28px; font-weight: bold; color: #0284c7;">{{ distributors|length }}</div>
+    </div>
+    <div class="card">
+      <div style="font-size: 12px; color: #666;">إجمالي الطلبات</div>
+      <div style="font-size: 28px; font-weight: bold; color: #10b981;">
+        {{ "{:,}".format((distributors | map(attribute='total_orders') | list | sum)) }}
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-size: 12px; color: #666;">إجمالي الديون المتأخرة</div>
+      <div style="font-size: 28px; font-weight: bold; color: #ef4444;">
+        {{ "{:.2f}".format((distributors | map(attribute='outstanding_debt') | list | sum)) }} ر.س
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-size: 12px; color: #666;">إجمالي الحجم</div>
+      <div style="font-size: 28px; font-weight: bold; color: #f59e0b;">
+        {{ "{:.2f}".format((distributors | map(attribute='total_volume') | list | sum)) }} ر.س
+      </div>
+    </div>
+  </div>
+
+  <!-- جدول الموزعين -->
+  <div class="card">
+    <div class="card-title">👥 أداء الموزعين التفصيلي</div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>اسم الموزع</th>
+          <th>عدد الطلبات</th>
+          <th>الطلبات المدفوعة</th>
+          <th>الطلبات المتأخرة</th>
+          <th>الحجم الإجمالي</th>
+          <th>المبلغ المدفوع</th>
+          <th>الديون المتأخرة</th>
+          <th>نسبة الدفع</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if distributors %}
+          {% for dist in distributors %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td><strong>{{ dist.distributor_name }}</strong></td>
+            <td class="value-high">{{ dist.total_orders }}</td>
+            <td class="value-high">{{ dist.paid_orders }}</td>
+            <td class="{% if dist.pending_orders > 0 %}value-low{% else %}value-high{% endif %}">
+              {{ dist.pending_orders }}
+            </td>
+            <td class="value-high">{{ "%.2f"|format(dist.total_volume) }} ر.س</td>
+            <td class="value-high">{{ "%.2f"|format(dist.paid_amount) }} ر.س</td>
+            <td class="{% if dist.outstanding_debt > 0 %}value-low{% else %}value-high{% endif %}">
+              {{ "%.2f"|format(dist.outstanding_debt) }} ر.س
+            </td>
+            <td>
+              <div style="margin-bottom: 4px;">{{ "%.0f"|format(dist.payment_rate) }}%</div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ dist.payment_rate }}%;"></div>
+              </div>
+              {% if dist.payment_rate >= 80 %}
+                <span class="badge badge-success" style="margin-top: 4px;">ممتاز ✓</span>
+              {% elif dist.payment_rate >= 50 %}
+                <span class="badge badge-warning" style="margin-top: 4px;">متوسط</span>
+              {% else %}
+                <span class="badge badge-danger" style="margin-top: 4px;">ضعيف</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+        <tr>
+          <td colspan="9" style="text-align: center; color: #999;">لا توجد بيانات</td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- الموزعون بأعلى مبيعات -->
+  <div class="card">
+    <div class="card-title">🏆 أفضل الموزعين (حسب الحجم)</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;">
+      {% for dist in distributors[:5] %}
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 16px; border-radius: 8px; color: white;">
+        <div style="font-size: 16px; font-weight: bold; margin-bottom: 8px;">{{ dist.distributor_name }}</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
+          <div>
+            <div style="opacity: 0.8;">الحجم</div>
+            <div style="font-size: 18px; font-weight: bold;">{{ "%.0f"|format(dist.total_volume) }}</div>
+          </div>
+          <div>
+            <div style="opacity: 0.8;">الطلبات</div>
+            <div style="font-size: 18px; font-weight: bold;">{{ dist.total_orders }}</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- الموزعون بديون متأخرة -->
+  {% set overdue = distributors | selectattr('outstanding_debt', 'gt', 0) | list %}
+  {% if overdue %}
+  <div class="card">
+    <div class="card-title">⚠️ الموزعون بديون متأخرة</div>
+    <table>
+      <thead>
+        <tr>
+          <th>الموزع</th>
+          <th>الديون</th>
+          <th>عدد الفواتير</th>
+          <th>الإجراء</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for dist in overdue | sort(attribute='outstanding_debt', reverse=True) %}
+        <tr>
+          <td><strong>{{ dist.distributor_name }}</strong></td>
+          <td class="value-low">{{ "%.2f"|format(dist.outstanding_debt) }} ر.س</td>
+          <td>{{ dist.pending_orders }}</td>
+          <td>
+            <a href="/wholesale/customers/{{ dist.id }}/statement" class="btn btn-sm" style="background: #f59e0b; color: white; padding: 4px 8px; text-decoration: none; border-radius: 4px;">عرض الكشف</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- ملاحظات -->
+  <div style="background: #fef3c7; border-right: 4px solid #f59e0b; padding: 16px; border-radius: 4px; margin-top: 20px;">
+    <strong>💡 ملاحظات:</strong>
+    <ul style="margin: 8px 0 0 20px; color: #333;">
+      <li><strong>نسبة الدفع العالية (>80%):</strong> الموزع موثوق وجديّ في السداد.</li>
+      <li><strong>الديون المتأخرة:</strong> انتبه للموزعين الذين لديهم فواتير معلقة.</li>
+      <li><strong>الحجم الإجمالي:</strong> يعكس قوة العلاقة التجارية مع الموزع.</li>
+      <li><strong>متوسط الطلب:</strong> عدد الطلبات ÷ عدد الأشهر = متوسط الطلب الشهري.</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

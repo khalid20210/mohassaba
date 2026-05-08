@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}الوصفات{% endblock %}
+
+{% block head %}
+<style>
+  .rec-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem; }
+  .rec-card { background:#fff; border:1px solid #e2e8f0; border-radius:.85rem;
+              padding:1.25rem; transition:box-shadow .2s; }
+  .rec-card:hover { box-shadow:0 4px 18px rgba(0,0,0,.08); }
+  .rec-card .name { font-weight:700; font-size:1rem; color:#1e293b; margin-bottom:.5rem; }
+  .rec-meta { display:flex; gap:.5rem; flex-wrap:wrap; margin:.5rem 0; }
+  .rec-badge { font-size:.75rem; padding:.2rem .55rem; border-radius:.7rem; font-weight:600; }
+  .rec-cost  { margin-top:.75rem; padding-top:.75rem; border-top:1px solid #f1f5f9;
+               display:flex; justify-content:space-between; font-size:.88rem; }
+  .rec-cost .cost { color:#059669; font-weight:700; }
+  .rec-cost .price { color:#1d4ed8; font-weight:700; }
+  .rec-actions { display:flex; gap:.4rem; margin-top:.75rem; }
+
+  .diff-easy   { background:#d1fae5; color:#065f46; }
+  .diff-medium { background:#fef9c3; color:#854d0e; }
+  .diff-hard   { background:#fee2e2; color:#991b1b; }
+
+  .filter-bar { background:#fff; border:1px solid #e2e8f0; border-radius:.75rem;
+                padding:1rem 1.25rem; margin-bottom:1rem; }
+  .filter-bar form { display:flex; flex-wrap:wrap; gap:.6rem; align-items:flex-end; }
+  .filter-bar .fgroup { display:flex; flex-direction:column; gap:.25rem; }
+  .filter-bar label  { font-size:.78rem; color:#475569; font-weight:600; }
+  .filter-bar input, .filter-bar select {
+    border:1px solid #d1d5db; border-radius:.5rem; padding:.4rem .7rem; font-size:.88rem; }
+
+  .btn { padding:.5rem 1rem; border-radius:.6rem; font-size:.85rem; font-weight:600;
+         cursor:pointer; border:1px solid transparent; text-decoration:none; display:inline-block; }
+  .btn-primary { background:#3b82f6; color:#fff; border-color:#3b82f6; }
+  .btn-edit    { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; font-size:.78rem; padding:.3rem .65rem; }
+  .btn-delete  { background:#fff1f2; color:#be123c; border-color:#fecdd3; font-size:.78rem; padding:.3rem .65rem; }
+  .btn-toggle  { background:#f0fdf4; color:#15803d; border-color:#bbf7d0; font-size:.78rem; padding:.3rem .65rem; }
+  .btn-off     { background:#f8fafc; color:#64748b; border-color:#e2e8f0; font-size:.78rem; padding:.3rem .65rem; }
+
+  .pagination { display:flex; gap:.4rem; justify-content:center; margin-top:1rem; }
+  .pagination a, .pagination span {
+    padding:.4rem .75rem; border:1px solid #e5e7eb; border-radius:.5rem; font-size:.85rem; text-decoration:none; color:#374151; }
+  .pagination .active { background:#3b82f6; color:#fff; border-color:#3b82f6; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+  <div>
+    <h1 style="margin:0; font-size:1.5rem; font-weight:700; color:#1e293b;">الوصفات</h1>
+    <p style="margin:.25rem 0 0; color:#64748b; font-size:.88rem;">إدارة وصفات المطبخ مع حساب التكلفة</p>
+  </div>
+  <a href="{{ url_for('recipes.add_recipe') }}" class="btn btn-primary">+ إضافة وصفة</a>
+</div>
+
+<!-- فلاتر -->
+<div class="filter-bar">
+  <form method="get">
+    <div class="fgroup">
+      <label>التصنيف</label>
+      <select name="category">
+        <option value="">الكل</option>
+        {% for k, v in categories %}
+        <option value="{{ k }}" {% if filter_category == k %}selected{% endif %}>{{ v }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="fgroup">
+      <label>بحث</label>
+      <input type="text" name="q" value="{{ filter_q }}" placeholder="اسم الوصفة..." maxlength="80">
+    </div>
+    <button type="submit" class="btn btn-primary" style="padding:.45rem 1rem;">🔍 بحث</button>
+    {% if filter_category or filter_q %}
+    <a href="{{ url_for('recipes.list_recipes') }}" class="btn" style="background:#f1f5f9;">مسح</a>
+    {% endif %}
+  </form>
+</div>
+
+{% if recipes %}
+<div class="rec-grid">
+  {% for r in recipes %}
+  <div class="rec-card" id="card-{{ r.id }}">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <div class="name">{{ r.recipe_name }}</div>
+      {% if not r.is_active %}
+      <span class="rec-badge" style="background:#f1f5f9;color:#94a3b8;">متوقفة</span>
+      {% endif %}
+    </div>
+
+    <div class="rec-meta">
+      {% set cat_map = {'appetizer':'مقبلات','main':'رئيسي','dessert':'حلويات','beverage':'مشروبات','sauce':'صلصات','bread':'خبز','salad':'سلطات','soup':'شوربات','other':'أخرى'} %}
+      <span class="rec-badge" style="background:#dbeafe;color:#1e40af;">
+        {{ cat_map.get(r.category, r.category) }}
+      </span>
+      {% set diff_map = {'easy':'سهلة','medium':'متوسطة','hard':'صعبة'} %}
+      <span class="rec-badge diff-{{ r.difficulty_level }}">
+        {{ diff_map.get(r.difficulty_level, r.difficulty_level) }}
+      </span>
+      {% if r.preparation_time or r.cooking_time %}
+      <span class="rec-badge" style="background:#f1f5f9;color:#475569;">
+        ⏱ {{ (r.preparation_time|int) + (r.cooking_time|int) }} د
+      </span>
+      {% endif %}
+    </div>
+
+    <div class="rec-cost">
+      <div>
+        <div style="font-size:.75rem; color:#64748b;">تكلفة الوصفة</div>
+        <div class="cost">{{ "%.3f"|format(r.cost_per_unit|float) }}</div>
+      </div>
+      <div style="text-align:left;">
+        <div style="font-size:.75rem; color:#64748b;">سعر البيع</div>
+        <div class="price">{{ "%.2f"|format(r.selling_price|float) }}</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:.75rem; color:#64748b;">الحصص</div>
+        <div style="font-weight:600;">{{ r.yield_quantity }} {{ r.yield_unit }}</div>
+      </div>
+    </div>
+
+    <div class="rec-actions">
+      <a href="{{ url_for('recipes.edit_recipe', recipe_id=r.id) }}" class="btn btn-edit">تعديل</a>
+      <button onclick="toggleRecipe({{ r.id }}, this)" data-active="{{ r.is_active }}"
+              class="btn {{ 'btn-off' if r.is_active else 'btn-toggle' }}">
+        {{ 'إيقاف' if r.is_active else 'تفعيل' }}
+      </button>
+      <button onclick='deleteRecipe({{ r.id }}, {{ r.recipe_name | tojson }})' class="btn btn-delete">حذف</button>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div style="text-align:center; padding:4rem 2rem; color:#94a3b8; background:#fff;
+     border:1px dashed #e2e8f0; border-radius:.85rem;">
+  <div style="font-size:3rem; margin-bottom:.75rem;">🍽️</div>
+  <p style="font-size:1rem;">لا توجد وصفات بعد</p>
+  <a href="{{ url_for('recipes.add_recipe') }}" class="btn btn-primary" style="margin-top:.75rem;">
+    + أضف أول وصفة
+  </a>
+</div>
+{% endif %}
+
+{% if total_pages > 1 %}
+<div class="pagination">
+  {% if page > 1 %}
+  <a href="{{ url_for('recipes.list_recipes', page=page-1, category=filter_category, q=filter_q) }}">‹ السابق</a>
+  {% endif %}
+  {% for p in range([1, page-2]|max, [total_pages+1, page+3]|min) %}
+  <{% if p == page %}span class="active"{% else %}a href="{{ url_for('recipes.list_recipes', page=p, category=filter_category, q=filter_q) }}"{% endif %}>
+    {{ p }}
+  </{% if p == page %}span{% else %}a{% endif %}>
+  {% endfor %}
+  {% if page < total_pages %}
+  <a href="{{ url_for('recipes.list_recipes', page=page+1, category=filter_category, q=filter_q) }}">التالي ›</a>
+  {% endif %}
+</div>
+{% endif %}
+
+<script>
+async function toggleRecipe(id, btn) {
+  const r = await fetch(`/recipes/${id}/toggle`, {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': '{{ csrf_token }}' }
+  });
+  const d = await r.json();
+  if (d.success) location.reload();
+  else alert(d.error || 'خطأ');
+}
+
+async function deleteRecipe(id, name) {
+  if (!confirm(`هل تريد حذف الوصفة "${name}"؟\nسيتم حفظها في سلة المهملات.`)) return;
+  const form = new FormData();
+  form.append('csrf_token', '{{ csrf_token }}');
+  const r = await fetch(`/recipes/${id}/delete`, { method: 'POST', body: form });
+  if (r.redirected) {
+    location.href = r.url;
+  } else {
+    location.reload();
+  }
+}
+</script>
+{% endblock %}

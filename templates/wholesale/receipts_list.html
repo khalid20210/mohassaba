@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}سندات القبض{% endblock %}
+{% block page_title %}سندات القبض{% endblock %}
+
+{% block content %}
+<style>
+  .card { background:white; border-radius:8px; padding:20px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { background:#f5f5f5; padding:10px; text-align:right; font-weight:bold; border-bottom:2px solid #ddd; }
+  td { padding:10px; border-bottom:1px solid #eee; }
+</style>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+  <form method="get" style="display:flex;gap:10px;align-items:flex-end">
+    <div><label style="display:block;font-size:12px;color:#666;margin-bottom:3px">من تاريخ</label>
+    <input type="date" name="from" value="{{ date_from }}" style="padding:7px 10px;border:1px solid #ddd;border-radius:6px"></div>
+    <div><label style="display:block;font-size:12px;color:#666;margin-bottom:3px">إلى تاريخ</label>
+    <input type="date" name="to" value="{{ date_to }}" style="padding:7px 10px;border:1px solid #ddd;border-radius:6px"></div>
+    <button type="submit" style="background:#3b82f6;color:white;border:none;padding:8px 18px;border-radius:6px;cursor:pointer">🔍 بحث</button>
+  </form>
+  <a href="/wholesale/receipts/new" style="background:#10b981;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold">+ سند قبض جديد</a>
+</div>
+
+<div style="background:linear-gradient(135deg,#10b981,#059669);color:white;padding:20px;border-radius:8px;margin-bottom:20px;text-align:center">
+  <div style="font-size:12px;opacity:.8">إجمالي المقبوض</div>
+  <div style="font-size:2rem;font-weight:900;margin:6px 0">{{ "{:,.2f}".format(total) }}</div>
+  <div style="font-size:12px;opacity:.8">ريال سعودي — {{ vouchers|length }} سند</div>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr><th>رقم السند</th><th>العميل</th><th>التاريخ</th><th>المبلغ</th><th>طريقة الدفع</th><th>رقم الشيك</th><th>ملاحظات</th></tr>
+    </thead>
+    <tbody>
+      {% for v in vouchers %}
+      <tr>
+        <td style="font-weight:bold;color:#3b82f6">{{ v.voucher_number }}</td>
+        <td>{{ v.contact_name or '—' }}</td>
+        <td>{{ v.receipt_date }}</td>
+        <td style="font-weight:bold;color:#059669">{{ "{:,.2f}".format(v.amount) }} ر.س</td>
+        <td>
+          {% if v.payment_method == 'cash' %}💵 كاش
+          {% elif v.payment_method == 'cheque' %}🏦 شيك
+          {% elif v.payment_method == 'transfer' %}📱 حوالة
+          {% else %}{{ v.payment_method }}{% endif %}
+        </td>
+        <td>{{ v.cheque_number or '—' }}</td>
+        <td style="font-size:12px;color:#666">{{ v.notes or '—' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" style="text-align:center;color:#999;padding:30px">لا توجد سندات قبض</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

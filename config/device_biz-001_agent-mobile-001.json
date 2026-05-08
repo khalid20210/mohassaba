@@ -1,0 +1,37 @@
+{
+  "device_info": {
+    "device_id": "agent-mobile-001",
+    "device_type": "pos",
+    "device_name": "جهاز agent-mobile-001",
+    "os": "Windows",
+    "created_at": "2026-05-05T23:04:33.764548"
+  },
+  "tenant_config": {
+    "tenant_key": "biz-001",
+    "local_db": "database/local_biz-001_agent-mobile-001.db",
+    "activities_count": 57
+  },
+  "sync_config": {
+    "central_server": "http://localhost:5001",
+    "sync_interval_seconds": 300,
+    "auto_sync_enabled": true,
+    "offline_mode_enabled": true,
+    "retry_failed_syncs": true,
+    "max_retry_attempts": 3
+  },
+  "features": {
+    "pos_enabled": true,
+    "invoicing_enabled": true,
+    "inventory_tracking": true,
+    "agent_portal": false,
+    "offline_cache": true,
+    "print_support": true,
+    "barcode_scanner": true
+  },
+  "performance": {
+    "cache_products_locally": true,
+    "prefetch_activities": true,
+    "batch_sync_size": 100,
+    "local_db_cleanup_days": 30
+  }
+}

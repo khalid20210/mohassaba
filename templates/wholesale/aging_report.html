@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}تقرير أعمار الديون{% endblock %}
+{% block page_title %}تقرير أعمار الديون (30/60/90){% endblock %}
+
+{% block content %}
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+  <div>
+    <p class="page-subtitle">إجمالي الذمم: {{ "{:,.2f}".format(total_outstanding) }}</p>
+  </div>
+  <a href="/wholesale/orders" class="btn btn-secondary">← العودة للطلبات</a>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:10px;margin-bottom:14px;">
+  <div class="card"><div style="color:#94a3b8;font-size:.82rem;">غير مستحقة</div><div style="font-weight:800;font-size:1.1rem;">{{ "{:,.2f}".format(buckets.current) }}</div></div>
+  <div class="card"><div style="color:#94a3b8;font-size:.82rem;">1 - 30 يوم</div><div style="font-weight:800;font-size:1.1rem;color:#f59e0b;">{{ "{:,.2f}".format(buckets['30']) }}</div></div>
+  <div class="card"><div style="color:#94a3b8;font-size:.82rem;">31 - 60 يوم</div><div style="font-weight:800;font-size:1.1rem;color:#fb923c;">{{ "{:,.2f}".format(buckets['60']) }}</div></div>
+  <div class="card"><div style="color:#94a3b8;font-size:.82rem;">+61 يوم</div><div style="font-weight:800;font-size:1.1rem;color:#ef4444;">{{ "{:,.2f}".format(buckets['90']) }}</div></div>
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>العميل</th>
+        <th>الفاتورة</th>
+        <th>تاريخ الاستحقاق</th>
+        <th>أيام التأخير</th>
+        <th>الفئة</th>
+        <th>المتبقي</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in details %}
+      <tr>
+        <td>
+          {{ d.customer_name }}
+          {% if d.customer_id %}
+          <div><a href="/wholesale/customers/{{ d.customer_id }}/statement" style="font-size:.78rem;color:#60a5fa;">كشف الحساب</a></div>
+          {% endif %}
+        </td>
+        <td>{{ d.invoice_number }}</td>
+        <td>{{ d.due_date }}</td>
+        <td>{{ d.days_overdue }}</td>
+        <td>{{ d.bucket }}</td>
+        <td>{{ "{:,.2f}".format(d.outstanding) }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;">لا توجد ذمم مفتوحة حالياً</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

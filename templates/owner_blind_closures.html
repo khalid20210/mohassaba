@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}الإقفال الأعمى{% endblock %}
+{% block page_title %}👁 تقارير الإقفال الأعمى{% endblock %}
+
+{% block head %}
+<style>
+.bc-wrap{max-width:1100px;margin:0 auto}
+.bc-card{background:#0f172a;border:1px solid rgba(148,163,184,.2);border-radius:14px;overflow:hidden}
+.bc-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.bc-table th{background:#0b1220;color:#93c5fd;padding:10px 12px;text-align:right;border-bottom:2px solid rgba(37,99,235,.3);font-weight:800}
+.bc-table td{padding:9px 12px;border-bottom:1px solid rgba(148,163,184,.1);color:#cbd5e1;vertical-align:middle}
+.bc-table tr:hover td{background:rgba(37,99,235,.04)}
+.status-pending{color:#fbbf24;background:rgba(245,158,11,.12);border-radius:6px;padding:3px 8px;font-size:.72rem;font-weight:700}
+.status-approved{color:#4ade80;background:rgba(34,197,94,.1);border-radius:6px;padding:3px 8px;font-size:.72rem;font-weight:700}
+.deficit-num{color:#f87171;font-weight:800}
+.approve-btn{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:inherit}
+.approve-btn:disabled{opacity:.4;cursor:not-allowed}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bc-wrap">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <a href="{{ url_for('owner.owner_dashboard') }}" style="color:#60a5fa;font-size:.83rem;text-decoration:none">← العودة لقمرة القيادة</a>
+    <span style="color:#64748b;font-size:.8rem">{{ closures|length }} إقفال</span>
+  </div>
+
+  <div class="bc-card">
+    <table class="bc-table">
+      <thead>
+        <tr>
+          <th>الموظف</th>
+          <th>التاريخ</th>
+          <th>المتوقع</th>
+          <th>المعدود</th>
+          <th>العجز</th>
+          <th>الحالة</th>
+          <th>الإجراء</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if closures %}
+          {% for c in closures %}
+          <tr id="row-{{ c.id }}">
+            <td style="font-weight:700">{{ c.employee_name or '—' }}</td>
+            <td>{{ c.shift_date }}</td>
+            <td>{{ "{:,.2f}".format(c.expected_cash or 0) }}</td>
+            <td>{{ "{:,.2f}".format(c.actual_cash or 0) }}</td>
+            <td>
+              {% if (c.deficit or 0) > 0 %}
+                <span class="deficit-num">{{ "{:,.2f}".format(c.deficit) }}</span>
+              {% else %}
+                <span style="color:#4ade80">لا يوجد</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if c.status == 'approved' %}
+                <span class="status-approved">معتمد ✓</span>
+              {% else %}
+                <span class="status-pending">قيد الانتظار</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if c.status == 'pending' and (c.deficit or 0) > 0 %}
+                <button class="approve-btn" onclick="approveClose({{ c.id }}, this)">اعتماد الخصم</button>
+              {% elif c.status == 'approved' %}
+                <span style="color:#64748b;font-size:.72rem">تم</span>
+              {% else %}
+                <span style="color:#64748b;font-size:.72rem">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" style="text-align:center;color:#64748b;padding:30px">لا توجد سجلات إقفال</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function approveClose(id, btn){
+  if(!confirm('هل تريد اعتماد خصم العجز من راتب الموظف؟')) return;
+  btn.disabled = true;
+  fetch(`/owner/blind-closures/${id}/approve`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': document.cookie.match(/csrf_token=([^;]+)/)?.[1] || ''
+    }
+  })
+  .then(r => r.json())
+  .then(d => {
+    if(d.success){
+      const row = document.getElementById('row-'+id);
+      row.cells[5].innerHTML = '<span class="status-approved">معتمد ✓</span>';
+      row.cells[6].innerHTML = '<span style="color:#64748b;font-size:.72rem">تم</span>';
+    } else {
+      alert(d.error || 'حدث خطأ');
+      btn.disabled = false;
+    }
+  })
+  .catch(()=>{ btn.disabled=false; });
+}
+</script>
+{% endblock %}

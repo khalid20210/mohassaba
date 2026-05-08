@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}تقرير التقادم{% endblock %}
+{% block page_title %}📅 تقرير انتهاء الصلاحية{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <a href="/inventory/reports" style="color:#94a3b8;font-size:.85rem;">← التقارير</a>
+    <h1 class="page-title" style="margin-top:4px;">📅 المنتجات المقاربة للانتهاء</h1>
+  </div>
+</div>
+
+<div class="card">
+  {% if products %}
+  <table class="table">
+    <thead>
+      <tr><th>المنتج</th><th>الكمية</th><th>تاريخ الانتهاء</th><th>الأيام المتبقية</th><th>الإجراء</th></tr>
+    </thead>
+    <tbody>
+      {% for p in products %}
+      <tr>
+        <td><a href="/inventory/products/{{ p.id }}" style="color:#38bdf8;">{{ p.name }}</a></td>
+        <td>{{ p.current_qty }} {{ p.unit }}</td>
+        <td style="color:#f59e0b;">{{ p.expiry_date }}</td>
+        <td>
+          {% set days = p.days_left or 0 %}
+          <span style="background:{% if days <= 7 %}#7f1d1d;color:#fca5a5{% elif days <= 30 %}#78350f;color:#fcd34d{% else %}#14532d;color:#86efac{% endif %};padding:2px 10px;border-radius:20px;font-size:.8rem;">
+            {{ days }} يوم
+          </span>
+        </td>
+        <td>
+          <a href="/inventory/products/{{ p.id }}" class="btn btn-secondary" style="padding:4px 12px;font-size:.8rem;">تفاصيل</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="text-align:center;padding:60px;">
+    <div style="font-size:3rem;margin-bottom:16px;">✅</div>
+    <h3>لا توجد منتجات ستنتهي صلاحيتها قريباً</h3>
+    <p style="color:#64748b;">جميع المنتجات صلاحيتها جيدة</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

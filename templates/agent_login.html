@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f172a">
+<title>دخول المندوب</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0f172a;--bg2:#0b1220;--bg3:#1e293b;
+  --border:rgba(148,163,184,.18);
+  --text:#e2e8f0;--muted:#94a3b8;--accent:#3b82f6;
+  --green:#22c55e;--red:#ef4444;--yellow:#f59e0b;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Segoe UI',Tahoma,sans-serif;display:flex;align-items:center;justify-content:center;padding:16px}
+.login-wrap{width:100%;max-width:400px}
+.logo-area{text-align:center;margin-bottom:32px}
+.logo-icon{font-size:3rem;margin-bottom:8px}
+.logo-title{font-size:1.4rem;font-weight:900;color:#dbeafe;letter-spacing:-.5px}
+.logo-sub{font-size:.82rem;color:var(--muted);margin-top:4px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:28px 22px}
+.field-label{font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:6px;display:block}
+.inp{width:100%;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:13px 14px;font-family:inherit;font-size:.95rem;outline:none;margin-bottom:14px;transition:border-color .2s}
+.inp:focus{border-color:var(--accent)}
+.inp::placeholder{color:var(--muted)}
+.pw-wrap{position:relative}
+.pw-wrap .inp{padding-left:42px}
+.pw-toggle{position:absolute;left:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem;padding:0}
+.btn-login{width:100%;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:12px;padding:14px;font-size:1rem;font-weight:800;font-family:inherit;cursor:pointer;transition:opacity .15s;margin-top:4px}
+.btn-login:active{opacity:.85}
+.btn-login:disabled{opacity:.5;cursor:not-allowed}
+.error-box{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);border-radius:10px;padding:10px 14px;color:#fca5a5;font-size:.83rem;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.footer-note{text-align:center;font-size:.72rem;color:var(--muted);margin-top:20px;line-height:1.6}
+.spinner-icon{display:none;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="logo-area">
+    <div class="logo-icon">🧭</div>
+    <div class="logo-title">بوابة المندوب</div>
+    <div class="logo-sub">سجّل دخولك لبدء يوم عمل موفّق</div>
+  </div>
+
+  <div class="card">
+    {% if error %}
+    <div class="error-box">⚠️ {{ error }}</div>
+    {% endif %}
+
+    <form method="POST" id="loginForm" autocomplete="off">
+      <input type="hidden" name="csrf_token" value="{{ session.get('_csrf_token','') }}">
+
+      <label class="field-label" for="username">اسم المستخدم</label>
+      <input class="inp" type="text" id="username" name="username"
+             placeholder="أدخل اسم المستخدم"
+             autocomplete="username" autocapitalize="none" spellcheck="false"
+             value="{{ request.form.get('username','') }}" required>
+
+      <label class="field-label" for="password">كلمة المرور</label>
+      <div class="pw-wrap">
+        <input class="inp" type="password" id="password" name="password"
+               placeholder="••••••" autocomplete="current-password" required>
+        <button type="button" class="pw-toggle" onclick="togglePw()" title="إظهار/إخفاء">👁</button>
+      </div>
+
+      <button class="btn-login" type="submit" id="loginBtn">
+        <span id="btnLabel">تسجيل الدخول</span>
+        <span class="spinner-icon" id="spinner">⟳</span>
+      </button>
+    </form>
+  </div>
+
+  <div class="footer-note">
+    بوابة مخصصة للمناديب فقط<br>
+    للدعم تواصل مع المسؤول
+  </div>
+</div>
+
+<script>
+function togglePw(){
+  const f=document.getElementById('password');
+  f.type = f.type==='password' ? 'text' : 'password';
+}
+document.getElementById('loginForm').addEventListener('submit', function(){
+  const btn=document.getElementById('loginBtn');
+  btn.disabled=true;
+  document.getElementById('btnLabel').textContent='جارٍ التحقق...';
+  document.getElementById('spinner').style.display='inline';
+});
+// Auto-focus
+document.getElementById('username').focus();
+</script>
+</body>
+</html>

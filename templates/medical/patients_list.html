@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+{% block title %}المرضى{% endblock %}
+{% block page_title %}قائمة المرضى{% endblock %}
+
+{% block content %}
+<style>
+/* ── Medical Nav Bar ── */
+.med-nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;padding:12px 16px;background:linear-gradient(135deg,rgba(14,165,233,.12),rgba(99,102,241,.08));border:1px solid rgba(56,189,248,.18);border-radius:14px;}
+.med-nav a{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;color:#94a3b8;text-decoration:none;font-size:.84rem;font-weight:600;transition:all .2s;}
+.med-nav a:hover,.med-nav a.active{background:rgba(56,189,248,.15);color:#38bdf8;}
+.med-nav .nav-icon{font-size:1.1rem;}
+
+/* ── Cards Grid ── */
+.patient-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
+.patient-card{background:linear-gradient(145deg,rgba(30,41,59,.9),rgba(15,23,42,.8));border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:20px;transition:all .25s;cursor:pointer;text-decoration:none;color:inherit;display:block;}
+.patient-card:hover{border-color:rgba(56,189,248,.4);transform:translateY(-2px);box-shadow:0 8px 32px rgba(14,165,233,.15);}
+.patient-card-header{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.patient-avatar{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;}
+.patient-avatar.male{background:linear-gradient(135deg,#1e40af,#3b82f6);}
+.patient-avatar.female{background:linear-gradient(135deg,#9d174d,#ec4899);}
+.patient-avatar.unknown{background:linear-gradient(135deg,#374151,#6b7280);}
+.patient-name{font-weight:700;font-size:1rem;color:#f1f5f9;margin-bottom:2px;}
+.patient-file{font-size:.75rem;color:#38bdf8;font-family:monospace;background:rgba(56,189,248,.1);padding:2px 8px;border-radius:20px;}
+.patient-info{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.info-item{display:flex;flex-direction:column;gap:2px;}
+.info-label{font-size:.72rem;color:#64748b;text-transform:uppercase;letter-spacing:.04em;}
+.info-value{font-size:.85rem;color:#cbd5e1;font-weight:500;}
+.blood-badge{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:rgba(239,68,68,.15);color:#ef4444;font-weight:800;font-size:.9rem;border:2px solid rgba(239,68,68,.3);}
+.patient-actions{display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06);}
+.btn-action{flex:1;padding:8px;border-radius:8px;font-size:.8rem;font-weight:600;text-align:center;text-decoration:none;border:none;cursor:pointer;transition:all .2s;}
+.btn-file{background:rgba(56,189,248,.12);color:#38bdf8;border:1px solid rgba(56,189,248,.2);}
+.btn-file:hover{background:rgba(56,189,248,.22);}
+.btn-appt{background:rgba(139,92,246,.12);color:#a78bfa;border:1px solid rgba(139,92,246,.2);}
+.btn-appt:hover{background:rgba(139,92,246,.22);}
+
+/* ── Modal ── */
+.med-modal{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
+.med-modal.open{opacity:1;pointer-events:all;}
+.med-modal-bg{position:absolute;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);}
+.med-modal-box{position:relative;z-index:1;background:linear-gradient(145deg,#1e293b,#0f172a);border:1px solid rgba(56,189,248,.2);border-radius:20px;padding:28px;width:90%;max-width:560px;max-height:90vh;overflow-y:auto;transform:translateY(20px);transition:transform .25s;}
+.med-modal.open .med-modal-box{transform:translateY(0);}
+.med-modal-header{display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.08);}
+.med-modal-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#0ea5e9,#6366f1);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;}
+.med-modal-title{font-size:1.1rem;font-weight:700;color:#f1f5f9;margin:0;}
+.med-modal-close{margin-right:auto;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
+.med-modal-close:hover{background:rgba(239,68,68,.15);color:#ef4444;border-color:rgba(239,68,68,.3);}
+.med-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.med-form-grid .full{grid-column:1/-1;}
+.med-label{display:block;font-size:.78rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+.med-input{width:100%;padding:10px 14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#f1f5f9;font-size:.9rem;transition:border .2s;box-sizing:border-box;}
+.med-input:focus{outline:none;border-color:#38bdf8;background:rgba(56,189,248,.05);}
+.med-input::placeholder{color:#475569;}
+.med-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06);}
+.btn-cancel{padding:10px 20px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .2s;}
+.btn-cancel:hover{background:rgba(255,255,255,.1);color:#f1f5f9;}
+.btn-submit{padding:10px 24px;border-radius:10px;background:linear-gradient(135deg,#0ea5e9,#6366f1);border:none;color:#fff;font-size:.88rem;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn-submit:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(14,165,233,.3);}
+
+/* ── Search ── */
+.search-bar{display:flex;gap:10px;align-items:center;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 16px;margin-bottom:20px;}
+.search-input{flex:1;background:none;border:none;color:#f1f5f9;font-size:.9rem;outline:none;}
+.search-input::placeholder{color:#475569;}
+.btn-search{padding:8px 18px;border-radius:8px;background:linear-gradient(135deg,#0ea5e9,#6366f1);border:none;color:#fff;font-weight:600;font-size:.84rem;cursor:pointer;}
+
+/* ── Stats ── */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+.stat-box{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;text-align:center;}
+.stat-num{font-size:1.6rem;font-weight:800;}
+.stat-lbl{font-size:.75rem;color:#64748b;margin-top:2px;}
+</style>
+
+<!-- Navigation -->
+<div class="med-nav">
+  <a href="/medical/patients" class="active"><span class="nav-icon">🏥</span> المرضى</a>
+  <a href="/medical/appointments"><span class="nav-icon">📅</span> المواعيد</a>
+  <a href="/medical/doctors"><span class="nav-icon">👨‍⚕️</span> الأطباء</a>
+  <a href="/medical/insurance"><span class="nav-icon">🛡️</span> التأمين</a>
+  <a href="/medical/services"><span class="nav-icon">💉</span> الخدمات</a>
+  <a href="/medical/reports"><span class="nav-icon">📊</span> التقارير</a>
+  <button onclick="openModal('newPatientModal')" style="margin-right:auto;padding:8px 18px;border-radius:10px;background:linear-gradient(135deg,#0ea5e9,#6366f1);border:none;color:#fff;font-weight:700;font-size:.84rem;cursor:pointer;display:flex;align-items:center;gap:6px;">
+    <span style="font-size:1.1rem;">＋</span> تسجيل مريض جديد
+  </button>
+</div>
+
+<!-- Stats -->
+<div class="stats-row">
+  <div class="stat-box">
+    <div class="stat-num" style="color:#38bdf8;">{{ total or patients|length }}</div>
+    <div class="stat-lbl">إجمالي المرضى</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-num" style="color:#86efac;">{{ patients|selectattr('insurance_company_id')|list|length }}</div>
+    <div class="stat-lbl">مرضى التأمين</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-num" style="color:#f59e0b;">{{ patients|selectattr('last_visit')|list|length }}</div>
+    <div class="stat-lbl">زاروا مؤخراً</div>
+  </div>
+</div>
+
+<!-- Search -->
+<form method="get" class="search-bar">
+  <span style="font-size:1.1rem;color:#475569;">🔍</span>
+  <input type="text" name="q" value="{{ search or '' }}" placeholder="ابحث باسم المريض أو رقم الملف أو الهاتف أو الرقم الوطني..." class="search-input">
+  {% if search %}
+  <a href="/medical/patients" style="color:#64748b;text-decoration:none;font-size:.85rem;white-space:nowrap;">✕ مسح</a>
+  {% endif %}
+  <button type="submit" class="btn-search">بحث</button>
+</form>
+
+<!-- Cards -->
+{% if patients %}
+<div class="patient-grid">
+  {% for p in patients %}
+  <div class="patient-card" onclick="location.href='/medical/patients/{{ p.id }}'">
+    <div class="patient-card-header">
+      <div class="patient-avatar {{ p.gender or 'unknown' }}">
+        {{ '👨' if p.gender=='male' else '👩' if p.gender=='female' else '🧑' }}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div class="patient-name">{{ p.patient_name }}</div>
+        <span class="patient-file">📁 {{ p.file_number or 'MED-?????' }}</span>
+      </div>
+      {% if p.blood_type %}
+      <div class="blood-badge">{{ p.blood_type }}</div>
+      {% endif %}
+    </div>
+    <div class="patient-info">
+      <div class="info-item">
+        <span class="info-label">📱 الهاتف</span>
+        <span class="info-value">{{ p.patient_phone or '—' }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">🎂 الميلاد</span>
+        <span class="info-value">{{ p.date_of_birth or '—' }}</span>
+      </div>
+      {% if p.chronic_diseases %}
+      <div class="info-item" style="grid-column:1/-1;">
+        <span class="info-label">⚕️ أمراض مزمنة</span>
+        <span class="info-value" style="color:#f59e0b;">{{ p.chronic_diseases }}</span>
+      </div>
+      {% endif %}
+      {% if p.allergies %}
+      <div class="info-item" style="grid-column:1/-1;">
+        <span class="info-label">⚠️ حساسية</span>
+        <span class="info-value" style="color:#ef4444;">{{ p.allergies }}</span>
+      </div>
+      {% endif %}
+      {% if p.last_visit %}
+      <div class="info-item" style="grid-column:1/-1;">
+        <span class="info-label">🕐 آخر زيارة</span>
+        <span class="info-value" style="color:#34d399;">{{ p.last_visit[:10] }}</span>
+      </div>
+      {% endif %}
+    </div>
+    <div class="patient-actions" onclick="event.stopPropagation()">
+      <a href="/medical/patients/{{ p.id }}" class="btn-action btn-file">📋 ملف المريض</a>
+      <a href="/medical/appointments?patient_id={{ p.id }}" class="btn-action btn-appt">📅 المواعيد</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div style="text-align:center;padding:80px 20px;">
+  <div style="font-size:4rem;margin-bottom:16px;">🏥</div>
+  <div style="font-size:1.2rem;font-weight:700;color:#f1f5f9;margin-bottom:8px;">
+    {% if search %}لا توجد نتائج للبحث "{{ search }}"{% else %}لا يوجد مرضى مسجلون بعد{% endif %}
+  </div>
+  <p style="color:#64748b;margin-bottom:20px;">ابدأ بتسجيل أول مريض</p>
+  <button onclick="openModal('newPatientModal')" style="padding:12px 28px;border-radius:12px;background:linear-gradient(135deg,#0ea5e9,#6366f1);border:none;color:#fff;font-weight:700;font-size:.95rem;cursor:pointer;">
+    ＋ تسجيل مريض جديد
+  </button>
+</div>
+{% endif %}
+
+<!-- Modal: تسجيل مريض جديد -->
+<div class="med-modal" id="newPatientModal">
+  <div class="med-modal-bg" onclick="closeModal('newPatientModal')"></div>
+  <div class="med-modal-box">
+    <div class="med-modal-header">
+      <div class="med-modal-icon">🏥</div>
+      <h3 class="med-modal-title">تسجيل مريض جديد</h3>
+      <button class="med-modal-close" onclick="closeModal('newPatientModal')" title="إغلاق">✕</button>
+    </div>
+    <form method="post" action="/medical/patients/new">
+      <div class="med-form-grid">
+        <div class="full">
+          <label class="med-label">👤 الاسم الكامل *</label>
+          <input name="full_name" class="med-input" placeholder="أدخل الاسم الكامل للمريض" required>
+        </div>
+        <div>
+          <label class="med-label">📱 رقم الهاتف</label>
+          <input name="phone" class="med-input" placeholder="05xxxxxxxx">
+        </div>
+        <div>
+          <label class="med-label">🪪 الرقم الوطني</label>
+          <input name="national_id" class="med-input" placeholder="10 أرقام">
+        </div>
+        <div>
+          <label class="med-label">🎂 تاريخ الميلاد</label>
+          <input name="dob" type="date" class="med-input">
+        </div>
+        <div>
+          <label class="med-label">⚥ الجنس</label>
+          <select name="gender" class="med-input">
+            <option value="male">♂ ذكر</option>
+            <option value="female">♀ أنثى</option>
+          </select>
+        </div>
+        <div>
+          <label class="med-label">🩸 فصيلة الدم</label>
+          <select name="blood_type" class="med-input">
+            <option value="">— غير معروفة</option>
+            <option>A+</option><option>A-</option>
+            <option>B+</option><option>B-</option>
+            <option>AB+</option><option>AB-</option>
+            <option>O+</option><option>O-</option>
+          </select>
+        </div>
+        <div>
+          <label class="med-label">📏 الطول (سم)</label>
+          <input name="height" type="number" class="med-input" placeholder="170">
+        </div>
+        <div>
+          <label class="med-label">⚖️ الوزن (كغ)</label>
+          <input name="weight" type="number" class="med-input" placeholder="70">
+        </div>
+        <div class="full">
+          <label class="med-label">💊 أمراض مزمنة</label>
+          <input name="chronic_diseases" class="med-input" placeholder="سكري، ضغط، ربو... (اتركه فارغاً إن لم يكن هناك)">
+        </div>
+        <div class="full">
+          <label class="med-label">⚠️ حساسية (Allergies)</label>
+          <input name="allergies" class="med-input" placeholder="البنسلين، أسبرين... (اتركه فارغاً إن لم يكن هناك)">
+        </div>
+        <div class="full">
+          <label class="med-label">📞 جهة اتصال طوارئ</label>
+          <input name="emergency_contact" class="med-input" placeholder="اسم القريب">
+        </div>
+        <div class="full">
+          <label class="med-label">📱 هاتف الطوارئ</label>
+          <input name="emergency_phone" class="med-input" placeholder="05xxxxxxxx">
+        </div>
+      </div>
+      <div class="med-footer">
+        <button type="button" class="btn-cancel" onclick="closeModal('newPatientModal')">↩ إلغاء</button>
+        <button type="submit" class="btn-submit">✅ تسجيل المريض</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openModal(id){
+  document.getElementById(id).classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow='';
+}
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape') document.querySelectorAll('.med-modal.open').forEach(m=>m.classList.remove('open'));
+});
+</script>
+{% endblock %}

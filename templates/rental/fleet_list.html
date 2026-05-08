@@ -1,0 +1,141 @@
+﻿{% extends "base.html" %}
+{% block title %}ط§ظ„ط£ط³ط·ظˆظ„{% endblock %}
+{% block page_title %}ًںڑ— ط¥ط¯ط§ط±ط© ط§ظ„ط£ط³ط·ظˆظ„{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <p class="page-subtitle">{{ vehicles|length }} ظ…ط±ظƒط¨ط© ظ…ط³ط¬ظ„ط©</p>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <a href="/rental/contracts" class="btn btn-secondary">ًں“„ ط§ظ„ط¹ظ‚ظˆط¯</a>
+    <a href="/rental/maintenance" class="btn btn-secondary">ًں”§ ط§ظ„طµظٹط§ظ†ط©</a>
+    <button class="btn btn-primary" onclick="document.getElementById('newVehicleModal').classList.add('show')">+ ط¥ط¶ط§ظپط© ظ…ط±ظƒط¨ط©</button>
+  </div>
+</div>
+
+<!-- ط¥ط­طµط§ط¦ظٹط§طھ ط§ظ„ط£ط³ط·ظˆظ„ -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+  {% set avail=0 %}{% set rented=0 %}{% set maint=0 %}
+  {% for v in vehicles %}
+    {% if v.status=='available' %}{% set avail=avail+1 %}
+    {% elif v.status=='rented' %}{% set rented=rented+1 %}
+    {% elif v.status=='maintenance' %}{% set maint=maint+1 %}{% endif %}
+  {% endfor %}
+  <div class="card" style="text-align:center;padding:12px;"><div style="font-size:1.4rem;font-weight:800;">{{ vehicles|length }}</div><div style="font-size:.78rem;color:#94a3b8;">ط§ظ„ط¥ط¬ظ…ط§ظ„ظٹ</div></div>
+  <div class="card" style="text-align:center;padding:12px;"><div style="font-size:1.4rem;font-weight:800;color:#22c55e;">{{ avail }}</div><div style="font-size:.78rem;color:#94a3b8;">ظ…طھط§ط­</div></div>
+  <div class="card" style="text-align:center;padding:12px;"><div style="font-size:1.4rem;font-weight:800;color:#ef4444;">{{ rented }}</div><div style="font-size:.78rem;color:#94a3b8;">ظ…ط¤ط¬ظ‘ط±</div></div>
+  <div class="card" style="text-align:center;padding:12px;"><div style="font-size:1.4rem;font-weight:800;color:#f59e0b;">{{ maint }}</div><div style="font-size:.78rem;color:#94a3b8;">طµظٹط§ظ†ط©</div></div>
+</div>
+
+<!-- ظپظ„طھط± -->
+<div style="display:flex;gap:8px;margin-bottom:16px;">
+  {% for s, label in [('','ط§ظ„ظƒظ„'),('available','ظ…طھط§ط­'),('rented','ظ…ط¤ط¬ط±'),('maintenance','طµظٹط§ظ†ط©')] %}
+  <a href="/rental/fleet{% if s %}?status={{ s }}{% endif %}"
+     style="padding:6px 14px;border-radius:20px;text-decoration:none;font-size:.82rem;border:1px solid rgba(255,255,255,.1);{% if request.args.get('status','')==s %}background:rgba(59,130,246,.15);color:#60a5fa;border-color:#3b82f6;{% else %}color:#64748b;{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px;">
+  {% for v in vehicles %}
+  <div class="card" style="border:1px solid rgba({% if v.status=='available' %}34,197,94{% elif v.status=='rented' %}239,68,68{% else %}148,163,184{% endif %},.25);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+      <div>
+        <h4 style="margin:0;color:#e2e8f0;">{{ v.vehicle_name or (v.make~' '~v.model) }}</h4>
+        <span style="color:#94a3b8;font-size:.82rem;">{{ v.year or '' }} â€¢ {{ v.plate_number or 'â€”' }}</span>
+      </div>
+      <span style="font-size:.78rem;padding:2px 10px;border-radius:20px;
+            {% if v.status=='available' %}background:#14532d;color:#86efac;
+            {% elif v.status=='rented' %}background:#7f1d1d;color:#fca5a5;
+            {% else %}background:rgba(255,255,255,.06);color:#94a3b8;{% endif %}">
+        {% if v.status=='available' %}âœ“ ظ…طھط§ط­
+        {% elif v.status=='rented' %}â—ڈ ظ…ط¤ط¬ظ‘ط±
+        {% elif v.status=='maintenance' %}ًں”§ طµظٹط§ظ†ط©
+        {% else %}{{ v.status }}{% endif %}
+      </span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:.82rem;color:#64748b;margin-bottom:12px;">
+      <span>ط§ظ„ط³ط¹ط±/ظٹظˆظ…</span><span style="color:#38bdf8;font-weight:700;">{{ "{:,.0f}".format(v.rental_rate_daily or 0) }} ط±.ط³</span>
+      <span>ط§ظ„ظ†ظˆط¹</span><span style="color:#e2e8f0;">{{ v.vehicle_type or 'â€”' }}</span>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <a href="/rental/fleet/{{ v.id }}" class="btn btn-secondary" style="flex:1;text-align:center;padding:6px;font-size:.8rem;">طھظپط§طµظٹظ„</a>
+      {% if v.status=='available' %}
+      <a href="/rental/contracts/new?vehicle_id={{ v.id }}" class="btn btn-primary" style="flex:1;text-align:center;padding:6px;font-size:.8rem;">+ ط¹ظ‚ط¯</a>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="grid-column:1/-1;text-align:center;padding:60px;">
+    <div style="font-size:3rem;margin-bottom:16px;">ًںڑ—</div>
+    <h3>ظ„ط§ طھظˆط¬ط¯ ظ…ط±ظƒط¨ط§طھ</h3>
+    <button class="btn btn-primary" style="margin-top:16px;" onclick="document.getElementById('newVehicleModal').classList.add('show')">ط¥ط¶ط§ظپط© ظ…ط±ظƒط¨ط© ط£ظˆظ„ظ‰</button>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Modal: ظ…ط±ظƒط¨ط© ط¬ط¯ظٹط¯ط© -->
+<div class="modal-overlay" id="newVehicleModal">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 class="modal-title">ًںڑ— ط¥ط¶ط§ظپط© ظ…ط±ظƒط¨ط© ط¬ط¯ظٹط¯ط©</h3>
+      <button class="modal-close" onclick="document.getElementById('newVehicleModal').classList.remove('show')">âœ•</button>
+    </div>
+    <form method="post" action="/rental/fleet/new">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">ط§ط³ظ…/ظˆطµظپ ط§ظ„ظ…ط±ظƒط¨ط© *</label>
+          <input name="name" class="form-input" placeholder="طھظˆظٹظˆطھط§ ظƒط§ظ…ط±ظٹ 2023" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ط±ظ‚ظ… ط§ظ„ظ„ظˆط­ط© *</label>
+          <input name="plate" class="form-input" placeholder="ط£ ط¨ ط¬ 1234" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ط§ظ„طµط§ظ†ط¹</label>
+          <input name="make" class="form-input" placeholder="طھظˆظٹظˆطھط§">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ط§ظ„ظ…ظˆط¯ظٹظ„</label>
+          <input name="model" class="form-input" placeholder="ظƒط§ظ…ط±ظٹ">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ط§ظ„ط³ظ†ط©</label>
+          <input name="year" class="form-input" type="number" placeholder="2024">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ط§ظ„ظ†ظˆط¹</label>
+          <select name="type" class="form-input">
+            <option value="sedan">ط³ظٹط¯ط§ظ†</option>
+            <option value="suv">SUV</option>
+            <option value="pickup">ط¨ظٹظƒ ط£ط¨</option>
+            <option value="van">ظپط§ظ†</option>
+            <option value="bus">ط¨ط§طµ</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">طھط§ط±ظٹط® ط§ظ„ط´ط±ط§ط،</label>
+          <input name="purchase_date" type="date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">طھظƒظ„ظپط© ط§ظ„ط´ط±ط§ط، (ط±.ط³)</label>
+          <input name="cost" class="form-input" type="number" step="0.01" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ط§ظ„ط³ط¹ط± ط§ظ„ظٹظˆظ…ظٹ (ط±.ط³) *</label>
+          <input name="rate_daily" class="form-input" type="number" step="0.01" placeholder="150.00" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ط±ظ‚ظ… ط§ظ„ظ‡ظٹظƒظ„ VIN</label>
+          <input name="vin" class="form-input" placeholder="ط§ط®طھظٹط§ط±ظٹ">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('newVehicleModal').classList.remove('show')">ط¥ظ„ط؛ط§ط،</button>
+        <button type="submit" class="btn btn-primary">âœ… ط¥ط¶ط§ظپط© ط§ظ„ظ…ط±ظƒط¨ط©</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

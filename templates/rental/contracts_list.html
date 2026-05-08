@@ -1,0 +1,100 @@
+﻿{% extends "base.html" %}
+{% block title %}ط¹ظ‚ظˆط¯ ط§ظ„ط¥ظٹط¬ط§ط±{% endblock %}
+
+
+{% block content %}
+<div class="page-header">
+  <div><p class="page-subtitle">{{ contracts|length }} ط¹ظ‚ط¯</p></div>
+  <div style="display:flex;gap:10px;">
+    <a href="/rental/fleet" class="btn btn-secondary">ًںڑ— ط§ظ„ط£ط³ط·ظˆظ„</a>
+    <button class="btn btn-primary" onclick="document.getElementById('newContractModal').classList.add('show')">+ ط¹ظ‚ط¯ ط¬ط¯ظٹط¯</button>
+  </div>
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>#</th><th>ط§ظ„ظ…ط±ظƒط¨ط©</th><th>ط§ظ„ظ…ط³طھط£ط¬ط±</th><th>ظ†ظˆط¹ ط§ظ„ط¥ظٹط¬ط§ط±</th><th>طھط§ط±ظٹط® ط§ظ„ط¨ط¯ط،</th><th>ط§ظ„ط³ط¹ط±/ظٹظˆظ…</th><th>ط§ظ„ط¥ط¬ظ…ط§ظ„ظٹ</th><th>ط§ظ„ط­ط§ظ„ط©</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for c in contracts %}
+      <tr>
+        <td style="color:#64748b;font-size:.82rem;">{{ c.id }}</td>
+        <td><strong>{{ c.vehicle_name or 'â€”' }}</strong><br><small style="color:#64748b;">{{ c.plate_number or '' }}</small></td>
+        <td>{{ c.renter_name or c.renter_id or 'â€”' }}</td>
+        <td style="color:#94a3b8;font-size:.82rem;">{{ c.rental_type or 'â€”' }}</td>
+        <td style="color:#94a3b8;font-size:.82rem;">{{ c.rental_start_date or 'â€”' }}</td>
+        <td style="color:#38bdf8;font-weight:700;">{{ "{:,.0f}".format(c.daily_rate or 0) }} ط±.ط³</td>
+        <td style="color:#22c55e;font-weight:700;">{{ "{:,.2f}".format(c.total_amount or 0) }} ط±.ط³</td>
+        <td>
+          {% if c.status=='active' %}<span style="background:#14532d;color:#86efac;padding:2px 10px;border-radius:20px;font-size:.78rem;">â—ڈ ظ†ط´ط·</span>
+          {% elif c.status=='closed' %}<span style="background:rgba(255,255,255,.06);color:#94a3b8;padding:2px 10px;border-radius:20px;font-size:.78rem;">âœ“ ظ…ظ†طھظ‡ظچ</span>
+          {% else %}<span style="color:#94a3b8;">{{ c.status or 'â€”' }}</span>{% endif %}
+        </td>
+        <td>
+          <div style="display:flex;gap:4px;">
+            <a href="/rental/contracts/{{ c.id }}" class="btn btn-secondary" style="padding:4px 10px;font-size:.78rem;">طھظپط§طµظٹظ„</a>
+            {% if c.status=='active' %}
+            <form method="post" action="/rental/contracts/{{ c.id }}/close" onsubmit="return confirm('ط¥ظ†ظ‡ط§ط، ط§ظ„ط¹ظ‚ط¯ ظˆط¥ط¹ط§ط¯ط© ط§ظ„ط³ظٹط§ط±ط©طں')">
+              <button type="submit" class="btn" style="padding:4px 10px;font-size:.78rem;background:#14532d;color:#86efac;border:none;">ط¥ظ†ظ‡ط§ط،</button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="9" style="text-align:center;color:#64748b;padding:40px;">ظ„ط§ طھظˆط¬ط¯ ط¹ظ‚ظˆط¯ ط¥ظٹط¬ط§ط±</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal: ط¹ظ‚ط¯ ط¬ط¯ظٹط¯ -->
+<div class="modal-overlay" id="newContractModal">
+  <div class="modal-box" style="max-width:500px;">
+    <div class="modal-header">
+      <h3 class="modal-title">ًں“„ ط¹ظ‚ط¯ ط¥ظٹط¬ط§ط± ط¬ط¯ظٹط¯</h3>
+      <button class="modal-close" onclick="document.getElementById('newContractModal').classList.remove('show')">âœ•</button>
+    </div>
+    <form method="post" action="/rental/contracts/new">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">ظ…ط¹ط±ظپ ط§ظ„ظ…ط±ظƒط¨ط© *</label>
+          <input name="vehicle_id" class="form-input" type="number" placeholder="ط±ظ‚ظ… ط§ظ„ظ…ط±ظƒط¨ط©" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ظ…ط¹ط±ظپ ط§ظ„ظ…ط³طھط£ط¬ط±</label>
+          <input name="renter_id" class="form-input" type="number" placeholder="ط±ظ‚ظ… ط§ظ„ط¹ظ…ظٹظ„">
+        </div>
+        <div class="form-group">
+          <label class="form-label">طھط§ط±ظٹط® ط§ظ„ط¨ط¯ط،</label>
+          <input name="start_date" type="date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ط¹ط¯ط¯ ط§ظ„ط£ظٹط§ظ…</label>
+          <input name="days" class="form-input" type="number" placeholder="7" min="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ط§ظ„ط³ط¹ط± ط§ظ„ظٹظˆظ…ظٹ (ط±.ط³)</label>
+          <input name="daily_rate" class="form-input" type="number" step="0.01" placeholder="150.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ظ†ظˆط¹ ط§ظ„ط¥ظٹط¬ط§ط±</label>
+          <select name="rental_type" class="form-input">
+            <option value="daily">ظٹظˆظ…ظٹ</option>
+            <option value="weekly">ط£ط³ط¨ظˆط¹ظٹ</option>
+            <option value="monthly">ط´ظ‡ط±ظٹ</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('newContractModal').classList.remove('show')">ط¥ظ„ط؛ط§ط،</button>
+        <button type="submit" class="btn btn-primary">âœ… ط¥ظ†ط´ط§ط، ط§ظ„ط¹ظ‚ط¯</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block page_title %}ًں“„ ط¹ظ‚ظˆط¯ ط§ظ„ط¥ظٹط¬ط§ط±{% endblock %}
+

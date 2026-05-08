@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}تقرير المصاريف{% endblock %}
+{% block page_title %}تقرير المصاريف{% endblock %}
+
+{% block content %}
+<style>
+  .card { background:white; border-radius:8px; padding:20px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { background:#f5f5f5; padding:10px; text-align:right; font-weight:bold; border-bottom:2px solid #ddd; }
+  td { padding:9px 10px; border-bottom:1px solid #eee; }
+</style>
+
+<!-- بطاقات الـ 30 يوم -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px">
+  <div style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;padding:20px;border-radius:8px;text-align:center">
+    <div style="font-size:12px;opacity:.8">إيرادات آخر 30 يوم</div>
+    <div style="font-size:1.8rem;font-weight:900;margin:6px 0">{{ "{:,.2f}".format(revenue_30d) }}</div>
+    <div style="font-size:12px;opacity:.8">ريال</div>
+  </div>
+  <div style="background:linear-gradient(135deg,#ef4444,#dc2626);color:white;padding:20px;border-radius:8px;text-align:center">
+    <div style="font-size:12px;opacity:.8">مصاريف آخر 30 يوم</div>
+    <div style="font-size:1.8rem;font-weight:900;margin:6px 0">{{ "{:,.2f}".format(expenses_30d) }}</div>
+    <div style="font-size:12px;opacity:.8">ريال</div>
+  </div>
+  <div style="background:linear-gradient(135deg,{% if revenue_30d - expenses_30d >= 0 %}#10b981,#059669{% else %}#ef4444,#b91c1c{% endif %});color:white;padding:20px;border-radius:8px;text-align:center">
+    <div style="font-size:12px;opacity:.8">صافي الربح (30 يوم)</div>
+    <div style="font-size:1.8rem;font-weight:900;margin:6px 0">{{ "{:,.2f}".format(revenue_30d - expenses_30d) }}</div>
+    <div style="font-size:12px;opacity:.8">ريال</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+  <!-- توزيع حسب الفئة -->
+  <div class="card">
+    <h3 style="margin:0 0 16px;font-size:15px">المصاريف حسب الفئة</h3>
+    <table>
+      <thead><tr><th>الفئة</th><th>الإجمالي</th><th>عدد العمليات</th></tr></thead>
+      <tbody>
+        {% for row in by_cat %}
+        <tr>
+          <td><span style="background:#f3f4f6;padding:2px 8px;border-radius:12px;font-size:12px">{{ row.category }}</span></td>
+          <td style="font-weight:bold;color:#dc2626">{{ "{:,.2f}".format(row.total) }} ر.س</td>
+          <td style="color:#666">{{ row.cnt }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" style="text-align:center;color:#999;padding:20px">لا بيانات</td></tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr style="background:#fef2f2;font-weight:bold">
+          <td>الإجمالي الكلي</td>
+          <td colspan="2" style="color:#dc2626">{{ "{:,.2f}".format(grand_total) }} ر.س</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- تفصيل شهري -->
+  <div class="card">
+    <h3 style="margin:0 0 16px;font-size:15px">المصاريف الشهرية</h3>
+    <table>
+      <thead><tr><th>الشهر</th><th>الإجمالي</th><th>عدد العمليات</th></tr></thead>
+      <tbody>
+        {% for row in monthly %}
+        <tr>
+          <td>{{ row.month }}</td>
+          <td style="font-weight:bold;color:#dc2626">{{ "{:,.2f}".format(row.total) }} ر.س</td>
+          <td style="color:#666">{{ row.cnt }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" style="text-align:center;color:#999;padding:20px">لا بيانات</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

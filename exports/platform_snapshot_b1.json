@@ -1,0 +1,176 @@
+{
+  "meta": {
+    "exported_at": "2026-05-05T23:31:23Z",
+    "db_path": "C:\\Users\\JEN21\\OneDrive\\سطح المكتب\\محاسبه\\database\\accounting_dev.db",
+    "actor": "_platform_ops.py",
+    "where": {
+      "business_id": 1
+    },
+    "tables": [
+      "businesses",
+      "settings"
+    ],
+    "limit": 50000
+  },
+  "data": {
+    "businesses": [],
+    "settings": [
+      {
+        "id": 16642,
+        "business_id": 1,
+        "key": "agent_invoice_enabled",
+        "value": "1"
+      },
+      {
+        "id": 16643,
+        "business_id": 1,
+        "key": "agent_invoice_with_company_vat",
+        "value": "1"
+      },
+      {
+        "id": 16637,
+        "business_id": 1,
+        "key": "company_address",
+        "value": "طريق الملك فهد، الرياض 12345"
+      },
+      {
+        "id": 16639,
+        "business_id": 1,
+        "key": "company_email",
+        "value": "info@jinan.sa"
+      },
+      {
+        "id": 16638,
+        "business_id": 1,
+        "key": "company_phone",
+        "value": "+966501234567"
+      },
+      {
+        "id": 16636,
+        "business_id": 1,
+        "key": "cr_number",
+        "value": "1010000001"
+      },
+      {
+        "id": 16632,
+        "business_id": 1,
+        "key": "currency",
+        "value": "SAR"
+      },
+      {
+        "id": 16633,
+        "business_id": 1,
+        "key": "currency_symbol",
+        "value": "ر.س"
+      },
+      {
+        "id": 3,
+        "business_id": 1,
+        "key": "decimal_places",
+        "value": "2"
+      },
+      {
+        "id": 7,
+        "business_id": 1,
+        "key": "default_cogs_account",
+        "value": "5101"
+      },
+      {
+        "id": 8,
+        "business_id": 1,
+        "key": "default_inventory_account",
+        "value": "1104"
+      },
+      {
+        "id": 10,
+        "business_id": 1,
+        "key": "default_payable_account",
+        "value": "2101"
+      },
+      {
+        "id": 9,
+        "business_id": 1,
+        "key": "default_receivable_account",
+        "value": "1103"
+      },
+      {
+        "id": 6,
+        "business_id": 1,
+        "key": "default_sales_account",
+        "value": "4101"
+      },
+      {
+        "id": 5,
+        "business_id": 1,
+        "key": "default_warehouse",
+        "value": "1"
+      },
+      {
+        "id": 11,
+        "business_id": 1,
+        "key": "industry_types",
+        "value": "retail,restaurant,construction,medical,education,wholesale,services,other"
+      },
+      {
+        "id": 16631,
+        "business_id": 1,
+        "key": "invoice_prefix",
+        "value": "INV"
+      },
+      {
+        "id": 2,
+        "business_id": 1,
+        "key": "invoice_prefix_purchase",
+        "value": "PUR"
+      },
+      {
+        "id": 1,
+        "business_id": 1,
+        "key": "invoice_prefix_sale",
+        "value": "INV"
+      },
+      {
+        "id": 4,
+        "business_id": 1,
+        "key": "low_stock_alert",
+        "value": "5"
+      },
+      {
+        "id": 13,
+        "business_id": 1,
+        "key": "multitenancy_enabled",
+        "value": "1"
+      },
+      {
+        "id": 16640,
+        "business_id": 1,
+        "key": "offline_sync_enabled",
+        "value": "1"
+      },
+      {
+        "id": 16641,
+        "business_id": 1,
+        "key": "pos_enabled",
+        "value": "1"
+      },
+      {
+        "id": 12,
+        "business_id": 1,
+        "key": "tenant_version",
+        "value": "2"
+      },
+      {
+        "id": 16634,
+        "business_id": 1,
+        "key": "vat_enabled",
+        "value": "1"
+      },
+      {
+        "id": 16635,
+        "business_id": 1,
+        "key": "vat_number",
+        "value": "300000000000003"
+      }
+    ]
+  }
+}

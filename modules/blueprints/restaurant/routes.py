@@ -1,6 +1,7 @@
 """
 blueprints/restaurant/routes.py — المطعم: طاولات، مطبخ، طلبات جملة، أسعار
 """
+import json
 from datetime import datetime
 
 from flask import (
@@ -11,11 +12,68 @@ from flask import (
 from modules.extensions import (
     get_db, get_account_id, next_entry_number, next_invoice_number
 )
-from modules.middleware import login_required, onboarding_required
+from modules.middleware import (
+    login_required, onboarding_required, user_has_perm, write_audit_log
+)
 from modules.validators import validate, V, SCHEMA_PRICING_UPDATE
 from modules.zatca_queue import enqueue_invoice
 
 bp = Blueprint("restaurant", __name__)
+
+
+def _is_admin() -> bool:
+    """المدير/المالك: permissions.all=true"""
+    return bool(user_has_perm("all"))
+
+
+def _can_invoice_edit() -> bool:
+    return bool(user_has_perm("all") or user_has_perm("invoice_edit"))
+
+
+def _can_invoice_cancel() -> bool:
+    return bool(user_has_perm("all") or user_has_perm("invoice_cancel"))
+
+
+def _can_invoice_delete() -> bool:
+    return bool(user_has_perm("all") or user_has_perm("invoice_delete"))
+
+
+def _can_skip_reason() -> bool:
+    return bool(user_has_perm("all") or user_has_perm("invoice_reason_optional"))
+
+
+def _invoice_snapshot(db, invoice_id: int) -> dict:
+    inv = db.execute(
+        "SELECT * FROM invoices WHERE id=?", (int(invoice_id),)
+    ).fetchone()
+    lines = db.execute(
+        """SELECT id, product_id, description, quantity, unit_price,
+                  discount_pct, discount_amount, tax_rate, tax_amount, total, line_order
+           FROM invoice_lines WHERE invoice_id=? ORDER BY line_order, id""",
+        (int(invoice_id),)
+    ).fetchall()
+    return {
+        "invoice": dict(inv) if inv else None,
+        "lines": [dict(l) for l in lines],
+    }
+
+
+def _audit_invoice_change(db, biz_id: int, invoice_id: int, action: str,
+                          old_snap: dict, new_snap: dict, reason: str):
+    payload_new = {
+        "reason": reason,
+        "snapshot": new_snap,
+    }
+    write_audit_log(
+        db, biz_id, action,
+        entity_type="invoice", entity_id=int(invoice_id),
+        old_value=json.dumps(old_snap, ensure_ascii=False),
+        new_value=json.dumps(payload_new, ensure_ascii=False),
+    )
+
+
+def _can_view_invoice_controls() -> bool:
+    return bool(_can_invoice_edit() or _can_invoice_cancel() or _can_invoice_delete())
 
 
 # ════════════════════════════════════════════════════════════════════════════════
@@ -44,7 +102,16 @@ def orders():
             f"""SELECT i.id, i.invoice_number, i.invoice_date, i.due_date,
                        i.party_name, i.subtotal, i.discount_amount,
                        i.tax_amount, i.total, i.paid_amount, i.status,
-                       u.full_name AS created_by_name
+                       u.full_name AS created_by_name,
+                       CASE
+                           WHEN EXISTS (
+                               SELECT 1 FROM audit_logs al
+                               WHERE al.business_id=i.business_id
+                                 AND al.entity_type='invoice'
+                                 AND al.entity_id=i.id
+                                 AND al.action IN ('invoice_updated','invoice_cancelled')
+                           ) THEN 1 ELSE 0
+                       END AS has_modifications
                 FROM invoices i
                 LEFT JOIN users u ON u.id = i.created_by
                 {where}
@@ -76,13 +143,18 @@ def orders():
         total_pages = max(1, (total + per_page - 1) // per_page)
         return render_template(
             "orders.html",
-            invoices=invoices_list,
-            customers=customers,
-            products=products,
+            invoices=[dict(r) for r in invoices_list],
+            customers=[dict(r) for r in customers],
+            products=[dict(r) for r in products],
             page=page,
             total_pages=total_pages,
             total=total,
             q=q,
+            can_view_invoice_controls=_can_view_invoice_controls(),
+            can_edit_invoice=_can_invoice_edit(),
+            can_cancel_invoice=_can_invoice_cancel(),
+            can_delete_invoice=_can_invoice_delete(),
+            can_skip_reason=_can_skip_reason(),
         )
 
     # POST: حفظ أمر بيع جملة
@@ -428,6 +500,8 @@ def tables():
         products=[dict(p) for p in products],
         stats=stats,
         table_count=table_count,
+        can_edit_invoice=_can_invoice_edit(),
+        can_skip_reason=_can_skip_reason(),
     )
 
 
@@ -497,6 +571,15 @@ def api_tables_add_item():
     if not inv:
         return jsonify({"success": False, "error": "الطلب غير موجود أو لا يمكن تعديله"}), 404
 
+    reason = (data.get("reason") or "").strip()
+    if inv["status"] != "draft":
+        if not _can_invoice_edit():
+            return jsonify({"success": False, "error": "غير مسموح: التعديل بعد الحفظ للمدير فقط"}), 403
+        if (not _can_skip_reason()) and (not reason):
+            return jsonify({"success": False, "error": "سبب التعديل إلزامي"}), 400
+
+    old_snap = _invoice_snapshot(db, int(invoice_id))
+
     product = db.execute(
         "SELECT * FROM products WHERE id=? AND business_id=? AND is_active=1",
         (int(product_id), biz_id)
@@ -533,6 +616,13 @@ def api_tables_add_item():
     subtotal = round(float(totals["s"] or 0), 2)
     db.execute("UPDATE invoices SET subtotal=?, total=? WHERE id=?",
                (subtotal, subtotal, int(invoice_id)))
+
+    new_snap = _invoice_snapshot(db, int(invoice_id))
+    if inv["status"] != "draft":
+        _audit_invoice_change(
+            db, biz_id, int(invoice_id), "invoice_updated",
+            old_snap, new_snap, reason
+        )
     db.commit()
     return jsonify({"success": True, "subtotal": subtotal, "item_name": product["name"]})
 
@@ -550,11 +640,20 @@ def api_tables_remove_item():
 
     db  = get_db()
     inv = db.execute(
-        "SELECT id FROM invoices WHERE id=? AND business_id=? AND status='draft'",
+        "SELECT id, status FROM invoices WHERE id=? AND business_id=? AND invoice_type='table' AND status IN ('draft','partial')",
         (int(invoice_id), biz_id)
     ).fetchone()
     if not inv:
         return jsonify({"success": False, "error": "لا يمكن تعديل طلب أُرسل للمطبخ"}), 403
+
+    reason = (data.get("reason") or "").strip()
+    if inv["status"] != "draft":
+        if not _can_invoice_edit():
+            return jsonify({"success": False, "error": "غير مسموح: التعديل بعد الحفظ للمدير فقط"}), 403
+        if (not _can_skip_reason()) and (not reason):
+            return jsonify({"success": False, "error": "سبب التعديل إلزامي"}), 400
+
+    old_snap = _invoice_snapshot(db, int(invoice_id))
 
     db.execute("DELETE FROM invoice_lines WHERE id=? AND invoice_id=?",
                (int(line_id), int(invoice_id)))
@@ -563,8 +662,138 @@ def api_tables_remove_item():
     subtotal = round(float(totals["s"] or 0), 2)
     db.execute("UPDATE invoices SET subtotal=?, total=? WHERE id=?",
                (subtotal, subtotal, int(invoice_id)))
+
+    new_snap = _invoice_snapshot(db, int(invoice_id))
+    if inv["status"] != "draft":
+        _audit_invoice_change(
+            db, biz_id, int(invoice_id), "invoice_updated",
+            old_snap, new_snap, reason
+        )
     db.commit()
     return jsonify({"success": True, "subtotal": subtotal})
+
+
+@bp.route("/api/orders/<int:invoice_id>/cancel", methods=["POST"])
+@onboarding_required
+def api_orders_cancel(invoice_id: int):
+    """لا حذف نهائي للفواتير: إلغاء فقط مع سبب إلزامي للمدير"""
+    if not _can_invoice_cancel():
+        return jsonify({"success": False, "error": "الإلغاء متاح للمدير فقط"}), 403
+
+    data = request.get_json(force=True) or {}
+    reason = (data.get("reason") or "").strip()
+    if (not _can_skip_reason()) and (not reason):
+        return jsonify({"success": False, "error": "سبب الإلغاء إلزامي"}), 400
+
+    db = get_db()
+    biz_id = session["business_id"]
+    user_id = session["user_id"]
+
+    inv = db.execute(
+        """SELECT * FROM invoices
+           WHERE id=? AND business_id=? AND invoice_type IN ('sale','table')""",
+        (int(invoice_id), biz_id)
+    ).fetchone()
+    if not inv:
+        return jsonify({"success": False, "error": "الفاتورة غير موجودة"}), 404
+    if inv["status"] == "cancelled":
+        return jsonify({"success": False, "error": "الفاتورة ملغاة بالفعل"}), 400
+
+    old_snap = _invoice_snapshot(db, int(invoice_id))
+    db.execute(
+        """UPDATE invoices
+           SET status='cancelled',
+               cancel_reason=?,
+               cancelled_at=datetime('now'),
+               cancelled_by=?
+           WHERE id=? AND business_id=?""",
+        (reason, user_id, int(invoice_id), biz_id)
+    )
+    new_snap = _invoice_snapshot(db, int(invoice_id))
+    _audit_invoice_change(
+        db, biz_id, int(invoice_id), "invoice_cancelled",
+        old_snap, new_snap, reason
+    )
+    db.commit()
+    return jsonify({"success": True, "message": "تم إلغاء الفاتورة مع الاحتفاظ بسجلها"})
+
+
+@bp.route("/api/orders/<int:invoice_id>/delete", methods=["POST"])
+@onboarding_required
+def api_orders_delete(invoice_id: int):
+    """حذف إداري مضبوط: مسموح فقط لمسودات بدون قيود محاسبية"""
+    if not _can_invoice_delete():
+        return jsonify({"success": False, "error": "الحذف متاح للمدير المخوّل فقط"}), 403
+
+    data = request.get_json(force=True) or {}
+    reason = (data.get("reason") or "").strip()
+    if (not _can_skip_reason()) and (not reason):
+        return jsonify({"success": False, "error": "سبب الحذف إلزامي"}), 400
+
+    db = get_db()
+    biz_id = session["business_id"]
+
+    inv = db.execute(
+        """SELECT * FROM invoices
+           WHERE id=? AND business_id=? AND invoice_type IN ('sale','table')""",
+        (int(invoice_id), biz_id)
+    ).fetchone()
+    if not inv:
+        return jsonify({"success": False, "error": "الفاتورة غير موجودة"}), 404
+    if inv["status"] != "draft":
+        return jsonify({"success": False, "error": "الحذف مسموح للمسودات فقط"}), 400
+    if inv["journal_entry_id"]:
+        return jsonify({"success": False, "error": "لا يمكن حذف فاتورة مرتبطة بقيد محاسبي"}), 400
+
+    old_snap = _invoice_snapshot(db, int(invoice_id))
+    db.execute("DELETE FROM invoices WHERE id=? AND business_id=?", (int(invoice_id), biz_id))
+    _audit_invoice_change(
+        db, biz_id, int(invoice_id), "invoice_deleted",
+        old_snap, {"invoice": None, "lines": []}, reason
+    )
+    db.commit()
+    return jsonify({"success": True, "message": "تم حذف المسودة مع توثيق العملية"})
+
+
+@bp.route("/api/orders/<int:invoice_id>/changes", methods=["GET"])
+@onboarding_required
+def api_orders_changes(invoice_id: int):
+    if not _can_view_invoice_controls():
+        return jsonify({"success": False, "error": "غير مصرح"}), 403
+
+    db = get_db()
+    biz_id = session["business_id"]
+    rows = db.execute(
+        """SELECT id, action, actor_name, actor_role, old_value, new_value, created_at
+           FROM audit_logs
+           WHERE business_id=? AND entity_type='invoice' AND entity_id=?
+                         AND action IN ('invoice_updated','invoice_cancelled','invoice_deleted')
+           ORDER BY id DESC LIMIT 10""",
+        (biz_id, int(invoice_id))
+    ).fetchall()
+
+    changes = []
+    for r in rows:
+        try:
+            old_obj = json.loads(r["old_value"] or "{}")
+        except Exception:
+            old_obj = {}
+        try:
+            new_obj = json.loads(r["new_value"] or "{}")
+        except Exception:
+            new_obj = {}
+        changes.append({
+            "id": r["id"],
+            "action": r["action"],
+            "actor_name": r["actor_name"],
+            "actor_role": r["actor_role"],
+            "created_at": r["created_at"],
+            "reason": (new_obj.get("reason") or ""),
+            "old": old_obj,
+            "new": new_obj.get("snapshot") if isinstance(new_obj, dict) else {},
+        })
+
+    return jsonify({"success": True, "changes": changes})
 
 
 @bp.route("/api/tables/send-kitchen", methods=["POST"])

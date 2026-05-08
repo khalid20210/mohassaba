@@ -720,3 +720,195 @@ def api_excel_import_confirm():
             + (f" — {len(errors_out)} صف تجاهلناه" if errors_out else "")
         ),
     })
+
+
+# ═══════════════════════════════════════════════════════════════
+#  إدارة المصاريف (Expenses)
+# ═══════════════════════════════════════════════════════════════
+
+EXPENSE_CATEGORIES = [
+    "إيجار", "كهرباء", "ماء", "اتصالات", "بنزين / مواصلات",
+    "صيانة", "رواتب وأجور", "تسويق وإعلان", "مستلزمات مكتبية",
+    "تأمين", "رسوم حكومية", "أخرى",
+]
+
+
+def _ensure_expenses_table(db):
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS expenses (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            business_id INTEGER NOT NULL,
+            expense_date TEXT DEFAULT (DATE('now')),
+            category    TEXT NOT NULL,
+            description TEXT,
+            amount      REAL NOT NULL,
+            payment_method TEXT DEFAULT 'cash',
+            vendor_name TEXT,
+            reference   TEXT,
+            created_by  INTEGER,
+            created_at  TEXT DEFAULT (datetime('now'))
+        )
+    """)
+    db.commit()
+
+
+@bp.route("/expenses")
+@require_perm("purchases")
+def expenses_list():
+    """قائمة المصاريف مع فلتر التاريخ والفئة"""
+    db     = get_db()
+    biz_id = session["business_id"]
+    _ensure_expenses_table(db)
+
+    date_from = request.args.get("from", "")
+    date_to   = request.args.get("to", "")
+    category  = request.args.get("category", "")
+
+    q      = "SELECT * FROM expenses WHERE business_id=?"
+    params = [biz_id]
+    if date_from:
+        q += " AND expense_date >= ?"; params.append(date_from)
+    if date_to:
+        q += " AND expense_date <= ?"; params.append(date_to)
+    if category:
+        q += " AND category = ?"; params.append(category)
+    q += " ORDER BY expense_date DESC, id DESC"
+
+    rows  = db.execute(q, params).fetchall()
+    total = sum(r["amount"] for r in rows)
+
+    # ملخص حسب الفئة (مع نفس الفلاتر)
+    cat_q = "SELECT category, ROUND(SUM(amount),2) AS total, COUNT(*) AS cnt FROM expenses WHERE business_id=?"
+    cat_params: list = [biz_id]
+    if date_from: cat_q += " AND expense_date >= ?"; cat_params.append(date_from)
+    if date_to:   cat_q += " AND expense_date <= ?"; cat_params.append(date_to)
+    if category:  cat_q += " AND category = ?";      cat_params.append(category)
+    cat_q += " GROUP BY category ORDER BY total DESC"
+    by_category = db.execute(cat_q, cat_params).fetchall()
+
+    return render_template(
+        "expenses/list.html",
+        expenses=[dict(r) for r in rows],
+        by_category=[dict(r) for r in by_category],
+        categories=EXPENSE_CATEGORIES,
+        date_from=date_from,
+        date_to=date_to,
+        category_filter=category,
+        total=round(total, 2),
+    )
+
+
+@bp.route("/expenses/new", methods=["GET", "POST"])
+@require_perm("purchases")
+def expense_new():
+    """إضافة مصروف جديد"""
+    db     = get_db()
+    biz_id = session["business_id"]
+    _ensure_expenses_table(db)
+
+    if request.method == "GET":
+        return render_template(
+            "expenses/form.html",
+            categories=EXPENSE_CATEGORIES,
+        )
+
+    data           = request.form
+    category       = (data.get("category") or "").strip()
+    description    = (data.get("description") or "").strip()
+    amount_raw     = data.get("amount", "0")
+    payment_method = (data.get("payment_method") or "cash").strip()
+    vendor_name    = (data.get("vendor_name") or "").strip() or None
+    reference      = (data.get("reference") or "").strip() or None
+    expense_date   = (data.get("expense_date") or "").strip() or None
+
+    try:
+        amount = float(amount_raw)
+    except (ValueError, TypeError):
+        amount = 0
+
+    if not category or amount <= 0:
+        flash("يرجى تعبئة الفئة والمبلغ بشكل صحيح", "error")
+        return redirect("/expenses/new")
+
+    db.execute("""
+        INSERT INTO expenses
+            (business_id, expense_date, category, description, amount,
+             payment_method, vendor_name, reference, created_by)
+        VALUES (?,?,?,?,?,?,?,?,?)
+    """, (
+        biz_id, expense_date, category, description, amount,
+        payment_method, vendor_name, reference,
+        session.get("user_id"),
+    ))
+    db.commit()
+    flash(f"تم تسجيل المصروف: {category} — {amount:.2f} ر.س", "success")
+    return redirect("/expenses")
+
+
+@bp.route("/expenses/<int:expense_id>/delete", methods=["POST"])
+@require_perm("purchases")
+def expense_delete(expense_id):
+    """حذف مصروف"""
+    db     = get_db()
+    biz_id = session["business_id"]
+    _ensure_expenses_table(db)
+    db.execute(
+        "DELETE FROM expenses WHERE id=? AND business_id=?",
+        (expense_id, biz_id)
+    )
+    db.commit()
+    flash("تم حذف المصروف", "info")
+    return redirect("/expenses")
+
+
+@bp.route("/expenses/report")
+@require_perm("purchases")
+def expenses_report():
+    """تقرير المصاريف: ملخص شهري + حسب الفئة"""
+    db     = get_db()
+    biz_id = session["business_id"]
+    _ensure_expenses_table(db)
+
+    # ملخص شهري
+    monthly = db.execute("""
+        SELECT
+            strftime('%Y-%m', expense_date) AS month,
+            ROUND(SUM(amount),2) AS total,
+            COUNT(*) AS cnt
+        FROM expenses WHERE business_id=?
+        GROUP BY month ORDER BY month DESC LIMIT 12
+    """, (biz_id,)).fetchall()
+
+    # ملخص حسب الفئة (كل الوقت)
+    by_cat = db.execute("""
+        SELECT category,
+               ROUND(SUM(amount),2) AS total,
+               COUNT(*) AS cnt,
+               ROUND(AVG(amount),2) AS avg_amount
+        FROM expenses WHERE business_id=?
+        GROUP BY category ORDER BY total DESC
+    """, (biz_id,)).fetchall()
+
+    grand_total = sum(r["total"] for r in by_cat)
+
+    # مقارنة بالإيرادات (آخر 30 يوم)
+    revenue = db.execute("""
+        SELECT COALESCE(SUM(total),0) AS rev
+        FROM invoices
+        WHERE business_id=? AND invoice_type IN ('sale','table')
+          AND status='paid' AND DATE(invoice_date) >= DATE('now','-30 days')
+    """, (biz_id,)).fetchone()
+    expenses_30d = db.execute("""
+        SELECT COALESCE(SUM(amount),0) AS exp
+        FROM expenses
+        WHERE business_id=? AND expense_date >= DATE('now','-30 days')
+    """, (biz_id,)).fetchone()
+
+    return render_template(
+        "expenses/report.html",
+        monthly=[dict(r) for r in monthly],
+        by_cat=[dict(r) for r in by_cat],
+        grand_total=round(grand_total, 2),
+        revenue_30d=round(float(revenue["rev"] or 0), 2),
+        expenses_30d=round(float(expenses_30d["exp"] or 0), 2),
+    )

@@ -1,0 +1,423 @@
+{% extends "base.html" %}
+{% block title %}إصدار فاتورة مبيعات{% endblock %}
+
+{% block head %}
+<style>
+  .inv-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: .75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .inv-card h3 {
+    font-size: .95rem;
+    font-weight: 700;
+    color: #1e40af;
+    margin-bottom: 1rem;
+    padding-bottom: .5rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media (max-width: 640px) {
+    .form-grid { grid-template-columns: 1fr; }
+  }
+  .field label {
+    display: block;
+    font-size: .8rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: .35rem;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    padding: .5rem .75rem;
+    border: 1px solid #d1d5db;
+    border-radius: .45rem;
+    font-size: .9rem;
+    color: #1e293b;
+    background: #f9fafb;
+    outline: none;
+    transition: border .2s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: #3b82f6;
+    background: #fff;
+  }
+  /* ── جدول الأسطر ── */
+  .lines-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .88rem;
+    margin-bottom: .75rem;
+  }
+  .lines-table th {
+    background: #f8fafc;
+    padding: .6rem .75rem;
+    text-align: right;
+    font-weight: 700;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+    white-space: nowrap;
+  }
+  .lines-table td {
+    padding: .4rem .5rem;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+  }
+  .lines-table td input {
+    width: 100%;
+    padding: .4rem .5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: .4rem;
+    font-size: .88rem;
+    background: #fff;
+  }
+  .lines-table td input:focus { border-color: #3b82f6; outline: none; }
+  .btn-del-row {
+    background: none;
+    border: none;
+    color: #ef4444;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0 .4rem;
+  }
+  /* ── الإجماليات ── */
+  .totals-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: .6rem;
+    padding: 1rem 1.25rem;
+    max-width: 340px;
+    margin-right: auto;
+  }
+  .totals-box .row {
+    display: flex;
+    justify-content: space-between;
+    padding: .35rem 0;
+    font-size: .9rem;
+    color: #374151;
+  }
+  .totals-box .row.grand {
+    border-top: 2px solid #e5e7eb;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #1e40af;
+    margin-top: .4rem;
+    padding-top: .6rem;
+  }
+  /* ── أزرار الإجراءات ── */
+  .action-bar {
+    display: flex;
+    gap: .75rem;
+    flex-wrap: wrap;
+    margin-top: 1.25rem;
+  }
+  .btn {
+    padding: .6rem 1.3rem;
+    border-radius: .6rem;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .btn-primary  { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+  .btn-success  { background: #22c55e; color: #fff; border-color: #22c55e; }
+  .btn-outline  { background: #fff; color: #374151; border-color: #d1d5db; }
+  .tax-badge {
+    display: inline-flex; align-items: center; gap: .5rem;
+    background: #eff6ff; border: 1px solid #bfdbfe;
+    border-radius: .5rem; padding: .4rem .8rem;
+    font-size: .85rem; color: #1e40af; margin-bottom: .75rem;
+  }
+  .vat-num { font-weight: 700; font-size: .8rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.25rem; flex-wrap:wrap;">
+  <a href="{{ url_for('invoices.list_invoices') }}" class="btn btn-outline">← العودة</a>
+  <h1 style="margin:0; font-size:1.35rem; font-weight:700;">🧾 إصدار فاتورة مبيعات جديدة</h1>
+</div>
+
+<!-- ── بيانات الرقم الضريبي للمنشأة ── -->
+{% if biz_vat %}
+<div class="tax-badge">
+  🏛️ الرقم الضريبي للمنشأة:
+  <span class="vat-num">{{ biz_vat }}</span>
+  <span style="font-size:.75rem; color:#6b7280;">— سيظهر تلقائياً في الفاتورة</span>
+</div>
+{% else %}
+<div style="background:#fef9c3; border:1px solid #fde68a; border-radius:.5rem; padding:.6rem 1rem; margin-bottom:.75rem; font-size:.88rem; color:#854d0e;">
+  ⚠️ لم يُضف الرقم الضريبي بعد.
+  <a href="{{ url_for('core.settings') }}" style="color:#1e40af; font-weight:600;">أضفه من الإعدادات</a>
+</div>
+{% endif %}
+
+<form method="POST" id="inv-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+  <!-- ── بيانات العميل والفاتورة ── -->
+  <div class="inv-card">
+    <h3>📋 بيانات الفاتورة</h3>
+    <div class="form-grid">
+      <div class="field">
+        <label>اسم العميل *</label>
+        <input type="text" name="party_name" required placeholder="اسم العميل أو الجهة"
+               list="customers-list" autocomplete="off">
+        <datalist id="customers-list">
+          {% for c in customers %}
+          <option value="{{ c.name }}">
+          {% endfor %}
+        </datalist>
+      </div>
+      <div class="field">
+        <label>الرقم الضريبي للعميل (اختياري)</label>
+        <input type="text" name="client_vat" placeholder="3XXXXXXXXXXXXX3" maxlength="15">
+      </div>
+      <div class="field">
+        <label>طريقة الدفع</label>
+        <select name="payment_method">
+          <option value="cash">نقدي</option>
+          <option value="bank">تحويل بنكي</option>
+          <option value="credit">آجل</option>
+          <option value="card">بطاقة</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>تاريخ الاستحقاق (للآجل)</label>
+        <input type="date" name="due_date">
+      </div>
+      <div class="field" style="grid-column:1/-1;">
+        <label>ملاحظات</label>
+        <textarea name="notes" rows="2" placeholder="ملاحظات إضافية (اختياري)"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── أسطر الفاتورة ── -->
+  <div class="inv-card">
+    <h3>📦 أسطر الفاتورة</h3>
+    
+    <!-- 🔍 بحث سريع عن المنتج -->
+    <div style="margin-bottom: 1rem;">
+      <input type="text" id="product-search" placeholder="🔍 بحث: اسم المنتج / الشركة / SKU ..." 
+             style="width:100%; padding:.6rem; border:1px solid #d1d5db; border-radius:.5rem; font-size:.9rem;">
+      <div id="search-results" style="display:none; background:#f9fafb; border:1px solid #d1d5db; border-top:none; max-height:250px; overflow-y:auto; border-radius:0 0 .5rem .5rem;">
+      </div>
+    </div>
+    
+    <table class="lines-table" id="lines-tbl">
+      <thead>
+        <tr>
+          <th style="width:40%;">الصنف / الخدمة</th>
+          <th style="width:12%;">الكمية</th>
+          <th style="width:16%;">سعر الوحدة</th>
+          <th style="width:12%;">الخصم%</th>
+          <th style="width:14%;">الإجمالي</th>
+          <th style="width:6%;"></th>
+        </tr>
+      </thead>
+      <tbody id="lines-body">
+        <!-- سطر افتراضي -->
+        <tr class="line-row">
+          <td><input type="text" name="desc[]" placeholder="اسم المنتج أو الخدمة" required list="products-list"></td>
+          <td><input type="number" name="qty[]" value="1" min="0.01" step="0.01" class="qty-input" required></td>
+          <td><input type="number" name="price[]" value="0" min="0" step="0.01" class="price-input" required></td>
+          <td><input type="number" name="disc[]" value="0" min="0" max="100" step="0.01" class="disc-input"></td>
+          <td class="line-total" style="font-weight:600; color:#1e293b;">0.00</td>
+          <td><button type="button" class="btn-del-row" onclick="delRow(this)">✕</button></td>
+        </tr>
+      </tbody>
+    </table>
+    <datalist id="products-list">
+      {% for p in products %}
+      <option value="{{ p.name }} ({{ p.sku or p.barcode }})" data-price="{{ p.sell_price or 0 }}" data-sku="{{ p.sku }}" data-cat="{{ p.category_name }}">
+      {% endfor %}
+    </datalist>
+    <button type="button" onclick="addRow()" class="btn btn-outline" style="font-size:.85rem;">+ إضافة سطر</button>
+  </div>
+
+  <!-- ── الإجماليات والضريبة ── -->
+  <div class="inv-card" style="display:flex; gap:2rem; align-items:flex-start; flex-wrap:wrap;">
+    <div style="flex:1; min-width:200px;">
+      <div class="field">
+        <label>
+          <input type="checkbox" id="vat-toggle" name="apply_vat" value="1" checked>
+          تطبيق ضريبة القيمة المضافة (VAT 15%)
+        </label>
+      </div>
+    </div>
+    <div class="totals-box" style="min-width:280px;">
+      <div class="row"><span>المجموع قبل الضريبة</span><span id="t-sub">0.00</span></div>
+      <div class="row"><span>الضريبة 15%</span><span id="t-vat">0.00</span></div>
+      <div class="row grand"><span>الإجمالي</span><span id="t-total">0.00</span></div>
+    </div>
+  </div>
+
+  <!-- ── أزرار الحفظ ── -->
+  <div class="action-bar">
+    <button type="submit" name="status" value="pending" class="btn btn-primary">💾 حفظ كمعلقة</button>
+    <button type="submit" name="status" value="paid" class="btn btn-success">✓ حفظ ومدفوعة</button>
+    <button type="submit" name="status" value="draft" class="btn btn-outline">📝 حفظ كمسودة</button>
+    <a href="{{ url_for('invoices.list_invoices') }}" class="btn btn-outline">إلغاء</a>
+  </div>
+
+</form>
+
+<script>
+// ─── حساب إجمالي سطر واحد ────────────────────────────────────────
+function calcRow(row) {
+  const qty   = parseFloat(row.querySelector('.qty-input').value)   || 0;
+  const price = parseFloat(row.querySelector('.price-input').value) || 0;
+  const disc  = parseFloat(row.querySelector('.disc-input').value)  || 0;
+  const total = qty * price * (1 - disc / 100);
+  row.querySelector('.line-total').textContent = total.toFixed(2);
+  return total;
+}
+
+// ─── حساب الإجماليات ─────────────────────────────────────────────
+function calcTotals() {
+  let sub = 0;
+  document.querySelectorAll('.line-row').forEach(r => { sub += calcRow(r); });
+  const applyVat = document.getElementById('vat-toggle').checked;
+  const vat   = applyVat ? sub * 0.15 : 0;
+  const total = sub + vat;
+  document.getElementById('t-sub').textContent   = sub.toFixed(2);
+  document.getElementById('t-vat').textContent   = vat.toFixed(2);
+  document.getElementById('t-total').textContent = total.toFixed(2);
+}
+
+// ─── إضافة سطر جديد ─────────────────────────────────────────────
+function addRow() {
+  const tmpl = document.querySelector('.line-row').cloneNode(true);
+  tmpl.querySelectorAll('input').forEach(i => {
+    if (i.classList.contains('qty-input'))   i.value = '1';
+    else if (i.classList.contains('price-input') || i.classList.contains('disc-input')) i.value = '0';
+    else i.value = '';
+  });
+  tmpl.querySelector('.line-total').textContent = '0.00';
+  bindRow(tmpl);
+  document.getElementById('lines-body').appendChild(tmpl);
+}
+
+// ─── ربط أحداث سطر ───────────────────────────────────────────────
+function bindRow(row) {
+  row.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', calcTotals);
+  });
+  // إذا اختار منتجاً من القائمة → ضع سعره تلقائياً
+  const descInp = row.querySelector('input[name="desc[]"]');
+  descInp.addEventListener('change', () => {
+    const opt = [...document.querySelectorAll('#products-list option')].find(o => o.value === descInp.value);
+    if (opt) {
+      const p = parseFloat(opt.getAttribute('data-price')) || 0;
+      if (p) { row.querySelector('.price-input').value = p; calcTotals(); }
+    }
+  });
+}
+
+// ─── حذف سطر ────────────────────────────────────────────────────
+function delRow(btn) {
+  const rows = document.querySelectorAll('.line-row');
+  if (rows.length <= 1) return;   // لا تحذف السطر الأخير
+  btn.closest('.line-row').remove();
+  calcTotals();
+}
+
+// ─── البحث السريع عن المنتجات ──────────────────────────────────
+function initProductSearch() {
+  const searchInput = document.getElementById('product-search');
+  const searchResults = document.getElementById('search-results');
+  const datalist = document.getElementById('products-list');
+  
+  if (!searchInput) return;
+  
+  searchInput.addEventListener('input', () => {
+    const query = searchInput.value.toLowerCase().trim();
+    if (query.length < 2) {
+      searchResults.style.display = 'none';
+      return;
+    }
+    
+    const options = [...datalist.options];
+    const filtered = options.filter(opt => {
+      const text = (opt.value + ' ' + opt.getAttribute('data-sku') + ' ' + opt.getAttribute('data-cat')).toLowerCase();
+      return text.includes(query);
+    }).slice(0, 15); // أول 15 نتيجة
+    
+    if (filtered.length === 0) {
+      searchResults.replaceChildren();
+      const empty = document.createElement('div');
+      empty.style.padding = '.5rem';
+      empty.style.color = '#999';
+      empty.textContent = 'لم يُعثر على نتائج';
+      searchResults.appendChild(empty);
+      searchResults.style.display = 'block';
+      return;
+    }
+
+    searchResults.replaceChildren();
+    filtered.forEach(opt => {
+      const name = opt.value || '';
+      const sku = opt.getAttribute('data-sku') || '-';
+      const price = opt.getAttribute('data-price') || '0';
+
+      const row = document.createElement('div');
+      row.style.padding = '.6rem';
+      row.style.borderBottom = '1px solid #e5e7eb';
+      row.style.cursor = 'pointer';
+      row.style.fontSize = '.85rem';
+      row.addEventListener('mouseover', () => { row.style.background = '#eff6ff'; });
+      row.addEventListener('mouseout', () => { row.style.background = 'transparent'; });
+      row.addEventListener('click', () => { selectProduct(name, price); });
+
+      const title = document.createElement('div');
+      title.style.fontWeight = '600';
+      title.style.color = '#1e40af';
+      title.textContent = name;
+
+      const meta = document.createElement('div');
+      meta.style.color = '#6b7280';
+      meta.style.fontSize = '.8rem';
+      meta.textContent = `SKU: ${sku} | السعر: ${price} ر.س`;
+
+      row.appendChild(title);
+      row.appendChild(meta);
+      searchResults.appendChild(row);
+    });
+    searchResults.style.display = 'block';
+  });
+}
+
+// ─── اختيار منتج من البحث ──────────────────────────────────────
+function selectProduct(name, price) {
+  const lastRow = document.querySelector('.line-row:last-of-type');
+  const descInp = lastRow.querySelector('input[name="desc[]"]');
+  const priceInp = lastRow.querySelector('.price-input');
+  
+  descInp.value = name;
+  priceInp.value = price;
+  calcTotals();
+  
+  // أضف سطر جديد تلقائياً
+  addRow();
+  
+  // أخفِ نتائج البحث
+  document.getElementById('product-search').value = '';
+  document.getElementById('search-results').style.display = 'none';
+}
+
+// ─── تهيئة ───────────────────────────────────────────────────────
+document.querySelectorAll('.line-row').forEach(bindRow);
+document.getElementById('vat-toggle').addEventListener('change', calcTotals);
+initProductSearch();
+calcTotals();
+</script>
+{% endblock %}

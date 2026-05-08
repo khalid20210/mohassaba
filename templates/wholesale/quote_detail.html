@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}عرض سعر {{ quote.quote_number }}{% endblock %}
+{% block page_title %}عرض سعر — {{ quote.quote_number }}{% endblock %}
+
+{% block content %}
+<style>
+  .card { background:white; border-radius:8px; padding:24px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th { background:#f5f5f5; padding:10px; text-align:right; font-weight:bold; border-bottom:2px solid #ddd; }
+  td { padding:10px; border-bottom:1px solid #eee; }
+</style>
+
+<div style="display:flex;gap:10px;margin-bottom:20px">
+  {% if quote.status == 'draft' %}
+  <form method="post" action="/wholesale/quotes/{{ quote.id }}/to-order">
+    <button style="background:#10b981;color:white;border:none;padding:10px 22px;border-radius:6px;cursor:pointer;font-weight:bold">تحويل إلى طلب جملة</button>
+  </form>
+  <form method="post" action="/wholesale/quotes/{{ quote.id }}/cancel">
+    <button style="background:#ef4444;color:white;border:none;padding:10px 18px;border-radius:6px;cursor:pointer">إلغاء العرض</button>
+  </form>
+  {% endif %}
+  <a href="/wholesale/quotes" style="background:#6b7280;color:white;padding:10px 18px;border-radius:6px;text-decoration:none">← رجوع</a>
+</div>
+
+<div class="card">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
+    <div><label style="font-size:12px;color:#888">رقم العرض</label><div style="font-size:18px;font-weight:bold">{{ quote.quote_number }}</div></div>
+    <div><label style="font-size:12px;color:#888">العميل</label><div>{{ quote.customer_name or '—' }}</div></div>
+    <div><label style="font-size:12px;color:#888">تاريخ الإنشاء</label><div>{{ quote.quote_date }}</div></div>
+    <div><label style="font-size:12px;color:#888">صالح حتى</label><div>{{ quote.expiry_date or 'غير محدد' }}</div></div>
+    <div><label style="font-size:12px;color:#888">الحالة</label>
+      <div>
+        {% if quote.status == 'converted' %}<span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:12px;font-size:12px">محوّل لطلب</span>
+        {% elif quote.status == 'cancelled' %}<span style="background:#fee2e2;color:#991b1b;padding:3px 10px;border-radius:12px;font-size:12px">ملغى</span>
+        {% else %}<span style="background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:12px;font-size:12px">مسودة</span>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3 style="margin:0 0 16px;font-size:16px">الأصناف</h3>
+  <table>
+    <thead>
+      <tr><th>#</th><th>الصنف</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ item.name }}</td>
+        <td>{{ "{:,.3f}".format(item.qty|float) }}</td>
+        <td>{{ "{:,.2f}".format(item.price|float) }} ر.س</td>
+        <td style="font-weight:bold">{{ "{:,.2f}".format(item.qty|float * item.price|float) }} ر.س</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr><td colspan="4" style="text-align:left;font-weight:bold">الإجمالي قبل الضريبة</td><td style="font-weight:bold">{{ "{:,.2f}".format(quote.subtotal) }} ر.س</td></tr>
+      <tr><td colspan="4" style="text-align:left;font-weight:bold">ضريبة القيمة المضافة</td><td>{{ "{:,.2f}".format(quote.tax_amount) }} ر.س</td></tr>
+      <tr style="background:#f0fdf4"><td colspan="4" style="text-align:left;font-weight:900;font-size:16px">الإجمالي الكلي</td><td style="font-weight:900;color:#059669;font-size:16px">{{ "{:,.2f}".format(quote.total_amount) }} ر.س</td></tr>
+    </tfoot>
+  </table>
+</div>
+
+{% if quote.notes %}
+<div class="card">
+  <h3 style="margin:0 0 8px;font-size:14px;color:#666">ملاحظات</h3>
+  <p style="margin:0">{{ quote.notes }}</p>
+</div>
+{% endif %}
+{% endblock %}

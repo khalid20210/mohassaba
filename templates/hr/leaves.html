@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}الإجازات{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50" dir="rtl">
+  <div class="bg-white border-b shadow-sm px-6 py-4">
+    <div class="max-w-5xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2 text-sm">
+        <a href="/hr/" class="text-gray-400 hover:text-yellow-600">الموارد البشرية</a> /
+        <h1 class="font-bold text-gray-800">🏖️ الإجازات</h1>
+      </div>
+      <button onclick="document.getElementById('modal-leave').classList.remove('hidden')"
+        class="bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-yellow-600 transition">
+        ➕ طلب إجازة
+      </button>
+    </div>
+  </div>
+
+  <div class="max-w-5xl mx-auto p-6">
+    <div class="bg-white rounded-xl shadow overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b">
+          <tr>
+            <th class="text-right px-4 py-3 text-gray-600">الموظف</th>
+            <th class="text-right px-4 py-3 text-gray-600">النوع</th>
+            <th class="text-right px-4 py-3 text-gray-600">من</th>
+            <th class="text-right px-4 py-3 text-gray-600">إلى</th>
+            <th class="text-right px-4 py-3 text-gray-600">السبب</th>
+            <th class="text-right px-4 py-3 text-gray-600">الحالة</th>
+            <th class="text-right px-4 py-3 text-gray-600">إجراء</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for l in leaves %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-3 font-medium">{{ l.full_name }}</td>
+            <td class="px-4 py-3">{{ l.leave_type }}</td>
+            <td class="px-4 py-3">{{ l.start_date }}</td>
+            <td class="px-4 py-3">{{ l.end_date }}</td>
+            <td class="px-4 py-3 text-gray-500 text-xs">{{ l.reason or '—' }}</td>
+            <td class="px-4 py-3">
+              <span class="px-2 py-1 rounded-full text-xs
+                {% if l.status=='approved' %}bg-green-100 text-green-700
+                {% elif l.status=='rejected' %}bg-red-100 text-red-700
+                {% else %}bg-yellow-100 text-yellow-700{% endif %}">
+                {{ {'approved':'موافق','rejected':'مرفوض','pending':'قيد الانتظار'}.get(l.status, l.status) }}
+              </span>
+            </td>
+            <td class="px-4 py-3">
+              {% if l.status == 'pending' %}
+              <form method="POST" action="/hr/leaves/{{ l.id }}/approve" class="flex gap-1">
+                <button name="action" value="approve" class="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600">✓ قبول</button>
+                <button name="action" value="reject" class="bg-red-400 text-white px-2 py-1 rounded text-xs hover:bg-red-500">✗ رفض</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" class="text-center py-8 text-gray-400">لا توجد طلبات إجازة</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal طلب إجازة -->
+<div id="modal-leave" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center" dir="rtl">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+    <div class="flex items-center justify-between p-5 border-b">
+      <h2 class="font-bold text-lg">🏖️ طلب إجازة جديدة</h2>
+      <button onclick="document.getElementById('modal-leave').classList.add('hidden')" class="text-gray-400 text-2xl">&times;</button>
+    </div>
+    <form method="POST" action="/hr/leaves/new" class="p-5 space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">الموظف *</label>
+        <select name="employee_id" required class="w-full border rounded-lg px-3 py-2 text-sm">
+          <option value="">اختر الموظف</option>
+          {% for emp in employees %}
+          <option value="{{ emp.id }}">{{ emp.full_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">نوع الإجازة</label>
+        <select name="leave_type" class="w-full border rounded-lg px-3 py-2 text-sm">
+          <option>سنوية</option>
+          <option>مرضية</option>
+          <option>طارئة</option>
+          <option>حج</option>
+          <option>أمومة</option>
+          <option>بدون راتب</option>
+        </select>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">من</label>
+          <input type="date" name="start_date" required class="w-full border rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">إلى</label>
+          <input type="date" name="end_date" required class="w-full border rounded-lg px-3 py-2 text-sm">
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">السبب</label>
+        <textarea name="reason" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm resize-none" placeholder="اختياري..."></textarea>
+      </div>
+      <div class="flex gap-3 justify-end pt-2">
+        <button type="button" onclick="document.getElementById('modal-leave').classList.add('hidden')"
+          class="px-4 py-2 border rounded-lg text-gray-600">إلغاء</button>
+        <button type="submit" class="bg-yellow-500 text-white px-5 py-2 rounded-lg hover:bg-yellow-600 font-medium">
+          ✓ تقديم الطلب
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

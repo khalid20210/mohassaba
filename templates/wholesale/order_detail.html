@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}طلب #{{ order.id }}{% endblock %}
+{% block page_title %}📦 طلب #{{ order.order_number or order.id }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <a href="/wholesale/orders" style="color:#94a3b8;font-size:.85rem;">← طلبات الجملة</a>
+    <p class="page-subtitle" style="margin-top:4px;">{{ order.order_date or '' }}</p>
+  </div>
+  <div style="display:flex;gap:8px;">
+    {% if order.status=='pending' %}
+    <form method="post" action="/wholesale/orders/{{ order.id }}/confirm">
+      <button type="submit" class="btn btn-secondary">✓ تأكيد الطلب</button>
+    </form>
+    {% endif %}
+    {% if order.status=='confirmed' %}
+    <form method="post" action="/wholesale/orders/{{ order.id }}/deliver">
+      <button type="submit" class="btn btn-primary">🚚 تسليم</button>
+    </form>
+    {% endif %}
+    {% if order.status not in ('delivered','cancelled') %}
+    <form method="post" action="/wholesale/orders/{{ order.id }}/cancel" onsubmit="return confirm('إلغاء الطلب؟')">
+      <button type="submit" class="btn" style="background:#7f1d1d;color:#fca5a5;border:none;">✕ إلغاء</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- الحالة -->
+<div style="margin-bottom:16px;">
+  {% if order.status=='pending' %}<span style="background:rgba(255,255,255,.06);color:#94a3b8;padding:6px 18px;border-radius:20px;font-size:.85rem;font-weight:700;">⏳ معلق</span>
+  {% elif order.status=='confirmed' %}<span style="background:#1e3a5f;color:#93c5fd;padding:6px 18px;border-radius:20px;font-size:.85rem;font-weight:700;">✓ مؤكد</span>
+  {% elif order.status=='delivered' %}<span style="background:#14532d;color:#86efac;padding:6px 18px;border-radius:20px;font-size:.85rem;font-weight:700;">✅ مُسلّم</span>
+  {% elif order.status=='cancelled' %}<span style="background:#7f1d1d;color:#fca5a5;padding:6px 18px;border-radius:20px;font-size:.85rem;font-weight:700;">✕ ملغي</span>
+  {% endif %}
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">📋 تفاصيل الطلب</h3></div>
+    <table class="table">
+      <tr><td style="color:#94a3b8;">رقم الطلب</td><td><strong style="color:#93c5fd;">{{ order.order_number or '—' }}</strong></td></tr>
+      <tr><td style="color:#94a3b8;">العميل</td><td>{{ order.client_id or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">تاريخ الطلب</td><td>{{ order.order_date or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">تاريخ التسليم</td><td>{{ order.delivery_date or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">تاريخ التسليم الفعلي</td><td>{{ order.delivered_at or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">قائمة الأسعار</td><td>{{ order.pricing_list_id or '—' }}</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">💰 ملخص مالي</h3></div>
+    <table class="table">
+      <tr><td style="color:#94a3b8;">المجموع قبل خصم</td><td style="color:#38bdf8;font-weight:700;">{{ "{:,.2f}".format(order.subtotal or order.total_amount or 0) }} ر.س</td></tr>
+      <tr><td style="color:#94a3b8;">الخصم</td><td style="color:#f59e0b;">{{ order.discount_percent or 0 }}%</td></tr>
+      <tr><td style="color:#94a3b8;">الإجمالي النهائي</td><td style="color:#22c55e;font-weight:700;font-size:1.2rem;">{{ "{:,.2f}".format(order.total_amount or 0) }} ر.س</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- الأصناف -->
+<div class="card" style="margin-top:16px;">
+  <div class="card-header"><h3 class="card-title">📦 أصناف الطلب</h3></div>
+  {% if order.items %}
+  <table class="table">
+    <thead>
+      <tr><th>#</th><th>الصنف</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr>
+    </thead>
+    <tbody>
+      {% if order.items is string %}
+        {% set items = order.items | from_json %}
+      {% else %}
+        {% set items = order.items %}
+      {% endif %}
+      {% for item in items %}
+      <tr>
+        <td style="color:#64748b;">{{ loop.index }}</td>
+        <td><strong>{{ item.name or item.product_name or '—' }}</strong></td>
+        <td style="text-align:center;">{{ item.quantity or item.qty or 0 }}</td>
+        <td style="color:#38bdf8;">{{ "{:,.2f}".format(item.price or item.unit_price or 0) }} ر.س</td>
+        <td style="color:#22c55e;font-weight:700;">{{ "{:,.2f}".format((item.quantity or item.qty or 0) * (item.price or item.unit_price or 0)) }} ر.س</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:#64748b;text-align:center;padding:20px;">لا توجد أصناف مسجلة</p>
+  {% endif %}
+</div>
+
+{% if order.notes %}
+<div class="card" style="margin-top:16px;">
+  <div class="card-header"><h3 class="card-title">📝 ملاحظات</h3></div>
+  <p style="color:#cbd5e1;line-height:1.8;">{{ order.notes }}</p>
+</div>
+{% endif %}
+{% endblock %}

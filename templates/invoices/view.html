@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+{% block title %}فاتورة {{ inv.invoice_number }}{% endblock %}
+
+{% block head %}
+<style>
+  .inv-header { background:#fff; border:1px solid #e2e8f0; border-radius:.75rem;
+                padding:1.5rem; margin-bottom:1.25rem; }
+  .inv-meta   { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+                gap:1rem; margin-top:1rem; }
+  .meta-item  { display:flex; flex-direction:column; gap:.2rem; }
+  .meta-item .key { font-size:.78rem; color:#64748b; font-weight:600; text-transform:uppercase; }
+  .meta-item .val { font-size:.92rem; color:#1e293b; font-weight:600; }
+
+  .inv-lines { background:#fff; border:1px solid #e2e8f0; border-radius:.75rem;
+               overflow:auto; margin-bottom:1.25rem; }
+  table { width:100%; border-collapse:collapse; font-size:.88rem; }
+  th { background:#f8fafc; padding:.7rem 1rem; text-align:right; font-weight:700; color:#374151; border-bottom:2px solid #e5e7eb; }
+  td { padding:.65rem 1rem; border-bottom:1px solid #f1f5f9; color:#374151; }
+
+  .totals-box { background:#fff; border:1px solid #e2e8f0; border-radius:.75rem;
+                padding:1.25rem; max-width:380px; margin-right:auto; margin-bottom:1.25rem; }
+  .totals-box .row { display:flex; justify-content:space-between; padding:.4rem 0;
+                     font-size:.9rem; }
+  .totals-box .row.grand { border-top:2px solid #e5e7eb; font-weight:700;
+                            font-size:1.05rem; color:#1e40af; margin-top:.5rem; padding-top:.75rem; }
+
+  .badge { display:inline-block; padding:.25rem .7rem; border-radius:.9rem; font-size:.8rem; font-weight:600; }
+  .badge-paid      { background:#dcfce7; color:#166534; }
+  .badge-pending   { background:#fef9c3; color:#854d0e; }
+  .badge-draft     { background:#f1f5f9; color:#475569; }
+  .badge-cancelled { background:#fee2e2; color:#991b1b; }
+
+  .audit-table { font-size:.82rem; }
+  .audit-table td { padding:.5rem .75rem; }
+
+  .action-bar { display:flex; gap:.75rem; flex-wrap:wrap; margin-bottom:1.25rem; }
+  .btn { padding:.55rem 1.1rem; border-radius:.6rem; font-size:.88rem; font-weight:600;
+         cursor:pointer; border:1px solid transparent; text-decoration:none; display:inline-block; }
+  .btn-primary  { background:#3b82f6; color:#fff; border-color:#3b82f6; }
+  .btn-success  { background:#22c55e; color:#fff; border-color:#22c55e; }
+  .btn-danger   { background:#ef4444; color:#fff; border-color:#ef4444; }
+  .btn-outline  { background:#fff; color:#374151; border-color:#d1d5db; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- رأس الصفحة -->
+<div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.25rem;">
+  <a href="{{ url_for('invoices.list_invoices') }}" class="btn btn-outline">← العودة للفواتير</a>
+  <div>
+    <h1 style="margin:0; font-size:1.4rem; font-weight:700;">
+      فاتورة {{ inv.invoice_number }}
+    </h1>
+  </div>
+</div>
+
+<!-- شريط الإجراءات -->
+<div class="action-bar">
+  {% if inv.status not in ('paid', 'cancelled') %}
+  <button onclick="markPaid()" class="btn btn-success">✓ تحديد كمدفوعة</button>
+  {% endif %}
+  {% if inv.status != 'cancelled' %}
+  <button onclick="document.getElementById('cancel-modal').style.display='flex'" class="btn btn-danger">✕ إلغاء الفاتورة</button>
+  {% endif %}
+  <a href="{{ url_for('accounting.invoice_print', inv_id=inv.id) }}" target="_blank" class="btn btn-primary">🖨️ طباعة</a>
+</div>
+
+{% if cancel_requests %}
+<div style="background:#fff; border:1px solid #e2e8f0; border-radius:.75rem; overflow:auto; margin-bottom:1.25rem;">
+  <div style="padding:1rem 1.25rem; font-weight:700; border-bottom:1px solid #f1f5f9;">
+    طلبات إلغاء الفاتورة
+  </div>
+  <table class="audit-table">
+    <thead>
+      <tr>
+        <th>الحالة</th>
+        <th>السبب</th>
+        <th>مرجع الإثبات</th>
+        <th>الطالب</th>
+        <th>التاريخ</th>
+        <th>المراجعة</th>
+        <th>الإجراء</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in cancel_requests %}
+      <tr>
+        <td>
+          {% if r.status == 'approved' %}
+            <span class="badge badge-paid">معتمد</span>
+          {% elif r.status == 'rejected' %}
+            <span class="badge badge-cancelled">مرفوض</span>
+          {% else %}
+            <span class="badge badge-pending">قيد المراجعة</span>
+          {% endif %}
+        </td>
+        <td>{{ r.reason }}</td>
+        <td>{{ r.evidence_ref or '—' }}</td>
+        <td>{{ r.requested_by_name or '—' }}</td>
+        <td>{{ r.created_at[:19] if r.created_at else '—' }}</td>
+        <td>
+          {% if r.status == 'pending' %}
+          —
+          {% else %}
+          <div>{{ r.reviewed_by_name or '—' }}</div>
+          <div style="font-size:.74rem;color:#64748b;">{{ r.reviewed_at[:19] if r.reviewed_at else '—' }}</div>
+          <div style="font-size:.74rem;color:#475569;">{{ r.review_note or '—' }}</div>
+          {% endif %}
+        </td>
+        <td>
+          {% if can_approve_cancel and r.status == 'pending' and inv.status != 'cancelled' %}
+          <form method="POST" action="{{ url_for('invoices.approve_cancel_request', inv_id=inv.id, req_id=r.id) }}" style="display:inline-flex; gap:.4rem; align-items:center;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="text" name="review_note" maxlength="200" placeholder="ملاحظة المدير (اختياري)"
+                   style="padding:.35rem .5rem; border:1px solid #d1d5db; border-radius:.45rem; font-size:.78rem; width:160px;">
+            <button type="submit" class="btn btn-success" style="padding:.35rem .6rem; font-size:.78rem;">اعتماد</button>
+          </form>
+          <form method="POST" action="{{ url_for('invoices.reject_cancel_request', inv_id=inv.id, req_id=r.id) }}" style="display:inline-flex; gap:.4rem; align-items:center; margin-right:.35rem;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="text" name="review_note" maxlength="200" placeholder="سبب الرفض"
+                   style="padding:.35rem .5rem; border:1px solid #d1d5db; border-radius:.45rem; font-size:.78rem; width:140px;">
+            <button type="submit" class="btn btn-danger" style="padding:.35rem .6rem; font-size:.78rem;">رفض</button>
+          </form>
+          {% else %}
+          {{ r.status }}
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- بيانات الفاتورة -->
+<div class="inv-header">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:.5rem;">
+    <div>
+      <span style="font-size:1.15rem; font-weight:700;">{{ inv.invoice_number }}</span>
+      {% set type_labels = {'sale':'مبيعات','purchase':'مشتريات','table':'طاولة','return':'مرتجع'} %}
+      <span class="badge" style="background:#dbeafe;color:#1e40af; margin-right:.5rem;">
+        {{ type_labels.get(inv.invoice_type, inv.invoice_type) }}
+      </span>
+    </div>
+    {% set status_labels = {'paid':'مدفوعة','pending':'معلقة','draft':'مسودة','cancelled':'ملغية','partial':'جزئي'} %}
+    <span class="badge badge-{{ inv.status }}" style="font-size:.9rem;">
+      {{ status_labels.get(inv.status, inv.status) }}
+    </span>
+  </div>
+
+  <div class="inv-meta">
+    <div class="meta-item">
+      <span class="key">التاريخ</span>
+      <span class="val">{{ inv.invoice_date[:10] if inv.invoice_date else '—' }}</span>
+    </div>
+    <div class="meta-item">
+      <span class="key">الطرف</span>
+      <span class="val">{{ inv.party_name or '—' }}</span>
+    </div>
+    <div class="meta-item">
+      <span class="key">طريقة الدفع</span>
+      <span class="val">{{ inv.payment_method or '—' }}</span>
+    </div>
+    <div class="meta-item">
+      <span class="key">أنشأه</span>
+      <span class="val">{{ inv.created_by_name or '—' }}</span>
+    </div>
+    {% if inv.cancel_reason %}
+    <div class="meta-item" style="grid-column:1/-1;">
+      <span class="key">سبب الإلغاء</span>
+      <span class="val" style="color:#ef4444;">{{ inv.cancel_reason }}</span>
+    </div>
+    {% endif %}
+    {% if inv.notes %}
+    <div class="meta-item" style="grid-column:1/-1;">
+      <span class="key">ملاحظات</span>
+      <span class="val">{{ inv.notes }}</span>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- سطور الفاتورة -->
+<div class="inv-lines">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>المنتج / الخدمة</th>
+        <th>الكمية</th>
+        <th>السعر</th>
+        <th>الخصم</th>
+        <th>الضريبة%</th>
+        <th>الإجمالي</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for line in lines %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ line.product_name or line.description or '—' }}</td>
+        <td>{{ line.quantity }}</td>
+        <td>{{ "%.2f"|format(line.unit_price|float) }}</td>
+        <td>{{ "%.2f"|format(line.discount_amount|default(0)|float) }}</td>
+        <td>{{ line.tax_rate or 0 }}%</td>
+        <td style="font-weight:600;">{{ "%.2f"|format(line.total|float) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- الإجماليات -->
+<div class="totals-box">
+  <div class="row">
+    <span>المجموع قبل الضريبة</span>
+    <span>{{ "%.2f"|format(inv.subtotal|float) }}</span>
+  </div>
+  <div class="row">
+    <span>ضريبة القيمة المضافة</span>
+    <span>{{ "%.2f"|format(inv.tax_amount|float) }}</span>
+  </div>
+  <div class="row grand">
+    <span>الإجمالي النهائي</span>
+    <span>{{ "%.2f"|format(inv.total|float) }}</span>
+  </div>
+</div>
+
+<!-- سجل التدقيق -->
+{% if audit %}
+<div style="background:#fff; border:1px solid #e2e8f0; border-radius:.75rem; overflow:auto;">
+  <div style="padding:1rem 1.25rem; font-weight:700; border-bottom:1px solid #f1f5f9;">
+    سجل العمليات
+  </div>
+  <table class="audit-table">
+    <thead>
+      <tr>
+        <th>التاريخ</th>
+        <th>المستخدم</th>
+        <th>الإجراء</th>
+        <th>تفاصيل</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in audit %}
+      <tr>
+        <td>{{ a.created_at[:19] if a.created_at else '—' }}</td>
+        <td>{{ a.actor_name or '—' }}</td>
+        <td>{{ a.action }}</td>
+        <td>{{ a.new_value or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- Modal إلغاء الفاتورة -->
+<div id="cancel-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
+     z-index:999; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:1rem; padding:2rem; max-width:480px; width:90%;">
+    <h2 style="margin:0 0 1rem; font-size:1.2rem; color:#dc2626;">إلغاء الفاتورة</h2>
+    <form method="POST" action="{{ url_for('invoices.cancel_invoice', inv_id=inv.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label style="font-weight:600; font-size:.9rem;">سبب الإلغاء *</label>
+      <textarea name="reason" required rows="3" placeholder="أدخل سبب الإلغاء..." maxlength="500"
+        style="width:100%; margin:.5rem 0 1rem; padding:.6rem; border:1px solid #d1d5db;
+               border-radius:.5rem; font-size:.9rem; resize:vertical; direction:rtl;"></textarea>
+      <label style="font-weight:600; font-size:.9rem;">مرجع الإثبات (للفواتير المدفوعة) *</label>
+      <input name="evidence_ref" type="text" maxlength="120" placeholder="رقم بلاغ / رقم تذكرة / رقم سند"
+             style="width:100%; margin:.5rem 0 1rem; padding:.6rem; border:1px solid #d1d5db;
+                    border-radius:.5rem; font-size:.9rem; direction:rtl;">
+      <div style="font-size:.8rem; color:#b45309; margin-top:-.5rem; margin-bottom:1rem;">
+        ملاحظة: إذا لم تكن مدير النظام فسيتم إنشاء طلب اعتماد رسمي عند محاولة إلغاء فاتورة مدفوعة.
+      </div>
+      <div style="display:flex; gap:.75rem; justify-content:flex-end;">
+        <button type="button" onclick="document.getElementById('cancel-modal').style.display='none'"
+                style="padding:.55rem 1.1rem; border:1px solid #d1d5db; border-radius:.6rem; background:#fff; cursor:pointer;">
+          رجوع
+        </button>
+        <button type="submit"
+                style="padding:.55rem 1.1rem; background:#ef4444; color:#fff; border:none; border-radius:.6rem; cursor:pointer; font-weight:600;">
+          تأكيد الإلغاء
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function markPaid() {
+  if (!confirm('هل تريد تحديد هذه الفاتورة كمدفوعة؟')) return;
+  fetch('{{ url_for("invoices.mark_paid", inv_id=inv.id) }}', {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': '{{ csrf_token }}' }
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) {
+      alert('تم تحديث الفاتورة بنجاح');
+      location.reload();
+    } else {
+      alert(d.error || 'حدث خطأ');
+    }
+  });
+}
+</script>
+{% endblock %}

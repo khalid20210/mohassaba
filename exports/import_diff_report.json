@@ -1,0 +1,25 @@
+{
+  "generated_at": "2026-05-05T23:35:01Z",
+  "mode": "upsert",
+  "summary": [
+    {
+      "table": "businesses",
+      "incoming_rows": 0,
+      "would_insert": 0,
+      "would_update": 0,
+      "unchanged": 0,
+      "would_conflict": 0,
+      "invalid": 0
+    },
+    {
+      "table": "settings",
+      "incoming_rows": 26,
+      "would_insert": 0,
+      "would_update": 0,
+      "unchanged": 26,
+      "would_conflict": 0,
+      "invalid": 0
+    }
+  ],
+  "samples": {}
+}

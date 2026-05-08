@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}عرض سعر جديد{% endblock %}
+{% block page_title %}إنشاء عرض سعر{% endblock %}
+
+{% block content %}
+<style>
+  .card { background:white; border-radius:8px; padding:24px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+  label { display:block; font-size:13px; color:#555; margin-bottom:4px; font-weight:500; }
+  input, select, textarea { width:100%; padding:9px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; box-sizing:border-box; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  #items-table { width:100%; border-collapse:collapse; font-size:13px; }
+  #items-table th { background:#f9fafb; padding:8px; text-align:right; border-bottom:2px solid #e5e7eb; }
+  #items-table td { padding:6px 8px; border-bottom:1px solid #f3f4f6; }
+  .btn { padding:10px 22px; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; }
+  .btn-green { background:#10b981; color:white; }
+  .btn-blue  { background:#3b82f6; color:white; }
+</style>
+
+<form id="quoteForm">
+<div class="card">
+  <h3 style="margin:0 0 16px;font-size:16px">بيانات العميل</h3>
+  <div class="grid2">
+    <div>
+      <label>العميل</label>
+      <select id="customer_id" name="customer_id" onchange="fillCustomerName(this)">
+        <option value="">— اختر عميلاً —</option>
+        {% for c in customers %}
+        <option value="{{ c.id }}" data-name="{{ c.name }}">{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>تاريخ انتهاء العرض</label>
+      <input type="date" id="expiry_date" name="expiry_date">
+    </div>
+  </div>
+  <input type="hidden" id="customer_name" name="customer_name">
+</div>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h3 style="margin:0;font-size:16px">الأصناف</h3>
+    <button type="button" class="btn btn-blue" onclick="addRow()">+ إضافة صنف</button>
+  </div>
+  <table id="items-table">
+    <thead>
+      <tr>
+        <th>الصنف</th>
+        <th>الكمية</th>
+        <th>سعر الوحدة</th>
+        <th>الإجمالي</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="items-body"></tbody>
+  </table>
+</div>
+
+<div class="card">
+  <div class="grid2">
+    <div>
+      <label>ملاحظات</label>
+      <textarea id="notes" name="notes" rows="3" placeholder="ملاحظات اختيارية..."></textarea>
+    </div>
+    <div style="text-align:left;padding-top:8px">
+      <div style="font-size:15px;margin-bottom:8px">الإجمالي قبل الضريبة: <strong id="sub-display">0.00</strong> ر.س</div>
+      <div style="font-size:15px;margin-bottom:8px">ضريبة القيمة المضافة (15%): <strong id="tax-display">0.00</strong> ر.س</div>
+      <div style="font-size:20px;font-weight:900;color:#059669">الإجمالي: <span id="total-display">0.00</span> ر.س</div>
+    </div>
+  </div>
+  <div style="margin-top:20px;text-align:left">
+    <button type="button" onclick="saveQuote()" class="btn btn-green">💾 حفظ عرض السعر</button>
+  </div>
+</div>
+</form>
+
+<script>
+const products = {{ products | tojson }};
+let rowIndex = 0;
+
+function fillCustomerName(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  document.getElementById('customer_name').value = opt.dataset.name || '';
+}
+
+function addRow() {
+  const tbody = document.getElementById('items-body');
+  const tr = document.createElement('tr');
+  tr.dataset.idx = rowIndex;
+  tr.innerHTML = `
+    <td>
+      <select onchange="fillPrice(${rowIndex},this)" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:4px">
+        <option value="">— اختر صنفاً —</option>
+        ${products.map(p => `<option value="${p.id}" data-price="${p.sale_price}" data-name="${p.name}">${p.name}</option>`).join('')}
+      </select>
+      <input type="hidden" name="item_name_${rowIndex}">
+    </td>
+    <td><input type="number" id="qty${rowIndex}" value="1" min="0.001" step="0.001" style="width:80px;padding:6px;border:1px solid #ddd;border-radius:4px" oninput="calcRow(${rowIndex})"></td>
+    <td><input type="number" id="price${rowIndex}" value="0" min="0" step="0.01" style="width:100px;padding:6px;border:1px solid #ddd;border-radius:4px" oninput="calcRow(${rowIndex})"></td>
+    <td id="line${rowIndex}" style="font-weight:bold;min-width:80px">0.00</td>
+    <td><button type="button" onclick="this.closest('tr').remove();calcTotal()" style="background:#fee2e2;color:#dc2626;border:none;padding:4px 8px;border-radius:4px;cursor:pointer">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+  rowIndex++;
+}
+
+function fillPrice(idx, sel) {
+  const opt = sel.options[sel.selectedIndex];
+  document.getElementById(`price${idx}`).value = opt.dataset.price || 0;
+  sel.parentElement.querySelector('input[type=hidden]').value = opt.dataset.name || '';
+  calcRow(idx);
+}
+
+function calcRow(idx) {
+  const q = parseFloat(document.getElementById(`qty${idx}`)?.value || 0);
+  const p = parseFloat(document.getElementById(`price${idx}`)?.value || 0);
+  const line = document.getElementById(`line${idx}`);
+  if (line) line.textContent = (q * p).toFixed(2);
+  calcTotal();
+}
+
+function calcTotal() {
+  let sub = 0;
+  document.querySelectorAll('#items-body tr').forEach(tr => {
+    const idx = tr.dataset.idx;
+    const q = parseFloat(document.getElementById(`qty${idx}`)?.value || 0);
+    const p = parseFloat(document.getElementById(`price${idx}`)?.value || 0);
+    sub += q * p;
+  });
+  const tax = sub * 0.15;
+  document.getElementById('sub-display').textContent = sub.toFixed(2);
+  document.getElementById('tax-display').textContent = tax.toFixed(2);
+  document.getElementById('total-display').textContent = (sub + tax).toFixed(2);
+}
+
+function saveQuote() {
+  const items = [];
+  document.querySelectorAll('#items-body tr').forEach(tr => {
+    const idx = tr.dataset.idx;
+    const sel = tr.querySelector('select');
+    const nameInput = tr.querySelector('input[type=hidden]');
+    const qty   = parseFloat(document.getElementById(`qty${idx}`)?.value || 0);
+    const price = parseFloat(document.getElementById(`price${idx}`)?.value || 0);
+    if (qty > 0 && price >= 0 && sel?.value) {
+      items.push({ product_id: sel.value, name: nameInput?.value || '', qty, price });
+    }
+  });
+  if (!items.length) { alert('يرجى إضافة صنف واحد على الأقل'); return; }
+  const payload = {
+    customer_id: document.getElementById('customer_id').value,
+    customer_name: document.getElementById('customer_name').value,
+    expiry_date: document.getElementById('expiry_date').value,
+    notes: document.getElementById('notes').value,
+    items: JSON.stringify(items),
+    tax_pct: 15,
+  };
+  const fd = new FormData();
+  Object.entries(payload).forEach(([k,v]) => fd.append(k,v));
+  fetch('/wholesale/quotes/new', { method:'POST', body: fd })
+    .then(r => r.json()).then(d => {
+      if (d.success) window.location = `/wholesale/quotes/${d.quote_id}`;
+      else alert(d.error || 'حدث خطأ');
+    });
+}
+</script>
+{% endblock %}

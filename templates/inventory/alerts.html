@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}التنبيهات{% endblock %}
+{% block page_title %}🔔 تنبيهات المخزون{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">🔔 تنبيهات المخزون</h1>
+  <p class="page-subtitle">{{ alerts|length }} تنبيه نشط</p>
+</div>
+
+{% if alerts %}
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>المنتج</th><th>نوع التنبيه</th><th>الكمية الحالية</th><th>التفاصيل</th><th>التاريخ</th><th>الإجراء</th></tr>
+    </thead>
+    <tbody>
+      {% for a in alerts %}
+      <tr>
+        <td><a href="/inventory/products/{{ a.product_id }}" style="color:#38bdf8;">{{ a.product_name or 'منتج #' ~ a.product_id }}</a></td>
+        <td>
+          {% if a.alert_type == 'low_stock' %}<span style="background:#78350f;color:#fcd34d;padding:2px 10px;border-radius:20px;font-size:.8rem;">⚠️ مخزون منخفض</span>
+          {% elif a.alert_type == 'out_of_stock' %}<span style="background:#7f1d1d;color:#fca5a5;padding:2px 10px;border-radius:20px;font-size:.8rem;">❌ نفد المخزون</span>
+          {% elif a.alert_type == 'expiry_soon' %}<span style="background:#1e3a5f;color:#93c5fd;padding:2px 10px;border-radius:20px;font-size:.8rem;">⏰ ينتهي قريباً</span>
+          {% else %}{{ a.alert_type }}{% endif %}
+        </td>
+        <td>{{ a.current_qty }}</td>
+        <td style="color:#94a3b8;font-size:.85rem;">{{ a.message or '—' }}</td>
+        <td style="color:#64748b;font-size:.82rem;">{{ a.created_at[:10] if a.created_at else '—' }}</td>
+        <td>
+          <form action="/inventory/alerts/{{ a.id }}/resolve" method="post" style="display:inline;">
+            <button type="submit" class="btn btn-secondary" style="padding:4px 12px;font-size:.8rem;">✓ حل</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card">
+  <div style="text-align:center;padding:60px;">
+    <div style="font-size:3rem;margin-bottom:16px;">✅</div>
+    <h3>لا توجد تنبيهات نشطة</h3>
+    <p style="color:#64748b;">جميع المنتجات ضمن النطاق الطبيعي</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

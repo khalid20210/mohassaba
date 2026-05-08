@@ -1,0 +1,49 @@
+﻿{% extends "base.html" %}
+{% block title %}طلبات الجملة{% endblock %}
+{% block page_title %}طلبات الجملة{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+  <div><p class="page-subtitle">{{ orders|length }} طلب</p></div>
+  <div style="display:flex;gap:8px;">
+    <a href="/wholesale/pricing" class="btn btn-secondary">قوائم الأسعار</a>
+    <a href="/wholesale/reports/aging" class="btn btn-secondary">تقرير أعمار الديون</a>
+  </div>
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>رقم الطلب</th>
+        <th>العميل</th>
+        <th>التاريخ</th>
+        <th>الإجمالي</th>
+        <th>الحالة</th>
+        <th>إجراء</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for o in orders %}
+      <tr>
+        <td>{{ o.order_number or ('#' ~ o.id) }}</td>
+        <td>
+          {% if o.customer_id %}
+            <div>{{ o.customer_name or ('#' ~ o.customer_id) }}</div>
+            <a href="/wholesale/customers/{{ o.customer_id }}/statement" style="font-size:.78rem;color:#60a5fa;">كشف الحساب</a>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td>{{ o.order_date or (o.created_at[:10] if o.created_at else '—') }}</td>
+        <td>{{ "{:,.2f}".format(o.total_amount or 0) }}</td>
+        <td>{{ o.order_status or o.status or 'pending' }}</td>
+        <td><a href="/wholesale/orders/{{ o.id }}" class="btn btn-secondary">تفاصيل</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;">لا توجد طلبات</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

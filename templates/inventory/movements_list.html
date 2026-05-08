@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}سجل الحركات{% endblock %}
+{% block page_title %}🔄 سجل حركات المخزون{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">🔄 سجل الحركات</h1>
+    <p class="page-subtitle">{{ total }} حركة مسجلة</p>
+  </div>
+  <a href="/inventory/movements/add" class="btn btn-primary">+ تسجيل حركة</a>
+</div>
+
+<!-- فلاتر -->
+<div class="card" style="margin-bottom:16px;">
+  <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+    <div>
+      <label style="font-size:.8rem;color:#94a3b8;display:block;margin-bottom:4px;">نوع الحركة</label>
+      <select name="type" class="form-input">
+        <option value="">الكل</option>
+        <option value="purchase" {% if request.args.get('type')=='purchase' %}selected{% endif %}>شراء</option>
+        <option value="sale" {% if request.args.get('type')=='sale' %}selected{% endif %}>بيع</option>
+        <option value="adjustment" {% if request.args.get('type')=='adjustment' %}selected{% endif %}>تعديل</option>
+        <option value="return" {% if request.args.get('type') in ['return','return_in'] %}selected{% endif %}>مرتجع</option>
+        <option value="damage" {% if request.args.get('type')=='damage' %}selected{% endif %}>تلف</option>
+      </select>
+    </div>
+    <div>
+      <label style="font-size:.8rem;color:#94a3b8;display:block;margin-bottom:4px;">من تاريخ</label>
+      <input type="date" name="from" value="{{ request.args.get('from','') }}" class="form-input">
+    </div>
+    <div>
+      <label style="font-size:.8rem;color:#94a3b8;display:block;margin-bottom:4px;">إلى تاريخ</label>
+      <input type="date" name="to" value="{{ request.args.get('to','') }}" class="form-input">
+    </div>
+    <button type="submit" class="btn btn-primary">تطبيق</button>
+    <a href="/inventory/movements" class="btn btn-secondary">إعادة تعيين</a>
+  </form>
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>المنتج</th><th>النوع</th><th>الكمية</th><th>الرصيد قبل</th><th>الرصيد بعد</th><th>المرجع</th><th>التاريخ</th><th>ملاحظات</th></tr>
+    </thead>
+    <tbody>
+      {% for m in movements %}
+      <tr>
+        <td>
+          <a href="/inventory/products/{{ m.product_id }}" style="color:#38bdf8;">{{ m.product_name or m.product_id }}</a>
+        </td>
+        <td>
+          {% if m.movement_type == 'purchase' %}<span style="color:#22c55e;">🟢 شراء</span>
+          {% elif m.movement_type == 'sale' %}<span style="color:#ef4444;">🔴 بيع</span>
+          {% elif m.movement_type == 'adjustment' %}<span style="color:#38bdf8;">🔵 تعديل</span>
+          {% elif m.movement_type == 'return' %}<span style="color:#f59e0b;">🟡 مرتجع</span>
+          {% elif m.movement_type == 'damage' %}<span style="color:#6b7280;">⚫ تلف</span>
+          {% else %}{{ m.movement_type }}{% endif %}
+        </td>
+        <td style="font-weight:600;color:{% if m.quantity > 0 %}#22c55e{% else %}#ef4444{% endif %};">
+          {{ '+' if m.quantity > 0 else '' }}{{ m.quantity }}
+        </td>
+        <td style="color:#94a3b8;">{{ m.qty_before }}</td>
+        <td>{{ m.qty_after }}</td>
+        <td style="color:#64748b;font-size:.82rem;">{{ m.reference or '—' }}</td>
+        <td style="color:#64748b;font-size:.82rem;">{{ m.created_at[:16] if m.created_at else '—' }}</td>
+        <td style="color:#94a3b8;font-size:.82rem;">{{ m.reason or m.notes or '—' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="text-align:center;color:#64748b;padding:40px;">لا توجد حركات</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

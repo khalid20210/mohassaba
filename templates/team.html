@@ -1,0 +1,450 @@
+{% extends "base.html" %}
+{% block title %}إدارة الفريق{% endblock %}
+
+{% block content %}
+<style>
+/* ─── layout ─── */
+.team-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:860px){.team-grid{grid-template-columns:1fr}}
+
+/* ─── member card ─── */
+.member-card{
+  background:var(--card-bg,#1e293b);border:1px solid var(--border,#334155);
+  border-radius:12px;padding:16px 18px;display:flex;align-items:center;
+  gap:14px;margin-bottom:10px;transition:border .2s
+}
+.member-card:hover{border-color:#3b82f6}
+.member-avatar{
+  width:42px;height:42px;border-radius:50%;background:#3b82f6;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;font-weight:700;color:#fff;flex-shrink:0
+}
+.member-info{flex:1;min-width:0}
+.member-name{font-weight:600;font-size:.95rem;margin-bottom:2px}
+.member-meta{font-size:.76rem;color:var(--text-muted,#94a3b8)}
+.member-badge{
+  font-size:.7rem;padding:2px 8px;border-radius:20px;
+  background:#1d4ed8;color:#fff;display:inline-block;margin-top:4px
+}
+.badge-inactive{background:#374151;color:#9ca3af}
+.member-actions{display:flex;gap:6px;flex-shrink:0}
+.btn-icon{
+  width:32px;height:32px;border-radius:8px;border:1px solid var(--border,#334155);
+  background:transparent;cursor:pointer;font-size:.9rem;display:flex;
+  align-items:center;justify-content:center;color:var(--text,#e2e8f0);
+  transition:background .15s
+}
+.btn-icon:hover{background:#334155}
+
+/* ─── role card ─── */
+.role-card{
+  background:var(--card-bg,#1e293b);border:1px solid var(--border,#334155);
+  border-radius:10px;padding:14px 16px;margin-bottom:8px;
+  display:flex;align-items:center;gap:10px
+}
+.role-icon{font-size:1.2rem}
+.role-name{font-weight:600;font-size:.9rem;flex:1}
+.role-perms{font-size:.72rem;color:#60a5fa}
+
+/* ─── permissions grid ─── */
+.perm-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;margin-top:10px}
+.perm-item{display:flex;align-items:center;gap:8px;font-size:.85rem}
+.perm-item input[type=checkbox]{accent-color:#3b82f6;width:16px;height:16px;cursor:pointer}
+
+/* ─── modal ─── */
+.modal-backdrop{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+  z-index:9000;align-items:center;justify-content:center
+}
+.modal-backdrop.open{display:flex}
+.modal{
+  background:var(--card-bg,#1e293b);border:1px solid var(--border,#334155);
+  border-radius:16px;padding:28px;width:520px;max-width:95vw;
+  max-height:90vh;overflow-y:auto
+}
+.modal-title{font-size:1.1rem;font-weight:700;margin-bottom:20px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:500px){.form-row{grid-template-columns:1fr}}
+.inp{
+  width:100%;background:var(--bg,#0f172a);border:1px solid var(--border,#334155);
+  border-radius:8px;padding:8px 12px;color:var(--text,#e2e8f0);font-size:.9rem;
+  box-sizing:border-box
+}
+.inp:focus{outline:none;border-color:#3b82f6}
+.form-label{font-size:.8rem;color:var(--text-muted,#94a3b8);margin-bottom:4px;display:block}
+.form-group{margin-bottom:12px}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.btn{padding:9px 20px;border-radius:8px;border:none;cursor:pointer;font-size:.88rem;font-weight:600}
+.btn-primary{background:#3b82f6;color:#fff}
+.btn-primary:hover{background:#2563eb}
+.btn-ghost{background:transparent;border:1px solid var(--border,#334155);color:var(--text,#e2e8f0)}
+.btn-ghost:hover{background:#334155}
+.btn-danger{background:#ef4444;color:#fff}
+.btn-danger:hover{background:#dc2626}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.section-title{font-size:1rem;font-weight:700}
+</style>
+
+<!-- ═══ header ═══ -->
+<div class="page-header">
+  <div>
+    <h2 class="page-title">👥 إدارة الفريق</h2>
+    <p class="page-subtitle">أضف أعضاء الفريق وحدد صلاحيات كل شخص بدقة</p>
+  </div>
+</div>
+
+<div class="team-grid">
+
+  <!-- ═══ عمود الأعضاء ═══ -->
+  <div>
+    <div class="section-header">
+      <span class="section-title">👤 الأعضاء</span>
+      <button class="btn btn-primary" onclick="openMemberModal()">+ إضافة عضو</button>
+    </div>
+    <div id="membersList">
+      {% for m in members %}
+      <div class="member-card" id="mc_{{m.id}}">
+        <div class="member-avatar">{{ (m.full_name or 'م')[0] }}</div>
+        <div class="member-info">
+          <div class="member-name">{{ m.full_name or m.username }}</div>
+          <div class="member-meta">@{{ m.username }}{% if m.phone %} · {{ m.phone }}{% endif %}</div>
+          <span class="member-badge {% if not m.is_active %}badge-inactive{% endif %}">
+            {{ m.role_name or 'بدون دور' }}{% if not m.is_active %} — غير نشط{% endif %}
+          </span>
+        </div>
+        <div class="member-actions">
+          <button class="btn-icon" title="صلاحيات" onclick='openUserPerms({{ m.id | tojson }}, {{ (m.full_name or "") | tojson }}, {{ (m.role_perms or "{}") | tojson }})'>🛡️</button>
+          <button class="btn-icon" title="تعديل" onclick='openEditMember({{ m.id | tojson }}, {{ (m.full_name or "") | tojson }}, {{ (m.username or "") | tojson }}, {{ (m.phone or "") | tojson }}, {{ (m.role_id if m.role_id is not none else none) | tojson }}, {{ m.is_active | tojson }})'>✏️</button>
+        </div>
+      </div>
+      {% else %}
+      <div style="text-align:center;color:var(--text-muted);padding:30px">لا يوجد أعضاء بعد</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ═══ عمود الأدوار ═══ -->
+  <div>
+    <div class="section-header">
+      <span class="section-title">🎭 الأدوار</span>
+      <button class="btn btn-primary" onclick="openRoleModal()">+ دور جديد</button>
+    </div>
+    <div id="rolesList">
+      {% for r in roles %}
+      {% set perms = r.permissions | tojson | safe %}
+      <div class="role-card" id="rc_{{r.id}}">
+        <span class="role-icon">🎭</span>
+        <div style="flex:1;min-width:0">
+          <div class="role-name">{{ r.name }}</div>
+          <div class="role-perms" id="rp_{{r.id}}">
+            {% set pj = r.permissions %}
+            {% if '"all": true' in pj or "'all': true" in pj %}
+              كل الصلاحيات
+            {% else %}
+              {% for key, label in perm_labels.items() %}
+                {% if '"' + key + '": true' in pj %}{{ label }}، {% endif %}
+              {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn-icon" onclick='openRoleModal({{ r.id | tojson }}, {{ (r.name or "") | tojson }}, {{ (r.permissions or "{}") | tojson }})'>✏️</button>
+          {% if not r.is_system %}
+          <button class="btn-icon" style="color:#ef4444" onclick="deleteRole({{r.id}})">🗑️</button>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <div style="text-align:center;color:var(--text-muted);padding:30px">لا توجد أدوار بعد</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Modal: إضافة/تعديل عضو ═══ -->
+<div class="modal-backdrop" id="memberModal">
+  <div class="modal">
+    <div class="modal-title" id="memberModalTitle">إضافة عضو جديد</div>
+    <input type="hidden" id="memberEditId" value="">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">الاسم الكامل *</label>
+        <input class="inp" id="mFullName" placeholder="اسم العضو">
+      </div>
+      <div class="form-group">
+        <label class="form-label">رقم الجوال</label>
+        <input class="inp" id="mPhone" placeholder="05XXXXXXXX" dir="ltr">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">اسم المستخدم (للدخول) *</label>
+        <input class="inp" id="mUsername" placeholder="username" dir="ltr">
+      </div>
+      <div class="form-group">
+        <label class="form-label">كلمة المرور *</label>
+        <input class="inp" id="mPassword" type="password" placeholder="6 أحرف على الأقل">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">الدور (الوظيفة)</label>
+      <select class="inp" id="mRoleId">
+        <option value="">— بدون دور (لا صلاحيات) —</option>
+        {% for r in roles %}
+        <option value="{{r.id}}">{{r.name}}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group" id="mActiveGroup" style="display:none">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="mIsActive" checked style="width:16px;height:16px;accent-color:#3b82f6">
+        <span style="font-size:.88rem">الحساب نشط</span>
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeMemberModal()">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveMember()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Modal: صلاحيات مستخدم ═══ -->
+<div class="modal-backdrop" id="userPermsModal">
+  <div class="modal">
+    <div class="modal-title">🛡️ صلاحيات: <span id="userPermsName"></span></div>
+    <input type="hidden" id="userPermsId">
+    <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:14px">
+      اختر الصفحات والميزات التي يمكن لهذا الشخص الوصول إليها
+    </p>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:14px">
+      <input type="checkbox" id="permAll" onchange="toggleAll(this)" style="width:16px;height:16px;accent-color:#f59e0b">
+      <span style="font-weight:700;color:#f59e0b">👑 كل الصلاحيات (مدير)</span>
+    </label>
+    <hr style="border-color:var(--border);margin:10px 0">
+    <div class="perm-grid" id="permGrid">
+      {% for key, label in perm_labels.items() %}
+      <label class="perm-item">
+        <input type="checkbox" id="perm_{{key}}" value="{{key}}">
+        <span>{{label}}</span>
+      </label>
+      {% endfor %}
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeUserPermsModal()">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveUserPerms()">💾 حفظ الصلاحيات</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Modal: إنشاء/تعديل دور ═══ -->
+<div class="modal-backdrop" id="roleModal">
+  <div class="modal">
+    <div class="modal-title" id="roleModalTitle">دور جديد</div>
+    <input type="hidden" id="roleEditId" value="">
+    <div class="form-group">
+      <label class="form-label">اسم الدور (مثال: كاشير، محاسب، مندوب) *</label>
+      <input class="inp" id="roleName" placeholder="اسم الدور">
+    </div>
+    <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:10px">الصلاحيات:</p>
+    <div class="perm-grid" id="rolePermGrid">
+      {% for key, label in perm_labels.items() %}
+      <label class="perm-item">
+        <input type="checkbox" id="rperm_{{key}}" value="{{key}}">
+        <span>{{label}}</span>
+      </label>
+      {% endfor %}
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeRoleModal()">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveRole()">💾 حفظ الدور</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PERM_KEYS = {{ perm_labels.keys() | list | tojson }};
+
+function parsePerms(value) {
+  if (!value) return {};
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return {};
+    }
+  }
+  return value;
+}
+
+// ─── Member Modal ─────────────────────────────────────────────────────────────
+function openMemberModal() {
+  document.getElementById('memberModalTitle').textContent = 'إضافة عضو جديد';
+  document.getElementById('memberEditId').value = '';
+  document.getElementById('mFullName').value = '';
+  document.getElementById('mPhone').value = '';
+  document.getElementById('mUsername').value = '';
+  document.getElementById('mPassword').value = '';
+  document.getElementById('mRoleId').value = '';
+  document.getElementById('mActiveGroup').style.display = 'none';
+  document.getElementById('mUsername').disabled = false;
+  document.getElementById('memberModal').classList.add('open');
+}
+
+function openEditMember(id, name, username, phone, roleId, isActive) {
+  document.getElementById('memberModalTitle').textContent = 'تعديل بيانات العضو';
+  document.getElementById('memberEditId').value = id;
+  document.getElementById('mFullName').value = name;
+  document.getElementById('mPhone').value = phone;
+  document.getElementById('mUsername').value = username;
+  document.getElementById('mUsername').disabled = true;
+  document.getElementById('mPassword').value = '';
+  document.getElementById('mRoleId').value = roleId || '';
+  document.getElementById('mIsActive').checked = !!isActive;
+  document.getElementById('mActiveGroup').style.display = 'block';
+  document.getElementById('memberModal').classList.add('open');
+}
+
+function closeMemberModal() {
+  document.getElementById('memberModal').classList.remove('open');
+}
+
+async function saveMember() {
+  const editId   = document.getElementById('memberEditId').value;
+  const fullName = document.getElementById('mFullName').value.trim();
+  const phone    = document.getElementById('mPhone').value.trim();
+  const username = document.getElementById('mUsername').value.trim();
+  const password = document.getElementById('mPassword').value.trim();
+  const roleId   = document.getElementById('mRoleId').value || null;
+  const isActive = document.getElementById('mIsActive').checked;
+
+  if (!fullName) { alert('الاسم مطلوب'); return; }
+  if (!editId && !username) { alert('اسم المستخدم مطلوب'); return; }
+  if (!editId && !password) { alert('كلمة المرور مطلوبة'); return; }
+
+  let url  = '/api/v1/team';
+  let meth = 'POST';
+  let body = { full_name: fullName, phone, username, password, role_id: roleId ? +roleId : null };
+
+  if (editId) {
+    url  = '/api/v1/team/' + editId;
+    meth = 'PUT';
+    body = { full_name: fullName, phone, role_id: roleId ? +roleId : null,
+             is_active: isActive, password: password || undefined };
+  }
+
+  const res = await fetch(url, {
+    method: meth,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) { alert(data.error || 'حدث خطأ'); return; }
+  closeMemberModal();
+  location.reload();
+}
+
+// ─── User Perms Modal ─────────────────────────────────────────────────────────
+function openUserPerms(id, name, perms) {
+  perms = parsePerms(perms);
+  document.getElementById('userPermsId').value = id;
+  document.getElementById('userPermsName').textContent = name;
+  // إعادة ضبط
+  document.getElementById('permAll').checked = !!(perms.all);
+  PERM_KEYS.forEach(k => {
+    const el = document.getElementById('perm_' + k);
+    if (el) el.checked = !!(perms[k]) || !!(perms.all);
+  });
+  toggleAll(document.getElementById('permAll'), true);
+  document.getElementById('userPermsModal').classList.add('open');
+}
+
+function closeUserPermsModal() {
+  document.getElementById('userPermsModal').classList.remove('open');
+}
+
+function toggleAll(el, init) {
+  const checked = el.checked;
+  PERM_KEYS.forEach(k => {
+    const inp = document.getElementById('perm_' + k);
+    if (inp) { inp.checked = checked; inp.disabled = checked && !init; }
+  });
+}
+
+async function saveUserPerms() {
+  const id   = document.getElementById('userPermsId').value;
+  const all  = document.getElementById('permAll').checked;
+  const body = all ? { all: true } : {};
+  if (!all) {
+    PERM_KEYS.forEach(k => {
+      const el = document.getElementById('perm_' + k);
+      if (el) body[k] = el.checked;
+    });
+  }
+  const res  = await fetch('/api/v1/team/' + id + '/permissions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) { alert(data.error || 'حدث خطأ'); return; }
+  closeUserPermsModal();
+  location.reload();
+}
+
+// ─── Role Modal ───────────────────────────────────────────────────────────────
+function openRoleModal(id, name, perms) {
+  perms = parsePerms(perms);
+  document.getElementById('roleEditId').value = id || '';
+  document.getElementById('roleModalTitle').textContent = id ? 'تعديل الدور' : 'دور جديد';
+  document.getElementById('roleName').value = name || '';
+  PERM_KEYS.forEach(k => {
+    const el = document.getElementById('rperm_' + k);
+    if (el) el.checked = perms ? !!(perms[k]) : false;
+  });
+  document.getElementById('roleModal').classList.add('open');
+}
+
+function closeRoleModal() {
+  document.getElementById('roleModal').classList.remove('open');
+}
+
+async function saveRole() {
+  const editId = document.getElementById('roleEditId').value;
+  const name   = document.getElementById('roleName').value.trim();
+  if (!name) { alert('اسم الدور مطلوب'); return; }
+
+  const body = { name };
+  PERM_KEYS.forEach(k => {
+    const el = document.getElementById('rperm_' + k);
+    if (el) body[k] = el.checked;
+  });
+
+  const url  = editId ? '/api/v1/roles/' + editId : '/api/v1/roles';
+  const meth = editId ? 'PUT' : 'POST';
+  const res  = await fetch(url, {
+    method: meth,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) { alert(data.error || 'حدث خطأ'); return; }
+  closeRoleModal();
+  location.reload();
+}
+
+async function deleteRole(id) {
+  if (!confirm('هل تريد حذف هذا الدور؟')) return;
+  const res  = await fetch('/api/v1/roles/' + id, { method: 'DELETE' });
+  const data = await res.json();
+  if (!res.ok || data.error) { alert(data.error || 'حدث خطأ'); return; }
+  document.getElementById('rc_' + id)?.remove();
+}
+
+// إغلاق بالنقر على الخلفية
+['memberModal','userPermsModal','roleModal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+});
+</script>
+{% endblock %}

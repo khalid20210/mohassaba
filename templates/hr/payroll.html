@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}الرواتب والأجور{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50" dir="rtl">
+
+  <!-- Header -->
+  <div class="bg-white border-b shadow-sm px-6 py-4">
+    <div class="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-3">
+      <div class="flex items-center gap-2 text-sm">
+        <a href="/hr/" class="text-gray-400 hover:text-green-600">الموارد البشرية</a> /
+        <h1 class="font-bold text-gray-800">💰 الرواتب والأجور</h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <form method="GET" class="flex items-center gap-2">
+          <label class="text-sm text-gray-500">الشهر:</label>
+          <input type="month" name="month" value="{{ month }}"
+            class="border rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-green-300">
+          <button class="bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-gray-700">عرض</button>
+        </form>
+        <form method="POST" action="/hr/payroll/run">
+          <input type="hidden" name="month" value="{{ month }}">
+          <button class="bg-green-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-green-700 transition font-medium">
+            ▶ تشغيل رواتب {{ month }}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-6xl mx-auto p-6">
+
+    <!-- Summary -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="bg-white rounded-xl shadow p-4 text-center">
+        <div class="text-2xl font-bold text-gray-800">{{ records|length }}</div>
+        <div class="text-gray-400 text-sm">إجمالي الرواتب المُعدّة</div>
+      </div>
+      <div class="bg-green-50 rounded-xl shadow p-4 text-center">
+        <div class="text-2xl font-bold text-green-700">{{ "{:,.2f}".format(total_net) }}</div>
+        <div class="text-gray-400 text-sm">الصافي الكلي (ريال)</div>
+      </div>
+      <div class="bg-yellow-50 rounded-xl shadow p-4 text-center">
+        <div class="text-2xl font-bold text-yellow-600">{{ without_payroll|length }}</div>
+        <div class="text-gray-400 text-sm">موظف بدون راتب هذا الشهر</div>
+      </div>
+    </div>
+
+    <!-- موظفون بدون رواتب -->
+    {% if without_payroll %}
+    <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-5">
+      <h3 class="font-bold text-yellow-700 mb-2">⚠️ هؤلاء الموظفون ليس لهم رواتب هذا الشهر:</h3>
+      <div class="flex flex-wrap gap-2">
+        {% for emp in without_payroll %}
+        <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm">{{ emp.full_name }}</span>
+        {% endfor %}
+      </div>
+      <form method="POST" action="/hr/payroll/run" class="mt-3">
+        <input type="hidden" name="month" value="{{ month }}">
+        <button class="bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-yellow-700">
+          ▶ إعداد رواتبهم الآن
+        </button>
+      </form>
+    </div>
+    {% endif %}
+
+    <!-- Payroll Table -->
+    <div class="bg-white rounded-xl shadow overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b">
+          <tr>
+            <th class="text-right px-4 py-3 text-gray-600">الموظف</th>
+            <th class="text-right px-4 py-3 text-gray-600">القسم</th>
+            <th class="text-right px-4 py-3 text-gray-600">الأساسي</th>
+            <th class="text-right px-4 py-3 text-gray-600">البدلات</th>
+            <th class="text-right px-4 py-3 text-gray-600">تأمينات</th>
+            <th class="text-right px-4 py-3 text-gray-600">سلف</th>
+            <th class="text-right px-4 py-3 text-gray-600">الصافي</th>
+            <th class="text-right px-4 py-3 text-gray-600">الحالة</th>
+            <th class="text-right px-4 py-3 text-gray-600">إجراء</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for r in records %}
+          <tr class="hover:bg-gray-50 transition">
+            <td class="px-4 py-3 font-medium text-gray-800">{{ r.full_name }}</td>
+            <td class="px-4 py-3 text-gray-500 text-xs">{{ r.department or '—' }}</td>
+            <td class="px-4 py-3">{{ "{:,.2f}".format(r.base_salary or 0) }}</td>
+            <td class="px-4 py-3 text-blue-600">{{ "{:,.2f}".format(r.allowances or 0) }}</td>
+            <td class="px-4 py-3 text-red-500">{{ "{:,.2f}".format(r.social_insurance or 0) }}</td>
+            <td class="px-4 py-3 text-red-400">{{ "{:,.2f}".format(r.advance_deduction or 0) }}</td>
+            <td class="px-4 py-3 font-bold text-green-700 text-base">{{ "{:,.2f}".format(r.net_salary or 0) }}</td>
+            <td class="px-4 py-3">
+              <span class="px-2 py-1 rounded-full text-xs
+                {% if r.status=='paid' %}bg-green-100 text-green-700
+                {% else %}bg-yellow-100 text-yellow-700{% endif %}">
+                {{ 'مدفوع' if r.status=='paid' else 'معلق' }}
+              </span>
+            </td>
+            <td class="px-4 py-3">
+              {% if r.status != 'paid' %}
+              <form method="POST" action="/hr/payroll/{{ r.id }}/pay">
+                <input type="hidden" name="back_to" value="/hr/payroll?month={{ month }}">
+                <button class="bg-green-500 text-white px-3 py-1 rounded text-xs hover:bg-green-600 transition">
+                  ✓ دفع
+                </button>
+              </form>
+              {% else %}
+              <span class="text-green-600 text-xs">{{ r.payment_date or '' }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="9" class="text-center py-10 text-gray-400">
+              لا توجد رواتب لشهر {{ month }}.
+              <form method="POST" action="/hr/payroll/run" class="inline-block mr-2">
+                <input type="hidden" name="month" value="{{ month }}">
+                <button class="text-green-600 hover:underline">ابدأ التشغيل ←</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}عقد #{{ contract.id }}{% endblock %}
+{% block page_title %}📄 عقد خدمة #{{ contract.contract_number or contract.id }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <a href="/services/contracts" style="color:#94a3b8;font-size:.85rem;">← عقود الخدمة</a>
+    <p class="page-subtitle" style="margin-top:4px;">{{ contract.contract_type or 'عقد خدمة' }}</p>
+  </div>
+  <div style="display:flex;gap:8px;">
+    {% if contract.status == 'active' %}
+    <button class="btn btn-primary" onclick="document.getElementById('renewModal').classList.add('show')">🔄 تجديد</button>
+    <form method="post" action="/services/contracts/{{ contract.id }}/cancel" onsubmit="return confirm('إلغاء العقد؟')">
+      <button type="submit" class="btn" style="background:#7f1d1d;color:#fca5a5;border:none;">✕ إلغاء</button>
+    </form>
+    {% elif contract.status == 'expired' %}
+    <button class="btn btn-primary" onclick="document.getElementById('renewModal').classList.add('show')">🔄 تجديد</button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- حالة العقد -->
+<div style="margin-bottom:16px;">
+  {% if contract.status=='active' %}
+    <span style="background:#14532d;color:#86efac;padding:6px 18px;border-radius:20px;font-size:.85rem;font-weight:700;">● نشط</span>
+  {% elif contract.status=='expired' %}
+    <span style="background:#7f1d1d;color:#fca5a5;padding:6px 18px;border-radius:20px;font-size:.85rem;font-weight:700;">⚠ منتهٍ</span>
+  {% elif contract.status=='cancelled' %}
+    <span style="background:rgba(255,255,255,.06);color:#64748b;padding:6px 18px;border-radius:20px;font-size:.85rem;font-weight:700;">✕ ملغي</span>
+  {% endif %}
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">📋 بيانات العقد</h3></div>
+    <table class="table">
+      <tr><td style="color:#94a3b8;">رقم العقد</td><td><strong style="color:#93c5fd;">{{ contract.contract_number or '—' }}</strong></td></tr>
+      <tr><td style="color:#94a3b8;">نوع الخدمة</td><td>{{ contract.contract_type or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">معرف العميل</td><td>{{ contract.client_id or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">دورية الفوترة</td><td>{{ contract.billing_frequency or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">تاريخ البدء</td><td>{{ contract.start_date or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">تاريخ الانتهاء</td><td>{{ contract.end_date or '—' }}</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">💰 القيمة المالية</h3></div>
+    <table class="table">
+      <tr><td style="color:#94a3b8;">قيمة العقد</td><td style="color:#22c55e;font-weight:700;font-size:1.2rem;">{{ "{:,.2f}".format(contract.contract_value or 0) }} ر.س</td></tr>
+    </table>
+  </div>
+</div>
+
+{% if contract.description %}
+<div class="card" style="margin-top:16px;">
+  <div class="card-header"><h3 class="card-title">📝 وصف الخدمة</h3></div>
+  <p style="color:#cbd5e1;line-height:1.8;">{{ contract.description }}</p>
+</div>
+{% endif %}
+
+<!-- Modal: تجديد -->
+<div class="modal-overlay" id="renewModal">
+  <div class="modal-box" style="max-width:400px;">
+    <div class="modal-header">
+      <h3 class="modal-title">🔄 تجديد العقد</h3>
+      <button class="modal-close" onclick="document.getElementById('renewModal').classList.remove('show')">✕</button>
+    </div>
+    <form method="post" action="/services/contracts/{{ contract.id }}/renew">
+      <div class="form-group">
+        <label class="form-label">تاريخ انتهاء جديد</label>
+        <input name="new_end_date" type="date" class="form-input" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">القيمة الجديدة (ر.س) — اتركه فارغاً للإبقاء على نفس القيمة</label>
+        <input name="new_value" class="form-input" type="number" step="0.01" placeholder="{{ contract.contract_value or '' }}">
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('renewModal').classList.remove('show')">إلغاء</button>
+        <button type="submit" class="btn btn-primary">🔄 تجديد العقد</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

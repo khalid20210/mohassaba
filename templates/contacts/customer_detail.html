@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}{{ customer.name }}{% endblock %}
+{% block page_title %}👤 {{ customer.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <a href="/contacts/customers" style="color:#94a3b8;font-size:.85rem;">← قائمة العملاء</a>
+    <h1 class="page-title" style="margin-top:4px;">
+      {% if customer.contact_type == 'vip' %}⭐ {% endif %}{{ customer.name }}
+    </h1>
+  </div>
+  <a href="/contacts/customers/{{ customer.id }}/edit" class="btn btn-primary">تعديل</a>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;">
+  <!-- معلومات العميل -->
+  <div>
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">📋 المعلومات</h3></div>
+      <table class="table">
+        <tr><td style="color:#94a3b8;">الرصيد</td>
+            <td><strong style="font-size:1.4rem;color:{% if (customer.balance or 0) > 0 %}#ef4444{% elif (customer.balance or 0) < 0 %}#22c55e{% else %}#94a3b8{% endif %};">
+              {{ "{:,.2f}".format(customer.balance or 0) }} ر.س
+            </strong></td></tr>
+        <tr><td style="color:#94a3b8;">الهاتف</td><td>{{ customer.phone or '—' }}</td></tr>
+        <tr><td style="color:#94a3b8;">البريد</td><td>{{ customer.email or '—' }}</td></tr>
+        <tr><td style="color:#94a3b8;">العنوان</td><td>{{ customer.address or '—' }}</td></tr>
+        <tr><td style="color:#94a3b8;">النوع</td><td>{{ customer.contact_type or '—' }}</td></tr>
+        <tr><td style="color:#94a3b8;">الرقم الضريبي</td><td>{{ customer.tax_number or '—' }}</td></tr>
+      </table>
+    </div>
+
+    <!-- إضافة معاملة -->
+    <div class="card" style="margin-top:16px;">
+      <div class="card-header"><h3 class="card-title">💳 تسجيل معاملة</h3></div>
+      <form action="/contacts/transactions/add" method="post">
+        <input type="hidden" name="contact_id" value="{{ customer.id }}">
+        <select name="transaction_type" class="form-input" style="margin-bottom:8px;">
+          <option value="payment">دفعة من العميل</option>
+          <option value="credit">رصيد دائن (حسم)</option>
+          <option value="debit">رصيد مدين (إضافة دين)</option>
+        </select>
+        <input type="number" name="amount" placeholder="المبلغ (ر.س)" class="form-input" style="margin-bottom:8px;" min="0" step="0.01" required>
+        <input type="text" name="notes" placeholder="ملاحظات" class="form-input" style="margin-bottom:12px;">
+        <button type="submit" class="btn btn-primary" style="width:100%;">تسجيل</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- المعاملات -->
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">📊 سجل المعاملات</h3></div>
+    {% if transactions %}
+    <table class="table">
+      <thead><tr><th>النوع</th><th>المبلغ</th><th>الرصيد بعد</th><th>المرجع</th><th>التاريخ</th></tr></thead>
+      <tbody>
+        {% for t in transactions %}
+        <tr>
+          <td>
+            {% if t.transaction_type == 'payment' %}💚 دفعة
+            {% elif t.transaction_type == 'credit' %}🔵 دائن
+            {% elif t.transaction_type == 'debit' %}🔴 مدين
+            {% else %}{{ t.transaction_type }}{% endif %}
+          </td>
+          <td style="color:{% if t.amount > 0 %}#22c55e{% else %}#ef4444{% endif %};font-weight:600;">
+            {{ "{:,.2f}".format(t.amount or 0) }}
+          </td>
+          <td>{{ "{:,.2f}".format(t.balance_after or 0) }}</td>
+          <td style="color:#64748b;font-size:.82rem;">{{ t.reference or '—' }}</td>
+          <td style="color:#64748b;font-size:.82rem;">{{ t.created_at[:16] if t.created_at else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:#64748b;text-align:center;padding:32px;">لا توجد معاملات مسجلة</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

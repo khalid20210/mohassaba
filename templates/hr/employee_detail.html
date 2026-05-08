@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block title %}ملف الموظف — {{ employee.full_name }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50" dir="rtl">
+  <!-- Header -->
+  <div class="bg-white border-b shadow-sm px-6 py-4">
+    <div class="max-w-5xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2 text-sm text-gray-500">
+        <a href="/hr/" class="hover:text-indigo-600">الموارد البشرية</a> /
+        <a href="/hr/employees" class="hover:text-indigo-600">الموظفون</a> /
+        <span class="text-gray-800 font-semibold">{{ employee.full_name }}</span>
+      </div>
+      <button onclick="document.getElementById('modal-edit').classList.remove('hidden')"
+        class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">
+        ✏️ تعديل
+      </button>
+    </div>
+  </div>
+
+  <div class="max-w-5xl mx-auto p-6 space-y-6">
+
+    <!-- Profile Card -->
+    <div class="bg-white rounded-xl shadow p-6 flex items-start gap-5">
+      <div class="w-16 h-16 rounded-full bg-indigo-100 text-indigo-700 text-2xl font-bold flex items-center justify-center flex-shrink-0">
+        {{ employee.full_name[0] if employee.full_name else '?' }}
+      </div>
+      <div class="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div>
+          <div class="text-xs text-gray-400">الاسم الكامل</div>
+          <div class="font-semibold text-gray-800">{{ employee.full_name }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-400">رقم الهوية</div>
+          <div class="font-medium">{{ employee.national_id or '—' }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-400">الهاتف</div>
+          <div class="font-medium">{{ employee.phone or '—' }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-400">البريد</div>
+          <div class="font-medium text-sm">{{ employee.email or '—' }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-400">المسمى الوظيفي</div>
+          <div class="font-semibold text-indigo-600">{{ employee.job_title or '—' }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-400">القسم</div>
+          <div class="font-medium">{{ employee.department or '—' }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-400">تاريخ التوظيف</div>
+          <div class="font-medium">{{ employee.hire_date or '—' }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-400">الجنسية</div>
+          <div class="font-medium">{{ employee.nationality or '—' }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-400">الراتب الأساسي</div>
+          <div class="font-bold text-green-600 text-lg">{{ "{:,.2f}".format(employee.base_salary or 0) }} ريال</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-400">البدلات</div>
+          <div class="font-bold text-blue-600">{{ "{:,.2f}".format(employee.allowances or 0) }} ريال</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-400">IBAN</div>
+          <div class="font-medium text-sm">{{ employee.bank_account or '—' }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-400">البنك</div>
+          <div class="font-medium">{{ employee.bank_name or '—' }}</div>
+        </div>
+      </div>
+      <span class="px-3 py-1 rounded-full text-sm font-medium
+        {% if employee.status=='active' %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-500{% endif %}">
+        {{ 'نشط' if employee.status=='active' else 'غير نشط' }}
+      </span>
+    </div>
+
+    <!-- Payroll History -->
+    <div class="bg-white rounded-xl shadow p-5">
+      <h2 class="font-bold text-gray-700 text-base mb-4">💸 سجل الرواتب (آخر 24 شهر)</h2>
+      {% if payroll_history %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 border-b">
+            <tr>
+              <th class="text-right px-3 py-2">الشهر</th>
+              <th class="text-right px-3 py-2">الأساسي</th>
+              <th class="text-right px-3 py-2">البدلات</th>
+              <th class="text-right px-3 py-2">الاستقطاعات</th>
+              <th class="text-right px-3 py-2">الصافي</th>
+              <th class="text-right px-3 py-2">الحالة</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for p in payroll_history %}
+            <tr class="hover:bg-gray-50">
+              <td class="px-3 py-2 font-medium">{{ p.period_month }}</td>
+              <td class="px-3 py-2">{{ "{:,.2f}".format(p.base_salary or 0) }}</td>
+              <td class="px-3 py-2 text-blue-600">{{ "{:,.2f}".format(p.allowances or 0) }}</td>
+              <td class="px-3 py-2 text-red-500">
+                {{ "{:,.2f}".format((p.social_insurance or 0)+(p.advance_deduction or 0)) }}
+              </td>
+              <td class="px-3 py-2 font-bold text-green-700">{{ "{:,.2f}".format(p.net_salary or 0) }}</td>
+              <td class="px-3 py-2">
+                <span class="px-2 py-0.5 rounded-full text-xs
+                  {% if p.status=='paid' %}bg-green-100 text-green-700{% else %}bg-yellow-100 text-yellow-700{% endif %}">
+                  {{ 'مدفوع' if p.status=='paid' else 'معلق' }}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-gray-400 text-center py-4">لا يوجد سجل رواتب بعد</p>
+      {% endif %}
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <!-- Leaves -->
+      <div class="bg-white rounded-xl shadow p-5">
+        <h2 class="font-bold text-gray-700 text-base mb-3">🏖️ الإجازات</h2>
+        {% if leaves %}
+        <div class="space-y-2">
+          {% for l in leaves %}
+          <div class="flex items-center justify-between text-sm border-b pb-2">
+            <span>{{ l.leave_type }} | {{ l.start_date }} → {{ l.end_date }}</span>
+            <span class="px-2 py-0.5 rounded-full text-xs
+              {% if l.status=='approved' %}bg-green-100 text-green-700
+              {% elif l.status=='rejected' %}bg-red-100 text-red-700
+              {% else %}bg-yellow-100 text-yellow-700{% endif %}">
+              {{ {'approved':'موافق','rejected':'مرفوض','pending':'قيد الانتظار'}.get(l.status, l.status) }}
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-400 text-sm text-center py-3">لا توجد إجازات</p>
+        {% endif %}
+      </div>
+
+      <!-- Advances -->
+      <div class="bg-white rounded-xl shadow p-5">
+        <h2 class="font-bold text-gray-700 text-base mb-3">💳 السلف</h2>
+        {% if advances %}
+        <div class="space-y-2">
+          {% for a in advances %}
+          <div class="flex items-center justify-between text-sm border-b pb-2">
+            <span>{{ "{:,.2f}".format(a.amount or 0) }} ريال — {{ a.advance_date or '' }}</span>
+            <span class="px-2 py-0.5 rounded-full text-xs
+              {% if a.status=='active' %}bg-yellow-100 text-yellow-700
+              {% else %}bg-green-100 text-green-700{% endif %}">
+              {{ 'نشطة' if a.status=='active' else 'مسددة' }}
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-400 text-sm text-center py-3">لا توجد سلف</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal تعديل الموظف -->
+<div id="modal-edit" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center" dir="rtl">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-screen overflow-y-auto">
+    <div class="flex items-center justify-between p-5 border-b">
+      <h2 class="font-bold text-lg text-gray-800">✏️ تعديل بيانات الموظف</h2>
+      <button onclick="document.getElementById('modal-edit').classList.add('hidden')"
+        class="text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
+    </div>
+    <form method="POST" action="/hr/employees/{{ employee.id }}/edit" class="p-5 grid grid-cols-2 gap-4">
+      <div class="col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1">الاسم الكامل *</label>
+        <input name="full_name" value="{{ employee.full_name }}" required class="w-full border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">رقم الهوية</label>
+        <input name="national_id" value="{{ employee.national_id or '' }}" class="w-full border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">الهاتف</label>
+        <input name="phone" value="{{ employee.phone or '' }}" class="w-full border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">البريد</label>
+        <input name="email" value="{{ employee.email or '' }}" type="email" class="w-full border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">الجنسية</label>
+        <input name="nationality" value="{{ employee.nationality or 'سعودي' }}" class="w-full border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">المسمى الوظيفي</label>
+        <input name="job_title" value="{{ employee.job_title or '' }}" class="w-full border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">القسم</label>
+        <input name="department" value="{{ employee.department or '' }}" class="w-full border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">الراتب الأساسي</label>
+        <input name="base_salary" type="number" step="0.01" value="{{ employee.base_salary or 0 }}" class="w-full border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">البدلات</label>
+        <input name="allowances" type="number" step="0.01" value="{{ employee.allowances or 0 }}" class="w-full border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">الحالة</label>
+        <select name="status" class="w-full border rounded-lg px-3 py-2 text-sm">
+          <option value="active" {{ 'selected' if employee.status=='active' }}>نشط</option>
+          <option value="inactive" {{ 'selected' if employee.status=='inactive' }}>غير نشط</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">IBAN</label>
+        <input name="bank_account" value="{{ employee.bank_account or '' }}" class="w-full border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">البنك</label>
+        <input name="bank_name" value="{{ employee.bank_name or '' }}" class="w-full border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div class="col-span-2 flex gap-3 justify-end pt-2">
+        <button type="button" onclick="document.getElementById('modal-edit').classList.add('hidden')"
+          class="px-5 py-2 border rounded-lg text-gray-600 hover:bg-gray-50">إلغاء</button>
+        <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 font-medium">
+          ✓ حفظ التعديلات
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

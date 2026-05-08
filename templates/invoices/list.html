@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block title %}الفواتير{% endblock %}
+
+{% block head %}
+<style>
+  .inv-stats { display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1.5rem; }
+  .inv-stat  { background:#fff; border:1px solid #e2e8f0; border-radius:.75rem;
+               padding:1rem 1.25rem; flex:1; min-width:180px; }
+  .inv-stat .val { font-size:1.5rem; font-weight:700; color:#1e40af; }
+  .inv-stat .lbl { font-size:.82rem; color:#64748b; margin-top:.25rem; }
+
+  .filter-bar { background:#fff; border:1px solid #e2e8f0; border-radius:.75rem;
+                padding:1rem 1.25rem; margin-bottom:1rem; }
+  .filter-bar form { display:flex; flex-wrap:wrap; gap:.6rem; align-items:flex-end; }
+  .filter-bar .fgroup { display:flex; flex-direction:column; gap:.3rem; }
+  .filter-bar label  { font-size:.78rem; color:#475569; font-weight:600; }
+  .filter-bar input, .filter-bar select {
+    border:1px solid #d1d5db; border-radius:.5rem; padding:.4rem .7rem;
+    font-size:.88rem; outline:none; min-width:130px; }
+  .filter-bar input:focus, .filter-bar select:focus { border-color:#3b82f6; }
+
+  .table-wrap { background:#fff; border:1px solid #e2e8f0; border-radius:.75rem;
+                overflow:auto; }
+  table { width:100%; border-collapse:collapse; font-size:.88rem; }
+  th    { background:#f8fafc; color:#374151; font-weight:700; padding:.75rem 1rem;
+          text-align:right; border-bottom:2px solid #e5e7eb; }
+  td    { padding:.7rem 1rem; border-bottom:1px solid #f1f5f9; color:#374151; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:#f8fafc; }
+
+  .badge { display:inline-block; padding:.2rem .6rem; border-radius:.9rem; font-size:.77rem; font-weight:600; }
+  .badge-paid      { background:#dcfce7; color:#166534; }
+  .badge-pending   { background:#fef9c3; color:#854d0e; }
+  .badge-draft     { background:#f1f5f9; color:#475569; }
+  .badge-cancelled { background:#fee2e2; color:#991b1b; }
+  .badge-partial   { background:#fde68a; color:#92400e; }
+
+  .badge-type-sale     { background:#dbeafe; color:#1e40af; }
+  .badge-type-purchase { background:#f3e8ff; color:#6b21a8; }
+  .badge-type-table    { background:#d1fae5; color:#065f46; }
+  .badge-type-return   { background:#ffe4e6; color:#be123c; }
+
+  .actions-cell { display:flex; gap:.4rem; }
+  .btn-sm { padding:.3rem .7rem; border-radius:.5rem; font-size:.8rem; cursor:pointer;
+            border:1px solid transparent; text-decoration:none; display:inline-block; }
+  .btn-view   { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+  .btn-paid   { background:#f0fdf4; color:#15803d; border-color:#bbf7d0; }
+  .btn-cancel { background:#fff1f2; color:#be123c; border-color:#fecdd3; }
+
+  .pagination { display:flex; gap:.4rem; justify-content:center; margin-top:1rem; }
+  .pagination a, .pagination span {
+    padding:.4rem .75rem; border:1px solid #e5e7eb; border-radius:.5rem;
+    font-size:.85rem; color:#374151; text-decoration:none; }
+  .pagination .active { background:#3b82f6; color:#fff; border-color:#3b82f6; }
+  .pagination a:hover { background:#f1f5f9; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
+  <div>
+    <h1 style="margin:0; font-size:1.5rem; font-weight:700; color:#1e293b;">الفواتير</h1>
+    <p style="margin:.25rem 0 0; color:#64748b; font-size:.88rem;">
+      إدارة شاملة لجميع الفواتير (مبيعات + مشتريات)
+    </p>
+  </div>
+  <div style="margin-right:auto; display:flex; gap:.5rem; flex-wrap:wrap;">
+    <a href="{{ url_for('invoices.new_invoice') }}" class="btn-sm" style="background:#16a34a;color:#fff;border-color:#16a34a;padding:.55rem .95rem;">
+      + إصدار فاتورة جديدة
+    </a>
+    {% if can_manage_cancel_requests %}
+    <a href="{{ url_for('invoices.pending_cancel_requests_page') }}" class="btn-sm" style="background:#7f1d1d;color:#fee2e2;border-color:#fecaca;padding:.55rem .95rem;">
+      🚨 طلبات الإلغاء المعلقة
+    </a>
+    {% endif %}
+    <a href="{{ url_for('core.settings') }}" class="btn-sm" style="background:#eef2ff;color:#3730a3;border-color:#c7d2fe;padding:.55rem .95rem;">
+      ⚙️ إعدادات المنشأة (الشعار/الضريبي)
+    </a>
+  </div>
+</div>
+
+<!-- إحصائيات سريعة -->
+<div class="inv-stats">
+  <div class="inv-stat">
+    <div class="val">{{ stats.total_count | default(0) }}</div>
+    <div class="lbl">إجمالي الفواتير</div>
+  </div>
+  <div class="inv-stat">
+    <div class="val" style="color:#15803d;">{{ "%.2f"|format(stats.paid_total|default(0)|float) }}</div>
+    <div class="lbl">المبالغ المحصّلة</div>
+  </div>
+  <div class="inv-stat">
+    <div class="val" style="color:#b45309;">{{ "%.2f"|format(stats.pending_total|default(0)|float) }}</div>
+    <div class="lbl">مستحقة التحصيل</div>
+  </div>
+  <div class="inv-stat">
+    <div class="val" style="color:#991b1b;">{{ stats.cancelled_count | default(0) }}</div>
+    <div class="lbl">ملغية</div>
+  </div>
+</div>
+
+<!-- فلاتر البحث -->
+<div class="filter-bar">
+  <form method="get" action="{{ url_for('invoices.list_invoices') }}">
+    <div class="fgroup">
+      <label>نوع الفاتورة</label>
+      <select name="type">
+        <option value="">الكل</option>
+        <option value="sale"     {% if filter_type=='sale'     %}selected{% endif %}>مبيعات</option>
+        <option value="purchase" {% if filter_type=='purchase' %}selected{% endif %}>مشتريات</option>
+        <option value="table"    {% if filter_type=='table'    %}selected{% endif %}>طاولة</option>
+        <option value="return"   {% if filter_type=='return'   %}selected{% endif %}>مرتجعات</option>
+      </select>
+    </div>
+    <div class="fgroup">
+      <label>الحالة</label>
+      <select name="status">
+        <option value="">الكل</option>
+        <option value="draft"     {% if filter_status=='draft'     %}selected{% endif %}>مسودة</option>
+        <option value="pending"   {% if filter_status=='pending'   %}selected{% endif %}>معلقة</option>
+        <option value="paid"      {% if filter_status=='paid'      %}selected{% endif %}>مدفوعة</option>
+        <option value="partial"   {% if filter_status=='partial'   %}selected{% endif %}>جزئي</option>
+        <option value="cancelled" {% if filter_status=='cancelled' %}selected{% endif %}>ملغية</option>
+      </select>
+    </div>
+    <div class="fgroup">
+      <label>من تاريخ</label>
+      <input type="date" name="from" value="{{ filter_from }}">
+    </div>
+    <div class="fgroup">
+      <label>إلى تاريخ</label>
+      <input type="date" name="to" value="{{ filter_to }}">
+    </div>
+    <div class="fgroup">
+      <label>بحث (رقم / عميل)</label>
+      <input type="text" name="q" value="{{ filter_q }}" placeholder="ابحث..." maxlength="100">
+    </div>
+    <button type="submit" class="btn-sm" style="background:#3b82f6;color:#fff;border-color:#3b82f6;padding:.5rem 1rem;">
+      🔍 بحث
+    </button>
+    {% if filter_type or filter_status or filter_from or filter_to or filter_q %}
+    <a href="{{ url_for('invoices.list_invoices') }}" class="btn-sm" style="background:#f1f5f9;">مسح</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- جدول الفواتير -->
+<div class="table-wrap">
+  {% if invoices %}
+  <table>
+    <thead>
+      <tr>
+        <th>رقم الفاتورة</th>
+        <th>النوع</th>
+        <th>التاريخ</th>
+        <th>الطرف</th>
+        <th>المجموع</th>
+        <th>الضريبة</th>
+        <th>الحالة</th>
+        <th>الإجراءات</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for inv in invoices %}
+      <tr>
+        <td style="font-weight:600; font-family:monospace;">{{ inv.invoice_number }}</td>
+        <td>
+          {% set type_labels = {'sale':'مبيعات','purchase':'مشتريات','table':'طاولة','return':'مرتجع'} %}
+          <span class="badge badge-type-{{ inv.invoice_type }}">
+            {{ type_labels.get(inv.invoice_type, inv.invoice_type) }}
+          </span>
+        </td>
+        <td>{{ inv.invoice_date[:10] if inv.invoice_date else '—' }}</td>
+        <td>{{ inv.party_name or '—' }}</td>
+        <td style="font-weight:600;">{{ "%.2f"|format(inv.total|float) }}</td>
+        <td>{{ "%.2f"|format(inv.tax_amount|float) }}</td>
+        <td>
+          {% set status_labels = {'paid':'مدفوعة','pending':'معلقة','draft':'مسودة','cancelled':'ملغية','partial':'جزئي'} %}
+          <span class="badge badge-{{ inv.status }}">
+            {{ status_labels.get(inv.status, inv.status) }}
+          </span>
+        </td>
+        <td>
+          <div class="actions-cell">
+            <a href="{{ url_for('invoices.view_invoice', inv_id=inv.id) }}" class="btn-sm btn-view">عرض</a>
+            {% if inv.status not in ('paid','cancelled') %}
+                <button onclick='markPaid({{ inv.id }}, {{ inv.invoice_number | tojson }})'
+                    class="btn-sm btn-paid">دفع</button>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="text-align:center; padding:3rem; color:#94a3b8;">
+    <div style="font-size:2.5rem; margin-bottom:.5rem;">📄</div>
+    <p>لا توجد فواتير تطابق معايير البحث</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ترقيم الصفحات -->
+{% if total_pages > 1 %}
+<div class="pagination">
+  {% if page > 1 %}
+  <a href="{{ url_for('invoices.list_invoices', page=page-1, type=filter_type, status=filter_status, from=filter_from, to=filter_to, q=filter_q) }}">‹ السابق</a>
+  {% endif %}
+  {% for p in range([1, page-2]|max, [total_pages+1, page+3]|min) %}
+  <{% if p == page %}span class="active"{% else %}a href="{{ url_for('invoices.list_invoices', page=p, type=filter_type, status=filter_status, from=filter_from, to=filter_to, q=filter_q) }}"{% endif %}>
+    {{ p }}
+  </{% if p == page %}span{% else %}a{% endif %}>
+  {% endfor %}
+  {% if page < total_pages %}
+  <a href="{{ url_for('invoices.list_invoices', page=page+1, type=filter_type, status=filter_status, from=filter_from, to=filter_to, q=filter_q) }}">التالي ›</a>
+  {% endif %}
+</div>
+{% endif %}
+
+<p style="text-align:center; color:#94a3b8; font-size:.82rem; margin-top:.5rem;">
+  إجمالي النتائج: {{ total }} فاتورة
+</p>
+
+<script>
+function markPaid(invId, invNumber) {
+  if (!confirm(`هل تريد تحديد الفاتورة "${invNumber}" كمدفوعة؟`)) return;
+  fetch(`/invoices/${invId}/mark-paid`, {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': '{{ csrf_token }}' }
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) {
+      alert(`تم تحديث الفاتورة ${d.invoice_number} بنجاح`);
+      location.reload();
+    } else {
+      alert(d.error || 'حدث خطأ');
+    }
+  });
+}
+</script>
+{% endblock %}

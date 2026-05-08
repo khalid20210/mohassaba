@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}طلبات إلغاء الفواتير{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+  <h1 style="margin:0;font-size:1.25rem;">طلبات إلغاء الفواتير المدفوعة (قيد المراجعة)</h1>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <a href="{{ url_for('invoices.cancel_requests_daily_report_page') }}" style="text-decoration:none;padding:.5rem .9rem;border:1px solid #c7d2fe;border-radius:.5rem;color:#3730a3;background:#eef2ff;">📈 التقرير اليومي</a>
+    <a href="{{ url_for('core.dashboard') }}" style="text-decoration:none;padding:.5rem .9rem;border:1px solid #d1d5db;border-radius:.5rem;color:#111827;background:#fff;">العودة للوحة التحكم</a>
+  </div>
+</div>
+
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;padding:.9rem;margin-bottom:12px;">
+  <form method="GET" style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;">
+    <div>
+      <label style="display:block;font-size:.78rem;color:#6b7280;margin-bottom:4px;">بحث</label>
+      <input name="q" value="{{ filter_q or '' }}" placeholder="رقم فاتورة / سبب / مرجع"
+             style="padding:.45rem .55rem;border:1px solid #d1d5db;border-radius:.45rem;min-width:220px;">
+    </div>
+    <div>
+      <label style="display:block;font-size:.78rem;color:#6b7280;margin-bottom:4px;">الأولوية</label>
+      <select name="priority" style="padding:.45rem .55rem;border:1px solid #d1d5db;border-radius:.45rem;min-width:120px;">
+        <option value="" {% if not filter_priority %}selected{% endif %}>الكل</option>
+        <option value="critical" {% if filter_priority=='critical' %}selected{% endif %}>حرج</option>
+        <option value="high" {% if filter_priority=='high' %}selected{% endif %}>مرتفع</option>
+        <option value="normal" {% if filter_priority=='normal' %}selected{% endif %}>عادي</option>
+      </select>
+    </div>
+    <div>
+      <label style="display:block;font-size:.78rem;color:#6b7280;margin-bottom:4px;">حالة SLA</label>
+      <select name="sla_status" style="padding:.45rem .55rem;border:1px solid #d1d5db;border-radius:.45rem;min-width:130px;">
+        <option value="" {% if not filter_sla_status %}selected{% endif %}>الكل</option>
+        <option value="breached" {% if filter_sla_status=='breached' %}selected{% endif %}>متجاوز</option>
+        <option value="warning" {% if filter_sla_status=='warning' %}selected{% endif %}>تحذير</option>
+        <option value="on_track" {% if filter_sla_status=='on_track' %}selected{% endif %}>ضمن الهدف</option>
+      </select>
+    </div>
+    <div>
+      <label style="display:block;font-size:.78rem;color:#6b7280;margin-bottom:4px;">الطالب</label>
+      <select name="requester" style="padding:.45rem .55rem;border:1px solid #d1d5db;border-radius:.45rem;min-width:150px;">
+        <option value="" {% if not filter_requester %}selected{% endif %}>الكل</option>
+        <option value="me" {% if filter_requester=='me' %}selected{% endif %}>طلباتي</option>
+        {% for u in requesters %}
+        <option value="{{ u.id }}" {% if filter_requester==(u.id|string) %}selected{% endif %}>{{ u.full_name }} ({{ u.req_count }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label style="display:block;font-size:.78rem;color:#6b7280;margin-bottom:4px;">حد أدنى للقيمة</label>
+      <input name="min_total" value="{{ filter_min_total or '' }}" placeholder="0"
+             style="padding:.45rem .55rem;border:1px solid #d1d5db;border-radius:.45rem;width:120px;">
+    </div>
+    <button type="submit" style="padding:.5rem .85rem;border:0;border-radius:.5rem;background:#2563eb;color:#fff;cursor:pointer;">تطبيق</button>
+    <a href="{{ url_for('invoices.pending_cancel_requests_page') }}" style="padding:.48rem .85rem;border:1px solid #d1d5db;border-radius:.5rem;color:#374151;background:#fff;text-decoration:none;">إعادة ضبط</a>
+  </form>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+    <span style="padding:.25rem .55rem;border-radius:999px;background:#fef2f2;color:#991b1b;font-size:.78rem;">حرج: {{ summary.critical or 0 }}</span>
+    <span style="padding:.25rem .55rem;border-radius:999px;background:#fff7ed;color:#9a3412;font-size:.78rem;">مرتفع: {{ summary.high or 0 }}</span>
+    <span style="padding:.25rem .55rem;border-radius:999px;background:#f8fafc;color:#334155;font-size:.78rem;">عادي: {{ summary.normal or 0 }}</span>
+    <span style="padding:.25rem .55rem;border-radius:999px;background:#fee2e2;color:#991b1b;font-size:.78rem;">SLA متجاوز: {{ summary.breached or 0 }}</span>
+    <span style="padding:.25rem .55rem;border-radius:999px;background:#ffedd5;color:#9a3412;font-size:.78rem;">SLA تحذير: {{ summary.warning or 0 }}</span>
+    <span style="padding:.25rem .55rem;border-radius:999px;background:#dcfce7;color:#166534;font-size:.78rem;">SLA ضمن الهدف: {{ summary.on_track or 0 }}</span>
+  </div>
+  <div style="margin-top:8px;font-size:.75rem;color:#64748b;">
+    حدود SLA بالساعات: حرج {{ sla_thresholds.critical }} • مرتفع {{ sla_thresholds.high }} • عادي {{ sla_thresholds.normal }}
+  </div>
+</div>
+
+{% if requests and requests|length > 0 %}
+<form id="bulkReviewForm" method="POST" action="{{ url_for('invoices.bulk_review_cancel_requests') }}" style="background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;padding:.8rem;margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:end;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <div>
+    <label style="display:block;font-size:.78rem;color:#6b7280;margin-bottom:4px;">ملاحظة المراجعة (اختياري)</label>
+    <input name="review_note" maxlength="300" placeholder="تظهر في سجل التدقيق لكل طلب" style="padding:.45rem .55rem;border:1px solid #d1d5db;border-radius:.45rem;min-width:280px;">
+  </div>
+  <button type="submit" name="action" value="approve" style="padding:.5rem .8rem;border:0;border-radius:.5rem;background:#16a34a;color:#fff;cursor:pointer;">اعتماد المحدد</button>
+  <button type="submit" name="action" value="reject" style="padding:.5rem .8rem;border:0;border-radius:.5rem;background:#dc2626;color:#fff;cursor:pointer;">رفض المحدد</button>
+  <span id="selectedCounter" style="font-size:.8rem;color:#475569;">المحدد: 0</span>
+</form>
+
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;overflow:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:.88rem;min-width:1040px;">
+    <thead>
+      <tr>
+        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">
+          <input id="selectAllRequests" type="checkbox" style="width:16px;height:16px;cursor:pointer;">
+        </th>
+        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">الأولوية</th>
+        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">SLA</th>
+        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">عمر الطلب</th>
+        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">الفاتورة</th>
+        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">الإجمالي</th>
+        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">السبب</th>
+        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">مرجع الإثبات</th>
+        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">الطالب</th>
+        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">تاريخ الطلب</th>
+        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">اعتماد</th>
+        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">رفض</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in requests %}
+      <tr>
+        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">
+          <input class="request-checkbox" type="checkbox" name="request_ids" value="{{ r.id }}" form="bulkReviewForm" style="width:16px;height:16px;cursor:pointer;">
+        </td>
+        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">
+          {% if r.priority == 'critical' %}
+            <span style="padding:.2rem .5rem;border-radius:999px;background:#fee2e2;color:#991b1b;font-size:.78rem;font-weight:700;">حرج</span>
+          {% elif r.priority == 'high' %}
+            <span style="padding:.2rem .5rem;border-radius:999px;background:#ffedd5;color:#9a3412;font-size:.78rem;font-weight:700;">مرتفع</span>
+          {% else %}
+            <span style="padding:.2rem .5rem;border-radius:999px;background:#f1f5f9;color:#334155;font-size:.78rem;font-weight:700;">عادي</span>
+          {% endif %}
+        </td>
+        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">
+          {% if r.sla_status == 'breached' %}
+            <span style="padding:.2rem .5rem;border-radius:999px;background:#fee2e2;color:#991b1b;font-size:.78rem;font-weight:700;">متجاوز</span>
+          {% elif r.sla_status == 'warning' %}
+            <span style="padding:.2rem .5rem;border-radius:999px;background:#ffedd5;color:#9a3412;font-size:.78rem;font-weight:700;">تحذير</span>
+          {% else %}
+            <span style="padding:.2rem .5rem;border-radius:999px;background:#dcfce7;color:#166534;font-size:.78rem;font-weight:700;">ضمن الهدف</span>
+          {% endif %}
+        </td>
+        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">{{ r.age_hours }} ساعة</td>
+        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">
+          <a href="{{ url_for('invoices.view_invoice', inv_id=r.invoice_id) }}" style="color:#1d4ed8;text-decoration:none;font-weight:700;">{{ r.invoice_number }}</a>
+          <div style="color:#6b7280;font-size:.78rem;">{{ r.invoice_date or '—' }} • حالة الفاتورة: {{ r.invoice_status }}</div>
+        </td>
+        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">{{ "%.2f"|format(r.total|float) }}</td>
+        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;max-width:260px;">{{ r.reason }}</td>
+        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">{{ r.evidence_ref or '—' }}</td>
+        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">{{ r.requested_by_name or '—' }}</td>
+        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">{{ r.created_at[:19] if r.created_at else '—' }}</td>
+        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">
+          <form method="POST" action="{{ url_for('invoices.approve_cancel_request', inv_id=r.invoice_id, req_id=r.id) }}" style="display:flex;gap:6px;align-items:center;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input name="review_note" maxlength="180" placeholder="ملاحظة" style="padding:.35rem .45rem;border:1px solid #d1d5db;border-radius:.4rem;width:110px;">
+            <button type="submit" style="padding:.35rem .55rem;border:0;border-radius:.4rem;background:#16a34a;color:#fff;cursor:pointer;">اعتماد</button>
+          </form>
+        </td>
+        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">
+          <form method="POST" action="{{ url_for('invoices.reject_cancel_request', inv_id=r.invoice_id, req_id=r.id) }}" style="display:flex;gap:6px;align-items:center;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input name="review_note" maxlength="180" placeholder="سبب الرفض" style="padding:.35rem .45rem;border:1px solid #d1d5db;border-radius:.4rem;width:110px;">
+            <button type="submit" style="padding:.35rem .55rem;border:0;border-radius:.4rem;background:#dc2626;color:#fff;cursor:pointer;">رفض</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;padding:1rem;color:#374151;">
+  لا توجد طلبات إلغاء معلقة حالياً.
+</div>
+{% endif %}
+
+<script>
+  (function () {
+    const bulkForm = document.getElementById('bulkReviewForm');
+    const master = document.getElementById('selectAllRequests');
+    const boxes = Array.from(document.querySelectorAll('.request-checkbox'));
+    const counter = document.getElementById('selectedCounter');
+
+    function refreshCounter() {
+      const selected = boxes.filter(b => b.checked).length;
+      if (counter) counter.textContent = `المحدد: ${selected}`;
+      if (master) {
+        master.checked = selected > 0 && selected === boxes.length;
+        master.indeterminate = selected > 0 && selected < boxes.length;
+      }
+    }
+
+    if (master) {
+      master.addEventListener('change', () => {
+        boxes.forEach(b => { b.checked = master.checked; });
+        refreshCounter();
+      });
+    }
+    boxes.forEach(b => b.addEventListener('change', refreshCounter));
+
+    if (bulkForm) {
+      bulkForm.addEventListener('submit', (ev) => {
+        const selected = boxes.filter(b => b.checked).length;
+        if (selected <= 0) {
+          ev.preventDefault();
+          alert('يرجى تحديد طلب واحد على الأقل.');
+          return;
+        }
+        const submitter = ev.submitter;
+        const action = submitter ? submitter.value : '';
+        const label = action === 'reject' ? 'رفض' : 'اعتماد';
+        if (!confirm(`تأكيد ${label} ${selected} طلب؟`)) {
+          ev.preventDefault();
+        }
+      });
+    }
+
+    refreshCounter();
+  })();
+</script>
+{% endblock %}

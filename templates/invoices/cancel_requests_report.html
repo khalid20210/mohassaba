@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}تقرير يومي لطلبات الإلغاء{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+  <h1 style="margin:0;font-size:1.25rem;">تقرير يومي — طلبات إلغاء الفواتير</h1>
+  <a href="{{ url_for('invoices.pending_cancel_requests_page') }}" style="text-decoration:none;padding:.5rem .9rem;border:1px solid #d1d5db;border-radius:.5rem;color:#111827;background:#fff;">العودة للطلبات المعلقة</a>
+</div>
+
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;padding:.9rem;margin-bottom:12px;">
+  <form method="GET" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;">
+    <div>
+      <label style="display:block;font-size:.78rem;color:#6b7280;margin-bottom:4px;">تاريخ التقرير</label>
+      <input type="date" name="date" value="{{ selected_date }}" style="padding:.45rem .55rem;border:1px solid #d1d5db;border-radius:.45rem;">
+    </div>
+    <button type="submit" style="padding:.5rem .85rem;border:0;border-radius:.5rem;background:#2563eb;color:#fff;cursor:pointer;">عرض</button>
+  </form>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:12px;">
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:.7rem;padding:.8rem;"><div style="color:#6b7280;font-size:.8rem;">إجمالي الطلبات</div><div style="font-size:1.35rem;font-weight:800;">{{ summary.total_count or 0 }}</div></div>
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:.7rem;padding:.8rem;"><div style="color:#6b7280;font-size:.8rem;">قيد المراجعة</div><div style="font-size:1.35rem;font-weight:800;color:#92400e;">{{ summary.pending_count or 0 }}</div></div>
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:.7rem;padding:.8rem;"><div style="color:#6b7280;font-size:.8rem;">معتمد</div><div style="font-size:1.35rem;font-weight:800;color:#166534;">{{ summary.approved_count or 0 }}</div></div>
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:.7rem;padding:.8rem;"><div style="color:#6b7280;font-size:.8rem;">مرفوض</div><div style="font-size:1.35rem;font-weight:800;color:#991b1b;">{{ summary.rejected_count or 0 }}</div></div>
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:.7rem;padding:.8rem;"><div style="color:#6b7280;font-size:.8rem;">حرج/مرتفع/عادي</div><div style="font-size:1rem;font-weight:700;">{{ summary.critical_count or 0 }} / {{ summary.high_count or 0 }} / {{ summary.normal_count or 0 }}</div></div>
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:.7rem;padding:.8rem;"><div style="color:#6b7280;font-size:.8rem;">SLA متجاوز/تحذير/ضمن الهدف</div><div style="font-size:1rem;font-weight:700;">{{ summary.sla_breached_count or 0 }} / {{ summary.sla_warning_count or 0 }} / {{ summary.sla_on_track_count or 0 }}</div></div>
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:.7rem;padding:.8rem;"><div style="color:#6b7280;font-size:.8rem;">معلّق متجاوز SLA</div><div style="font-size:1.35rem;font-weight:800;color:#991b1b;">{{ summary.pending_sla_breached_count or 0 }}</div></div>
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:.7rem;padding:.8rem;"><div style="color:#6b7280;font-size:.8rem;">متوسط زمن المراجعة (ساعة)</div><div style="font-size:1.2rem;font-weight:800;">{{ "%.2f"|format(summary.avg_review_hours|default(0)|float) }}</div></div>
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:.7rem;padding:.8rem;"><div style="color:#6b7280;font-size:.8rem;">إجمالي القيم</div><div style="font-size:1.2rem;font-weight:800;">{{ "%.2f"|format(summary.total_amount|default(0)|float) }}</div></div>
+</div>
+
+<div style="margin:-2px 0 12px;color:#64748b;font-size:.78rem;">
+  حدود SLA بالساعات: حرج {{ sla_thresholds.critical }} • مرتفع {{ sla_thresholds.high }} • عادي {{ sla_thresholds.normal }}
+</div>
+
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;overflow:auto;margin-bottom:12px;">
+  <div style="padding:.8rem 1rem;border-bottom:1px solid #f1f5f9;font-weight:700;">إنتاجية المراجعين (اليوم)</div>
+  <table style="width:100%;border-collapse:collapse;font-size:.88rem;">
+    <thead><tr>
+      <th style="padding:.65rem;text-align:right;border-bottom:1px solid #e5e7eb;">المراجع</th>
+      <th style="padding:.65rem;text-align:right;border-bottom:1px solid #e5e7eb;">معتمد</th>
+      <th style="padding:.65rem;text-align:right;border-bottom:1px solid #e5e7eb;">مرفوض</th>
+      <th style="padding:.65rem;text-align:right;border-bottom:1px solid #e5e7eb;">الإجمالي</th>
+    </tr></thead>
+    <tbody>
+      {% if reviewer_rows %}
+        {% for r in reviewer_rows %}
+        <tr>
+          <td style="padding:.6rem;border-bottom:1px solid #f1f5f9;">{{ r.reviewer_name }}</td>
+          <td style="padding:.6rem;border-bottom:1px solid #f1f5f9;color:#166534;">{{ r.approved_count }}</td>
+          <td style="padding:.6rem;border-bottom:1px solid #f1f5f9;color:#991b1b;">{{ r.rejected_count }}</td>
+          <td style="padding:.6rem;border-bottom:1px solid #f1f5f9;">{{ r.reviewed_total }}</td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <tr><td colspan="4" style="padding:.8rem;color:#6b7280;">لا توجد مراجعات في هذا اليوم.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;overflow:auto;">
+  <div style="padding:.8rem 1rem;border-bottom:1px solid #f1f5f9;font-weight:700;">أكبر الطلبات بالقيمة</div>
+  <table style="width:100%;border-collapse:collapse;font-size:.88rem;">
+    <thead><tr>
+      <th style="padding:.65rem;text-align:right;border-bottom:1px solid #e5e7eb;">الفاتورة</th>
+      <th style="padding:.65rem;text-align:right;border-bottom:1px solid #e5e7eb;">القيمة</th>
+      <th style="padding:.65rem;text-align:right;border-bottom:1px solid #e5e7eb;">الأولوية</th>
+      <th style="padding:.65rem;text-align:right;border-bottom:1px solid #e5e7eb;">الحالة</th>
+      <th style="padding:.65rem;text-align:right;border-bottom:1px solid #e5e7eb;">الطالب</th>
+      <th style="padding:.65rem;text-align:right;border-bottom:1px solid #e5e7eb;">المراجع</th>
+    </tr></thead>
+    <tbody>
+      {% if top_requests %}
+        {% for r in top_requests %}
+        <tr>
+          <td style="padding:.6rem;border-bottom:1px solid #f1f5f9;"><a href="{{ url_for('invoices.view_invoice', inv_id=r.invoice_id) }}" style="text-decoration:none;color:#1d4ed8;font-weight:700;">{{ r.invoice_number }}</a></td>
+          <td style="padding:.6rem;border-bottom:1px solid #f1f5f9;">{{ "%.2f"|format(r.total|float) }}</td>
+          <td style="padding:.6rem;border-bottom:1px solid #f1f5f9;">{{ r.priority }}</td>
+          <td style="padding:.6rem;border-bottom:1px solid #f1f5f9;">{{ r.status }}</td>
+          <td style="padding:.6rem;border-bottom:1px solid #f1f5f9;">{{ r.requested_by_name }}</td>
+          <td style="padding:.6rem;border-bottom:1px solid #f1f5f9;">{{ r.reviewed_by_name }}</td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <tr><td colspan="6" style="padding:.8rem;color:#6b7280;">لا توجد بيانات لهذا اليوم.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

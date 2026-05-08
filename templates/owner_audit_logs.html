@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}سجل النشاط{% endblock %}
+{% block page_title %}📋 سجل النشاط الكامل{% endblock %}
+
+{% block head %}
+<style>
+.al-wrap{max-width:1200px;margin:0 auto}
+.al-filter{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.al-sel{background:#0b1220;color:#e2e8f0;border:1px solid rgba(148,163,184,.25);border-radius:10px;padding:8px 12px;font-family:inherit;font-size:.83rem}
+.al-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.al-table th{background:#0b1220;color:#93c5fd;padding:10px 12px;text-align:right;border-bottom:2px solid rgba(37,99,235,.3);white-space:nowrap;font-weight:800}
+.al-table td{padding:9px 12px;border-bottom:1px solid rgba(148,163,184,.1);color:#cbd5e1;vertical-align:middle}
+.al-table tr:hover td{background:rgba(37,99,235,.04)}
+.al-badge{background:rgba(37,99,235,.15);color:#93c5fd;border-radius:6px;padding:3px 8px;font-size:.68rem;font-weight:700;white-space:nowrap}
+.al-entity{color:#64748b;font-size:.72rem}
+.al-pager{display:flex;gap:8px;margin-top:16px;justify-content:center;flex-wrap:wrap}
+.al-pager a{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;background:#0f172a;border:1px solid rgba(148,163,184,.2);color:#94a3b8;text-decoration:none;font-size:.82rem;font-weight:700}
+.al-pager a.active{background:#2563eb;color:#fff;border-color:#2563eb}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="al-wrap">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <a href="{{ url_for('owner.owner_dashboard') }}" style="color:#60a5fa;font-size:.83rem;text-decoration:none">← العودة لقمرة القيادة</a>
+    <span style="color:#64748b;font-size:.8rem">{{ total }} سجل</span>
+  </div>
+
+  <div class="al-filter">
+    <form method="GET">
+      <select class="al-sel" name="action" onchange="this.form.submit()">
+        <option value="">كل النشاطات</option>
+        {% for a in actions %}
+          <option value="{{ a }}" {% if a == action_filter %}selected{% endif %}>{{ a | replace('_',' ') }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+
+  <div style="background:#0f172a;border:1px solid rgba(148,163,184,.2);border-radius:14px;overflow:hidden">
+    <table class="al-table">
+      <thead>
+        <tr>
+          <th>الإجراء</th>
+          <th>المستخدم</th>
+          <th>الدور</th>
+          <th>الكيان</th>
+          <th>IP</th>
+          <th>التاريخ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if logs %}
+          {% for log in logs %}
+          <tr>
+            <td><span class="al-badge">{{ log.action | replace('_',' ') }}</span></td>
+            <td>{{ log.actor_name or log.user_full_name or '—' }}</td>
+            <td style="color:#94a3b8;font-size:.75rem">{{ log.actor_role or '—' }}</td>
+            <td>
+              {% if log.entity_type %}
+                <span class="al-entity">{{ log.entity_type }}</span>
+                {% if log.entity_id %} <span style="color:#64748b">#{{ log.entity_id }}</span>{% endif %}
+              {% else %}—{% endif %}
+            </td>
+            <td style="color:#475569;font-size:.72rem;font-family:monospace">{{ log.ip_address or '—' }}</td>
+            <td style="color:#64748b;font-size:.73rem;white-space:nowrap">{{ log.created_at[:16] if log.created_at else '—' }}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="6" style="text-align:center;color:#64748b;padding:30px">لا توجد سجلات نشاط حتى الآن</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pages > 1 %}
+  <div class="al-pager">
+    {% for p in range(1, pages+1) %}
+      <a href="?page={{ p }}{% if action_filter %}&action={{ action_filter }}{% endif %}"
+         class="{{ 'active' if p == page else '' }}">{{ p }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

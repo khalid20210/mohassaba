@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}تقرير المبيعات التفصيلي{% endblock %}
+{% block page_title %}تقرير المبيعات التفصيلي{% endblock %}
+
+{% block content %}
+<style>
+  .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .filter-bar { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-bottom:16px; }
+  .filter-group label { display:block; font-size:12px; color:#666; margin-bottom:4px; }
+  .filter-group input, .filter-group select {
+    padding: 7px 10px; border: 1px solid #ddd; border-radius: 6px; font-size:14px; min-width:140px;
+  }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { background:#f5f5f5; padding:10px; text-align:right; font-weight:bold; border-bottom:2px solid #ddd; }
+  td { padding:9px 10px; border-bottom:1px solid #eee; }
+  tr:hover { background:#fafafa; }
+  .stat-box { text-align:center; padding:18px; border-radius:8px; color:white; }
+</style>
+
+<!-- فلاتر البحث -->
+<div class="card">
+  <form method="get" style="display:contents">
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label>من تاريخ</label>
+        <input type="date" name="from" value="{{ date_from }}">
+      </div>
+      <div class="filter-group">
+        <label>إلى تاريخ</label>
+        <input type="date" name="to" value="{{ date_to }}">
+      </div>
+      <div class="filter-group">
+        <label>الصنف (جزئي)</label>
+        <input type="text" name="product" value="{{ product_filter }}" placeholder="اسم المنتج...">
+      </div>
+      <div class="filter-group">
+        <label>الكاشير</label>
+        <select name="cashier">
+          <option value="">— الكل —</option>
+          {% for c in cashiers %}
+          <option value="{{ c.id }}" {% if cashier_filter == c.id|string %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" style="background:#3b82f6;color:white;border:none;padding:8px 20px;border-radius:6px;cursor:pointer;font-size:14px;align-self:flex-end">
+        🔍 بحث
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- بطاقات الإجمالي -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:20px">
+  <div class="stat-box" style="background:linear-gradient(135deg,#3b82f6,#2563eb)">
+    <div style="font-size:11px;opacity:.8">إجمالي الإيرادات</div>
+    <div style="font-size:1.8rem;font-weight:900;margin:6px 0">{{ "{:,.2f}".format(grand_total) }}</div>
+    <div style="font-size:11px;opacity:.8">ريال</div>
+  </div>
+  <div class="stat-box" style="background:linear-gradient(135deg,#10b981,#059669)">
+    <div style="font-size:11px;opacity:.8">عدد أيام البيع</div>
+    <div style="font-size:1.8rem;font-weight:900;margin:6px 0">{{ daily_summary|length }}</div>
+    <div style="font-size:11px;opacity:.8">يوم</div>
+  </div>
+  <div class="stat-box" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed)">
+    <div style="font-size:11px;opacity:.8">سطور المبيعات</div>
+    <div style="font-size:1.8rem;font-weight:900;margin:6px 0">{{ sales_lines|length }}</div>
+    <div style="font-size:11px;opacity:.8">صنف مُباع</div>
+  </div>
+  <div class="stat-box" style="background:linear-gradient(135deg,#f59e0b,#d97706)">
+    <div style="font-size:11px;opacity:.8">متوسط اليومي</div>
+    <div style="font-size:1.8rem;font-weight:900;margin:6px 0">{{ "{:,.0f}".format(grand_total / daily_summary|length) if daily_summary else 0 }}</div>
+    <div style="font-size:11px;opacity:.8">ريال</div>
+  </div>
+</div>
+
+<!-- الأصناف الأكثر مبيعاً -->
+<div class="card">
+  <div style="font-size:17px;font-weight:bold;margin-bottom:14px">🏆 الأصناف الأكثر مبيعاً</div>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>اسم الصنف</th>
+        <th>الكمية المباعة</th>
+        <th>متوسط السعر</th>
+        <th>إجمالي الإيرادات</th>
+        <th>عدد الفواتير</th>
+        <th>النسبة</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in product_summary %}
+      <tr>
+        <td style="color:#999">{{ loop.index }}</td>
+        <td><strong>{{ p.product_name }}</strong></td>
+        <td>{{ "{:,.2f}".format(p.total_qty) }}</td>
+        <td>{{ "{:,.2f}".format(p.avg_price) }} ر.س</td>
+        <td style="color:#059669;font-weight:bold">{{ "{:,.2f}".format(p.total_revenue) }} ر.س</td>
+        <td>{{ p.sale_count }}</td>
+        <td>
+          {% if grand_total > 0 %}
+            {% set pct = (p.total_revenue / grand_total * 100)|round(1) %}
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="background:#e5e7eb;border-radius:4px;height:6px;flex:1;max-width:80px">
+                <div style="background:#3b82f6;height:6px;border-radius:4px;width:{{ [pct, 100]|min }}%"></div>
+              </div>
+              <span style="font-size:12px;color:#666">{{ pct }}%</span>
+            </div>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ملخص يومي -->
+<div class="card">
+  <div style="font-size:17px;font-weight:bold;margin-bottom:14px">📅 ملخص يومي</div>
+  <table>
+    <thead>
+      <tr>
+        <th>التاريخ</th>
+        <th>عدد الفواتير</th>
+        <th>إجمالي الكمية</th>
+        <th>إجمالي الإيرادات</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in daily_summary %}
+      <tr>
+        <td>{{ d.sale_date }}</td>
+        <td>{{ d.invoice_count }}</td>
+        <td>{{ "{:,.2f}".format(d.total_qty) }}</td>
+        <td style="font-weight:bold;color:#059669">{{ "{:,.2f}".format(d.total_revenue) }} ر.س</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" style="text-align:center;color:#999;padding:30px">لا توجد بيانات للفترة المحددة</td></tr>
+      {% endfor %}
+    </tbody>
+    {% if daily_summary %}
+    <tfoot>
+      <tr style="background:#f0fdf4;font-weight:bold">
+        <td colspan="3">الإجمالي</td>
+        <td style="color:#059669">{{ "{:,.2f}".format(grand_total) }} ر.س</td>
+      </tr>
+    </tfoot>
+    {% endif %}
+  </table>
+</div>
+
+<!-- سطور المبيعات التفصيلية -->
+{% if sales_lines %}
+<div class="card">
+  <div style="font-size:17px;font-weight:bold;margin-bottom:14px">📋 تفاصيل سطور المبيعات (أحدث {{ sales_lines|length }} سجل)</div>
+  <table>
+    <thead>
+      <tr>
+        <th>التاريخ</th>
+        <th>رقم الفاتورة</th>
+        <th>المنتج</th>
+        <th>الكمية</th>
+        <th>سعر الوحدة</th>
+        <th>الإجمالي</th>
+        <th>الكاشير</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in sales_lines %}
+      <tr>
+        <td>{{ row.sale_date }}</td>
+        <td>{{ row.invoice_number }}</td>
+        <td>{{ row.product_name }}</td>
+        <td>{{ "{:,.3f}".format(row.qty) }}</td>
+        <td>{{ "{:,.2f}".format(row.unit_price) }}</td>
+        <td style="font-weight:bold">{{ "{:,.2f}".format(row.line_total) }} ر.س</td>
+        <td>{{ row.cashier_name }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}الموازنة التقديرية{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50" dir="rtl">
+  <div class="bg-white border-b shadow-sm px-6 py-4">
+    <div class="max-w-5xl mx-auto flex items-center justify-between flex-wrap gap-3">
+      <div class="flex items-center gap-2 text-sm">
+        <a href="/hr/" class="text-gray-400 hover:text-teal-600">الموارد البشرية</a> /
+        <h1 class="font-bold text-gray-800">📊 الموازنة التقديرية</h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <form method="GET" class="flex items-center gap-2">
+          <input type="number" name="year" value="{{ year }}" min="2020" max="2099"
+            class="border rounded-lg px-3 py-1.5 text-sm w-24">
+          <button class="bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm">عرض</button>
+        </form>
+        <button onclick="document.getElementById('modal-budget').classList.remove('hidden')"
+          class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700 transition">
+          ➕ بند جديد
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-5xl mx-auto p-6">
+
+    <!-- Comparison Cards -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="bg-white rounded-xl shadow p-4 text-center">
+        <div class="text-xl font-bold text-teal-700">{{ "{:,.2f}".format(total_budget) }}</div>
+        <div class="text-gray-400 text-sm">الموازنة المخططة (ريال)</div>
+      </div>
+      <div class="bg-red-50 rounded-xl shadow p-4 text-center">
+        <div class="text-xl font-bold text-red-600">{{ "{:,.2f}".format(actual_expenses) }}</div>
+        <div class="text-gray-400 text-sm">الفعلي المنصرف</div>
+      </div>
+      <div class="{% if variance >= 0 %}bg-green-50{% else %}bg-red-50{% endif %} rounded-xl shadow p-4 text-center">
+        <div class="text-xl font-bold {% if variance >= 0 %}text-green-700{% else %}text-red-700{% endif %}">
+          {{ "{:,.2f}".format(variance) }}
+        </div>
+        <div class="text-gray-400 text-sm">الفارق ({{ 'وفورات' if variance >= 0 else 'تجاوز' }})</div>
+      </div>
+    </div>
+
+    <!-- Budget Items -->
+    <div class="bg-white rounded-xl shadow overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b">
+          <tr>
+            <th class="text-right px-4 py-3 text-gray-600">الفئة</th>
+            <th class="text-right px-4 py-3 text-gray-600">الشهر</th>
+            <th class="text-right px-4 py-3 text-gray-600">البيان</th>
+            <th class="text-right px-4 py-3 text-gray-600">المبلغ المخطط</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for item in budget_items %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-3 font-medium text-teal-700">{{ item.category }}</td>
+            <td class="px-4 py-3 text-gray-500">
+              {{ ['','يناير','فبراير','مارس','إبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'][item.month] if item.month else 'سنوي' }}
+            </td>
+            <td class="px-4 py-3 text-gray-600 text-xs">{{ item.description or '—' }}</td>
+            <td class="px-4 py-3 font-bold text-gray-800">{{ "{:,.2f}".format(item.amount or 0) }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="text-center py-10 text-gray-400">لا توجد بنود موازنة لعام {{ year }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal إضافة بند -->
+<div id="modal-budget" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center" dir="rtl">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+    <div class="flex items-center justify-between p-5 border-b">
+      <h2 class="font-bold text-lg">📊 إضافة بند موازنة</h2>
+      <button onclick="document.getElementById('modal-budget').classList.add('hidden')" class="text-gray-400 text-2xl">&times;</button>
+    </div>
+    <form method="POST" action="/hr/budget/new" class="p-5 space-y-4">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">السنة</label>
+          <input type="number" name="year" value="{{ year }}" class="w-full border rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">الشهر (0 = سنوي)</label>
+          <select name="month" class="w-full border rounded-lg px-3 py-2 text-sm">
+            <option value="0">سنوي</option>
+            {% for m in range(1,13) %}
+            <option value="{{ m }}">{{ ['','يناير','فبراير','مارس','إبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'][m] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">الفئة *</label>
+        <input name="category" required list="cats-list" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="رواتب، إيجار، كهرباء...">
+        <datalist id="cats-list">
+          <option>رواتب وأجور</option>
+          <option>إيجار</option>
+          <option>كهرباء وماء</option>
+          <option>تسويق وإعلان</option>
+          <option>صيانة وإصلاح</option>
+          <option>مشتريات</option>
+          <option>تأمينات</option>
+          <option>مصاريف إدارية</option>
+          <option>تكنولوجيا</option>
+        </datalist>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">البيان</label>
+        <input name="description" class="w-full border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">المبلغ المخطط</label>
+        <input type="number" name="amount" min="0" step="0.01" value="0"
+          class="w-full border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div class="flex gap-3 justify-end pt-2">
+        <button type="button" onclick="document.getElementById('modal-budget').classList.add('hidden')"
+          class="px-4 py-2 border rounded-lg text-gray-600">إلغاء</button>
+        <button type="submit" class="bg-teal-600 text-white px-5 py-2 rounded-lg hover:bg-teal-700 font-medium">
+          ✓ إضافة البند
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

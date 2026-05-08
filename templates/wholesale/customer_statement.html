@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}كشف حساب {{ customer.name }}{% endblock %}
+{% block page_title %}كشف حساب العميل{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+  <div>
+    <h3 style="margin:0;">{{ customer.name }}</h3>
+    <p class="page-subtitle" style="margin:4px 0 0;">{{ customer.phone or '' }}</p>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <a href="/wholesale/reports/aging" class="btn btn-secondary">تقرير الأعمار</a>
+    <a href="/wholesale/orders" class="btn btn-secondary">الطلبات</a>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:10px;margin-bottom:14px;">
+  <div class="card"><div style="color:#94a3b8;font-size:.82rem;">الرصيد الحالي</div><div style="font-weight:800;font-size:1.1rem;color:#f59e0b;">{{ "{:,.2f}".format(current_balance) }}</div></div>
+  <div class="card"><div style="color:#94a3b8;font-size:.82rem;">سقف الائتمان</div><div style="font-weight:800;font-size:1.1rem;">{{ "{:,.2f}".format(credit_limit) }}</div></div>
+  <div class="card"><div style="color:#94a3b8;font-size:.82rem;">المتاح</div><div style="font-weight:800;font-size:1.1rem;color:#22c55e;">{{ "{:,.2f}".format(available_credit) }}</div></div>
+</div>
+
+<div class="card" style="margin-bottom:14px;">
+  <div class="card-header"><h3 class="card-title">فواتير المبيعات</h3></div>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>رقم الفاتورة</th>
+        <th>التاريخ</th>
+        <th>الاستحقاق</th>
+        <th>الحالة</th>
+        <th>الإجمالي</th>
+        <th>المتبقي</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for i in invoices %}
+      <tr>
+        <td>{{ i.invoice_number or ('#' ~ i.id) }}</td>
+        <td>{{ i.invoice_date or '—' }}</td>
+        <td>{{ i.due_date or '—' }}</td>
+        <td>{{ i.status or '—' }}</td>
+        <td>{{ "{:,.2f}".format(i.total or 0) }}</td>
+        <td style="color:#f59e0b;">{{ "{:,.2f}".format(i.outstanding or 0) }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;">لا توجد فواتير لهذا العميل</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3 class="card-title">حركات العميل</h3></div>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>النوع</th>
+        <th>المبلغ</th>
+        <th>قبل</th>
+        <th>بعد</th>
+        <th>مرجع</th>
+        <th>التاريخ</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in transactions %}
+      <tr>
+        <td>{{ t.transaction_type }}</td>
+        <td>{{ "{:,.2f}".format(t.amount or 0) }}</td>
+        <td>{{ "{:,.2f}".format(t.balance_before or 0) }}</td>
+        <td>{{ "{:,.2f}".format(t.balance_after or 0) }}</td>
+        <td>{{ t.reference_type or '' }} {{ t.reference_id or '' }}</td>
+        <td>{{ t.created_at or '' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;">لا توجد حركات بعد</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}الموعد{% endblock %}
+{% block page_title %}📅 تفاصيل الموعد{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <a href="/medical/appointments" style="color:#94a3b8;font-size:.85rem;">← قائمة المواعيد</a>
+    <h1 class="page-title" style="margin-top:4px;">موعد: {{ appointment.patient_name or 'مريض #' ~ appointment.patient_id }}</h1>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+  <!-- تفاصيل الموعد -->
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">📋 معلومات الموعد</h3></div>
+    <table class="table">
+      <tr><td style="color:#94a3b8;">المريض</td><td><strong>{{ appointment.patient_name }}</strong></td></tr>
+      <tr><td style="color:#94a3b8;">الطبيب</td><td>{{ appointment.doctor_name or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">التاريخ</td><td>{{ appointment.appointment_date }}</td></tr>
+      <tr><td style="color:#94a3b8;">الوقت</td><td>{{ appointment.appointment_time or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">نوع الزيارة</td><td>{{ appointment.visit_type or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">الحالة</td>
+          <td>{% if appointment.status == 'scheduled' %}📅 مجدول
+              {% elif appointment.status == 'completed' %}✅ منجز
+              {% elif appointment.status == 'cancelled' %}❌ ملغي
+              {% else %}{{ appointment.status }}{% endif %}</td></tr>
+      {% if appointment.notes %}
+      <tr><td style="color:#94a3b8;">ملاحظات</td><td>{{ appointment.notes }}</td></tr>
+      {% endif %}
+    </table>
+
+    <!-- تحديث الحالة -->
+    <div style="padding:16px 0 0;display:flex;gap:8px;flex-wrap:wrap;">
+      {% if appointment.status == 'scheduled' %}
+      <form action="/medical/appointments/{{ appointment.id }}/update" method="post" style="display:inline;">
+        <input type="hidden" name="status" value="completed">
+        <button type="submit" class="btn btn-primary">✓ إنجاز الموعد</button>
+      </form>
+      <form action="/medical/appointments/{{ appointment.id }}/update" method="post" style="display:inline;">
+        <input type="hidden" name="status" value="cancelled">
+        <button type="submit" class="btn btn-secondary">✕ إلغاء</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- تسجيل الزيارة -->
+  {% if appointment.status == 'scheduled' %}
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">📝 تسجيل الزيارة</h3></div>
+    <form action="/medical/appointments/{{ appointment.id }}/visit" method="post">
+      <div style="margin-bottom:12px;">
+        <label class="form-label">التشخيص</label>
+        <textarea name="diagnosis" class="form-input" rows="3" placeholder="أدخل التشخيص..."></textarea>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label class="form-label">العلاج / الإجراء</label>
+        <textarea name="treatment" class="form-input" rows="3" placeholder="وصف العلاج المقترح..."></textarea>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label class="form-label">ملاحظات</label>
+        <textarea name="notes" class="form-input" rows="2"></textarea>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label class="form-label">تكلفة الزيارة (ر.س)</label>
+        <input type="number" name="visit_cost" class="form-input" min="0" step="0.01" value="0">
+      </div>
+      <button type="submit" class="btn btn-primary">💾 حفظ الزيارة</button>
+    </form>
+  </div>
+  {% endif %}
+
+  {% if visit %}
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">📋 سجل الزيارة</h3></div>
+    <table class="table">
+      <tr><td style="color:#94a3b8;">التشخيص</td><td>{{ visit.diagnosis or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">العلاج</td><td>{{ visit.treatment or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">الملاحظات</td><td>{{ visit.notes or '—' }}</td></tr>
+      <tr><td style="color:#94a3b8;">تكلفة الزيارة</td><td>{{ "{:,.2f}".format(visit.visit_cost or 0) }} ر.س</td></tr>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

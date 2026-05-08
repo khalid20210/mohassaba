@@ -1,0 +1,37 @@
+﻿{% extends "base.html" %}
+{% block title %}قوائم الأسعار{% endblock %}
+{% block page_title %}قوائم الأسعار{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+  <div><p class="page-subtitle">{{ pricing_lists|length }} قائمة سعر</p></div>
+  <div style="display:flex;gap:8px;">
+    <a href="/wholesale/orders" class="btn btn-secondary">الطلبات</a>
+  </div>
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>الاسم</th>
+        <th>الوصف</th>
+        <th>نشطة</th>
+        <th>إجراء</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pl in pricing_lists %}
+      <tr>
+        <td>{{ pl.list_name or pl.name }}</td>
+        <td>{{ pl.description or '—' }}</td>
+        <td>{{ 'نعم' if pl.is_active else 'لا' }}</td>
+        <td><a href="/wholesale/pricing/{{ pl.id }}" class="btn btn-secondary">تفاصيل</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" style="text-align:center;">لا توجد قوائم أسعار</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

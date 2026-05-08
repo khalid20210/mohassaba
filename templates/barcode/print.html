@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}طباعة الباركود{% endblock %}
+{% block page_title %}🖨️ طباعة الباركودات{% endblock %}
+
+{% block head %}
+<style>
+  @media print {
+    .sidebar, .topbar, .page-header, .no-print { display:none !important; }
+    .main-content { margin:0 !important; padding:0 !important; }
+    .barcode-grid { display:flex; flex-wrap:wrap; gap:8px; }
+    .barcode-label { border:1px solid #ccc; padding:8px; text-align:center; width:120px; page-break-inside:avoid; }
+  }
+  .barcode-grid { display:flex; flex-wrap:wrap; gap:16px; padding:16px; }
+  .barcode-label { border:1px solid rgba(255,255,255,.15); border-radius:8px; padding:12px; text-align:center; width:150px; background:rgba(255,255,255,.03); }
+  .barcode-label img { max-width:130px; height:80px; object-fit:contain; }
+  .barcode-label .prod-name { font-size:.78rem; margin-top:6px; color:#94a3b8; }
+  .barcode-label .barcode-val { font-size:.7rem; font-family:monospace; color:#64748b; margin-top:2px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">🖨️ طباعة الباركودات</h1>
+  <button onclick="window.print()" class="btn btn-primary no-print">🖨️ طباعة</button>
+</div>
+
+<div class="card no-print" style="margin-bottom:16px;">
+  <p style="color:#94a3b8;">{{ barcodes|length }} باركود جاهز للطباعة</p>
+</div>
+
+<div class="barcode-grid">
+  {% for b in barcodes %}
+  <div class="barcode-label">
+    {% if b.image_data %}
+      <img src="data:image/png;base64,{{ b.image_data }}" alt="{{ b.barcode_value }}">
+    {% else %}
+      <div style="height:80px;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:.8rem;">
+        {{ b.barcode_value }}
+      </div>
+    {% endif %}
+    <div class="prod-name">{{ b.product_name or '—' }}</div>
+    <div class="barcode-val">{{ b.barcode_value }}</div>
+  </div>
+  {% else %}
+  <p style="color:#64748b;">لا توجد باركودات للطباعة</p>
+  {% endfor %}
+</div>
+{% endblock %}

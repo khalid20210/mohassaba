@@ -331,3 +331,25 @@ SCHEMA_REGISTER = {
     "full_name":     [V.required, V.str_max(100), V.safe_text],
     "business_name": [V.required, V.str_max(150), V.safe_text],
 }
+
+SCHEMA_EMPLOYEE_CREATE = {
+    "full_name":   [V.required, V.str_max(120), V.safe_text],
+    "phone":       [V.optional, V.saudi_phone],
+    "role_label":  [V.optional, V.str_max(100), V.safe_text],
+    "base_salary": [V.optional, V.positive_number],
+}
+
+SCHEMA_BLIND_CLOSE = {
+    "employee_id":   [V.required, V.positive_int],
+    "shift_date":    [V.required, V.date_str],
+    "expected_cash": [V.required, V.positive_number],
+    "counted_cash":  [V.required, V.positive_number],
+    "notes":         [V.optional, V.str_max(250), V.safe_text],
+}
+
+SCHEMA_AGENT_CREATE = {
+    "full_name":       [V.required, V.str_max(120), V.safe_text],
+    "phone":           [V.optional, V.saudi_phone],
+    "whatsapp_number": [V.optional, V.saudi_phone],
+    "commission_rate": [V.optional, V.num_range(0, 100)],
+}

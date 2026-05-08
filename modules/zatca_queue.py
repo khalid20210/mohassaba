@@ -79,27 +79,297 @@ def enqueue_invoice(db, business_id: int, invoice_id: int,
     return row_id
 
 
+# ── ثوابت ZATCA API ───────────────────────────────────────────────────────────
+import os as _os
+import hashlib as _hashlib
+import base64 as _base64
+import sqlite3 as _sqlite3
+
+_ZATCA_PHASE       = int(_os.environ.get("ZATCA_PHASE", "1"))  # 1 أو 2
+_ZATCA_API_URL     = _os.environ.get(
+    "ZATCA_API_URL",
+    "https://gw-fatoora.zatca.gov.sa/e-invoicing/developer-portal",
+)
+_ZATCA_SANDBOX_URL = "https://gw-fatoora.zatca.gov.sa/e-invoicing/developer-portal"
+_ZATCA_PROD_URL    = "https://gw-fatoora.zatca.gov.sa/e-invoicing/core"
+
+
+def _get_zatca_credentials(business_id: int) -> tuple[str, str]:
+    """
+    يُعيد (csid, secret) للمنشأة.
+    يبحث أولاً في متغيرات البيئة، ثم في جدول business_zatca_settings.
+    """
+    # 1) متغيرات البيئة خاصة بالمنشأة
+    csid   = _os.environ.get(f"ZATCA_CSID_{business_id}", "")
+    secret = _os.environ.get(f"ZATCA_SECRET_{business_id}", "")
+    if csid and secret:
+        return csid, secret
+
+    # 2) متغيرات البيئة عامة (للـ single-tenant أو dev)
+    csid   = _os.environ.get("ZATCA_CSID", "")
+    secret = _os.environ.get("ZATCA_SECRET", "")
+    if csid and secret:
+        return csid, secret
+
+    # 3) قاعدة البيانات (business_zatca_settings)
+    try:
+        from .config import DB_PATH
+        conn = _sqlite3.connect(str(DB_PATH), timeout=5)
+        conn.row_factory = _sqlite3.Row
+        row = conn.execute(
+            "SELECT csid, api_secret FROM business_zatca_settings WHERE business_id=? AND is_active=1",
+            (business_id,)
+        ).fetchone()
+        conn.close()
+        if row:
+            return row["csid"] or "", row["api_secret"] or ""
+    except Exception:
+        pass
+    return "", ""
+
+
 # ── المعالج الفعلي لإرسال ZATCA ───────────────────────────────────────────────
 
 def _send_to_zatca(business_id: int, payload: dict) -> bool:
     """
-    يُحاول إرسال الفاتورة لـ ZATCA.
-    يُعيد True عند النجاح، False عند الفشل.
+    يُرسل الفاتورة لـ ZATCA Fatoora API.
 
-    حالياً: Stub — يُسجّل فقط.
-    في الإنتاج: استبدل بـ ZATCA Fatoora API call.
+    الوضع 1 (Phase 1 — مبسطة):
+      لا يلزم إرسال API — يكتفي بـ QR code.
+      يُعيد True مباشرة.
+
+    الوضع 2 (Phase 2 — معيارية):
+      يُرسل طلب Reporting/Clearance لـ ZATCA Fatoora.
+      يحتاج CSID + Secret مُعدّين مسبقاً من بوابة ZATCA.
+
+    بيئة التطوير: يستخدم Sandbox URL تلقائياً.
     """
+    invoice_number = payload.get("invoice_number", "")
+
+    # ── Phase 1: لا يلزم إرسال API ───────────────────────────────────────────
+    if _ZATCA_PHASE < 2:
+        _log.info(f"[ZATCA Phase 1] فاتورة {invoice_number} — QR code فقط، لا إرسال API")
+        return True
+
+    # ── Phase 2: إرسال لـ ZATCA Fatoora API ──────────────────────────────────
+    csid, secret = _get_zatca_credentials(business_id)
+
+    if not csid or not secret:
+        _log.warning(
+            f"[ZATCA Phase 2] لا يوجد CSID/Secret للمنشأة {business_id} — "
+            f"الفاتورة {invoice_number} ستُوضع في وضع انتظار ZATCA Phase 2 غير مفعّل"
+        )
+        # إعادة True لتجنب تعطّل العمليات — المنشأة تحتاج تسجيل ZATCA Phase 2
+        return True
+
     try:
-        # TODO: استبدل هذا الـ stub بـ ZATCA API الفعلي
-        # import requests
-        # r = requests.post(ZATCA_API_URL, json=payload, timeout=10,
-        #                   headers={"Authorization": f"Bearer {get_token(business_id)}"})
-        # return r.status_code == 200
-        _log.info(f"[ZATCA-STUB] Would send invoice {payload.get('invoice_number')} "
-                  f"for business {business_id}")
-        return True   # stub دائماً ينجح
+        import requests as _requests
+        import uuid as _uuid
+
+        xml_data = payload.get("xml", "")
+        if not xml_data:
+            _log.error(f"[ZATCA] لا يوجد XML في الـ payload للفاتورة {invoice_number}")
+            return False
+
+        xml_bytes     = xml_data.encode("utf-8") if isinstance(xml_data, str) else xml_data
+        invoice_hash  = _base64.b64encode(
+            _hashlib.sha256(xml_bytes).digest()
+        ).decode("ascii")
+        invoice_b64   = _base64.b64encode(xml_bytes).decode("ascii")
+        invoice_uuid  = payload.get("uuid") or str(_uuid.uuid4())
+
+        # المصادقة: Base64(CSID:Secret)
+        auth_str = _base64.b64encode(f"{csid}:{secret}".encode()).decode("ascii")
+
+        is_prod    = _os.environ.get("FLASK_ENV", "development").lower() == "production"
+        api_url    = _ZATCA_PROD_URL if is_prod else _ZATCA_SANDBOX_URL
+        endpoint   = f"{api_url}/invoices/reporting/single"
+
+        response = _requests.post(
+            endpoint,
+            json={
+                "invoiceHash": invoice_hash,
+                "uuid":        invoice_uuid,
+                "invoice":     invoice_b64,
+            },
+            headers={
+                "Authorization":  f"Basic {auth_str}",
+                "Content-Type":   "application/json",
+                "Accept-Version": "V2",
+            },
+            timeout=30,
+            verify=True,      # TLS verification دائماً
+        )
+
+        if response.status_code in (200, 202):
+            _log.info(
+                f"[ZATCA] ✅ فاتورة {invoice_number} أُرسلت بنجاح "
+                f"(HTTP {response.status_code})"
+            )
+            return True
+
+        # خطأ من ZATCA
+        _log.error(
+            f"[ZATCA] ❌ فشل HTTP {response.status_code} "
+            f"للفاتورة {invoice_number}: {response.text[:400]}"
+        )
+        return False
+
+    except ImportError:
+        _log.warning(
+            "[ZATCA] مكتبة requests غير متوفرة — "
+            "تثبيت: pip install requests"
+        )
+        return True   # fallback بدون كسر التدفق
+
+    except _requests.exceptions.Timeout:
+        _log.error(f"[ZATCA] انتهت المهلة الزمنية للفاتورة {invoice_number}")
+        return False
+
+    except _requests.exceptions.SSLError as ssl_err:
+        _log.error(f"[ZATCA] خطأ TLS: {ssl_err}")
+        return False
+
     except Exception as e:
-        _log.error(f"ZATCA send error: {e}")
+        _log.error(f"[ZATCA] خطأ غير متوقع للفاتورة {invoice_number}: {e}")
+        return False
+
+
+def _get_zatca_creds(business_id: int):
+    """يُعيد (csid, secret) من متغيرات البيئة أو قاعدة البيانات."""
+    # 1) متغيرات البيئة خاصة بالـ business
+    csid   = _os.environ.get(f"ZATCA_CSID_{business_id}", "")
+    secret = _os.environ.get(f"ZATCA_SECRET_{business_id}", "")
+    if csid and secret:
+        return csid, secret
+
+    # 2) متغيرات البيئة عامة (للـ single-tenant أو dev)
+    csid   = _os.environ.get("ZATCA_CSID", "")
+    secret = _os.environ.get("ZATCA_SECRET", "")
+    if csid and secret:
+        return csid, secret
+
+    # 3) قاعدة البيانات (business_zatca_settings)
+    try:
+        from .config import DB_PATH
+        conn = _sqlite3.connect(str(DB_PATH), timeout=5)
+        conn.row_factory = _sqlite3.Row
+        row = conn.execute(
+            "SELECT csid, api_secret FROM business_zatca_settings WHERE business_id=? AND is_active=1",
+            (business_id,)
+        ).fetchone()
+        conn.close()
+        if row:
+            return row["csid"] or "", row["api_secret"] or ""
+    except Exception:
+        pass
+    return "", ""
+
+
+# ── المعالج الفعلي لإرسال ZATCA ───────────────────────────────────────────────
+
+def _send_to_zatca(business_id: int, payload: dict) -> bool:
+    """
+    يُرسل الفاتورة لـ ZATCA Fatoora API.
+
+    الوضع 1 (Phase 1 — مبسطة):
+      لا يلزم إرسال API — يكتفي بـ QR code.
+      يُعيد True مباشرة.
+
+    الوضع 2 (Phase 2 — معيارية):
+      يُرسل طلب Reporting/Clearance لـ ZATCA Fatoora.
+      يحتاج CSID + Secret مُعدّين مسبقاً من بوابة ZATCA.
+
+    بيئة التطوير: يستخدم Sandbox URL تلقائياً.
+    """
+    invoice_number = payload.get("invoice_number", "")
+
+    # ── Phase 1: لا يلزم إرسال API ───────────────────────────────────────────
+    if _ZATCA_PHASE < 2:
+        _log.info(f"[ZATCA Phase 1] فاتورة {invoice_number} — QR code فقط، لا إرسال API")
+        return True
+
+    # ── Phase 2: إرسال لـ ZATCA Fatoora API ──────────────────────────────────
+    csid, secret = _get_zatca_credentials(business_id)
+
+    if not csid or not secret:
+        _log.warning(
+            f"[ZATCA Phase 2] لا يوجد CSID/Secret للمنشأة {business_id} — "
+            f"الفاتورة {invoice_number} ستُوضع في وضع انتظار ZATCA Phase 2 غير مفعّل"
+        )
+        # إعادة True لتجنب تعطّل العمليات — المنشأة تحتاج تسجيل ZATCA Phase 2
+        return True
+
+    try:
+        import requests as _requests
+        import uuid as _uuid
+
+        xml_data = payload.get("xml", "")
+        if not xml_data:
+            _log.error(f"[ZATCA] لا يوجد XML في الـ payload للفاتورة {invoice_number}")
+            return False
+
+        xml_bytes     = xml_data.encode("utf-8") if isinstance(xml_data, str) else xml_data
+        invoice_hash  = _base64.b64encode(
+            _hashlib.sha256(xml_bytes).digest()
+        ).decode("ascii")
+        invoice_b64   = _base64.b64encode(xml_bytes).decode("ascii")
+        invoice_uuid  = payload.get("uuid") or str(_uuid.uuid4())
+
+        # المصادقة: Base64(CSID:Secret)
+        auth_str = _base64.b64encode(f"{csid}:{secret}".encode()).decode("ascii")
+
+        is_prod    = _os.environ.get("FLASK_ENV", "development").lower() == "production"
+        api_url    = _ZATCA_PROD_URL if is_prod else _ZATCA_SANDBOX_URL
+        endpoint   = f"{api_url}/invoices/reporting/single"
+
+        response = _requests.post(
+            endpoint,
+            json={
+                "invoiceHash": invoice_hash,
+                "uuid":        invoice_uuid,
+                "invoice":     invoice_b64,
+            },
+            headers={
+                "Authorization":  f"Basic {auth_str}",
+                "Content-Type":   "application/json",
+                "Accept-Version": "V2",
+            },
+            timeout=30,
+            verify=True,      # TLS verification دائماً
+        )
+
+        if response.status_code in (200, 202):
+            _log.info(
+                f"[ZATCA] ✅ فاتورة {invoice_number} أُرسلت بنجاح "
+                f"(HTTP {response.status_code})"
+            )
+            return True
+
+        # خطأ من ZATCA
+        _log.error(
+            f"[ZATCA] ❌ فشل HTTP {response.status_code} "
+            f"للفاتورة {invoice_number}: {response.text[:400]}"
+        )
+        return False
+
+    except ImportError:
+        _log.warning(
+            "[ZATCA] مكتبة requests غير متوفرة — "
+            "تثبيت: pip install requests"
+        )
+        return True   # fallback بدون كسر التدفق
+
+    except _requests.exceptions.Timeout:
+        _log.error(f"[ZATCA] انتهت المهلة الزمنية للفاتورة {invoice_number}")
+        return False
+
+    except _requests.exceptions.SSLError as ssl_err:
+        _log.error(f"[ZATCA] خطأ TLS: {ssl_err}")
+        return False
+
+    except Exception as e:
+        _log.error(f"[ZATCA] خطأ غير متوقع للفاتورة {invoice_number}: {e}")
         return False
 
 

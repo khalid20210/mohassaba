@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}سجل العمليات{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:1.5rem">
+  <h1 style="font-size:1.5rem;font-weight:700;display:flex;align-items:center;gap:.5rem">
+    🗂️ سجل العمليات
+    <span style="font-size:.85rem;font-weight:400;color:#6b7280">(Audit Trail)</span>
+  </h1>
+  <p style="color:#6b7280;margin-top:.25rem">كل حركة في النظام مسجّلة — دخول، بيع، تعديل، حذف</p>
+</div>
+
+<!-- فلاتر البحث -->
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end">
+  <div style="display:flex;flex-direction:column;gap:.35rem;min-width:160px">
+    <label style="font-size:.8rem;color:#374151;font-weight:600">نوع الحدث</label>
+    <select id="filterAction" style="border:1px solid #d1d5db;border-radius:8px;padding:.45rem .75rem;font-size:.875rem">
+      <option value="">الكل</option>
+      <option value="login">تسجيل دخول</option>
+      <option value="login_failed">محاولة دخول فاشلة</option>
+      <option value="logout">تسجيل خروج</option>
+      <option value="pos_sale">بيع POS</option>
+      <option value="create">إنشاء</option>
+      <option value="update">تعديل</option>
+      <option value="delete">حذف</option>
+    </select>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:.35rem;min-width:160px">
+    <label style="font-size:.8rem;color:#374151;font-weight:600">المستخدم</label>
+    <input type="text" id="filterUser" placeholder="اسم المستخدم..." style="border:1px solid #d1d5db;border-radius:8px;padding:.45rem .75rem;font-size:.875rem">
+  </div>
+  <div style="display:flex;flex-direction:column;gap:.35rem">
+    <label style="font-size:.8rem;color:#374151;font-weight:600">من تاريخ</label>
+    <input type="date" id="filterFrom" style="border:1px solid #d1d5db;border-radius:8px;padding:.45rem .75rem;font-size:.875rem">
+  </div>
+  <div style="display:flex;flex-direction:column;gap:.35rem">
+    <label style="font-size:.8rem;color:#374151;font-weight:600">إلى تاريخ</label>
+    <input type="date" id="filterTo" style="border:1px solid #d1d5db;border-radius:8px;padding:.45rem .75rem;font-size:.875rem">
+  </div>
+  <button onclick="loadLogs(1)" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:.55rem 1.25rem;font-size:.875rem;font-weight:600;cursor:pointer">🔍 بحث</button>
+  <button onclick="clearFilters()" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;border-radius:8px;padding:.55rem 1rem;font-size:.875rem;cursor:pointer">مسح</button>
+</div>
+
+<!-- إحصائيات سريعة -->
+<div id="statsRow" style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.25rem"></div>
+
+<!-- الجدول -->
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
+  <div style="padding:.875rem 1.25rem;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center">
+    <span style="font-weight:600;color:#111827" id="logCount">يتم التحميل…</span>
+    <button onclick="exportCSV()" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:8px;padding:.4rem .9rem;font-size:.8rem;cursor:pointer">⬇️ تصدير CSV</button>
+  </div>
+  <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:.855rem">
+      <thead>
+        <tr style="background:#f9fafb;color:#6b7280;font-size:.78rem;text-align:right">
+          <th style="padding:.75rem 1rem;font-weight:600">التاريخ والوقت</th>
+          <th style="padding:.75rem 1rem;font-weight:600">المستخدم</th>
+          <th style="padding:.75rem 1rem;font-weight:600">الدور</th>
+          <th style="padding:.75rem 1rem;font-weight:600">الحدث</th>
+          <th style="padding:.75rem 1rem;font-weight:600">النوع</th>
+          <th style="padding:.75rem 1rem;font-weight:600">التفاصيل</th>
+          <th style="padding:.75rem 1rem;font-weight:600">عنوان IP</th>
+        </tr>
+      </thead>
+      <tbody id="logsBody">
+        <tr><td colspan="7" style="text-align:center;padding:2rem;color:#9ca3af">جاري التحميل…</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- Pagination -->
+  <div id="pagination" style="padding:1rem;display:flex;justify-content:center;gap:.5rem"></div>
+</div>
+
+<style>
+.log-badge { display:inline-block;padding:.2rem .55rem;border-radius:20px;font-size:.75rem;font-weight:600 }
+.badge-login       { background:#dbeafe;color:#1d4ed8 }
+.badge-login_failed{ background:#fee2e2;color:#dc2626 }
+.badge-logout      { background:#f3f4f6;color:#6b7280 }
+.badge-pos_sale    { background:#d1fae5;color:#065f46 }
+.badge-create      { background:#ede9fe;color:#7c3aed }
+.badge-update      { background:#fef3c7;color:#b45309 }
+.badge-delete      { background:#fee2e2;color:#dc2626 }
+.badge-default     { background:#f3f4f6;color:#6b7280 }
+tbody tr:hover { background:#f9fafb }
+</style>
+
+<script>
+let currentPage = 1;
+let allLogs = [];
+
+const ACTION_LABELS = {
+  login:        'تسجيل دخول',
+  login_failed: 'دخول فاشل',
+  logout:       'خروج',
+  pos_sale:     'بيع POS',
+  create:       'إنشاء',
+  update:       'تعديل',
+  delete:       'حذف',
+};
+
+function escHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function badgeClass(action) {
+  return 'log-badge badge-' + (document.querySelector('.badge-' + action) ? action : 'default');
+}
+
+function formatDate(dt) {
+  if (!dt) return '—';
+  return dt.replace('T', ' ').slice(0, 16);
+}
+
+function renderStats(logs) {
+  const counts = {};
+  logs.forEach(l => { counts[l.action] = (counts[l.action] || 0) + 1; });
+  const statsEl = document.getElementById('statsRow');
+  const colors = { login:'#dbeafe:#1d4ed8', login_failed:'#fee2e2:#dc2626', pos_sale:'#d1fae5:#065f46', logout:'#f3f4f6:#6b7280' };
+  statsEl.innerHTML = Object.entries(counts).slice(0,6).map(([k,v]) => {
+    const [bg, fg] = (colors[k] || '#f3f4f6:#6b7280').split(':');
+    return `<div style="background:${bg};color:${fg};border-radius:10px;padding:.5rem 1rem;font-size:.82rem;font-weight:600">
+      ${escHtml(ACTION_LABELS[k]||k)}: ${escHtml(v)}
+    </div>`;
+  }).join('');
+}
+
+function loadLogs(page = 1) {
+  currentPage = page;
+  const action = document.getElementById('filterAction').value;
+  const user   = document.getElementById('filterUser').value;
+  const from   = document.getElementById('filterFrom').value;
+  const to     = document.getElementById('filterTo').value;
+
+  const params = new URLSearchParams({ page, action, user, from, to });
+
+  fetch('/api/v1/audit-log?' + params)
+    .then(r => r.json())
+    .then(data => {
+      allLogs = data.logs || [];
+      renderTable(allLogs);
+      renderStats(allLogs);
+      document.getElementById('logCount').textContent = `${data.total.toLocaleString('ar')} سجل`;
+      renderPagination(data.page, data.pages);
+    })
+    .catch(() => {
+      document.getElementById('logsBody').innerHTML =
+        '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#ef4444">حدث خطأ أثناء التحميل</td></tr>';
+    });
+}
+
+function renderTable(logs) {
+  const tbody = document.getElementById('logsBody');
+  if (!logs.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#9ca3af">لا توجد سجلات</td></tr>';
+    return;
+  }
+  tbody.innerHTML = logs.map(l => {
+    let details = '';
+    if (l.new_value) {
+      try {
+        const obj = JSON.parse(l.new_value);
+        details = Object.entries(obj).slice(0,3).map(([k,v]) => `<span style="color:#6b7280">${escHtml(k)}:</span> ${escHtml(v)}`).join(' &nbsp;|&nbsp; ');
+      } catch { details = escHtml(String(l.new_value).slice(0,80)); }
+    }
+    const badgeCls = 'log-badge badge-' + (ACTION_LABELS[l.action] ? l.action : 'default');
+    return `<tr>
+      <td style="padding:.65rem 1rem;color:#374151;white-space:nowrap">${escHtml(formatDate(l.created_at))}</td>
+      <td style="padding:.65rem 1rem;font-weight:600;color:#111827">${escHtml(l.actor_name || '—')}</td>
+      <td style="padding:.65rem 1rem;color:#6b7280">${escHtml(l.actor_role || '—')}</td>
+      <td style="padding:.65rem 1rem"><span class="${badgeCls}">${escHtml(ACTION_LABELS[l.action]||l.action)}</span></td>
+      <td style="padding:.65rem 1rem;color:#6b7280">${escHtml(l.entity_type || '—')} ${l.entity_id ? '#'+escHtml(l.entity_id) : ''}</td>
+      <td style="padding:.65rem 1rem;color:#374151;font-size:.8rem;max-width:260px;overflow:hidden;text-overflow:ellipsis">${details}</td>
+      <td style="padding:.65rem 1rem;color:#9ca3af;font-size:.78rem;direction:ltr">${escHtml(l.ip_address || '—')}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderPagination(page, pages) {
+  const el = document.getElementById('pagination');
+  if (pages <= 1) { el.innerHTML = ''; return; }
+  let btns = '';
+  for (let i = 1; i <= Math.min(pages, 10); i++) {
+    const active = i === page ? 'background:#2563eb;color:#fff' : 'background:#f3f4f6;color:#374151';
+    btns += `<button onclick="loadLogs(${i})" style="${active};border:none;border-radius:6px;padding:.4rem .8rem;cursor:pointer;font-size:.82rem">${i}</button>`;
+  }
+  el.innerHTML = btns;
+}
+
+function clearFilters() {
+  document.getElementById('filterAction').value = '';
+  document.getElementById('filterUser').value   = '';
+  document.getElementById('filterFrom').value   = '';
+  document.getElementById('filterTo').value     = '';
+  loadLogs(1);
+}
+
+function exportCSV() {
+  if (!allLogs.length) return alert('لا توجد بيانات للتصدير');
+  const headers = ['التاريخ','المستخدم','الدور','الحدث','النوع','التفاصيل','IP'];
+  const rows = allLogs.map(l => [
+    l.created_at, l.actor_name, l.actor_role, l.action,
+    (l.entity_type||'') + (l.entity_id?' #'+l.entity_id:''),
+    (l.new_value||'').replace(/[\n\r,]/g,' ').slice(0,200),
+    l.ip_address
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(c => `"${c||''}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `audit_log_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+document.addEventListener('DOMContentLoaded', () => loadLogs(1));
+</script>
+{% endblock %}

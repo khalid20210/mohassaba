@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}المواعيد{% endblock %}
+{% block page_title %}📅 جدول المواعيد{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div><p class="page-subtitle">{{ appointments|length }} موعد</p></div>
+  <div style="display:flex;gap:10px;">
+    <a href="/medical/patients" class="btn btn-secondary">🏥 المرضى</a>
+    <a href="/medical/reports" class="btn btn-secondary">📊 التقارير</a>
+    <a href="/medical/doctors" class="btn btn-secondary">👨‍⚕️ الأطباء</a>
+    <button class="btn btn-primary" onclick="document.getElementById('newApptModal').classList.add('show')">+ موعد جديد</button>
+  </div>
+</div>
+
+<!-- فلتر -->
+<div class="card" style="margin-bottom:16px;padding:12px;">
+  <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+    <div>
+      <label style="font-size:.8rem;color:#94a3b8;display:block;margin-bottom:4px;">التاريخ</label>
+      <input type="date" name="date" value="{{ request.args.get('date','') }}" class="form-input" style="width:160px;">
+    </div>
+    <div>
+      <label style="font-size:.8rem;color:#94a3b8;display:block;margin-bottom:4px;">الحالة</label>
+      <select name="status" class="form-input" style="width:140px;">
+        <option value="">الكل</option>
+        <option value="scheduled" {% if request.args.get('status')=='scheduled' %}selected{% endif %}>مجدول</option>
+        <option value="completed" {% if request.args.get('status')=='completed' %}selected{% endif %}>منجز</option>
+        <option value="cancelled" {% if request.args.get('status')=='cancelled' %}selected{% endif %}>ملغي</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;align-items:flex-end;">
+      <button type="submit" class="btn btn-primary">تطبيق</button>
+      <a href="/medical/appointments" class="btn btn-secondary">إعادة تعيين</a>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>#</th><th>المريض</th><th>الطبيب</th><th>التاريخ والوقت</th><th>نوع الزيارة</th><th>السبب</th><th>الحالة</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for a in appointments %}
+      <tr>
+        <td style="color:#64748b;font-size:.82rem;">{{ a.id }}</td>
+        <td><strong>{{ a.patient_name or 'مريض #'~a.patient_id }}</strong></td>
+        <td>{{ a.doctor_name or a.doctor_id or '—' }}</td>
+        <td><strong>{{ a.appointment_date or '—' }}</strong><br><small style="color:#64748b;">{{ a.appointment_time or '' }}</small></td>
+        <td style="color:#94a3b8;font-size:.82rem;">{{ a.appointment_type or a.visit_type or '—' }}</td>
+        <td style="color:#94a3b8;font-size:.82rem;">{{ (a.reason[:40]~'...' if a.reason and a.reason|length > 40 else a.reason) or '—' }}</td>
+        <td>
+          {% if a.status=='scheduled' %}<span style="background:#1e3a5f;color:#93c5fd;padding:2px 10px;border-radius:20px;font-size:.78rem;">📅 مجدول</span>
+          {% elif a.status=='completed' %}<span style="background:#14532d;color:#86efac;padding:2px 10px;border-radius:20px;font-size:.78rem;">✓ منجز</span>
+          {% elif a.status=='cancelled' %}<span style="background:#7f1d1d;color:#fca5a5;padding:2px 10px;border-radius:20px;font-size:.78rem;">✕ ملغي</span>
+          {% else %}<span style="color:#94a3b8;">{{ a.status }}</span>{% endif %}
+        </td>
+        <td>
+          <div style="display:flex;gap:4px;">
+            <a href="/medical/appointments/{{ a.id }}" class="btn btn-secondary" style="padding:4px 10px;font-size:.78rem;">إدارة</a>
+            {% if a.status=='scheduled' %}
+            <form method="post" action="/medical/appointments/{{ a.id }}" onsubmit="return confirm('إلغاء الموعد؟')">
+              <input type="hidden" name="action" value="cancel">
+              <button type="submit" class="btn" style="padding:4px 10px;font-size:.78rem;background:#7f1d1d;color:#fca5a5;border:none;border-radius:6px;cursor:pointer;">إلغاء</button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="text-align:center;color:#64748b;padding:40px;">لا توجد مواعيد</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal: موعد جديد -->
+<div class="modal-overlay" id="newApptModal">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-header">
+      <h3 class="modal-title">📅 موعد جديد</h3>
+      <button class="modal-close" onclick="document.getElementById('newApptModal').classList.remove('show')">✕</button>
+    </div>
+    <form method="post" action="/medical/appointments/new">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group" style="grid-column:1/-1;">
+          <label class="form-label">المريض *</label>
+          <select name="patient_id" class="form-input" required>
+            <option value="">— اختر مريض</option>
+            {% for pt in patients %}
+            <option value="{{ pt.id }}">{{ pt.patient_name }} {% if pt.file_number %}({{ pt.file_number }}){% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">الطبيب</label>
+          <select name="doctor_id" class="form-input">
+            <option value="">— غير محدد</option>
+            {% for doc in doctors %}
+            <option value="{{ doc.id }}">{{ doc.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">نوع الزيارة</label>
+          <select name="appointment_type" class="form-input">
+            <option value="كشف">كشف عادي</option>
+            <option value="متابعة">متابعة</option>
+            <option value="طارئ">طارئ</option>
+            <option value="استشارة">استشارة</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">التاريخ *</label>
+          <input name="appointment_date" type="date" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">الوقت</label>
+          <input name="appointment_time" type="time" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">رسوم الزيارة (ر.س)</label>
+          <input name="visit_fee" class="form-input" type="number" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">سبب الزيارة</label>
+        <textarea name="reason" class="form-input" rows="2" placeholder="وصف الأعراض..."></textarea>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('newApptModal').classList.remove('show')">إلغاء</button>
+        <button type="submit" class="btn btn-primary">✅ حجز الموعد</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}مورد جديد{% endblock %}
+{% block page_title %}🏭 إضافة مورد{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <a href="/contacts/suppliers" style="color:#94a3b8;font-size:.85rem;">← قائمة الموردين</a>
+    <h1 class="page-title" style="margin-top:4px;">إضافة مورد جديد</h1>
+  </div>
+</div>
+
+<div class="card" style="max-width:600px;margin:0 auto;">
+  <form action="/contacts/suppliers/new" method="post">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div style="grid-column:1/-1;">
+        <label class="form-label">اسم المورد / الشركة *</label>
+        <input type="text" name="name" class="form-input" required placeholder="اسم المورد">
+      </div>
+      <div>
+        <label class="form-label">الهاتف</label>
+        <input type="text" name="phone" class="form-input" placeholder="05xxxxxxxx">
+      </div>
+      <div>
+        <label class="form-label">البريد الإلكتروني</label>
+        <input type="email" name="email" class="form-input">
+      </div>
+      <div style="grid-column:1/-1;">
+        <label class="form-label">العنوان</label>
+        <input type="text" name="address" class="form-input" placeholder="المدينة، العنوان">
+      </div>
+      <div>
+        <label class="form-label">الرقم الضريبي</label>
+        <input type="text" name="tax_number" class="form-input" required>
+      </div>
+      <div>
+        <label class="form-label">رقم السجل التجاري</label>
+        <input type="text" name="commercial_reg" class="form-input" pattern="\d{10}" required>
+      </div>
+      <div style="grid-column:1/-1;">
+        <label class="form-label">مرجع شهادة الضريبة *</label>
+        <input type="text" name="tax_certificate_ref" class="form-input" required placeholder="رقم الشهادة أو مرجع التحقق">
+      </div>
+    </div>
+    <div style="margin-top:24px;display:flex;gap:12px;">
+      <button type="submit" class="btn btn-primary">💾 حفظ</button>
+      <a href="/contacts/suppliers" class="btn btn-secondary">إلغاء</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

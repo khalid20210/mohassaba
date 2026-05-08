@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}إدارة الموظفين{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50" dir="rtl">
+
+  <!-- Header -->
+  <div class="bg-white border-b shadow-sm px-6 py-4">
+    <div class="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-3">
+      <div class="flex items-center gap-2">
+        <a href="/hr/" class="text-gray-400 hover:text-indigo-600">الموارد البشرية</a>
+        <span class="text-gray-300">/</span>
+        <h1 class="text-lg font-bold text-gray-800">👥 الموظفون</h1>
+      </div>
+      <button onclick="document.getElementById('modal-add').classList.remove('hidden')"
+        class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition text-sm font-medium">
+        ➕ إضافة موظف
+      </button>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto p-6">
+
+    <!-- Filters -->
+    <form method="GET" class="bg-white rounded-xl shadow p-4 mb-5 flex flex-wrap gap-3 items-end">
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">بحث</label>
+        <input name="q" value="{{ search }}" placeholder="الاسم، الهوية، الهاتف..."
+          class="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 w-48">
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">القسم</label>
+        <select name="dept" class="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300">
+          <option value="">الكل</option>
+          {% for d in departments %}
+          <option value="{{ d }}" {{ 'selected' if dept_filter==d }}>{{ d }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">الحالة</label>
+        <select name="status" class="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300">
+          <option value="active" {{ 'selected' if status_filter=='active' }}>نشط</option>
+          <option value="inactive" {{ 'selected' if status_filter=='inactive' }}>غير نشط</option>
+          <option value="" {{ 'selected' if not status_filter }}>الكل</option>
+        </select>
+      </div>
+      <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">بحث</button>
+    </form>
+
+    <!-- Table -->
+    <div class="bg-white rounded-xl shadow overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b">
+          <tr>
+            <th class="text-right px-4 py-3 text-gray-600 font-semibold">الموظف</th>
+            <th class="text-right px-4 py-3 text-gray-600 font-semibold">المسمى / القسم</th>
+            <th class="text-right px-4 py-3 text-gray-600 font-semibold">الهوية</th>
+            <th class="text-right px-4 py-3 text-gray-600 font-semibold">الهاتف</th>
+            <th class="text-right px-4 py-3 text-gray-600 font-semibold">الراتب الأساسي</th>
+            <th class="text-right px-4 py-3 text-gray-600 font-semibold">البدلات</th>
+            <th class="text-right px-4 py-3 text-gray-600 font-semibold">الجنسية</th>
+            <th class="text-right px-4 py-3 text-gray-600 font-semibold">الحالة</th>
+            <th class="text-right px-4 py-3 text-gray-600 font-semibold">ملف</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for emp in employees %}
+          <tr class="hover:bg-gray-50 transition">
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center">
+                  {{ emp.full_name[0] if emp.full_name else '?' }}
+                </div>
+                <span class="font-medium text-gray-800">{{ emp.full_name }}</span>
+              </div>
+            </td>
+            <td class="px-4 py-3 text-gray-600">
+              <div>{{ emp.job_title or '—' }}</div>
+              <div class="text-gray-400 text-xs">{{ emp.department or '' }}</div>
+            </td>
+            <td class="px-4 py-3 text-gray-600">{{ emp.national_id or '—' }}</td>
+            <td class="px-4 py-3 text-gray-600">{{ emp.phone or '—' }}</td>
+            <td class="px-4 py-3 font-semibold text-gray-800">{{ "{:,.2f}".format(emp.base_salary or 0) }}</td>
+            <td class="px-4 py-3 text-green-600">{{ "{:,.2f}".format(emp.allowances or 0) }}</td>
+            <td class="px-4 py-3 text-gray-600">{{ emp.nationality or '—' }}</td>
+            <td class="px-4 py-3">
+              <span class="px-2 py-1 rounded-full text-xs
+                {% if emp.status=='active' %}bg-green-100 text-green-700
+                {% else %}bg-gray-100 text-gray-500{% endif %}">
+                {{ 'نشط' if emp.status=='active' else 'غير نشط' }}
+              </span>
+            </td>
+            <td class="px-4 py-3">
+              <a href="/hr/employees/{{ emp.id }}" class="text-indigo-600 hover:underline text-xs">عرض</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="9" class="text-center py-10 text-gray-400">لا يوجد موظفون. أضف أول موظف الآن!</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal إضافة موظف -->
+<div id="modal-add" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center" dir="rtl">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-screen overflow-y-auto">
+    <div class="flex items-center justify-between p-5 border-b">
+      <h2 class="font-bold text-lg text-gray-800">➕ إضافة موظف جديد</h2>
+      <button onclick="document.getElementById('modal-add').classList.add('hidden')"
+        class="text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
+    </div>
+    <form method="POST" action="/hr/employees/new" class="p-5 grid grid-cols-2 gap-4">
+      <div class="col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1">الاسم الكامل *</label>
+        <input name="full_name" required class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300" placeholder="محمد أحمد العمري">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">رقم الهوية</label>
+        <input name="national_id" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="1234567890">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">الهاتف</label>
+        <input name="phone" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="05XXXXXXXX">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">البريد الإلكتروني</label>
+        <input name="email" type="email" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="name@company.com">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">الجنسية</label>
+        <input name="nationality" value="سعودي" class="w-full border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">المسمى الوظيفي</label>
+        <input name="job_title" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="محاسب، مدير مبيعات...">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">القسم</label>
+        <input name="department" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="المحاسبة، المبيعات...">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">تاريخ التوظيف</label>
+        <input name="hire_date" type="date" class="w-full border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">الحالة</label>
+        <select name="status" class="w-full border rounded-lg px-3 py-2 text-sm">
+          <option value="active">نشط</option>
+          <option value="inactive">غير نشط</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">الراتب الأساسي</label>
+        <input name="base_salary" type="number" min="0" step="0.01" value="0" class="w-full border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">البدلات الشهرية</label>
+        <input name="allowances" type="number" min="0" step="0.01" value="0" class="w-full border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">رقم الحساب البنكي (IBAN)</label>
+        <input name="bank_account" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="SA12...">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">اسم البنك</label>
+        <input name="bank_name" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="الراجحي، الأهلي...">
+      </div>
+      <div class="col-span-2 flex gap-3 justify-end pt-2">
+        <button type="button" onclick="document.getElementById('modal-add').classList.add('hidden')"
+          class="px-5 py-2 border rounded-lg text-gray-600 hover:bg-gray-50">إلغاء</button>
+        <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition font-medium">
+          ✓ حفظ الموظف
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

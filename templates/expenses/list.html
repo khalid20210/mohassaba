@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}إدارة المصاريف{% endblock %}
+{% block page_title %}إدارة المصاريف{% endblock %}
+
+{% block content %}
+<style>
+  .card { background:white; border-radius:8px; padding:20px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { background:#f5f5f5; padding:10px; text-align:right; font-weight:bold; border-bottom:2px solid #ddd; }
+  td { padding:9px 10px; border-bottom:1px solid #eee; }
+  tr:hover { background:#fafafa; }
+</style>
+
+<!-- أدوات -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+  <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+    <div><label style="display:block;font-size:12px;color:#666;margin-bottom:3px">من</label>
+    <input type="date" name="from" value="{{ date_from }}" style="padding:7px 10px;border:1px solid #ddd;border-radius:6px"></div>
+    <div><label style="display:block;font-size:12px;color:#666;margin-bottom:3px">إلى</label>
+    <input type="date" name="to" value="{{ date_to }}" style="padding:7px 10px;border:1px solid #ddd;border-radius:6px"></div>
+    <div><label style="display:block;font-size:12px;color:#666;margin-bottom:3px">الفئة</label>
+    <select name="category" style="padding:7px 10px;border:1px solid #ddd;border-radius:6px">
+      <option value="">— الكل —</option>
+      {% for cat in categories %}<option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>{% endfor %}
+    </select></div>
+    <button type="submit" style="background:#3b82f6;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;align-self:flex-end">🔍 بحث</button>
+  </form>
+  <div style="display:flex;gap:8px">
+    <a href="/expenses/new" style="background:#10b981;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold">+ مصروف جديد</a>
+    <a href="/expenses/report" style="background:#8b5cf6;color:white;padding:10px 16px;border-radius:6px;text-decoration:none">📊 التقرير</a>
+  </div>
+</div>
+
+<!-- بطاقات ملخص -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px">
+  <div style="background:linear-gradient(135deg,#ef4444,#dc2626);color:white;padding:18px;border-radius:8px;text-align:center">
+    <div style="font-size:12px;opacity:.8">إجمالي المصاريف</div>
+    <div style="font-size:1.8rem;font-weight:900;margin:6px 0">{{ "{:,.2f}".format(total) }}</div>
+    <div style="font-size:12px;opacity:.8">ريال — {{ expenses|length }} سجل</div>
+  </div>
+  {% for cat in by_category[:3] %}
+  <div style="background:white;border:1px solid #e5e7eb;padding:18px;border-radius:8px;text-align:center">
+    <div style="font-size:12px;color:#666">{{ cat.category }}</div>
+    <div style="font-size:1.4rem;font-weight:900;margin:4px 0;color:#374151">{{ "{:,.2f}".format(cat.total) }}</div>
+    <div style="font-size:11px;color:#999">{{ cat.cnt }} عملية</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- جدول المصاريف -->
+<div class="card">
+  <table>
+    <thead>
+      <tr><th>التاريخ</th><th>الفئة</th><th>الوصف</th><th>المبلغ</th><th>طريقة الدفع</th><th>المورد</th><th>إجراء</th></tr>
+    </thead>
+    <tbody>
+      {% for exp in expenses %}
+      <tr>
+        <td>{{ exp.expense_date }}</td>
+        <td><span style="background:#f3f4f6;padding:2px 8px;border-radius:12px;font-size:12px">{{ exp.category }}</span></td>
+        <td>{{ exp.description or '—' }}</td>
+        <td style="font-weight:bold;color:#dc2626">{{ "{:,.2f}".format(exp.amount) }} ر.س</td>
+        <td>{{ 'كاش' if exp.payment_method=='cash' else ('شيك' if exp.payment_method=='cheque' else 'حوالة') }}</td>
+        <td>{{ exp.vendor_name or '—' }}</td>
+        <td>
+          <form method="post" action="/expenses/{{ exp.id }}/delete" onsubmit="return confirm('حذف هذا المصروف؟')">
+            <button style="background:#fee2e2;color:#dc2626;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">حذف</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" style="text-align:center;color:#999;padding:30px">لا توجد مصاريف مسجّلة للفترة المحددة</td></tr>
+      {% endfor %}
+    </tbody>
+    {% if expenses %}
+    <tfoot>
+      <tr style="background:#fef2f2;font-weight:bold">
+        <td colspan="3">الإجمالي</td>
+        <td colspan="4" style="color:#dc2626">{{ "{:,.2f}".format(total) }} ر.س</td>
+      </tr>
+    </tfoot>
+    {% endif %}
+  </table>
+</div>
+{% endblock %}
