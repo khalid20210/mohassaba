@@ -200,6 +200,7 @@ def healthz():
 
 
 @bp.route("/monitoring")
+@owner_required
 def monitoring_dashboard():
     """لوحة مراقبة الأداء الحية."""
     return render_template("monitoring_dashboard.html")
