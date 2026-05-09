@@ -32,9 +32,13 @@ def _ensure_onboarding_complete(business_id: int):
     from modules.config import DB_PATH
 
     conn = sqlite3.connect(str(DB_PATH))
-    # نضيف قيمة الإعداد المطلوبة كي لا يتم redirect إلى /onboarding أثناء الاختبار
+    # upsert: نضمن القيمة حتى لو كان السجل موجود مسبقاً
     conn.execute(
-        "INSERT INTO settings (business_id, key, value) VALUES (?, 'onboarding_complete', '1')",
+        """
+        INSERT INTO settings (business_id, key, value)
+        VALUES (?, 'onboarding_complete', '1')
+        ON CONFLICT(business_id, key) DO UPDATE SET value='1'
+        """,
         (business_id,),
     )
     conn.commit()

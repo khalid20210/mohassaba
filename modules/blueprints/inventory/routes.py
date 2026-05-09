@@ -621,6 +621,20 @@ def add_product():
             ).fetchone()
             category_name = cat["name"] if cat else ""
 
+        # بيانات ZATCA/الجمارك من النموذج
+        tax_category = (data.get("tax_category") or "S").strip() or "S"
+        hs_code = (data.get("hs_code") or "").strip()
+        origin_country = (data.get("origin_country") or "").strip()
+        tax_exemption_reason = (data.get("tax_exemption_reason") or "").strip()
+
+        notes_raw = (data.get("notes", "") or "").strip()
+        extra_meta = {
+            "tax_category": tax_category,
+            "hs_code": hs_code,
+            "origin_country": origin_country,
+            "tax_exemption_reason": tax_exemption_reason,
+        }
+
         # إدراج في جدول products أولاً
         cur = db.execute("""
             INSERT INTO products (
@@ -641,11 +655,45 @@ def add_product():
             category_name,
             cost_price,
             sell_price,
-            data.get("notes", "").strip(),
+            notes_raw,
             data.get("supplier_id") or None,
             data.get("expiry_date") or None,
         ))
         product_id = cur.lastrowid
+
+        # حفظ حقول ZATCA بشكل مرن: في أعمدة products إن كانت موجودة، وإلا داخل notes كـ JSON.
+        product_columns = {
+            c["name"]
+            for c in db.execute("PRAGMA table_info(products)").fetchall()
+        }
+        update_sets = []
+        update_vals = []
+
+        for col_name, col_val in (
+            ("tax_category", tax_category),
+            ("hs_code", hs_code),
+            ("origin_country", origin_country),
+            ("tax_exemption_reason", tax_exemption_reason),
+        ):
+            if col_name in product_columns:
+                update_sets.append(f"{col_name} = ?")
+                update_vals.append(col_val)
+
+        if update_sets:
+            update_vals.extend([product_id, business_id])
+            db.execute(
+                f"UPDATE products SET {', '.join(update_sets)}, updated_at=datetime('now') "
+                "WHERE id=? AND business_id=?",
+                tuple(update_vals),
+            )
+        else:
+            # fallback متوافق للخلف إذا لم تكن الأعمدة موجودة بعد
+            meta_json = json.dumps(extra_meta, ensure_ascii=False)
+            merged_notes = notes_raw + ("\n\n" if notes_raw else "") + f"[PRODUCT_TAX_META]{meta_json}"
+            db.execute(
+                "UPDATE products SET notes=?, updated_at=datetime('now') WHERE id=? AND business_id=?",
+                (merged_notes, product_id, business_id),
+            )
 
         # إدراج في product_inventory
         init_qty = float(data.get("initial_qty", 0) or 0)
@@ -667,7 +715,7 @@ def add_product():
             init_qty, min_qty, max_qty,
             cost_price, sell_price,
             location or None,
-            data.get("notes", "").strip(),
+            notes_raw,
         ))
         db.commit()
 
