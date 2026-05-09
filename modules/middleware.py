@@ -8,6 +8,7 @@ from datetime import datetime
 from functools import wraps
 from threading import BoundedSemaphore, Lock
 from time import monotonic
+from typing import Optional
 
 from flask import g, redirect, session, url_for, flash, request, jsonify
 
@@ -169,8 +170,8 @@ def admin_required(f):
 
 
 def write_audit_log(db, business_id: int, action: str,
-                    entity_type: str = None, entity_id: int = None,
-                    old_value: str = None, new_value: str = None):
+                    entity_type: Optional[str] = None, entity_id: Optional[int] = None,
+                    old_value: Optional[str] = None, new_value: Optional[str] = None):
     """تسجيل حدث في جدول audit_logs"""
     try:
         user_id    = session.get("user_id")
