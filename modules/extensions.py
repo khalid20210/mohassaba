@@ -9,6 +9,7 @@ import secrets
 import sqlite3
 from datetime import datetime
 from pathlib import Path
+from typing import Optional, Set
 
 try:
     import bcrypt as _bcrypt
@@ -60,7 +61,7 @@ def close_db(exc=None):
         db.close()
 
 
-def safe_sql_identifier(name: str, allowed: set | None = None) -> str:
+def safe_sql_identifier(name: str, allowed: Optional[Set[str]] = None) -> str:
     """تحقق من اسم معرّف SQL (مثل اسم جدول/عمود) قبل إدخاله في f-string."""
     candidate = (name or "").strip()
     if not candidate or not _SQL_IDENTIFIER_RE.match(candidate):
