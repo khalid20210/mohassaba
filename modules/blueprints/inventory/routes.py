@@ -682,7 +682,7 @@ def add_product():
         if update_sets:
             update_vals.extend([product_id, business_id])
             db.execute(
-                f"UPDATE products SET {', '.join(update_sets)}, updated_at=datetime('now') "
+                f"UPDATE products SET {', '.join(update_sets)}, updated_at=datetime('now') "  # nosec B608
                 "WHERE id=? AND business_id=?",
                 tuple(update_vals),
             )
@@ -806,7 +806,7 @@ def edit_product(product_id):
     if update_sets:
         update_vals.extend([product_id_fk, business_id])
         db.execute(
-            f"UPDATE products SET {', '.join(update_sets)}, updated_at=datetime('now') "
+            f"UPDATE products SET {', '.join(update_sets)}, updated_at=datetime('now') "  # nosec B608
             "WHERE id=? AND business_id=?",
             tuple(update_vals),
         )
@@ -863,39 +863,48 @@ def list_movements():
     date_to = request.args.get("to", "").strip()
     product_id = request.args.get("product_id", "").strip()
 
-    where = ["im.business_id = ?"]
-    params = [business_id]
-
     normalized_type = _normalize_movement_type(movement_type) if movement_type else None
-    if movement_type and normalized_type:
-        where.append("im.movement_type = ?")
-        params.append(normalized_type)
-
-    if date_from:
-        where.append("date(im.created_at) >= date(?)")
-        params.append(date_from)
-    if date_to:
-        where.append("date(im.created_at) <= date(?)")
-        params.append(date_to)
-    if product_id.isdigit():
-        where.append("im.product_id = ?")
-        params.append(int(product_id))
-
-    where_sql = " AND ".join(where)
+    filter_type = normalized_type if (movement_type and normalized_type) else None
+    filter_from = date_from or None
+    filter_to = date_to or None
+    filter_product = int(product_id) if product_id.isdigit() else None
 
     movements = db.execute(
-        f"""SELECT im.*, pi.sku, pi.sku AS product_name, im.reason AS notes
+        """SELECT im.*, pi.sku, pi.sku AS product_name, im.reason AS notes
             FROM inventory_movements im
             LEFT JOIN product_inventory pi ON im.product_id = pi.id
-            WHERE {where_sql}
+            WHERE im.business_id = ?
+              AND (? IS NULL OR im.movement_type = ?)
+              AND (? IS NULL OR DATE(im.created_at) >= DATE(?))
+              AND (? IS NULL OR DATE(im.created_at) <= DATE(?))
+              AND (? IS NULL OR im.product_id = ?)
             ORDER BY im.created_at DESC
             LIMIT ? OFFSET ?""",
-        (*params, per_page, (page - 1) * per_page)
+        (
+            business_id,
+            filter_type, filter_type,
+            filter_from, filter_from,
+            filter_to, filter_to,
+            filter_product, filter_product,
+            per_page, (page - 1) * per_page,
+        )
     ).fetchall()
 
     total = db.execute(
-        f"SELECT COUNT(*) FROM inventory_movements im WHERE {where_sql}",
-        params,
+        """SELECT COUNT(*)
+           FROM inventory_movements im
+           WHERE im.business_id = ?
+             AND (? IS NULL OR im.movement_type = ?)
+             AND (? IS NULL OR DATE(im.created_at) >= DATE(?))
+             AND (? IS NULL OR DATE(im.created_at) <= DATE(?))
+             AND (? IS NULL OR im.product_id = ?)""",
+        (
+            business_id,
+            filter_type, filter_type,
+            filter_from, filter_from,
+            filter_to, filter_to,
+            filter_product, filter_product,
+        ),
     ).fetchone()[0]
 
     return render_template("inventory/movements_list.html", **{
@@ -1293,57 +1302,57 @@ def report_damage_waste():
     date_from = request.args.get("from", "").strip()
     date_to = request.args.get("to", "").strip()
 
-    where = ["im.business_id = ? AND im.movement_type = 'damage'"]
-    params = [business_id]
-
-    if date_from:
-        where.append("DATE(im.created_at) >= DATE(?)")
-        params.append(date_from)
-    if date_to:
-        where.append("DATE(im.created_at) <= DATE(?)")
-        params.append(date_to)
-
-    where_sql = " AND ".join(where)
+    filter_from = date_from or None
+    filter_to = date_to or None
 
     # ملخص التقرير
     summary = db.execute(
-        f"""SELECT 
+        """SELECT 
             COUNT(*) AS count,
             SUM(quantity) AS total_qty
         FROM inventory_movements im
-        WHERE {where_sql}""",
-        params,
+        WHERE im.business_id = ?
+          AND im.movement_type = 'damage'
+          AND (? IS NULL OR DATE(im.created_at) >= DATE(?))
+          AND (? IS NULL OR DATE(im.created_at) <= DATE(?))""",
+        (business_id, filter_from, filter_from, filter_to, filter_to),
     ).fetchone()
 
     # تفاصيل الهالك حسب السبب
     by_reason = db.execute(
-        f"""SELECT 
+        """SELECT 
             im.reason, 
             COUNT(*) AS cnt,
             SUM(quantity) AS total_qty,
             pi.sku
         FROM inventory_movements im
         LEFT JOIN product_inventory pi ON im.product_id = pi.id
-        WHERE {where_sql}
+        WHERE im.business_id = ?
+          AND im.movement_type = 'damage'
+          AND (? IS NULL OR DATE(im.created_at) >= DATE(?))
+          AND (? IS NULL OR DATE(im.created_at) <= DATE(?))
         GROUP BY im.reason
         ORDER BY total_qty DESC""",
-        params,
+        (business_id, filter_from, filter_from, filter_to, filter_to),
     ).fetchall()
 
     # أكثر الأصناف هالكاً
     top_damaged = db.execute(
-        f"""SELECT 
+        """SELECT 
             pi.sku,
             COUNT(*) AS cnt,
             SUM(im.quantity) AS total_qty,
             ROUND(SUM(im.quantity * COALESCE(pi.unit_cost, 0)), 2) AS estimated_cost
         FROM inventory_movements im
         LEFT JOIN product_inventory pi ON im.product_id = pi.id
-        WHERE {where_sql}
+        WHERE im.business_id = ?
+          AND im.movement_type = 'damage'
+          AND (? IS NULL OR DATE(im.created_at) >= DATE(?))
+          AND (? IS NULL OR DATE(im.created_at) <= DATE(?))
         GROUP BY im.product_id
         ORDER BY total_qty DESC
         LIMIT 10""",
-        params,
+        (business_id, filter_from, filter_from, filter_to, filter_to),
     ).fetchall()
 
     return render_template(
@@ -1374,7 +1383,7 @@ def report_inventory_turnover():
     since = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
 
     # معدل دوران كل صنف: (إجمالي المبيعات / متوسط المخزون)
-    turnover = db.execute(f"""
+    turnover = db.execute("""
         SELECT 
             pi.sku,
             p.name AS product_name,
@@ -1387,7 +1396,7 @@ def report_inventory_turnover():
                 THEN ROUND(COALESCE(SUM(CASE WHEN i.invoice_type='sale' AND i.status='paid' THEN il.quantity ELSE 0 END), 0) / pi.current_qty, 2)
                 ELSE 0 
             END AS turnover_rate,
-            ROUND(COALESCE(SUM(CASE WHEN i.invoice_type='sale' AND i.status='paid' THEN il.quantity ELSE 0 END), 0) * 1.0 / {days}, 2) AS avg_daily_sales
+            ROUND(COALESCE(SUM(CASE WHEN i.invoice_type='sale' AND i.status='paid' THEN il.quantity ELSE 0 END), 0) * 1.0 / ?, 2) AS avg_daily_sales
         FROM product_inventory pi
         LEFT JOIN products p ON p.id = pi.product_id
         LEFT JOIN invoice_lines il ON il.description = p.name
@@ -1396,10 +1405,10 @@ def report_inventory_turnover():
         WHERE pi.business_id = ?
         GROUP BY pi.id
         ORDER BY turnover_rate DESC
-    """, (since, business_id)).fetchall()
+    """, (max(days, 1), since, business_id)).fetchall()
 
     # الأصناف البطيئة جداً (لم تُباع في آخر 30/60/90 يوم)
-    slow_moving = db.execute(f"""
+    slow_moving = db.execute("""
         SELECT 
             pi.sku,
             p.name AS product_name,
@@ -1461,7 +1470,7 @@ def report_distributor_performance():
     since = (datetime.now() - timedelta(days=months * 30)).strftime("%Y-%m-%d")
 
     # أداء كل موزع
-    distributors = db.execute(f"""
+    distributors = db.execute("""
         SELECT 
             c.id,
             c.name AS distributor_name,
@@ -1544,7 +1553,7 @@ def report_sales_detail():
         WHERE {where_sql}
         ORDER BY i.created_at DESC, il.id
         LIMIT 500
-    """, params).fetchall()
+    """, params).fetchall()  # nosec B608
 
     # ملخص حسب التاريخ
     daily_summary = db.execute(f"""
@@ -1558,7 +1567,7 @@ def report_sales_detail():
         WHERE {where_sql}
         GROUP BY DATE(i.created_at)
         ORDER BY sale_date DESC
-    """, params).fetchall()
+    """, params).fetchall()  # nosec B608
 
     # ملخص حسب الصنف
     product_summary = db.execute(f"""
@@ -1574,7 +1583,7 @@ def report_sales_detail():
         GROUP BY il.description
         ORDER BY total_revenue DESC
         LIMIT 30
-    """, params).fetchall()
+    """, params).fetchall()  # nosec B608
 
     # الكاشيرون المتاحون للفلتر
     cashiers = db.execute("""
@@ -1623,7 +1632,7 @@ def report_profit_margin():
     since = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
 
     # هامش الربح لكل صنف
-    margins = db.execute(f"""
+    margins = db.execute("""
         SELECT
             pi.sku,
             p.name AS product_name,

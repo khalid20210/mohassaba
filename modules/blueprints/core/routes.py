@@ -233,7 +233,7 @@ def diagnostics():
         for table in ["businesses", "users", "invoices", "products", "contacts"]:
             try:
                 safe_table = safe_sql_identifier(table)
-                cnt = db.execute(f"SELECT COUNT(*) FROM {safe_table}").fetchone()[0]
+                cnt = db.execute(f"SELECT COUNT(*) FROM {safe_table}").fetchone()[0]  # nosec B608
                 table_counts[table] = cnt
             except Exception:
                 pass
@@ -730,19 +730,19 @@ def dashboard():
             ).fetchone()[0] or 24)
 
             pending_row = db.execute(
-                f"""SELECT
+                """SELECT
                        COUNT(*) AS pending_count,
                        SUM(CASE WHEN (
                              (CASE
-                                WHEN i.total >= {critical_amount} THEN ((julianday('now') - julianday(r.created_at)) * 24.0) >= {sla_critical}
-                                WHEN i.total >= {high_amount} THEN ((julianday('now') - julianday(r.created_at)) * 24.0) >= {sla_high}
-                                ELSE ((julianday('now') - julianday(r.created_at)) * 24.0) >= {sla_normal}
+                                WHEN i.total >= ? THEN ((julianday('now') - julianday(r.created_at)) * 24.0) >= ?
+                                WHEN i.total >= ? THEN ((julianday('now') - julianday(r.created_at)) * 24.0) >= ?
+                                ELSE ((julianday('now') - julianday(r.created_at)) * 24.0) >= ?
                               END)
                            ) THEN 1 ELSE 0 END) AS breached_count
                    FROM invoice_cancel_requests r
                    JOIN invoices i ON i.id = r.invoice_id AND i.business_id = r.business_id
                    WHERE r.business_id=? AND r.status='pending'""",
-                (biz_id,),
+                (critical_amount, sla_critical, high_amount, sla_high, sla_normal, biz_id),
             ).fetchone()
             pending_cancel_requests_count = int((pending_row["pending_count"] if pending_row else 0) or 0)
             pending_cancel_requests_sla_breached_count = int((pending_row["breached_count"] if pending_row else 0) or 0)
@@ -1617,24 +1617,34 @@ def api_recycle_list():
     page        = max(1, int(request.args.get("page", 1)))
     per_page    = 25
 
-    conditions = ["business_id=?", "restored_at IS NULL"]
-    params     = [biz_id]
     if entity_type:
-        conditions.append("entity_type=?")
-        params.append(entity_type)
-
-    where = " AND ".join(conditions)
-    where_join = where.replace("business_id", "rb.business_id").replace("restored_at", "rb.restored_at")
-    total = db.execute(f"SELECT COUNT(*) FROM recycle_bin WHERE {where}", params).fetchone()[0]
-    rows  = db.execute(
-        f"""SELECT rb.*, u.full_name AS deleted_by_name
-            FROM recycle_bin rb
-            LEFT JOIN users u ON u.id = rb.deleted_by
-            WHERE {where_join}
-            ORDER BY rb.deleted_at DESC
-            LIMIT ? OFFSET ?""",
-        params + [per_page, (page - 1) * per_page]
-    ).fetchall()
+        total = db.execute(
+            "SELECT COUNT(*) FROM recycle_bin WHERE business_id=? AND restored_at IS NULL AND entity_type=?",
+            (biz_id, entity_type),
+        ).fetchone()[0]
+        rows = db.execute(
+            """SELECT rb.*, u.full_name AS deleted_by_name
+               FROM recycle_bin rb
+               LEFT JOIN users u ON u.id = rb.deleted_by
+               WHERE rb.business_id=? AND rb.restored_at IS NULL AND rb.entity_type=?
+               ORDER BY rb.deleted_at DESC
+               LIMIT ? OFFSET ?""",
+            (biz_id, entity_type, per_page, (page - 1) * per_page),
+        ).fetchall()
+    else:
+        total = db.execute(
+            "SELECT COUNT(*) FROM recycle_bin WHERE business_id=? AND restored_at IS NULL",
+            (biz_id,),
+        ).fetchone()[0]
+        rows = db.execute(
+            """SELECT rb.*, u.full_name AS deleted_by_name
+               FROM recycle_bin rb
+               LEFT JOIN users u ON u.id = rb.deleted_by
+               WHERE rb.business_id=? AND rb.restored_at IS NULL
+               ORDER BY rb.deleted_at DESC
+               LIMIT ? OFFSET ?""",
+            (biz_id, per_page, (page - 1) * per_page),
+        ).fetchall()
 
     return jsonify({
         "total": total,
@@ -1750,9 +1760,9 @@ def api_reminders_list():
     if not show_dismissed:
         cond += " AND is_dismissed=0"
 
-    total = db.execute(f"SELECT COUNT(*) FROM reminders WHERE {cond}", params).fetchone()[0]
+    total = db.execute(f"SELECT COUNT(*) FROM reminders WHERE {cond}", params).fetchone()[0]  # nosec B608
     rows  = db.execute(
-        f"SELECT * FROM reminders WHERE {cond} ORDER BY due_date ASC LIMIT ? OFFSET ?",
+        f"SELECT * FROM reminders WHERE {cond} ORDER BY due_date ASC LIMIT ? OFFSET ?",  # nosec B608
         params + [per_page, (page - 1) * per_page]
     ).fetchall()
     return jsonify({
@@ -1961,8 +1971,9 @@ def api_backup_download():
             elif table in ("users", "roles", "settings",
                            "products", "product_categories", "warehouses",
                            "contacts", "accounts", "tax_settings", "reminders"):
+                safe_table = safe_sql_identifier(table)
                 rows = db.execute(
-                    f"SELECT * FROM {table} WHERE business_id=?", (biz_id,)
+                    f"SELECT * FROM {safe_table} WHERE business_id=?", (biz_id,)  # nosec B608
                 ).fetchall()
             elif table == "stock":
                 rows = db.execute(
@@ -2111,9 +2122,9 @@ def api_audit_log():
         params.append(date_to + " 23:59:59")
 
     where = " AND ".join(conditions)
-    total = db.execute(f"SELECT COUNT(*) FROM audit_logs WHERE {where}", params).fetchone()[0]
+    total = db.execute(f"SELECT COUNT(*) FROM audit_logs WHERE {where}", params).fetchone()[0]  # nosec B608
     rows  = db.execute(
-        f"SELECT * FROM audit_logs WHERE {where} ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        f"SELECT * FROM audit_logs WHERE {where} ORDER BY created_at DESC LIMIT ? OFFSET ?",  # nosec B608
         params + [per_page, (page - 1) * per_page]
     ).fetchall()
 
