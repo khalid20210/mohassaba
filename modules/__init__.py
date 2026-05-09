@@ -4,7 +4,14 @@ modules/__init__.py — Application Factory
 import logging
 from flask import Flask, g
 
-from .config import _load_secret_key, FLASK_CONFIG, DB_PATH, IS_PROD
+from .config import (
+    _load_secret_key,
+    FLASK_CONFIG,
+    DB_PATH,
+    IS_PROD,
+    SECURITY_BASELINE_REQUIRED,
+    get_security_baseline_issues,
+)
 from .extensions import close_db
 from .observability import setup_logging
 from .runtime_services import setup_runtime_services, validate_runtime_requirements
@@ -23,6 +30,13 @@ def create_app():
     )
     app.secret_key = _load_secret_key()
     app.config.update(FLASK_CONFIG)
+
+    # ── Security Baseline Validation (اختياري بوضع إلزامي) ─────────────────
+    security_issues = get_security_baseline_issues()
+    if security_issues:
+        logger.warning("Security baseline issues: %s", " | ".join(security_issues))
+        if SECURITY_BASELINE_REQUIRED:
+            raise RuntimeError("Security baseline failed: " + " | ".join(security_issues))
 
     # ── Runtime Services (Session/Redis/Queue) ─────────────────────────────
     try:

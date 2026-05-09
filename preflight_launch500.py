@@ -25,6 +25,7 @@ def main() -> int:
     _load_env_file(Path('.env.production'))
 
     from modules import create_app
+    from modules.config import get_security_baseline_issues, IS_PROD
 
     app = create_app()
     c = app.test_client()
@@ -48,6 +49,20 @@ def main() -> int:
 
     req_id_ok = 'X-Request-ID' in health.headers
     checks.append(("request_id_header", req_id_ok, req_id_ok))
+
+    # فحوصات أمنية مباشرة من الـ response headers
+    csp_value = health.headers.get("Content-Security-Policy", "")
+    hsts_value = health.headers.get("Strict-Transport-Security", "")
+    checks.append(("security_header_csp", bool(csp_value), csp_value[:90] if csp_value else "missing"))
+    hsts_required = IS_PROD
+    checks.append((
+        "security_header_hsts",
+        (bool(hsts_value) if hsts_required else True),
+        hsts_value or ("not_required_in_dev" if not hsts_required else "missing"),
+    ))
+
+    baseline_issues = get_security_baseline_issues()
+    checks.append(("security_baseline", len(baseline_issues) == 0, "ok" if not baseline_issues else " | ".join(baseline_issues)))
 
     print("=== Launch500 Preflight ===")
     failed = 0

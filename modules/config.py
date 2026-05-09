@@ -27,6 +27,12 @@ HEALTH_DB_TIMEOUT_MS   = int(os.environ.get("HEALTH_DB_TIMEOUT_MS", "1500"))
 MAX_INFLIGHT_REQUESTS  = int(os.environ.get("MAX_INFLIGHT_REQUESTS", "300"))
 OVERLOAD_RETRY_AFTER_SEC = int(os.environ.get("OVERLOAD_RETRY_AFTER_SEC", "2"))
 
+# ─── Security Posture Controls ──────────────────────────────────────────────
+SECURITY_BASELINE_REQUIRED = os.environ.get("SECURITY_BASELINE_REQUIRED", "false").lower() in ("1", "true", "yes")
+CSP_MODE = os.environ.get("CSP_MODE", "compatible").strip().lower()  # compatible | strict
+if CSP_MODE not in ("compatible", "strict"):
+    CSP_MODE = "compatible"
+
 # ─── Runtime Services (Redis / Session / Queue) ─────────────────────────────
 REDIS_URL = os.environ.get("REDIS_URL", "")
 SESSION_BACKEND = os.environ.get("SESSION_BACKEND", "filesystem").lower()
@@ -93,14 +99,51 @@ FLASK_CONFIG: dict = {
     "PERMANENT_SESSION_LIFETIME": timedelta(hours=8),
     "SESSION_COOKIE_HTTPONLY":    True,
     "SESSION_COOKIE_SAMESITE":    "Lax",
+    "SESSION_COOKIE_NAME":        "jenan_session",
+    "SESSION_COOKIE_PATH":        "/",
     "DEBUG":                      not IS_PROD,
     "TESTING":                    False,
     "ENV":                        FLASK_ENV,
 }
 if IS_PROD:
-    # في الإنتاج: فعّل SECURE فقط مع HTTPS
-    _secure = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true"
+    # في الإنتاج: الافتراضي الآمن هو Secure=true. يمكن تعطيله صراحة فقط عند الحاجة.
+    _secure = os.environ.get("SESSION_COOKIE_SECURE", "true").lower() == "true"
     FLASK_CONFIG["SESSION_COOKIE_SECURE"] = _secure
+    FLASK_CONFIG["SESSION_COOKIE_SAMESITE"] = os.environ.get("SESSION_COOKIE_SAMESITE", "Lax")
+    FLASK_CONFIG["SESSION_REFRESH_EACH_REQUEST"] = False
+    FLASK_CONFIG["PREFERRED_URL_SCHEME"] = "https"
+    if _secure:
+        # اسم __Host- يفرض قيودًا أقوى حسب المتصفحات الحديثة.
+        FLASK_CONFIG["SESSION_COOKIE_NAME"] = "__Host-jenan_session"
+
+
+def get_security_baseline_issues() -> list[str]:
+    """يرجع قائمة مشاكل الأمان الحرجة التي يُفضّل عدم تجاهلها في الإنتاج."""
+    issues: list[str] = []
+    if not IS_PROD:
+        return issues
+
+    env_key = os.environ.get("SECRET_KEY", "")
+    key_file = BASE_DIR / ".secret_key"
+    key_value = (env_key or (key_file.read_text().strip() if key_file.exists() else "")).strip()
+
+    if not key_value:
+        issues.append("SECRET_KEY is empty")
+    elif key_value == "CHANGE_ME_TO_STRONG_RANDOM_64_HEX":
+        issues.append("SECRET_KEY uses placeholder value")
+    elif len(key_value) < 32:
+        issues.append("SECRET_KEY is too short (<32 chars)")
+
+    if not FLASK_CONFIG.get("SESSION_COOKIE_SECURE", False):
+        issues.append("SESSION_COOKIE_SECURE must be true in production")
+
+    if str(FLASK_CONFIG.get("SESSION_COOKIE_SAMESITE", "")).lower() not in ("lax", "strict"):
+        issues.append("SESSION_COOKIE_SAMESITE must be Lax or Strict")
+
+    if CSP_MODE == "compatible":
+        issues.append("CSP_MODE is compatible (allows unsafe-inline)")
+
+    return issues
 
 
 MAX_LOGIN_ATTEMPTS = 10

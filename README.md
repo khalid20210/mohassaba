@@ -33,6 +33,8 @@ Copy-Item .env.example .env
 - `SECRET_KEY` قيمة قوية
 - `SESSION_COOKIE_SECURE=true` عند وجود HTTPS
 - `BEHIND_PROXY=true` إذا كان خلف Nginx/Proxy
+- `SECURITY_BASELINE_REQUIRED=true` لإيقاف الإقلاع عند وجود إعدادات أمنية ضعيفة
+- `CSP_MODE=strict` لتشديد سياسة المحتوى (قد يتطلب إزالة أي inline scripts/styles)
 
 3. تشغيل إنتاجي:
 
@@ -45,6 +47,13 @@ python run_production.py
 - `GET /readyz` فحص الجاهزية (زمن اتصال DB)
 - `X-Request-ID` لكل طلب لتتبع الأعطال
 - Rate limiting أساسي لتخفيف ضغط الهجمات/الانفجارات المرورية
+
+## Cybersecurity CI Gates
+- `security-gates.yml`: فحص SAST عبر Bandit + فحص CVE للتبعيات عبر pip-audit + فحص أسرار عبر Gitleaks.
+- `codeql-analysis.yml`: تحليل CodeQL دوري وعلى كل Push/PR لاكتشاف أنماط ثغرات الكود.
+- `.github/dependabot.yml`: تحديثات أسبوعية تلقائية لحزم Python و GitHub Actions.
+
+مخرجات الفحوصات الأمنية تُرفع كـ Artifacts داخل GitHub Actions لتسهيل المراجعة والتدقيق.
 
 ## تسجيل اجتماعي حقيقي (OAuth)
 لتمكين تسجيل الدخول عبر Google / Apple / Microsoft أضف مفاتيح المزود في ملف `.env`:

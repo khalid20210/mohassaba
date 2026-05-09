@@ -1,0 +1,12 @@
+title = "Jenan Biz Gitleaks Config"
+
+[allowlist]
+description = "Allow common placeholders/examples only"
+regexes = [
+  '''CHANGE_ME_TO_STRONG_RANDOM_64_HEX''',
+  '''SECRET_KEY=$'''
+]
+paths = [
+  '''^\.env\.example$''',
+  '''^\.env\.launch500\.example$'''
+]

@@ -18,6 +18,8 @@ from .config import (
     RATE_LIMIT_MAX_REQUEST,
     MAX_INFLIGHT_REQUESTS,
     OVERLOAD_RETRY_AFTER_SEC,
+    IS_PROD,
+    CSP_MODE,
 )
 from .runtime_services import (
     should_use_distributed_rate_limit,
@@ -548,18 +550,43 @@ def add_security_headers(response):
     """Security Headers على كل استجابة"""
     response.headers["X-Frame-Options"]        = "SAMEORIGIN"
     response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-XSS-Protection"]       = "1; mode=block"
+    response.headers["X-XSS-Protection"]       = "0"
     response.headers["Referrer-Policy"]        = "strict-origin-when-cross-origin"
-    response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net unpkg.com; "
-        "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com; "
-        "font-src 'self' fonts.gstatic.com cdn.jsdelivr.net data:; "
-        "img-src 'self' data: blob:; "
-        "connect-src 'self';"
-    )
-    if request.is_secure:
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+    response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()"
+    response.headers["Origin-Agent-Cluster"] = "?1"
+
+    if CSP_MODE == "strict":
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "base-uri 'self'; "
+            "object-src 'none'; "
+            "frame-ancestors 'self'; "
+            "form-action 'self'; "
+            "script-src 'self' cdn.jsdelivr.net unpkg.com; "
+            "style-src 'self' cdn.jsdelivr.net fonts.googleapis.com; "
+            "font-src 'self' fonts.gstatic.com cdn.jsdelivr.net data:; "
+            "img-src 'self' data: blob:; "
+            "connect-src 'self';"
+        )
+    else:
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "base-uri 'self'; "
+            "object-src 'none'; "
+            "frame-ancestors 'self'; "
+            "form-action 'self'; "
+            "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net unpkg.com; "
+            "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com; "
+            "font-src 'self' fonts.gstatic.com cdn.jsdelivr.net data:; "
+            "img-src 'self' data: blob:; "
+            "connect-src 'self';"
+        )
+
+    if request.is_secure or (IS_PROD and request.headers.get("X-Forwarded-Proto", "").lower() == "https"):
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
     response.headers["X-Request-ID"] = getattr(g, "request_id", "")
 
     # تحرير slot الطلب المتزامن بعد إنهاء المعالجة.
