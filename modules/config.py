@@ -24,6 +24,8 @@ SAAS_REGION   = os.environ.get("SAAS_REGION", "sa")
 RATE_LIMIT_WINDOW_SEC  = int(os.environ.get("RATE_LIMIT_WINDOW_SEC", "60"))
 RATE_LIMIT_MAX_REQUEST = int(os.environ.get("RATE_LIMIT_MAX_REQUEST", "240"))
 HEALTH_DB_TIMEOUT_MS   = int(os.environ.get("HEALTH_DB_TIMEOUT_MS", "1500"))
+MAX_INFLIGHT_REQUESTS  = int(os.environ.get("MAX_INFLIGHT_REQUESTS", "300"))
+OVERLOAD_RETRY_AFTER_SEC = int(os.environ.get("OVERLOAD_RETRY_AFTER_SEC", "2"))
 
 # ─── Runtime Services (Redis / Session / Queue) ─────────────────────────────
 REDIS_URL = os.environ.get("REDIS_URL", "")
@@ -45,6 +47,8 @@ SQLITE_SYNCHRONOUS         = os.environ.get("SQLITE_SYNCHRONOUS", "NORMAL")
 SQLITE_CACHE_SIZE          = int(os.environ.get("SQLITE_CACHE_SIZE", "-65536"))   # 64 MB
 SQLITE_MMAP_SIZE           = int(os.environ.get("SQLITE_MMAP_SIZE", "268435456"))   # 256 MB
 SQLITE_WAL_AUTOCHECKPOINT  = int(os.environ.get("SQLITE_WAL_AUTOCHECKPOINT", "10000"))
+SQLITE_LOCK_RETRY_COUNT    = int(os.environ.get("SQLITE_LOCK_RETRY_COUNT", "3"))
+SQLITE_LOCK_RETRY_DELAY_MS = int(os.environ.get("SQLITE_LOCK_RETRY_DELAY_MS", "30"))
 
 # ─── خيارات Checkout lock (للضغط العالي على نقطة البيع) ───────────────
 CHECKOUT_LOCK_TIMEOUT_MS = int(os.environ.get("CHECKOUT_LOCK_TIMEOUT_MS", "30000"))

@@ -6,14 +6,19 @@ import secrets
 from collections import deque
 from datetime import datetime
 from functools import wraps
-from threading import Lock
+from threading import BoundedSemaphore, Lock
 from time import monotonic
 
 from flask import g, redirect, session, url_for, flash, request, jsonify
 
 from .config import SIDEBAR_CONFIG, SIDEBAR_PERM, get_sidebar_key
 from .extensions import get_db, generate_csrf_token
-from .config import RATE_LIMIT_WINDOW_SEC, RATE_LIMIT_MAX_REQUEST
+from .config import (
+    RATE_LIMIT_WINDOW_SEC,
+    RATE_LIMIT_MAX_REQUEST,
+    MAX_INFLIGHT_REQUESTS,
+    OVERLOAD_RETRY_AFTER_SEC,
+)
 from .runtime_services import (
     should_use_distributed_rate_limit,
     check_rate_limit_distributed,
@@ -23,6 +28,7 @@ from .i18n import SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE
 
 _rate_limit_state: dict[str, deque] = {}
 _rate_lock = Lock()
+_inflight_semaphore = BoundedSemaphore(max(1, MAX_INFLIGHT_REQUESTS))
 
 
 def _is_onboarding_complete() -> bool:
@@ -309,6 +315,7 @@ def load_user():
 def platform_guard():
     """حماية أساسية: request id + rate limit بسيط على مستوى التطبيق."""
     g.request_id = request.headers.get("X-Request-ID") or secrets.token_hex(12)
+    g._inflight_acquired = False
 
     path = request.path or ""
     if path.startswith("/static") or path == "/sw.js":
@@ -317,6 +324,20 @@ def platform_guard():
     # استثناءات صحة المنصة والصفحة الهابطة
     if path in ("/healthz", "/readyz", "/offline"):
         return None
+
+    # حماية من التشبع: إذا امتلأت سعة الطلبات المتزامنة نرجع 503 سريعاً.
+    acquired = _inflight_semaphore.acquire(blocking=False)
+    if not acquired:
+        resp = jsonify({
+            "success": False,
+            "error": "service_overloaded",
+            "message": "الخدمة تحت ضغط مرتفع، حاول بعد قليل",
+            "request_id": g.request_id,
+        })
+        resp.status_code = 503
+        resp.headers["Retry-After"] = str(max(1, OVERLOAD_RETRY_AFTER_SEC))
+        return resp
+    g._inflight_acquired = True
 
     # Force Update Gate: إغلاق إجباري للنسخ القديمة لتطبيق المندوب
     if path.startswith(("/api/v1/agents", "/api/v2/agents")):
@@ -540,4 +561,13 @@ def add_security_headers(response):
     if request.is_secure:
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     response.headers["X-Request-ID"] = getattr(g, "request_id", "")
+
+    # تحرير slot الطلب المتزامن بعد إنهاء المعالجة.
+    if getattr(g, "_inflight_acquired", False):
+        try:
+            _inflight_semaphore.release()
+        except Exception:
+            pass
+        g._inflight_acquired = False
+
     return response

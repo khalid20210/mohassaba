@@ -3,6 +3,7 @@ modules/db_adapter.py
 طبقة abstraction لقاعدة البيانات: تسمح بالانتقال من SQLite → PostgreSQL بدون تغيير كود Business Logic
 """
 import sqlite3
+import time
 from typing import Optional
 
 from flask import g
@@ -13,6 +14,8 @@ from modules.config import (
     SQLITE_CACHE_SIZE,
     SQLITE_MMAP_SIZE,
     SQLITE_WAL_AUTOCHECKPOINT,
+    SQLITE_LOCK_RETRY_COUNT,
+    SQLITE_LOCK_RETRY_DELAY_MS,
 )
 
 
@@ -33,26 +36,44 @@ class DatabaseConnection:
     def execute(self, query: str, params: tuple = ()):
         """تنفيذ استعلام مع تسجيل الأداء."""
         from modules.observability import perf_tracker
-        import time
-        
+
+        retry_count = max(0, int(SQLITE_LOCK_RETRY_COUNT))
+        retry_delay_sec = max(0.0, float(SQLITE_LOCK_RETRY_DELAY_MS) / 1000.0)
         start = time.time()
-        try:
-            cursor = self.conn.execute(query, params)
-            duration_ms = (time.time() - start) * 1000
-            
-            # تسجيل الأداء
-            result_count = cursor.rowcount if getattr(cursor, 'rowcount', -1) not in (-1, None) else 0
-            perf_tracker.track_db_query(query, duration_ms, params, result_count)
-            
-            return cursor
-        except Exception as e:
-            duration_ms = (time.time() - start) * 1000
-            from modules.observability import perf_tracker as pt
-            pt.track_error("DB_ERROR", str(e), {
-                "query_first_80": query[:80],
-                "duration_ms": duration_ms,
-            })
-            raise
+
+        for attempt in range(retry_count + 1):
+            try:
+                cursor = self.conn.execute(query, params)
+                duration_ms = (time.time() - start) * 1000
+
+                # تسجيل الأداء
+                result_count = cursor.rowcount if getattr(cursor, 'rowcount', -1) not in (-1, None) else 0
+                perf_tracker.track_db_query(query, duration_ms, params, result_count)
+                return cursor
+            except sqlite3.OperationalError as e:
+                err_text = str(e).lower()
+                is_lock_error = ("database is locked" in err_text) or ("database is busy" in err_text)
+                if is_lock_error and attempt < retry_count:
+                    time.sleep(retry_delay_sec)
+                    continue
+
+                duration_ms = (time.time() - start) * 1000
+                from modules.observability import perf_tracker as pt
+                pt.track_error("DB_ERROR", str(e), {
+                    "query_first_80": query[:80],
+                    "duration_ms": duration_ms,
+                    "attempt": attempt + 1,
+                })
+                raise
+            except Exception as e:
+                duration_ms = (time.time() - start) * 1000
+                from modules.observability import perf_tracker as pt
+                pt.track_error("DB_ERROR", str(e), {
+                    "query_first_80": query[:80],
+                    "duration_ms": duration_ms,
+                    "attempt": attempt + 1,
+                })
+                raise
     
     def fetchone(self, cursor):
         """جلب صف واحد (موحد بين الـ backends)."""
