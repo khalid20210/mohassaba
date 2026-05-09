@@ -9,6 +9,8 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}
 
     steps:
       - uses: actions/checkout@v4
@@ -27,7 +29,7 @@ jobs:
       - name: Run tests with reports
         run: |
           mkdir -p artifacts
-          pytest tests \
+          python -m pytest tests \
             --junitxml=artifacts/junit.xml \
             --cov=modules \
             --cov=app \

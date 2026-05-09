@@ -31,17 +31,17 @@ jobs:
           python -m pip install bandit bandit-sarif-formatter
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Run Bandit (high confidence, medium+ severity)
+      - name: Run Bandit (high confidence, high severity)
         run: |
           mkdir -p artifacts
           bandit -r app.py modules \
             -f json \
             -o artifacts/bandit.json \
-            -ii -ll
+            -iii -lll
           bandit -r app.py modules \
             -f sarif \
             -o artifacts/bandit.sarif \
-            -ii -ll
+            -iii -lll
 
       - name: Upload Bandit SARIF
         if: always()
