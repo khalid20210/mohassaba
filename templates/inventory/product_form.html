@@ -266,6 +266,69 @@
       </div>
     </div>
 
+    <!-- ══ بيانات ZATCA الضريبية ══ -->
+    <div class="pf-section" style="border-color:rgba(99,102,241,.2);background:linear-gradient(145deg,rgba(30,41,59,.9),rgba(99,102,241,.04));">
+      <div class="pf-section-title">
+        <div class="pf-section-icon" style="background:rgba(99,102,241,.2);">🧾</div>
+        بيانات الضريبة والجمارك (ZATCA)
+        <span style="margin-right:auto;font-size:.7rem;color:#6366f1;background:rgba(99,102,241,.1);
+                     border:1px solid rgba(99,102,241,.25);border-radius:20px;padding:2px 10px;font-weight:500">
+          مطلوب للفاتورة الإلكترونية
+        </span>
+      </div>
+      <div class="pf-row cols3">
+        <div class="pf-field">
+          <label class="pf-label">فئة الضريبة
+            <span style="background:rgba(99,102,241,.12);border-radius:4px;padding:1px 6px;font-size:.7rem">ZATCA</span>
+          </label>
+          <select name="tax_category" class="pf-input pf-select">
+            <option value="S">S — خاضع للضريبة (15%)</option>
+            <option value="Z">Z — معدل صفري (0%)</option>
+            <option value="E">E — معفى من الضريبة</option>
+            <option value="O">O — خارج النطاق الضريبي</option>
+          </select>
+          <span style="font-size:.72rem;color:#475569;margin-top:2px">للمنتجات المعفاة أو ذات الصفر: اختر E أو Z</span>
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">رمز HS (للاستيراد/الجمارك)
+            <span style="font-size:.68rem;color:#64748b">اختياري</span>
+          </label>
+          <input type="text" name="hs_code" class="pf-input"
+                 placeholder="مثال: 6109.10" dir="ltr" maxlength="20">
+          <span style="font-size:.72rem;color:#475569;margin-top:2px">رمز النظام المنسَّق الدولي (HS Code)</span>
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">بلد المنشأ
+            <span style="font-size:.68rem;color:#64748b">اختياري</span>
+          </label>
+          <select name="origin_country" class="pf-input pf-select">
+            <option value="">— غير محدد —</option>
+            <option value="SA">🇸🇦 المملكة العربية السعودية</option>
+            <option value="CN">🇨🇳 الصين</option>
+            <option value="US">🇺🇸 الولايات المتحدة</option>
+            <option value="DE">🇩🇪 ألمانيا</option>
+            <option value="TR">🇹🇷 تركيا</option>
+            <option value="IN">🇮🇳 الهند</option>
+            <option value="JP">🇯🇵 اليابان</option>
+            <option value="GB">🇬🇧 بريطانيا</option>
+            <option value="FR">🇫🇷 فرنسا</option>
+            <option value="IT">🇮🇹 إيطاليا</option>
+            <option value="AE">🇦🇪 الإمارات</option>
+            <option value="EG">🇪🇬 مصر</option>
+            <option value="KW">🇰🇼 الكويت</option>
+            <option value="OTHER">🌍 أخرى</option>
+          </select>
+        </div>
+        <div class="pf-field full">
+          <label class="pf-label">سبب الإعفاء الضريبي
+            <span style="font-size:.68rem;color:#64748b">مطلوب إذا كانت فئة الضريبة E أو Z</span>
+          </label>
+          <input type="text" name="tax_exemption_reason" class="pf-input"
+                 placeholder="مثال: خدمات تعليمية — معفاة وفق المادة (...)">
+        </div>
+      </div>
+    </div>
+
     <!-- ══ معلومات إضافية ══ -->
     <div class="pf-section">
       <div class="pf-section-title">

@@ -752,6 +752,16 @@ def edit_product(product_id):
     business_id = g.business["id"]
     
     data = request.form
+
+    inventory_row = db.execute(
+        "SELECT id, product_id FROM product_inventory WHERE id=? AND business_id=?",
+        (product_id, business_id),
+    ).fetchone()
+    if not inventory_row:
+        flash("الصنف غير موجود", "error")
+        return redirect("/inventory/products")
+
+    notes_raw = (data.get("notes") or "").strip()
     
     db.execute("""
         UPDATE product_inventory SET
@@ -764,10 +774,67 @@ def edit_product(product_id):
         float(data.get("unit_price", 0)),
         data.get("location"),
         data.get("supplier_id") or None,
-        data.get("notes"),
+        notes_raw,
         product_id,
         business_id,
     ))
+
+    # تحديث بيانات ZATCA في جدول products إن كانت الأعمدة موجودة، وإلا تخزينها كـ metadata.
+    tax_category = (data.get("tax_category") or "S").strip() or "S"
+    hs_code = (data.get("hs_code") or "").strip()
+    origin_country = (data.get("origin_country") or "").strip()
+    tax_exemption_reason = (data.get("tax_exemption_reason") or "").strip()
+
+    product_id_fk = int(inventory_row["product_id"])
+    product_columns = {
+        c["name"]
+        for c in db.execute("PRAGMA table_info(products)").fetchall()
+    }
+    update_sets = []
+    update_vals = []
+
+    for col_name, col_val in (
+        ("tax_category", tax_category),
+        ("hs_code", hs_code),
+        ("origin_country", origin_country),
+        ("tax_exemption_reason", tax_exemption_reason),
+    ):
+        if col_name in product_columns:
+            update_sets.append(f"{col_name} = ?")
+            update_vals.append(col_val)
+
+    if update_sets:
+        update_vals.extend([product_id_fk, business_id])
+        db.execute(
+            f"UPDATE products SET {', '.join(update_sets)}, updated_at=datetime('now') "
+            "WHERE id=? AND business_id=?",
+            tuple(update_vals),
+        )
+    else:
+        marker = "[PRODUCT_TAX_META]"
+        product_row = db.execute(
+            "SELECT notes FROM products WHERE id=? AND business_id=?",
+            (product_id_fk, business_id),
+        ).fetchone()
+        base_notes = ((product_row["notes"] if product_row else "") or "").strip()
+        if marker in base_notes:
+            base_notes = base_notes.split(marker, 1)[0].strip()
+        if notes_raw:
+            base_notes = notes_raw
+
+        meta_json = json.dumps({
+            "tax_category": tax_category,
+            "hs_code": hs_code,
+            "origin_country": origin_country,
+            "tax_exemption_reason": tax_exemption_reason,
+        }, ensure_ascii=False)
+        merged_notes = base_notes + ("\n\n" if base_notes else "") + f"{marker}{meta_json}"
+
+        db.execute(
+            "UPDATE products SET notes=?, updated_at=datetime('now') WHERE id=? AND business_id=?",
+            (merged_notes, product_id_fk, business_id),
+        )
+
     db.commit()
     
     log_activity("inventory", "edit_product", product_id)
