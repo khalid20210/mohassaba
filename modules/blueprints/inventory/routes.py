@@ -666,27 +666,33 @@ def add_product():
             c["name"]
             for c in db.execute("PRAGMA table_info(products)").fetchall()
         }
-        update_sets = []
-        update_vals = []
-
-        for col_name, col_val in (
-            ("tax_category", tax_category),
-            ("hs_code", hs_code),
-            ("origin_country", origin_country),
-            ("tax_exemption_reason", tax_exemption_reason),
-        ):
-            if col_name in product_columns:
-                update_sets.append(f"{col_name} = ?")
-                update_vals.append(col_val)
-
-        if update_sets:
-            update_vals.extend([product_id, business_id])
+        has_tax_cols = False
+        if "tax_category" in product_columns:
             db.execute(
-                f"UPDATE products SET {', '.join(update_sets)}, updated_at=datetime('now') "  # nosec B608
-                "WHERE id=? AND business_id=?",
-                tuple(update_vals),
+                "UPDATE products SET tax_category=?, updated_at=datetime('now') WHERE id=? AND business_id=?",
+                (tax_category, product_id, business_id),
             )
-        else:
+            has_tax_cols = True
+        if "hs_code" in product_columns:
+            db.execute(
+                "UPDATE products SET hs_code=?, updated_at=datetime('now') WHERE id=? AND business_id=?",
+                (hs_code, product_id, business_id),
+            )
+            has_tax_cols = True
+        if "origin_country" in product_columns:
+            db.execute(
+                "UPDATE products SET origin_country=?, updated_at=datetime('now') WHERE id=? AND business_id=?",
+                (origin_country, product_id, business_id),
+            )
+            has_tax_cols = True
+        if "tax_exemption_reason" in product_columns:
+            db.execute(
+                "UPDATE products SET tax_exemption_reason=?, updated_at=datetime('now') WHERE id=? AND business_id=?",
+                (tax_exemption_reason, product_id, business_id),
+            )
+            has_tax_cols = True
+
+        if not has_tax_cols:
             # fallback متوافق للخلف إذا لم تكن الأعمدة موجودة بعد
             meta_json = json.dumps(extra_meta, ensure_ascii=False)
             merged_notes = notes_raw + ("\n\n" if notes_raw else "") + f"[PRODUCT_TAX_META]{meta_json}"
@@ -790,27 +796,33 @@ def edit_product(product_id):
         c["name"]
         for c in db.execute("PRAGMA table_info(products)").fetchall()
     }
-    update_sets = []
-    update_vals = []
-
-    for col_name, col_val in (
-        ("tax_category", tax_category),
-        ("hs_code", hs_code),
-        ("origin_country", origin_country),
-        ("tax_exemption_reason", tax_exemption_reason),
-    ):
-        if col_name in product_columns:
-            update_sets.append(f"{col_name} = ?")
-            update_vals.append(col_val)
-
-    if update_sets:
-        update_vals.extend([product_id_fk, business_id])
+    has_tax_cols = False
+    if "tax_category" in product_columns:
         db.execute(
-            f"UPDATE products SET {', '.join(update_sets)}, updated_at=datetime('now') "  # nosec B608
-            "WHERE id=? AND business_id=?",
-            tuple(update_vals),
+            "UPDATE products SET tax_category=?, updated_at=datetime('now') WHERE id=? AND business_id=?",
+            (tax_category, product_id_fk, business_id),
         )
-    else:
+        has_tax_cols = True
+    if "hs_code" in product_columns:
+        db.execute(
+            "UPDATE products SET hs_code=?, updated_at=datetime('now') WHERE id=? AND business_id=?",
+            (hs_code, product_id_fk, business_id),
+        )
+        has_tax_cols = True
+    if "origin_country" in product_columns:
+        db.execute(
+            "UPDATE products SET origin_country=?, updated_at=datetime('now') WHERE id=? AND business_id=?",
+            (origin_country, product_id_fk, business_id),
+        )
+        has_tax_cols = True
+    if "tax_exemption_reason" in product_columns:
+        db.execute(
+            "UPDATE products SET tax_exemption_reason=?, updated_at=datetime('now') WHERE id=? AND business_id=?",
+            (tax_exemption_reason, product_id_fk, business_id),
+        )
+        has_tax_cols = True
+
+    if not has_tax_cols:
         marker = "[PRODUCT_TAX_META]"
         product_row = db.execute(
             "SELECT notes FROM products WHERE id=? AND business_id=?",
