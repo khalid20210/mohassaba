@@ -1,6 +1,8 @@
 {
   "recommendations": [
     "mtxr.sqltools",
+    "donjayamanne.githistory",
+    "eamodio.gitlens",
     "qwtel.sqlite-viewer",
     "snyk-security.snyk-vulnerability-scanner",
     "rangav.vscode-thunder-client",
