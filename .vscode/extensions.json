@@ -1,0 +1,16 @@
+{
+  "recommendations": [
+    "mtxr.sqltools",
+    "qwtel.sqlite-viewer",
+    "snyk-security.snyk-vulnerability-scanner",
+    "rangav.vscode-thunder-client",
+    "usernamehw.errorlens",
+    "firefox-devtools.vscode-firefox-debug",
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "github.vscode-pull-request-github",
+    "github.vscode-github-actions",
+    "ms-vscode.powershell"
+  ],
+  "unwantedRecommendations": []
+}
