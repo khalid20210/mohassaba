@@ -96,13 +96,7 @@ CREATE TABLE IF NOT EXISTS contacts (
 );
 -- توافق مع قواعد قديمة تحتوي عمود type بدل contact_type
 ALTER TABLE contacts ADD COLUMN contact_type TEXT;
-UPDATE contacts
-SET contact_type = CASE
-    WHEN lower(COALESCE(type,'')) = 'supplier' THEN 'supplier'
-    WHEN lower(COALESCE(type,'')) = 'customer' THEN 'customer'
-    ELSE 'other'
-END
-WHERE contact_type IS NULL;
+UPDATE contacts SET contact_type = 'other' WHERE contact_type IS NULL;
 
 CREATE INDEX IF NOT EXISTS idx_contacts_biz_type ON contacts(business_id, contact_type);
 CREATE INDEX IF NOT EXISTS idx_contacts_phone ON contacts(phone);
