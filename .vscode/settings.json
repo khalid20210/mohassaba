@@ -1,0 +1,50 @@
+{
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.diagnosticMode": "openFilesOnly",
+  "python.analysis.exclude": [
+    "**/.venv/**",
+    "**/__pycache__/**",
+    "**/database/**",
+    "**/instance/**",
+    "**/uploads/**"
+  ],
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportMissingTypeStubs": "none",
+    "reportUnknownVariableType": "none",
+    "reportUnknownMemberType": "none",
+    "reportUnknownArgumentType": "none",
+    "reportUnknownLambdaType": "none",
+    "reportUnknownParameterType": "none",
+    "reportUnusedCallResult": "none",
+    "reportUnusedImport": "warning"
+  },
+  "editor.unicodeHighlight.nonBasicASCII": false,
+  "editor.unicodeHighlight.ambiguousCharacters": false,
+  "editor.unicodeHighlight.invisibleCharacters": true,
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/*.pyc": true,
+    "**/*.pyo": true,
+    "database/*.db-shm": true,
+    "database/*.db-wal": true
+  },
+  "search.exclude": {
+    "**/.venv": true,
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "database/*.db-shm": true,
+    "database/*.db-wal": true,
+    "uploads/**": true,
+    "instance/**": true
+  },
+  "problems.exclude": {
+    "**/.venv/**": true,
+    "**/__pycache__/**": true,
+    "**/database/**": true,
+    "**/uploads/**": true,
+    "**/instance/**": true
+  },
+  "sqltools.results.location": "tab",
+  "sqltools.connections": []
+}
