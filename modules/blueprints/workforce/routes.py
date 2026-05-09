@@ -4,7 +4,10 @@ blueprints/workforce/routes.py
 نظام المناديب الاحترافي الكامل — v2
 """
 import json
+import secrets
+import string
 from datetime import datetime, timedelta
+from typing import Optional
 from urllib.parse import quote
 
 from flask import Blueprint, jsonify, redirect, render_template, request, session, url_for
@@ -59,6 +62,29 @@ def _build_safe_update_parts(payload: dict, allowed: dict):
         except (TypeError, ValueError):
             raise ValueError(f"قيمة غير صالحة للحقل: {col}")
     return fields, vals
+
+
+def _generate_temp_password(length: int = 12) -> str:
+    alphabet = string.ascii_letters + string.digits + "@#_-!"
+    return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
+def _next_unique_agent_username(db, biz_id: int, base: str, exclude_agent_id: Optional[int] = None) -> str:
+    base_clean = (base or "").strip().lower().replace(" ", "")
+    if len(base_clean) < 3:
+        base_clean = f"agt{exclude_agent_id or biz_id}"
+    candidate = base_clean
+
+    i = 1
+    while True:
+        row = db.execute(
+            "SELECT id FROM agents WHERE username=? AND business_id=? LIMIT 1",
+            (candidate, biz_id),
+        ).fetchone()
+        if not row or (exclude_agent_id and row["id"] == exclude_agent_id):
+            return candidate
+        i += 1
+        candidate = f"{base_clean}{i}"
 
 
 # ─────────────────────────────────────────────────────────────
@@ -387,7 +413,7 @@ def api_v1_agents_list():
 
 
 @bp.route("/api/v1/agents/<int:agent_id>/set-credentials", methods=["POST"])
-@onboarding_required
+@require_perm("settings")
 def api_agent_set_credentials(agent_id: int):
     """تعيين اسم المستخدم وكلمة المرور للمندوب من قِبل الأدمن"""
     biz_id  = session["business_id"]
@@ -430,11 +456,16 @@ def api_agent_set_credentials(agent_id: int):
             (username, agent_id, biz_id),
         )
     db.commit()
-    return jsonify({"success": True, "message": "تم تحديث بيانات الدخول"})
+    return jsonify({
+        "success": True,
+        "message": "تم تحديث بيانات الدخول",
+        "username": username,
+        "password_changed": bool(password),
+    })
 
 
 @bp.route("/api/v1/agents/<int:agent_id>/credentials", methods=["GET"])
-@onboarding_required
+@require_perm("settings")
 def api_agent_get_credentials(agent_id: int):
     """جلب اسم المستخدم للمندوب (بدون كلمة المرور)"""
     biz_id = session["business_id"]
@@ -451,6 +482,53 @@ def api_agent_get_credentials(agent_id: int):
         "last_login": row["last_login"],
         "has_password": bool(row["username"]),
     })
+
+
+@bp.route("/api/v1/agents/<int:agent_id>/issue-credentials", methods=["POST"])
+@require_perm("settings")
+def api_agent_issue_credentials(agent_id: int):
+    """إصدار اسم مستخدم + كلمة مرور مؤقتة (تظهر مرة واحدة للمالك)."""
+    biz_id = session["business_id"]
+    payload = request.get_json(force=True, silent=True) or {}
+
+    db = get_db()
+    agent = db.execute(
+        "SELECT id, full_name, username FROM agents WHERE id=? AND business_id=?",
+        (agent_id, biz_id),
+    ).fetchone()
+    if not agent:
+        return jsonify({"success": False, "error": "المندوب غير موجود"}), 404
+
+    requested_username = (payload.get("username") or "").strip()
+    if requested_username and len(requested_username) < 3:
+        return jsonify({"success": False, "error": "اسم المستخدم 3 أحرف على الأقل"}), 400
+
+    base_username = requested_username or (agent["username"] or f"agt{agent_id}")
+    username = _next_unique_agent_username(
+        db,
+        biz_id,
+        base=base_username,
+        exclude_agent_id=agent_id,
+    )
+
+    temp_password = _generate_temp_password(12)
+    db.execute(
+        "UPDATE agents SET username=?, password_hash=? WHERE id=? AND business_id=?",
+        (username, hash_password(temp_password), agent_id, biz_id),
+    )
+    db.commit()
+
+    return jsonify(
+        {
+            "success": True,
+            "message": "تم إصدار بيانات دخول جديدة",
+            "agent_id": agent_id,
+            "agent_name": agent["full_name"],
+            "username": username,
+            "temporary_password": temp_password,
+            "login_path": "/agent/login",
+        }
+    )
 
 
 @bp.route("/api/v1/agents", methods=["POST"])
@@ -570,10 +648,10 @@ def api_v1_agent_assign_invoice(agent_id: int):
 
 
 @bp.route("/api/v1/agents/<int:agent_id>/commissions/summary")
-@onboarding_required
 def api_v1_agent_commissions_summary(agent_id: int):
-    db = get_db()
-    biz_id = session["business_id"]
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
     days = request.args.get("days", "30")
     try:
         days_int = max(1, min(int(days), 365))
@@ -585,6 +663,7 @@ def api_v1_agent_commissions_summary(agent_id: int):
     row = db.execute(
         """SELECT
                COUNT(*) AS invoices_count,
+               COALESCE(SUM(invoice_total),0) AS sales_total,
                COALESCE(SUM(commission_amount),0) AS commissions_total,
                COALESCE(SUM(CASE WHEN status='paid' THEN commission_amount ELSE 0 END),0) AS commissions_paid,
                COALESCE(SUM(CASE WHEN status='pending' THEN commission_amount ELSE 0 END),0) AS commissions_pending
@@ -729,7 +808,6 @@ def api_v1_agent_toggle(agent_id: int):
 # ═══════════════════════════════════════════════════════════════
 
 @bp.route("/api/v1/agents/<int:agent_id>/location", methods=["POST"])
-@onboarding_required
 def api_v1_agent_record_location(agent_id: int):
     """تسجيل موقع المندوب (يُستدعى كل 30 دقيقة)"""
     payload = request.get_json(force=True) or {}
@@ -737,8 +815,9 @@ def api_v1_agent_record_location(agent_id: int):
     lng = payload.get("longitude")
     if lat is None or lng is None:
         return jsonify({"success": False, "error": "latitude و longitude مطلوبان"}), 400
-    db = get_db()
-    biz_id = session["business_id"]
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
     ensure_security_tables(db)
     suspicious_gps, gps_msg = detect_mock_location(payload)
     if suspicious_gps:
@@ -805,11 +884,11 @@ def api_v1_all_agents_locations():
 # ═══════════════════════════════════════════════════════════════
 
 @bp.route("/api/v1/agents/<int:agent_id>/attendance/checkin", methods=["POST"])
-@onboarding_required
 def api_v1_agent_checkin(agent_id: int):
     payload = request.get_json(force=True) or {}
-    db = get_db()
-    biz_id = session["business_id"]
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
     ensure_security_tables(db)
     suspicious_gps, gps_msg = detect_mock_location(payload)
     if suspicious_gps:
@@ -850,11 +929,11 @@ def api_v1_agent_checkin(agent_id: int):
 
 
 @bp.route("/api/v1/agents/<int:agent_id>/attendance/checkout", methods=["POST"])
-@onboarding_required
 def api_v1_agent_checkout(agent_id: int):
     payload = request.get_json(force=True) or {}
-    db = get_db()
-    biz_id = session["business_id"]
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
     ensure_security_tables(db)
     suspicious_gps, gps_msg = detect_mock_location(payload)
     if suspicious_gps:
@@ -904,10 +983,10 @@ def api_v1_agent_checkout(agent_id: int):
 
 
 @bp.route("/api/v1/agents/<int:agent_id>/attendance")
-@onboarding_required
 def api_v1_agent_attendance_history(agent_id: int):
-    db = get_db()
-    biz_id = session["business_id"]
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
     rows = db.execute(
         """SELECT work_date, checkin_at, checkout_at, total_hours, notes
            FROM agent_attendance
@@ -923,10 +1002,10 @@ def api_v1_agent_attendance_history(agent_id: int):
 # ═══════════════════════════════════════════════════════════════
 
 @bp.route("/api/v1/agents/<int:agent_id>/client-profiles")
-@onboarding_required
 def api_v1_agent_client_profiles(agent_id: int):
-    db = get_db()
-    biz_id = session["business_id"]
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
     rows = db.execute(
         """SELECT id, contact_id, company_name, manager_name, phone, region, address, notes, is_active
            FROM agent_client_profiles
@@ -938,13 +1017,13 @@ def api_v1_agent_client_profiles(agent_id: int):
 
 
 @bp.route("/api/v1/agents/<int:agent_id>/client-profiles", methods=["POST"])
-@onboarding_required
 def api_v1_agent_client_profiles_create(agent_id: int):
     payload = request.get_json(force=True) or {}
     if not payload.get("company_name", "").strip():
         return jsonify({"success": False, "error": "اسم المنشأة مطلوب"}), 400
-    db = get_db()
-    biz_id = session["business_id"]
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
     db.execute(
         """INSERT INTO agent_client_profiles
            (business_id, agent_id, contact_id, company_name, manager_name, phone, region, address, notes, lat, lng)
@@ -965,11 +1044,11 @@ def api_v1_agent_client_profiles_create(agent_id: int):
 
 
 @bp.route("/api/v1/agents/<int:agent_id>/client-profiles/<int:profile_id>", methods=["PUT"])
-@onboarding_required
 def api_v1_agent_client_profile_update(agent_id: int, profile_id: int):
     payload = request.get_json(force=True) or {}
-    db = get_db()
-    biz_id = session["business_id"]
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
     allowed = {
         "company_name": str,
         "manager_name": str,
@@ -1001,10 +1080,10 @@ def api_v1_agent_client_profile_update(agent_id: int, profile_id: int):
 # ═══════════════════════════════════════════════════════════════
 
 @bp.route("/api/v1/agents/<int:agent_id>/customers/<int:contact_id>/history")
-@onboarding_required
 def api_v1_customer_history(agent_id: int, contact_id: int):
-    db = get_db()
-    biz_id = session["business_id"]
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
 
     contact = db.execute(
         """SELECT c.id, c.name, c.phone,
@@ -1057,7 +1136,6 @@ def api_v1_customer_history(agent_id: int, contact_id: int):
 # ═══════════════════════════════════════════════════════════════
 
 @bp.route("/api/v1/agents/<int:agent_id>/invoices", methods=["POST"])
-@onboarding_required
 def api_v1_agent_create_invoice(agent_id: int):
     """إصدار فاتورة من المندوب مع مزامنة المخزون + ربط عمولة تلقائي"""
     payload = request.get_json(force=True) or {}
@@ -1070,8 +1148,9 @@ def api_v1_agent_create_invoice(agent_id: int):
     if not ok_items:
         return jsonify({"success": False, "error": items_msg}), 400
 
-    db = get_db()
-    biz_id = session["business_id"]
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
     ensure_security_tables(db)
 
     ratio_row = db.execute(
@@ -1746,11 +1825,11 @@ def api_v1_agent_products(agent_id: int):
 # ═══════════════════════════════════════════════════════════════
 
 @bp.route("/api/v1/agents/<int:agent_id>/visits", methods=["POST"])
-@onboarding_required
 def api_v1_agent_visit_create(agent_id: int):
     payload = request.get_json(force=True) or {}
-    db = get_db()
-    biz_id = session["business_id"]
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
     db.execute(
         """INSERT INTO agent_visits
            (business_id, agent_id, contact_id, client_profile_id, visit_type,
@@ -1770,10 +1849,10 @@ def api_v1_agent_visit_create(agent_id: int):
 
 
 @bp.route("/api/v1/agents/<int:agent_id>/visits")
-@onboarding_required
 def api_v1_agent_visits_list(agent_id: int):
-    db = get_db()
-    biz_id = session["business_id"]
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
     rows = db.execute(
         """SELECT av.id, av.visit_type, av.outcome, av.notes, av.rejection_reason,
                   av.visited_at, c.name AS contact_name
@@ -1791,13 +1870,13 @@ def api_v1_agent_visits_list(agent_id: int):
 # ═══════════════════════════════════════════════════════════════
 
 @bp.route("/api/v1/agents/<int:agent_id>/draft-orders", methods=["POST"])
-@onboarding_required
 def api_v1_agent_draft_order_create(agent_id: int):
     payload = request.get_json(force=True) or {}
     items = payload.get("items", [])
     total = sum(float(i.get("qty", 1)) * float(i.get("price", 0)) for i in items)
-    db = get_db()
-    biz_id = session["business_id"]
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
     db.execute(
         """INSERT INTO agent_draft_orders
            (business_id, agent_id, contact_id, client_name, items_json, total, notes)
@@ -1814,10 +1893,10 @@ def api_v1_agent_draft_order_create(agent_id: int):
 
 
 @bp.route("/api/v1/agents/<int:agent_id>/draft-orders")
-@onboarding_required
 def api_v1_agent_draft_orders_list(agent_id: int):
-    db = get_db()
-    biz_id = session["business_id"]
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
     rows = db.execute(
         """SELECT id, contact_id, client_name, items_json, total, status, notes, created_at
            FROM agent_draft_orders
@@ -1858,14 +1937,14 @@ def api_v1_draft_order_approve(order_id: int):
 # ═══════════════════════════════════════════════════════════════
 
 @bp.route("/api/v1/agents/<int:agent_id>/collect-payment", methods=["POST"])
-@onboarding_required
 def api_v1_agent_collect_payment(agent_id: int):
     payload = request.get_json(force=True) or {}
     amount = payload.get("amount")
     if not amount or float(amount) <= 0:
         return jsonify({"success": False, "error": "المبلغ مطلوب وأكبر من صفر"}), 400
-    db = get_db()
-    biz_id = session["business_id"]
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
     db.execute(
         """INSERT INTO agent_collections
            (business_id, agent_id, contact_id, invoice_id, amount, payment_method, notes)
@@ -1938,10 +2017,10 @@ def api_v1_collection_confirm(col_id: int):
 # ═══════════════════════════════════════════════════════════════
 
 @bp.route("/api/v1/agents/<int:agent_id>/targets")
-@onboarding_required
 def api_v1_agent_targets(agent_id: int):
-    db = get_db()
-    biz_id = session["business_id"]
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
     month = request.args.get("month", datetime.now().strftime("%Y-%m"))
 
     target = db.execute(
@@ -2004,7 +2083,6 @@ def api_v1_agent_target_set(agent_id: int):
 # ═══════════════════════════════════════════════════════════════
 
 @bp.route("/api/v1/agents/<int:agent_id>/send-offer", methods=["POST"])
-@onboarding_required
 def api_v1_agent_send_offer(agent_id: int):
     payload = request.get_json(force=True) or {}
     message = (payload.get("message") or "").strip()
@@ -2012,8 +2090,9 @@ def api_v1_agent_send_offer(agent_id: int):
     if not message:
         return jsonify({"success": False, "error": "نص العرض مطلوب"}), 400
 
-    db = get_db()
-    biz_id = session["business_id"]
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
 
     if contact_ids:
         placeholders = ",".join("?" * len(contact_ids))
@@ -2056,10 +2135,10 @@ def api_v1_agent_send_offer(agent_id: int):
 # ═══════════════════════════════════════════════════════════════
 
 @bp.route("/api/v1/agents/<int:agent_id>/reminders")
-@onboarding_required
 def api_v1_agent_reminders(agent_id: int):
-    db = get_db()
-    biz_id = session["business_id"]
+    db, biz_id = _get_agent_biz(agent_id)
+    if not biz_id:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
     days = int(request.args.get("days", 30))
     since = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
 
