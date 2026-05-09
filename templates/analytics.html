@@ -3,27 +3,50 @@
 
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+.an-hero{background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(245,158,11,.08),rgba(16,185,129,.1));
+  border:1px solid rgba(99,102,241,.2);border-radius:20px;padding:28px 32px;margin-bottom:26px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.an-hero-left{display:flex;align-items:center;gap:16px}
+.an-hero-icon{width:60px;height:60px;background:linear-gradient(135deg,#6366f1,#f59e0b);
+  border-radius:16px;display:flex;align-items:center;justify-content:center;
+  font-size:1.8rem;flex-shrink:0;box-shadow:0 6px 18px rgba(99,102,241,.3)}
+.an-hero h1{font-size:1.45rem;font-weight:800;color:#f1f5f9;margin:0 0 3px}
+.an-hero-sub{color:#94a3b8;font-size:.87rem;margin:0}
+.an-period-pills{display:flex;gap:6px;flex-wrap:wrap}
+.an-period-pill{padding:9px 18px;border-radius:10px;font-size:.83rem;font-weight:600;
+  border:1px solid rgba(255,255,255,.1);color:#94a3b8;background:rgba(255,255,255,.05);
+  text-decoration:none;transition:all .18s;white-space:nowrap}
+.an-period-pill.active,.an-period-pill:hover{
+  background:rgba(99,102,241,.2);border-color:rgba(99,102,241,.4);color:#a5b4fc}
+.an-section-title{font-size:1rem;font-weight:700;margin:0 0 16px;color:var(--text);
+  display:flex;align-items:center;gap:8px}
+</style>
 {% endblock %}
 
 {% block content %}
 
-<!-- ─── رأس الصفحة ──────────────────────────────────────────── -->
-<div class="page-header">
-  <h2 class="page-title">📊 تحليل المبيعات</h2>
-  <div class="page-header-actions">
-    <form method="get" style="display:flex;gap:8px;align-items:center">
-      <label style="font-size:.82rem;color:var(--text-muted)">الفترة:</label>
-      <select name="period" class="form-control form-control-sm" onchange="this.form.submit()">
-        <option value="7"   {% if period=='7'   %}selected{% endif %}>آخر 7 أيام</option>
-        <option value="30"  {% if period=='30'  %}selected{% endif %}>آخر 30 يوماً</option>
-        <option value="90"  {% if period=='90'  %}selected{% endif %}>آخر 90 يوماً</option>
-        <option value="365" {% if period=='365' %}selected{% endif %}>السنة الكاملة</option>
-      </select>
-    </form>
+<!-- Hero -->
+<div class="an-hero">
+  <div class="an-hero-left">
+    <div class="an-hero-icon">📊</div>
+    <div>
+      <h1>تحليل المبيعات</h1>
+      <p class="an-hero-sub">لوحة تحليلية شاملة — الإيرادات، الأرباح، أكثر المنتجات مبيعاً</p>
+    </div>
+  </div>
+  <div>
+    <div style="font-size:.72rem;font-weight:700;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">تحديد الفترة</div>
+    <div class="an-period-pills">
+      <a href="?period=7"   class="an-period-pill {% if period=='7'   %}active{% endif %}">7 أيام</a>
+      <a href="?period=30"  class="an-period-pill {% if period=='30'  %}active{% endif %}">30 يوماً</a>
+      <a href="?period=90"  class="an-period-pill {% if period=='90'  %}active{% endif %}">90 يوماً</a>
+      <a href="?period=365" class="an-period-pill {% if period=='365' %}active{% endif %}">سنة كاملة</a>
+    </div>
   </div>
 </div>
 
-<!-- ─── بطاقات الإجماليات ──────────────────────────────────── -->
+<!-- بطاقات الإجماليات -->
 <div class="an-cards">
   <div class="an-card an-card-revenue">
     <span class="an-icon">💰</span>

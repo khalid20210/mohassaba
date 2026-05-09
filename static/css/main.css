@@ -2072,51 +2072,57 @@ body, .sidebar, .topbar, .card, .stat-card, .page-content,
 /* ─── بطاقات الإجماليات ──────────────────────────────── */
 .an-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 14px;
-  margin-bottom: 22px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
+  margin-bottom: 26px;
 }
 .an-card {
   background: var(--card-bg);
-  border-radius: 14px;
-  padding: 20px 20px 16px;
+  border-radius: 18px;
+  padding: 26px 24px 22px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
-  border-right: 4px solid transparent;
-  box-shadow: var(--shadow);
+  gap: 8px;
+  border-right: 5px solid transparent;
+  box-shadow: 0 4px 20px rgba(0,0,0,.18);
+  transition: transform .2s, box-shadow .2s;
 }
-.an-card-revenue  { border-color: #6366f1; }
-.an-card-purchases{ border-color: #f59e0b; }
-.an-card-profit   { border-color: #10b981; }
-.an-card-invoices { border-color: #06b6d4; }
+.an-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,.25); }
+.an-card-revenue  { border-color: #6366f1; background: linear-gradient(145deg, var(--card-bg), rgba(99,102,241,.06)); }
+.an-card-purchases{ border-color: #f59e0b; background: linear-gradient(145deg, var(--card-bg), rgba(245,158,11,.06)); }
+.an-card-profit   { border-color: #10b981; background: linear-gradient(145deg, var(--card-bg), rgba(16,185,129,.06)); }
+.an-card-invoices { border-color: #06b6d4; background: linear-gradient(145deg, var(--card-bg), rgba(6,182,212,.06)); }
 
-.an-icon { font-size: 1.4rem; }
-.an-num  { font-size: 1.7rem; font-weight: 900; color: var(--text); line-height: 1; }
-.an-label{ font-size: .78rem; color: var(--text-muted); font-weight: 600; }
+.an-icon { font-size: 1.8rem; }
+.an-num  { font-size: 2.1rem; font-weight: 900; color: var(--text); line-height: 1; font-variant-numeric: tabular-nums; }
+.an-label{ font-size: .82rem; color: var(--text-muted); font-weight: 600; letter-spacing: .02em; }
 
 /* ─── منطقة الرسوم ───────────────────────────────────── */
 .an-charts-row {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 18px;
+  margin-bottom: 22px;
 }
 .an-chart-card {
   background: var(--card-bg);
-  border-radius: 14px;
-  padding: 18px;
-  box-shadow: var(--shadow);
+  border-radius: 18px;
+  padding: 22px 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.15);
+  border: 1px solid rgba(255,255,255,.05);
 }
 .an-chart-wide { grid-column: auto; }
 .an-chart-title {
-  font-size: .9rem;
+  font-size: .95rem;
   font-weight: 700;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
   color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.an-chart-wrap { position: relative; height: 220px; }
+.an-chart-wrap { position: relative; height: 280px; }
 .an-chart-empty {
   display: flex;
   align-items: center;
@@ -2136,16 +2142,21 @@ body, .sidebar, .topbar, .card, .stat-card, .page-content,
   font-size: .85rem;
 }
 .an-top-table th {
-  background: var(--bg);
-  padding: 8px 12px;
+  background: rgba(255,255,255,.03);
+  padding: 11px 14px;
   text-align: right;
-  font-weight: 600;
+  font-weight: 700;
   border-bottom: 2px solid var(--border);
   font-size: .78rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  white-space: nowrap;
 }
 .an-top-table td {
-  padding: 8px 12px;
-  border-bottom: 1px dashed var(--border);
+  padding: 11px 14px;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+  font-size: .88rem;
 }
 .an-top-table tr:last-child td { border-bottom: none; }
 
