@@ -327,6 +327,11 @@
     <input class="inp-dash" id="credUsername" placeholder="اسم المستخدم الجديد *" autocomplete="off" autocapitalize="none">
     <input class="inp-dash" id="credPassword" type="password" placeholder="كلمة المرور الجديدة (اتركه فارغاً للإبقاء على القديمة)" autocomplete="new-password">
     <input class="inp-dash" id="credPassword2" type="password" placeholder="تأكيد كلمة المرور" autocomplete="new-password">
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button class="btn-dash btn-green-d" onclick="issueCred()" style="flex:1">⚡ إصدار بيانات تلقائياً</button>
+      <button class="btn-dash btn-gray" onclick="copyIssuedCred()" style="flex:1">📋 نسخ البيانات</button>
+    </div>
+    <textarea class="inp-dash" id="credIssuedText" rows="4" readonly placeholder="ستظهر هنا بيانات الدخول الجاهزة للنسخ بعد الإصدار"></textarea>
     <div id="credMsg" style="font-size:.78rem;min-height:18px;margin-bottom:8px"></div>
     <div style="margin-bottom:12px">
       <a id="credPortalLink" href="/agent/login" target="_blank"
@@ -432,7 +437,7 @@ async function loadAgentsGrid(){
             style="background:rgba(168,85,247,.15);border:none;border-radius:8px;padding:4px 8px;color:#c084fc;cursor:pointer;font-size:.8rem">🔑</button>
           <button onclick="event.stopPropagation();openPermModal(${a.id},'${esc(a.full_name)}')" title="صلاحيات المندوب"
             style="background:rgba(245,158,11,.15);border:none;border-radius:8px;padding:4px 8px;color:#fbbf24;cursor:pointer;font-size:.8rem">🛡️</button>
-          <a href="/agent/portal" target="_blank" onclick="event.stopPropagation()"
+          <a href="/agent/login" target="_blank" onclick="event.stopPropagation()"
             style="background:rgba(34,197,94,.15);border-radius:8px;padding:4px 8px;color:#4ade80;text-decoration:none;font-size:.8rem">📱</a>
         </div>
       </div>
@@ -707,6 +712,7 @@ async function openCredModal(agentId, agentName){
   document.getElementById('credUsername').value = '';
   document.getElementById('credPassword').value = '';
   document.getElementById('credPassword2').value = '';
+  document.getElementById('credIssuedText').value = '';
   document.getElementById('credMsg').textContent = '';
   const origin = window.location.origin;
   document.getElementById('credPortalUrl').textContent = origin + '/agent/login';
@@ -725,6 +731,56 @@ async function openCredModal(agentId, agentName){
     }
   }
 }
+
+async function issueCred(){
+  const agentId = document.getElementById('credAgentId').value;
+  const username = document.getElementById('credUsername').value.trim();
+  const msg = document.getElementById('credMsg');
+  msg.style.color='#94a3b8';
+  msg.textContent='جارٍ إصدار بيانات دخول جديدة...';
+
+  const r = await api('POST', `/api/v1/agents/${agentId}/issue-credentials`, {
+    username: username || null,
+  });
+
+  if(!r.success){
+    msg.style.color='#f87171';
+    msg.textContent='❌ ' + (r.error || 'تعذر إصدار البيانات');
+    return;
+  }
+
+  document.getElementById('credUsername').value = r.username || '';
+  document.getElementById('credPassword').value = r.temporary_password || '';
+  document.getElementById('credPassword2').value = r.temporary_password || '';
+
+  const loginUrl = window.location.origin + (r.login_path || '/agent/login');
+  document.getElementById('credIssuedText').value =
+`اسم المستخدم: ${r.username}
+كلمة المرور: ${r.temporary_password}
+رابط الدخول: ${loginUrl}`;
+
+  msg.style.color='#4ade80';
+  msg.textContent='✅ تم إصدار بيانات الدخول. احفظها الآن لأن كلمة المرور لا يمكن استرجاعها لاحقاً.';
+}
+
+async function copyIssuedCred(){
+  const txt = document.getElementById('credIssuedText').value.trim();
+  const msg = document.getElementById('credMsg');
+  if(!txt){
+    msg.style.color='#f59e0b';
+    msg.textContent='⚠️ لا توجد بيانات جاهزة للنسخ بعد';
+    return;
+  }
+  try{
+    await navigator.clipboard.writeText(txt);
+    msg.style.color='#4ade80';
+    msg.textContent='✅ تم نسخ بيانات الدخول';
+  }catch{
+    msg.style.color='#f87171';
+    msg.textContent='❌ تعذّر النسخ التلقائي. انسخ النص يدوياً.';
+  }
+}
+
 async function saveCred(){
   const agentId = document.getElementById('credAgentId').value;
   const username = document.getElementById('credUsername').value.trim();
@@ -738,6 +794,13 @@ async function saveCred(){
   const r = await api('POST', `/api/v1/agents/${agentId}/set-credentials`, {username, password: pw1});
   if(r.success){
     msg.style.color='#4ade80'; msg.textContent='✅ تم حفظ بيانات الدخول بنجاح';
+    if(pw1){
+      const loginUrl = window.location.origin + '/agent/login';
+      document.getElementById('credIssuedText').value =
+`اسم المستخدم: ${username}
+كلمة المرور: ${pw1}
+رابط الدخول: ${loginUrl}`;
+    }
     document.getElementById('credPassword').value = '';
     document.getElementById('credPassword2').value = '';
     setTimeout(()=>closeModal('credModal'),1500);
