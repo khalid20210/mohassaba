@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}محرر الثيم{% endblock %}
+{% block page_title %}🎨 محرر الثيم{% endblock %}
+
+{% block head %}
+<style>
+.te-wrap { max-width: 900px; margin: 0 auto; }
+.te-card { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 24px; margin-bottom: 18px; }
+.btn-primary { background: linear-gradient(135deg,#2563eb,#1d4ed8); color: #fff; border: none; border-radius: 10px; padding: 11px 28px; font-weight: 800; cursor: pointer; font-family: inherit; font-size: .9rem; }
+.btn-secondary { background: rgba(148,163,184,.1); color: #94a3b8; border: 1px solid rgba(148,163,184,.2); border-radius: 10px; padding: 9px 20px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: .85rem; }
+.color-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid rgba(148,163,184,.08); }
+.color-row:last-of-type { border-bottom: none; }
+.color-label { color: #e2e8f0; font-size: .88rem; font-weight: 700; }
+.color-desc { color: #64748b; font-size: .75rem; margin-top: 2px; }
+.color-input-wrap { display: flex; align-items: center; gap: 8px; }
+.color-hex { background: #0b1220; color: #e2e8f0; border: 1px solid rgba(148,163,184,.25); border-radius: 8px; padding: 7px 11px; font-family: monospace; font-size: .85rem; width: 100px; }
+.color-preview { width: 32px; height: 32px; border-radius: 8px; border: 2px solid rgba(148,163,184,.2); }
+.reset-link { color: #60a5fa; font-size: .75rem; cursor: pointer; text-decoration: underline; background: none; border: none; font-family: inherit; }
+.preview-box { background: #0b1220; border-radius: 12px; padding: 20px; margin-top: 16px; border: 1px solid rgba(148,163,184,.15); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="te-wrap">
+  <a href="/admin/" style="color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px">← العودة للوحة الإدارة</a>
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}
+      <div style="background:rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.12);border:1px solid rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.3);border-radius:10px;padding:12px 16px;margin-bottom:14px;color:{% if cat=='success' %}#4ade80{% else %}#f87171{% endif %};font-size:.85rem">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="te-card">
+    <p style="color:#94a3b8;font-size:.85rem;margin:0 0 20px">🎨 خصّص ألوان المنصة. التغييرات تُطبَّق على الواجهة الكاملة فور الحفظ.</p>
+    <form method="POST" action="{{ url_for('admin.admin_theme') }}" id="themeForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      {% set color_fields = [
+        ('theme_primary', 'اللون الأساسي', 'الأزرار والروابط الرئيسية'),
+        ('theme_primary_dark', 'اللون الأساسي الداكن', 'تدرج الأزرار عند الضغط'),
+        ('theme_primary_light', 'اللون الأساسي الفاتح', 'الخلفيات الفاتحة والتمييز'),
+        ('theme_accent', 'اللون المميز', 'التأكيدات والعناصر الثانوية'),
+        ('theme_sidebar_bg', 'خلفية الشريط الجانبي', 'لون خلفية القائمة الجانبية'),
+        ('theme_sidebar_text', 'نص الشريط الجانبي', 'لون النص في القائمة الجانبية'),
+        ('theme_sidebar_active', 'العنصر النشط بالشريط', 'لون العنصر المحدد في القائمة'),
+      ] %}
+
+      {% for key, label, desc in color_fields %}
+      {% set cur_val = current.get(key, defaults.get(key, '#000000')) if current else defaults.get(key, '#000000') %}
+      <div class="color-row">
+        <div>
+          <div class="color-label">{{ label }}</div>
+          <div class="color-desc">{{ desc }}</div>
+        </div>
+        <div class="color-input-wrap">
+          <input type="color" value="{{ cur_val }}" id="picker_{{ key }}"
+            oninput="syncHex('{{ key }}', this.value)"
+            style="width:36px;height:36px;border:none;background:none;cursor:pointer;border-radius:8px;padding:0">
+          <input class="color-hex" type="text" name="{{ key }}" id="hex_{{ key }}"
+            value="{{ cur_val }}" maxlength="7"
+            oninput="syncPicker('{{ key }}', this.value)">
+        </div>
+        <button type="button" class="reset-link"
+          onclick="resetColor('{{ key }}', '{{ defaults.get(key, cur_val) }}')">إعادة تعيين</button>
+      </div>
+      {% endfor %}
+
+      <div style="display:flex;gap:12px;margin-top:20px">
+        <button class="btn-primary" type="submit">💾 حفظ الثيم</button>
+        <button class="btn-secondary" type="button" onclick="resetAll()">↺ إعادة تعيين الكل للافتراضي</button>
+      </div>
+    </form>
+
+    <div class="preview-box" id="previewBox">
+      <div style="font-size:.78rem;color:#94a3b8;margin-bottom:10px">معاينة مباشرة</div>
+      <div id="previewPrimary" style="padding:10px 20px;border-radius:10px;display:inline-block;color:#fff;font-weight:700;font-size:.85rem;margin-left:8px;margin-bottom:6px;cursor:pointer">زر أساسي</div>
+      <div id="previewAccent" style="padding:10px 20px;border-radius:10px;display:inline-block;color:#fff;font-weight:700;font-size:.85rem;margin-left:8px;margin-bottom:6px;cursor:pointer">عنصر مميز</div>
+      <div id="previewSidebar" style="border-radius:10px;padding:12px 16px;margin-top:8px;display:inline-block;min-width:150px">
+        <div style="font-size:.82rem;font-weight:700" id="previewSidebarText">قائمة جانبية</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const defaults = {{ defaults | tojson | safe }};
+
+function syncHex(key, val) {
+  document.getElementById('hex_' + key).value = val;
+  updatePreview();
+}
+function syncPicker(key, val) {
+  if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+    document.getElementById('picker_' + key).value = val;
+    updatePreview();
+  }
+}
+function resetColor(key, defVal) {
+  document.getElementById('hex_' + key).value = defVal;
+  document.getElementById('picker_' + key).value = defVal;
+  updatePreview();
+}
+function resetAll() {
+  for (const [k, v] of Object.entries(defaults)) {
+    const hexEl = document.getElementById('hex_' + k);
+    const pickerEl = document.getElementById('picker_' + k);
+    if (hexEl) hexEl.value = v;
+    if (pickerEl) pickerEl.value = v;
+  }
+  updatePreview();
+}
+function getVal(key) {
+  const el = document.getElementById('hex_' + key);
+  return el ? el.value : (defaults[key] || '#000');
+}
+function updatePreview() {
+  const primary = getVal('theme_primary');
+  const accent = getVal('theme_accent');
+  const sidebarBg = getVal('theme_sidebar_bg');
+  const sidebarText = getVal('theme_sidebar_text');
+  document.getElementById('previewPrimary').style.background = primary;
+  document.getElementById('previewAccent').style.background = accent;
+  document.getElementById('previewSidebar').style.background = sidebarBg;
+  document.getElementById('previewSidebarText').style.color = sidebarText;
+}
+updatePreview();
+</script>
+{% endblock %}

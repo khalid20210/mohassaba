@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}تنبيهات الأمان{% endblock %}
+{% block page_title %}🚨 تنبيهات الأمان{% endblock %}
+
+{% block head %}
+<style>
+.sa-wrap { max-width: 1100px; margin: 0 auto; }
+.sa-card { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+.sa-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.sa-table th { background: rgba(148,163,184,.08); color: #94a3b8; padding: 10px 14px; text-align: right; font-weight: 700; font-size: .78rem; }
+.sa-table td { padding: 10px 14px; color: #e2e8f0; border-bottom: 1px solid rgba(148,163,184,.1); vertical-align: middle; }
+.sa-table tr:last-child td { border-bottom: none; }
+.btn-sm { border: none; border-radius: 8px; padding: 5px 14px; font-size: .75rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+.btn-primary { background: linear-gradient(135deg,#2563eb,#1d4ed8); color: #fff; }
+.sev-badge { display: inline-block; border-radius: 999px; padding: 3px 10px; font-size: .72rem; font-weight: 800; }
+.sev-critical { background: rgba(239,68,68,.2); color: #f87171; border: 1px solid rgba(239,68,68,.3); }
+.sev-high { background: rgba(245,158,11,.2); color: #fbbf24; border: 1px solid rgba(245,158,11,.3); }
+.sev-medium { background: rgba(251,191,36,.12); color: #fde68a; border: 1px solid rgba(251,191,36,.2); }
+.sev-low { background: rgba(148,163,184,.12); color: #94a3b8; border: 1px solid rgba(148,163,184,.2); }
+.stat-row { display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+.stat-chip { background: #0b1220; border: 1px solid rgba(148,163,184,.15); border-radius: 10px; padding: 12px 18px; min-width: 100px; }
+.stat-chip .n { font-size: 1.5rem; font-weight: 800; }
+.stat-chip .l { color: #94a3b8; font-size: .73rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sa-wrap">
+  <a href="/admin/" style="color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px">← العودة للوحة الإدارة</a>
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}
+      <div style="background:rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.12);border:1px solid rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.3);border-radius:10px;padding:12px 16px;margin-bottom:14px;color:{% if cat=='success' %}#4ade80{% else %}#f87171{% endif %};font-size:.85rem">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  {% set critical_count = alerts | selectattr('severity', 'equalto', 'critical') | list | length %}
+  {% set high_count = alerts | selectattr('severity', 'equalto', 'high') | list | length %}
+  {% set unack_count = alerts | rejectattr('is_acknowledged') | list | length %}
+
+  <div class="stat-row">
+    <div class="stat-chip"><div class="n" style="color:#f87171">{{ critical_count }}</div><div class="l">حرجة</div></div>
+    <div class="stat-chip"><div class="n" style="color:#fbbf24">{{ high_count }}</div><div class="l">عالية</div></div>
+    <div class="stat-chip"><div class="n" style="color:#e2e8f0">{{ alerts | length }}</div><div class="l">إجمالي</div></div>
+    <div class="stat-chip"><div class="n" style="color:#94a3b8">{{ unack_count }}</div><div class="l">غير مؤكدة</div></div>
+  </div>
+
+  <div class="sa-card">
+    <div style="color:#dbeafe;font-size:.95rem;font-weight:800;margin-bottom:14px">🚨 التنبيهات الأمنية ({{ alerts | length }})</div>
+    {% if alerts %}
+    <div style="overflow-x:auto">
+      <table class="sa-table">
+        <thead>
+          <tr><th>الخطورة</th><th>النوع</th><th>الرسالة</th><th>المستخدم</th><th>الـ IP</th><th>الوقت</th><th>إجراء</th></tr>
+        </thead>
+        <tbody>
+          {% for a in alerts %}
+          <tr style="{% if a.is_acknowledged %}opacity:.5{% endif %}">
+            <td>
+              {% set sev = a.severity or 'low' %}
+              <span class="sev-badge sev-{{ sev }}">
+                {% if sev == 'critical' %}🔴 حرج
+                {% elif sev == 'high' %}🟡 عالي
+                {% elif sev == 'medium' %}🟠 متوسط
+                {% else %}⚪ منخفض{% endif %}
+              </span>
+            </td>
+            <td style="color:#94a3b8;font-family:monospace;font-size:.78rem">{{ a.alert_type or '—' }}</td>
+            <td style="max-width:320px;word-break:break-word;font-size:.82rem">{{ a.message or '—' }}</td>
+            <td style="color:#94a3b8;font-size:.8rem">{{ a.username or a.user_id or '—' }}</td>
+            <td style="font-family:monospace;color:#64748b;font-size:.78rem">{{ a.ip_address or '—' }}</td>
+            <td style="color:#64748b;font-size:.75rem;white-space:nowrap">{{ (a.created_at or '')[:16] }}</td>
+            <td>
+              {% if not a.is_acknowledged %}
+              <form method="POST" action="{{ url_for('admin.acknowledge_alert', alert_id=a.id) }}" style="margin:0">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button class="btn-sm btn-primary" type="submit">✓ تأكيد</button>
+              </form>
+              {% else %}
+                <span style="color:#64748b;font-size:.75rem">✓ مؤكد</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div style="text-align:center;padding:40px;color:#64748b">
+        <div style="font-size:3rem;margin-bottom:10px">✅</div>
+        <div style="font-size:.9rem">لا توجد تنبيهات أمنية حالياً</div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}التحليلات الشاملة{% endblock %}
+{% block page_title %}📊 التحليلات الشاملة{% endblock %}
+
+{% block head %}
+<style>
+.an-wrap { max-width: 1200px; margin: 0 auto; }
+.an-card { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+.an-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 18px; }
+.stat-box { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 12px; padding: 18px; text-align: center; }
+.stat-val { font-size: 1.8rem; font-weight: 900; color: #dbeafe; }
+.stat-lbl { color: #94a3b8; font-size: .78rem; margin-top: 4px; }
+.an-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.an-table th { background: rgba(148,163,184,.08); color: #94a3b8; padding: 10px 14px; text-align: right; font-weight: 700; font-size: .78rem; }
+.an-table td { padding: 10px 14px; color: #e2e8f0; border-bottom: 1px solid rgba(148,163,184,.1); }
+.an-table tr:last-child td { border-bottom: none; }
+.sec-title { color: #dbeafe; font-size: .9rem; font-weight: 800; margin: 0 0 14px; }
+.chart-bar-wrap { display: flex; flex-direction: column; gap: 6px; }
+.chart-bar-row { display: flex; align-items: center; gap: 10px; font-size: .78rem; }
+.chart-bar-label { color: #94a3b8; min-width: 90px; text-align: right; }
+.chart-bar { height: 20px; background: linear-gradient(135deg,#2563eb,#0ea5e9); border-radius: 4px; min-width: 4px; transition: width .3s; }
+.chart-bar-val { color: #dbeafe; font-weight: 700; font-size: .75rem; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:700px){ .two-col { grid-template-columns: 1fr; } }
+.export-btn { background: rgba(34,197,94,.12); color: #4ade80; border: 1px solid rgba(34,197,94,.3); border-radius: 8px; padding: 7px 16px; font-size: .8rem; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block; font-family: inherit; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="an-wrap">
+  <a href="/admin/" style="color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px">← العودة للوحة الإدارة</a>
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:14px">
+    <a href="{{ url_for('admin.analytics_export', report='invoices') }}" class="export-btn">⬇️ تصدير الفواتير</a>
+    <a href="{{ url_for('admin.analytics_export', report='businesses') }}" class="export-btn">⬇️ تصدير المنشآت</a>
+    <a href="{{ url_for('admin.analytics_export', report='users') }}" class="export-btn">⬇️ تصدير المستخدمين</a>
+  </div>
+
+  <!-- ملخص الإحصائيات -->
+  <div class="an-grid">
+    <div class="stat-box">
+      <div class="stat-val">{{ summary.total_businesses | default(0) }}</div>
+      <div class="stat-lbl">🏢 إجمالي المنشآت</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val">{{ summary.total_users | default(0) }}</div>
+      <div class="stat-lbl">👥 إجمالي المستخدمين</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val">{{ summary.total_invoices | default(0) }}</div>
+      <div class="stat-lbl">📄 إجمالي الفواتير</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" style="color:#4ade80">{{ "{:,.0f}".format(summary.total_revenue | default(0)) }}</div>
+      <div class="stat-lbl">💰 إجمالي الإيرادات</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" style="color:#fbbf24">{{ summary.new_this_month | default(0) }}</div>
+      <div class="stat-lbl">📅 منشآت هذا الشهر</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" style="color:#a78bfa">{{ "{:,.0f}".format(summary.revenue_this_month | default(0)) }}</div>
+      <div class="stat-lbl">💵 إيرادات هذا الشهر</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <!-- أكثر المنشآت نشاطاً -->
+    <div class="an-card">
+      <div class="sec-title">🏆 أكثر المنشآت إصداراً للفواتير (30 يوم)</div>
+      {% if top_businesses %}
+      {% set max_inv = top_businesses[0].inv_count | default(1) %}
+      <div class="chart-bar-wrap">
+        {% for b in top_businesses %}
+        <div class="chart-bar-row">
+          <span class="chart-bar-label">{{ b.name[:18] }}</span>
+          <div class="chart-bar" style="width:{{ [(b.inv_count / max_inv * 200) | int, 4] | max }}px"></div>
+          <span class="chart-bar-val">{{ b.inv_count }} فاتورة</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+        <p style="color:#64748b;text-align:center;margin:20px 0">لا توجد بيانات</p>
+      {% endif %}
+    </div>
+
+    <!-- أكثر العمليات تكراراً -->
+    <div class="an-card">
+      <div class="sec-title">⚡ أكثر العمليات (30 يوم)</div>
+      {% if top_actions %}
+      {% set max_cnt = top_actions[0].cnt | default(1) %}
+      <div class="chart-bar-wrap">
+        {% for a in top_actions %}
+        <div class="chart-bar-row">
+          <span class="chart-bar-label">{{ a.action[:18] }}</span>
+          <div class="chart-bar" style="width:{{ [(a.cnt / max_cnt * 200) | int, 4] | max }}px; background:linear-gradient(135deg,#7c3aed,#a78bfa)"></div>
+          <span class="chart-bar-val">{{ a.cnt }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+        <p style="color:#64748b;text-align:center;margin:20px 0">لا توجد بيانات</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- الإيرادات الشهرية -->
+  <div class="an-card">
+    <div class="sec-title">📈 الإيرادات الشهرية (آخر 12 شهر)</div>
+    {% if monthly_revenue %}
+    <div style="overflow-x:auto">
+      <table class="an-table">
+        <thead>
+          <tr><th>الشهر</th><th>عدد الفواتير</th><th>الإيرادات</th></tr>
+        </thead>
+        <tbody>
+          {% for row in monthly_revenue %}
+          <tr>
+            <td>{{ row.m }}</td>
+            <td>{{ row.cnt }}</td>
+            <td style="color:#4ade80;font-weight:700">{{ "{:,.2f}".format(row.rev | default(0)) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p style="color:#64748b;text-align:center;margin:20px 0">لا توجد بيانات إيرادات</p>
+    {% endif %}
+  </div>
+
+  <!-- الاشتراكات الجديدة آخر 30 يوم -->
+  <div class="an-card">
+    <div class="sec-title">🆕 الاشتراكات الجديدة (آخر 30 يوم)</div>
+    {% if new_subs_30 %}
+    <div style="overflow-x:auto">
+      <table class="an-table">
+        <thead>
+          <tr><th>التاريخ</th><th>عدد الاشتراكات</th></tr>
+        </thead>
+        <tbody>
+          {% for row in new_subs_30 %}
+          <tr>
+            <td>{{ row.d }}</td>
+            <td style="color:#60a5fa;font-weight:700">{{ row.cnt }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p style="color:#64748b;text-align:center;margin:20px 0">لا توجد اشتراكات جديدة</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

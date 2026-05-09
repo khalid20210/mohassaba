@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}صحة النظام{% endblock %}
+{% block page_title %}🖥️ صحة النظام{% endblock %}
+
+{% block head %}
+<style>
+.sh-wrap { max-width: 1100px; margin: 0 auto; }
+.sh-card { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+.comp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.comp-card { background: #0b1220; border-radius: 12px; padding: 16px; border-width: 1px; border-style: solid; }
+.comp-card.ok { border-color: rgba(34,197,94,.3); }
+.comp-card.warn { border-color: rgba(245,158,11,.3); }
+.comp-card.err { border-color: rgba(239,68,68,.3); }
+.comp-card.unknown { border-color: rgba(148,163,184,.2); }
+.comp-name { font-size: .85rem; font-weight: 800; color: #dbeafe; margin-bottom: 8px; }
+.comp-status { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 12px; font-size: .75rem; font-weight: 700; }
+.s-ok { background: rgba(34,197,94,.15); color: #4ade80; }
+.s-warn { background: rgba(245,158,11,.15); color: #fbbf24; }
+.s-err { background: rgba(239,68,68,.15); color: #f87171; }
+.s-unknown { background: rgba(148,163,184,.1); color: #94a3b8; }
+.comp-details { margin-top: 10px; font-size: .78rem; color: #94a3b8; line-height: 1.7; }
+.detail-row { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(148,163,184,.07); padding: 3px 0; }
+.detail-row:last-child { border-bottom: none; }
+.detail-val { color: #e2e8f0; font-family: monospace; font-size: .77rem; }
+.overall-badge { display: inline-block; border-radius: 12px; padding: 8px 20px; font-size: 1rem; font-weight: 800; margin-bottom: 14px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sh-wrap">
+  <a href="/admin/" style="color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px">← العودة للوحة الإدارة</a>
+
+  {% set overall = report.get('overall_status', 'unknown') if report else 'unknown' %}
+  <div class="sh-card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="color:#94a3b8;font-size:.78rem;margin-bottom:6px">الحالة العامة للنظام</div>
+        <div class="overall-badge
+          {% if overall == 'healthy' %}s-ok" style="background:rgba(34,197,94,.15);color:#4ade80">✅ النظام يعمل بشكل سليم
+          {% elif overall == 'warning' %}s-warn" style="background:rgba(245,158,11,.15);color:#fbbf24">⚠️ تحذيرات تستوجب الانتباه
+          {% elif overall == 'error' %}s-err" style="background:rgba(239,68,68,.15);color:#f87171">❌ يوجد أخطاء في النظام
+          {% else %}s-unknown" style="background:rgba(148,163,184,.1);color:#94a3b8">❓ الحالة غير محددة
+          {% endif %}
+        </div>
+      </div>
+      <div style="text-align:left">
+        <div style="color:#64748b;font-size:.75rem">آخر فحص</div>
+        <div style="color:#94a3b8;font-size:.82rem">{{ report.get('checked_at', 'الآن') if report else '—' }}</div>
+      </div>
+    </div>
+  </div>
+
+  {% if report %}
+    {% set components = report.get('components', {}) %}
+    {% if components %}
+    <div class="sh-card">
+      <div style="color:#dbeafe;font-size:.95rem;font-weight:800;margin-bottom:16px">🔍 مكونات النظام</div>
+      <div class="comp-grid">
+        {% for comp_name, comp_data in components.items() %}
+          {% set status = comp_data.get('status', 'unknown') if comp_data is mapping else 'unknown' %}
+          <div class="comp-card {% if status == 'healthy' or status == 'ok' %}ok{% elif status == 'warning' or status == 'warn' %}warn{% elif status == 'error' or status == 'err' %}err{% else %}unknown{% endif %}">
+            <div class="comp-name">
+              {% if 'db' in comp_name.lower() or 'database' in comp_name.lower() %}🗄️
+              {% elif 'redis' in comp_name.lower() %}⚡
+              {% elif 'storage' in comp_name.lower() or 'disk' in comp_name.lower() %}💾
+              {% elif 'cpu' in comp_name.lower() %}⚙️
+              {% elif 'memory' in comp_name.lower() or 'ram' in comp_name.lower() %}🧠
+              {% elif 'queue' in comp_name.lower() %}📬
+              {% else %}🔧{% endif %}
+              {{ comp_name | replace('_', ' ') | title }}
+            </div>
+            <div class="comp-status
+              {% if status in ('healthy','ok') %}s-ok{% elif status in ('warning','warn') %}s-warn{% elif status in ('error','err') %}s-err{% else %}s-unknown{% endif %}">
+              {% if status in ('healthy','ok') %}● يعمل
+              {% elif status in ('warning','warn') %}● تحذير
+              {% elif status in ('error','err') %}● خطأ
+              {% else %}● غير معروف{% endif %}
+            </div>
+            {% if comp_data is mapping %}
+            <div class="comp-details">
+              {% for k, v in comp_data.items() if k != 'status' %}
+              <div class="detail-row">
+                <span>{{ k | replace('_', ' ') }}</span>
+                <span class="detail-val">{{ v }}</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- معلومات إضافية -->
+    {% set extra_keys = report.keys() | reject('equalto', 'components') | reject('equalto', 'overall_status') | reject('equalto', 'checked_at') | list %}
+    {% if extra_keys %}
+    <div class="sh-card">
+      <div style="color:#dbeafe;font-size:.95rem;font-weight:800;margin-bottom:14px">📊 معلومات إضافية</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">
+        {% for k in extra_keys %}
+        <div style="background:#0b1220;border-radius:10px;padding:12px">
+          <div style="color:#94a3b8;font-size:.73rem;margin-bottom:4px">{{ k | replace('_', ' ') | title }}</div>
+          <div style="color:#e2e8f0;font-size:.88rem;font-weight:700">{{ report[k] }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  {% else %}
+    <div class="sh-card" style="text-align:center;padding:40px">
+      <div style="font-size:2.5rem;margin-bottom:10px">📡</div>
+      <div style="color:#94a3b8;font-size:.9rem">تعذر الحصول على تقرير الصحة</div>
+    </div>
+  {% endif %}
+
+  <div style="text-align:left;margin-top:10px">
+    <a href="{{ request.url }}" style="color:#60a5fa;font-size:.82rem;text-decoration:none">🔄 تحديث الصفحة</a>
+  </div>
+</div>
+{% endblock %}

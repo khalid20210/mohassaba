@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}تعديل عملية تاريخية{% endblock %}
+{% block page_title %}🕰️ تعديل عملية تاريخية{% endblock %}
+
+{% block head %}
+<style>
+.mh-wrap { max-width: 800px; margin: 0 auto; }
+.mh-card { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 24px; margin-bottom: 18px; }
+.mh-in { width: 100%; background: #0b1220; color: #e2e8f0; border: 1px solid rgba(148,163,184,.25); border-radius: 10px; padding: 9px 11px; font-family: inherit; font-size: .85rem; box-sizing: border-box; }
+.mh-label { font-size: .78rem; color: #94a3b8; display: block; margin-bottom: 6px; font-weight: 700; }
+.mh-field { margin-bottom: 16px; }
+.btn-primary { background: linear-gradient(135deg,#2563eb,#1d4ed8); color: #fff; border: none; border-radius: 10px; padding: 11px 28px; font-weight: 800; cursor: pointer; font-family: inherit; font-size: .9rem; }
+.warn-box { background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.3); border-radius: 12px; padding: 14px 18px; color: #fbbf24; font-size: .85rem; margin-bottom: 20px; }
+.result-box { display: none; background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.3); border-radius: 10px; padding: 14px 18px; color: #4ade80; font-size: .85rem; margin-top: 14px; }
+.err-box { display: none; background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); border-radius: 10px; padding: 14px 18px; color: #f87171; font-size: .85rem; margin-top: 14px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mh-wrap">
+  <a href="/admin/" style="color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px">← العودة للوحة الإدارة</a>
+
+  <div class="warn-box">
+    ⚠️ <b>تحذير:</b> تعديل العمليات التاريخية إجراء حساس ويُسجَّل في سجل التدقيق. تأكد من وجود سبب مشروع قبل المتابعة.
+  </div>
+
+  <div class="mh-card">
+    <h3 style="color:#dbeafe;font-size:.95rem;font-weight:800;margin:0 0 20px">تعديل عملية مالية تاريخية</h3>
+    <form id="mhForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="mh-field">
+        <label class="mh-label">رقم العملية (Transaction ID) *</label>
+        <input class="mh-in" name="transaction_id" id="txId" type="number" placeholder="أدخل معرف العملية" required>
+      </div>
+      <div class="mh-field">
+        <label class="mh-label">البيانات القديمة (JSON) *</label>
+        <textarea class="mh-in" name="old_data" id="oldData" rows="5" placeholder='{"amount": 1000, "status": "paid"}' dir="ltr" style="font-family:monospace;font-size:.8rem"></textarea>
+        <div style="color:#64748b;font-size:.72rem;margin-top:4px">أدخل البيانات الأصلية بصيغة JSON</div>
+      </div>
+      <div class="mh-field">
+        <label class="mh-label">البيانات الجديدة (JSON) *</label>
+        <textarea class="mh-in" name="new_data" id="newData" rows="5" placeholder='{"amount": 1200, "status": "paid"}' dir="ltr" style="font-family:monospace;font-size:.8rem"></textarea>
+        <div style="color:#64748b;font-size:.72rem;margin-top:4px">أدخل البيانات المعدلة بصيغة JSON</div>
+      </div>
+      <div class="mh-field">
+        <label class="mh-label">سبب التعديل *</label>
+        <input class="mh-in" name="reason" id="reason" placeholder="اشرح سبب التعديل التاريخي بوضوح" required>
+      </div>
+      <button class="btn-primary" type="submit" onclick="return submitModify(event)">🔧 تطبيق التعديل</button>
+    </form>
+    <div class="result-box" id="resultBox"></div>
+    <div class="err-box" id="errBox"></div>
+  </div>
+
+  <div class="mh-card" style="border-color:rgba(148,163,184,.1)">
+    <h3 style="color:#94a3b8;font-size:.88rem;font-weight:800;margin:0 0 12px">📋 إرشادات الاستخدام</h3>
+    <ul style="color:#64748b;font-size:.82rem;line-height:1.8;margin:0;padding-right:18px">
+      <li>يمكن تعديل عمليات الفواتير، المدفوعات، والقيود المحاسبية</li>
+      <li>تأكد من صحة صيغة JSON قبل الإرسال</li>
+      <li>سيتم تسجيل التعديل مع اسم المستخدم والوقت تلقائياً</li>
+      <li>التعديل لا يُلغى إلا بتعديل آخر مقابل</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+function submitModify(e) {
+  e.preventDefault();
+  const txId = document.getElementById('txId').value;
+  const oldData = document.getElementById('oldData').value;
+  const newData = document.getElementById('newData').value;
+  const reason = document.getElementById('reason').value;
+  const csrf = document.querySelector('[name=csrf_token]').value;
+  const resultBox = document.getElementById('resultBox');
+  const errBox = document.getElementById('errBox');
+  resultBox.style.display = 'none';
+  errBox.style.display = 'none';
+
+  try { JSON.parse(oldData); JSON.parse(newData); } catch(e) {
+    errBox.textContent = '❌ صيغة JSON غير صحيحة';
+    errBox.style.display = 'block';
+    return;
+  }
+
+  if (!confirm('هل أنت متأكد من تطبيق هذا التعديل التاريخي؟ هذا الإجراء سيُسجَّل.')) return;
+
+  fetch('{{ url_for("admin.modify_historical_transaction") }}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+    body: JSON.stringify({ transaction_id: parseInt(txId), old_data: JSON.parse(oldData), new_data: JSON.parse(newData), reason })
+  }).then(r => r.json()).then(d => {
+    if (d.success) {
+      resultBox.textContent = '✅ ' + d.message;
+      resultBox.style.display = 'block';
+      document.getElementById('mhForm').reset();
+    } else {
+      errBox.textContent = '❌ ' + d.message;
+      errBox.style.display = 'block';
+    }
+  }).catch(() => { errBox.textContent = '❌ فشل الاتصال بالخادم'; errBox.style.display = 'block'; });
+}
+</script>
+{% endblock %}

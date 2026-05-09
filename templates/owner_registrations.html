@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}طلبات التسجيل{% endblock %}
+{% block page_title %}📋 طلبات التسجيل{% endblock %}
+
+{% block head %}
+<style>
+.reg-wrap { max-width: 1100px; margin: 0 auto; }
+.reg-card { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+.reg-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.reg-table th { background: rgba(148,163,184,.08); color: #94a3b8; padding: 10px 14px; text-align: right; font-weight: 700; font-size: .78rem; }
+.reg-table td { padding: 12px 14px; color: #e2e8f0; border-bottom: 1px solid rgba(148,163,184,.1); vertical-align: middle; }
+.reg-table tr:last-child td { border-bottom: none; }
+.badge-pending { background: rgba(245,158,11,.15); color: #fbbf24; border-radius: 999px; padding: 3px 10px; font-size: .72rem; font-weight: 700; }
+.badge-approved { background: rgba(34,197,94,.15); color: #4ade80; border-radius: 999px; padding: 3px 10px; font-size: .72rem; font-weight: 700; }
+.badge-rejected { background: rgba(239,68,68,.15); color: #f87171; border-radius: 999px; padding: 3px 10px; font-size: .72rem; font-weight: 700; }
+.btn-approve { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.3); border-radius: 8px; padding: 6px 14px; font-size: .78rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+.btn-approve:hover { background: rgba(34,197,94,.25); }
+.btn-reject { background: rgba(239,68,68,.15); color: #f87171; border: 1px solid rgba(239,68,68,.3); border-radius: 8px; padding: 6px 14px; font-size: .78rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+.btn-reject:hover { background: rgba(239,68,68,.25); }
+.sec-title { color: #dbeafe; font-size: .95rem; font-weight: 800; margin: 0 0 14px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reg-wrap">
+  <a href="{{ url_for('owner.owner_dashboard') }}" style="color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px">← العودة لقمرة القيادة</a>
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}
+      <div style="background:rgba({% if cat=='success' %}34,197,94{% elif cat=='error' %}239,68,68{% else %}37,99,235{% endif %},.12);border:1px solid rgba({% if cat=='success' %}34,197,94{% elif cat=='error' %}239,68,68{% else %}37,99,235{% endif %},.3);border-radius:10px;padding:12px 16px;margin-bottom:14px;color:{% if cat=='success' %}#4ade80{% elif cat=='error' %}#f87171{% else %}#93c5fd{% endif %};font-size:.85rem">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <!-- طلبات قيد الانتظار -->
+  <div class="reg-card">
+    <div class="sec-title">⏳ طلبات تنتظر الموافقة ({{ pending | length }})</div>
+    {% if pending %}
+    <div style="overflow-x:auto">
+      <table class="reg-table">
+        <thead>
+          <tr>
+            <th>المنشأة</th>
+            <th>المستخدم</th>
+            <th>البريد</th>
+            <th>الدولة</th>
+            <th>تاريخ التسجيل</th>
+            <th>الإجراء</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in pending %}
+          <tr>
+            <td><b>{{ r.biz_name }}</b><br><span style="color:#64748b;font-size:.72rem">#{{ r.biz_id }}</span></td>
+            <td>{{ r.full_name or r.username }}</td>
+            <td style="color:#94a3b8">{{ r.email or '—' }}</td>
+            <td>{{ r.country_code or '—' }}</td>
+            <td style="color:#94a3b8">{{ (r.created_at or '')[:10] }}</td>
+            <td>
+              <div style="display:flex;gap:8px">
+                <form method="POST" action="{{ url_for('owner.approve_registration') }}" style="margin:0">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <input type="hidden" name="business_id" value="{{ r.biz_id }}">
+                  <button class="btn-approve" type="submit">✓ قبول</button>
+                </form>
+                <form method="POST" action="{{ url_for('owner.reject_registration') }}" style="margin:0">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <input type="hidden" name="business_id" value="{{ r.biz_id }}">
+                  <button class="btn-reject" type="submit" onclick="return confirm('رفض هذا الطلب؟')">✗ رفض</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p style="color:#64748b;text-align:center;margin:24px 0">لا توجد طلبات معلقة حالياً ✅</p>
+    {% endif %}
+  </div>
+
+  <!-- السجل التاريخي -->
+  <div class="reg-card">
+    <div class="sec-title">📜 السجل التاريخي ({{ history | length }})</div>
+    {% if history %}
+    <div style="overflow-x:auto">
+      <table class="reg-table">
+        <thead>
+          <tr>
+            <th>المنشأة</th>
+            <th>المستخدم</th>
+            <th>البريد</th>
+            <th>الحالة</th>
+            <th>التاريخ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in history %}
+          <tr>
+            <td><b>{{ r.biz_name }}</b></td>
+            <td>{{ r.full_name or r.username }}</td>
+            <td style="color:#94a3b8">{{ r.email or '—' }}</td>
+            <td>
+              {% if r.account_status == 'approved' %}
+                <span class="badge-approved">✓ مقبول</span>
+              {% elif r.account_status == 'rejected' %}
+                <span class="badge-rejected">✗ مرفوض</span>
+              {% else %}
+                <span class="badge-pending">{{ r.account_status }}</span>
+              {% endif %}
+            </td>
+            <td style="color:#94a3b8">{{ (r.created_at or '')[:10] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p style="color:#64748b;text-align:center;margin:24px 0">لا يوجد سجل بعد</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}إدارة الملفات{% endblock %}
+{% block page_title %}📁 إدارة الملفات{% endblock %}
+
+{% block head %}
+<style>
+.fl-wrap { max-width: 1100px; margin: 0 auto; }
+.fl-card { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+.fl-in { background: #0b1220; color: #e2e8f0; border: 1px solid rgba(148,163,184,.25); border-radius: 10px; padding: 9px 11px; font-family: inherit; font-size: .85rem; }
+.btn-primary { background: linear-gradient(135deg,#2563eb,#1d4ed8); color: #fff; border: none; border-radius: 10px; padding: 9px 20px; font-weight: 800; cursor: pointer; font-family: inherit; font-size: .85rem; }
+.btn-danger { background: rgba(239,68,68,.15); color: #f87171; border: 1px solid rgba(239,68,68,.3); border-radius: 8px; padding: 5px 12px; font-size: .75rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+.fl-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.fl-table th { background: rgba(148,163,184,.08); color: #94a3b8; padding: 10px 14px; text-align: right; font-weight: 700; font-size: .78rem; }
+.fl-table td { padding: 10px 14px; color: #e2e8f0; border-bottom: 1px solid rgba(148,163,184,.1); vertical-align: middle; }
+.fl-table tr:last-child td { border-bottom: none; }
+.file-ext { display: inline-block; background: rgba(37,99,235,.15); color: #93c5fd; border-radius: 6px; padding: 2px 8px; font-size: .72rem; font-weight: 700; font-family: monospace; }
+.sec-title { color: #dbeafe; font-size: .95rem; font-weight: 800; margin: 0 0 14px; }
+.upload-zone { border: 2px dashed rgba(148,163,184,.3); border-radius: 12px; padding: 28px; text-align: center; color: #94a3b8; margin-bottom: 14px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fl-wrap">
+  <a href="/admin/" style="color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px">← العودة للوحة الإدارة</a>
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}
+      <div style="background:rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.12);border:1px solid rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.3);border-radius:10px;padding:12px 16px;margin-bottom:14px;color:{% if cat=='success' %}#4ade80{% else %}#f87171{% endif %};font-size:.85rem">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <!-- نموذج الرفع -->
+  <div class="fl-card">
+    <div class="sec-title">⬆️ رفع ملف جديد</div>
+    <form method="POST" action="{{ url_for('admin.platform_files') }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="action" value="upload">
+      <div class="upload-zone">
+        <div style="font-size:2rem;margin-bottom:8px">📂</div>
+        <div style="font-size:.9rem;margin-bottom:12px">اسحب الملف هنا أو انقر للاختيار</div>
+        <input type="file" name="file" required style="color:#e2e8f0;font-size:.85rem">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end">
+        <div>
+          <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:5px">الاسم / التسمية</label>
+          <input class="fl-in" name="label" placeholder="اسم وصفي للملف" style="width:100%;box-sizing:border-box">
+        </div>
+        <div>
+          <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:5px">التصنيف</label>
+          <input class="fl-in" name="category" placeholder="مثال: صور، مستندات" value="عام" style="width:100%;box-sizing:border-box">
+        </div>
+        <div>
+          <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:5px">
+            <input type="checkbox" name="is_public"> عام
+          </label>
+          <button class="btn-primary" type="submit">رفع</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- قائمة الملفات -->
+  <div class="fl-card">
+    <div class="sec-title">📋 الملفات المرفوعة ({{ files | length }})</div>
+    {% if files %}
+    <div style="overflow-x:auto">
+      <table class="fl-table">
+        <thead>
+          <tr><th>الاسم</th><th>النوع</th><th>الحجم</th><th>التصنيف</th><th>تاريخ الرفع</th><th>رابط</th><th>حذف</th></tr>
+        </thead>
+        <tbody>
+          {% for f in files %}
+          <tr>
+            <td><b>{{ f.name or f.original_name }}</b></td>
+            <td><span class="file-ext">{{ f.file_type or '?' }}</span></td>
+            <td style="color:#94a3b8">
+              {% set sz = f.file_size | default(0) | int %}
+              {% if sz > 1048576 %}{{ "%.1f" | format(sz/1048576) }} MB
+              {% elif sz > 1024 %}{{ "%.1f" | format(sz/1024) }} KB
+              {% else %}{{ sz }} B{% endif %}
+            </td>
+            <td style="color:#94a3b8">{{ f.category or '—' }}</td>
+            <td style="color:#64748b;font-size:.78rem">{{ (f.created_at or '')[:10] }}</td>
+            <td>
+              {% if f.file_path %}
+              <a href="{{ f.file_path }}" target="_blank" style="color:#60a5fa;font-size:.78rem">عرض ↗</a>
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              <form method="POST" action="{{ url_for('admin.platform_files') }}" style="margin:0">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="file_id" value="{{ f.id }}">
+                <button class="btn-danger" type="submit" onclick="return confirm('حذف هذا الملف نهائياً؟')">🗑️</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p style="color:#64748b;text-align:center;margin:24px 0">لا توجد ملفات مرفوعة حتى الآن</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

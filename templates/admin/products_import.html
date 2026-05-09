@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}استيراد المنتجات{% endblock %}
+{% block page_title %}📥 استيراد المنتجات{% endblock %}
+
+{% block head %}
+<style>
+.pi-wrap { max-width: 800px; margin: 0 auto; }
+.pi-card { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 24px; margin-bottom: 18px; }
+.pi-in { width: 100%; background: #0b1220; color: #e2e8f0; border: 1px solid rgba(148,163,184,.25); border-radius: 10px; padding: 9px 11px; font-family: inherit; font-size: .85rem; box-sizing: border-box; }
+.pi-in:focus { outline: none; border-color: rgba(37,99,235,.5); }
+.pi-label { font-size: .78rem; color: #94a3b8; display: block; margin-bottom: 6px; font-weight: 700; }
+.pi-field { margin-bottom: 16px; }
+.btn-primary { background: linear-gradient(135deg,#2563eb,#1d4ed8); color: #fff; border: none; border-radius: 10px; padding: 11px 28px; font-weight: 800; cursor: pointer; font-family: inherit; font-size: .9rem; }
+.upload-zone { border: 2px dashed rgba(37,99,235,.4); border-radius: 12px; padding: 32px; text-align: center; background: rgba(37,99,235,.04); margin-bottom: 16px; }
+.info-box { background: rgba(14,165,233,.08); border: 1px solid rgba(14,165,233,.2); border-radius: 10px; padding: 14px 16px; color: #38bdf8; font-size: .83rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pi-wrap">
+  <a href="/admin/" style="color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px">← العودة للوحة الإدارة</a>
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}
+      <div style="background:rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.12);border:1px solid rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.3);border-radius:10px;padding:12px 16px;margin-bottom:14px;color:{% if cat=='success' %}#4ade80{% else %}#f87171{% endif %};font-size:.85rem">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="pi-card">
+    <form method="POST" action="{{ url_for('admin.platform_products_import') }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <div class="pi-field">
+        <label class="pi-label">المنشأة المستهدفة *</label>
+        <select class="pi-in" name="business_id" required>
+          <option value="">اختر المنشأة...</option>
+          {% for b in businesses %}
+            <option value="{{ b.id }}">{{ b.name }} (#{{ b.id }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="upload-zone">
+        <div style="font-size:2.2rem;margin-bottom:10px">📊</div>
+        <div style="color:#dbeafe;font-size:.95rem;font-weight:700;margin-bottom:6px">اختر ملف المنتجات</div>
+        <div style="color:#94a3b8;font-size:.8rem;margin-bottom:14px">صيغ مدعومة: CSV، Excel (.xlsx، .xls)</div>
+        <input type="file" name="products_file" accept=".csv,.xlsx,.xls" required style="color:#e2e8f0;font-size:.85rem">
+      </div>
+
+      <div class="info-box" style="margin-bottom:16px">
+        <b>📌 متطلبات الملف:</b>
+        <ul style="margin:8px 0 0;padding-right:18px;line-height:1.8">
+          <li>الأعمدة المطلوبة: <code>name</code>، <code>price</code></li>
+          <li>الأعمدة الاختيارية: <code>sku</code>، <code>category</code>، <code>unit</code>، <code>barcode</code>، <code>description</code></li>
+          <li>يجب أن يكون السعر رقماً بدون رموز العملة</li>
+          <li>الترميز المدعوم: UTF-8</li>
+        </ul>
+      </div>
+
+      <button class="btn-primary" type="submit">📥 بدء الاستيراد</button>
+    </form>
+  </div>
+
+  <div class="pi-card" style="border-color:rgba(148,163,184,.1)">
+    <h3 style="color:#94a3b8;font-size:.88rem;font-weight:800;margin:0 0 10px">📋 مثال على صيغة CSV</h3>
+    <pre style="background:#0b1220;border-radius:8px;padding:12px;color:#a5b4fc;font-size:.78rem;overflow-x:auto;margin:0">name,price,sku,category,unit
+منتج أول,150.00,SKU001,إلكترونيات,قطعة
+منتج ثاني,75.50,SKU002,ملابس,حبة</pre>
+  </div>
+</div>
+{% endblock %}

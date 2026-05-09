@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}إعدادات تجربة المستخدم{% endblock %}
+{% block page_title %}🖌️ تحكم في تجربة المستخدم{% endblock %}
+
+{% block head %}
+<style>
+.ux-wrap { max-width: 1000px; margin: 0 auto; }
+.ux-card { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 22px; margin-bottom: 18px; }
+.ux-in { width: 100%; background: #0b1220; color: #e2e8f0; border: 1px solid rgba(148,163,184,.25); border-radius: 10px; padding: 9px 11px; font-family: inherit; font-size: .85rem; box-sizing: border-box; }
+.ux-in:focus { outline: none; border-color: rgba(37,99,235,.5); }
+.ux-label { font-size: .78rem; color: #94a3b8; display: block; margin-bottom: 6px; font-weight: 700; }
+.ux-field { margin-bottom: 16px; }
+.btn-primary { background: linear-gradient(135deg,#2563eb,#1d4ed8); color: #fff; border: none; border-radius: 10px; padding: 10px 24px; font-weight: 800; cursor: pointer; font-family: inherit; font-size: .88rem; }
+.btn-sm { border: none; border-radius: 8px; padding: 5px 12px; font-size: .75rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+.btn-warning { background: rgba(245,158,11,.15); color: #fbbf24; border: 1px solid rgba(245,158,11,.3); }
+.btn-danger { background: rgba(239,68,68,.15); color: #f87171; border: 1px solid rgba(239,68,68,.3); }
+.btn-muted { background: rgba(148,163,184,.1); color: #94a3b8; border: 1px solid rgba(148,163,184,.2); }
+.sec-title { color: #dbeafe; font-size: .95rem; font-weight: 800; margin: 0 0 16px; }
+.notif-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.notif-table th { background: rgba(148,163,184,.08); color: #94a3b8; padding: 9px 14px; text-align: right; font-weight: 700; font-size: .78rem; }
+.notif-table td { padding: 9px 14px; color: #e2e8f0; border-bottom: 1px solid rgba(148,163,184,.1); vertical-align: middle; }
+.notif-table tr:last-child td { border-bottom: none; }
+.badge-active { display: inline-block; background: rgba(34,197,94,.15); color: #4ade80; border-radius: 999px; padding: 2px 10px; font-size: .72rem; font-weight: 700; }
+.badge-off { display: inline-block; background: rgba(148,163,184,.1); color: #64748b; border-radius: 999px; padding: 2px 10px; font-size: .72rem; font-weight: 700; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ux-wrap">
+  <a href="/admin/" style="color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px">← العودة للوحة الإدارة</a>
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}
+      <div style="background:rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.12);border:1px solid rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.3);border-radius:10px;padding:12px 16px;margin-bottom:14px;color:{% if cat=='success' %}#4ade80{% else %}#f87171{% endif %};font-size:.85rem">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <!-- إعدادات UX -->
+  <div class="ux-card">
+    <div class="sec-title">🖌️ إعدادات تجربة المستخدم</div>
+    <form method="POST" action="{{ url_for('admin.ux_control') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="action" value="save_ux">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px">
+        {% for key, label, ftype, value in fields %}
+        <div class="ux-field" {% if ftype == 'textarea' %}style="grid-column:1/-1"{% endif %}>
+          <label class="ux-label" for="uxf_{{ key }}">{{ label }}</label>
+          {% if ftype == 'textarea' %}
+            <textarea class="ux-in" id="uxf_{{ key }}" name="{{ key }}" rows="4" dir="ltr" style="font-family:monospace;font-size:.8rem">{{ value or '' }}</textarea>
+          {% elif ftype == 'url' %}
+            <input class="ux-in" id="uxf_{{ key }}" name="{{ key }}" type="url" value="{{ value or '' }}" placeholder="https://...">
+          {% elif ftype == 'color' %}
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="color" value="{{ value or '#000000' }}" style="width:36px;height:36px;border:none;background:none;cursor:pointer;border-radius:8px"
+                oninput="document.getElementById('uxf_{{ key }}').value=this.value">
+              <input class="ux-in" id="uxf_{{ key }}" name="{{ key }}" type="text" value="{{ value or '' }}" style="flex:1">
+            </div>
+          {% elif ftype == 'select' %}
+            <select class="ux-in" id="uxf_{{ key }}" name="{{ key }}">
+              <option value="">اختر...</option>
+            </select>
+          {% else %}
+            <input class="ux-in" id="uxf_{{ key }}" name="{{ key }}" type="text" value="{{ value or '' }}" placeholder="{{ label }}">
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <button class="btn-primary" type="submit">💾 حفظ إعدادات UX</button>
+    </form>
+  </div>
+
+  <!-- الإشعارات -->
+  <div class="ux-card">
+    <div class="sec-title">🔔 الإشعارات المنبثقة</div>
+    <!-- إضافة إشعار -->
+    <form method="POST" action="{{ url_for('admin.ux_control') }}" style="margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid rgba(148,163,184,.1)">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="action" value="add_notification">
+      <div style="display:grid;grid-template-columns:1fr 140px 80px auto;gap:8px;align-items:end">
+        <div>
+          <label class="ux-label">نص الإشعار *</label>
+          <input class="ux-in" name="message" placeholder="رسالة الإشعار..." required>
+        </div>
+        <div>
+          <label class="ux-label">النوع</label>
+          <select class="ux-in" name="notif_type">
+            <option value="info">ℹ️ معلومة</option>
+            <option value="warning">⚠️ تحذير</option>
+            <option value="success">✅ نجاح</option>
+            <option value="error">❌ خطأ</option>
+          </select>
+        </div>
+        <div>
+          <label class="ux-label">مدة (ثانية)</label>
+          <input class="ux-in" name="duration" type="number" value="5" min="1" max="60">
+        </div>
+        <div style="display:flex;align-items:flex-end">
+          <button class="btn-primary" type="submit" style="padding:9px 16px">➕ إضافة</button>
+        </div>
+      </div>
+    </form>
+
+    {% if notifications %}
+    <div style="overflow-x:auto">
+      <table class="notif-table">
+        <thead><tr><th>الرسالة</th><th>النوع</th><th>المدة</th><th>الحالة</th><th>إجراء</th></tr></thead>
+        <tbody>
+          {% for n in notifications %}
+          <tr>
+            <td style="max-width:380px;word-break:break-word">{{ n.message or '—' }}</td>
+            <td style="color:#94a3b8;font-size:.8rem">
+              {% if n.notif_type == 'warning' %}⚠️ تحذير
+              {% elif n.notif_type == 'success' %}✅ نجاح
+              {% elif n.notif_type == 'error' %}❌ خطأ
+              {% else %}ℹ️ معلومة{% endif %}
+            </td>
+            <td style="color:#94a3b8;font-size:.8rem">{{ n.duration or 5 }}ث</td>
+            <td>
+              {% if n.is_active %}<span class="badge-active">● نشط</span>
+              {% else %}<span class="badge-off">● معطّل</span>{% endif %}
+            </td>
+            <td>
+              <div style="display:flex;gap:5px">
+                <form method="POST" action="{{ url_for('admin.ux_control') }}" style="margin:0">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <input type="hidden" name="action" value="toggle_notification">
+                  <input type="hidden" name="notif_id" value="{{ n.id }}">
+                  <button class="btn-sm btn-warning" type="submit">
+                    {% if n.is_active %}⏸{% else %}▶{% endif %}
+                  </button>
+                </form>
+                <form method="POST" action="{{ url_for('admin.ux_control') }}" style="margin:0">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <input type="hidden" name="action" value="delete_notification">
+                  <input type="hidden" name="notif_id" value="{{ n.id }}">
+                  <button class="btn-sm btn-danger" type="submit" onclick="return confirm('حذف هذا الإشعار؟')">🗑️</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p style="color:#64748b;text-align:center;margin:16px 0">لا توجد إشعارات مضافة</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

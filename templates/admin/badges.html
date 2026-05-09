@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}الشارات التسويقية{% endblock %}
+{% block page_title %}🏷️ الشارات التسويقية{% endblock %}
+
+{% block head %}
+<style>
+.bd-wrap { max-width: 1100px; margin: 0 auto; }
+.bd-card { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+.bd-in { width: 100%; background: #0b1220; color: #e2e8f0; border: 1px solid rgba(148,163,184,.25); border-radius: 10px; padding: 9px 11px; font-family: inherit; font-size: .85rem; box-sizing: border-box; }
+.bd-btn { border: none; border-radius: 10px; padding: 9px 20px; font-weight: 800; cursor: pointer; font-family: inherit; font-size: .85rem; }
+.btn-primary { background: linear-gradient(135deg,#2563eb,#1d4ed8); color: #fff; }
+.btn-edit { background: rgba(245,158,11,.15); color: #fbbf24; border: 1px solid rgba(245,158,11,.3); }
+.btn-danger { background: rgba(239,68,68,.15); color: #f87171; border: 1px solid rgba(239,68,68,.3); }
+.bd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.badge-item { background: #0b1220; border: 1px solid rgba(148,163,184,.15); border-radius: 12px; padding: 16px; }
+.badge-preview { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 6px 14px; font-weight: 800; font-size: .85rem; margin-bottom: 12px; }
+.badge-meta { color: #94a3b8; font-size: .75rem; margin-bottom: 8px; }
+.badge-actions { display: flex; gap: 8px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media(max-width:700px){ .form-grid { grid-template-columns: 1fr; } }
+.form-label { font-size: .75rem; color: #94a3b8; display: block; margin-bottom: 5px; }
+.sec-title { color: #dbeafe; font-size: .95rem; font-weight: 800; margin: 0 0 16px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bd-wrap">
+  <a href="/admin/" style="color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px">← العودة للوحة الإدارة</a>
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}
+      <div style="background:rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.12);border:1px solid rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.3);border-radius:10px;padding:12px 16px;margin-bottom:14px;color:{% if cat=='success' %}#4ade80{% else %}#f87171{% endif %};font-size:.85rem">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <!-- نموذج إضافة شارة -->
+  <div class="bd-card">
+    <div class="sec-title">➕ إضافة شارة جديدة</div>
+    <form method="POST" action="{{ url_for('admin.admin_badges') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="action" value="add">
+      <div class="form-grid">
+        <div>
+          <label class="form-label">نص الشارة *</label>
+          <input class="bd-in" name="badge_text" placeholder="مثال: عرض خاص 🔥" required>
+        </div>
+        <div>
+          <label class="form-label">أيقونة</label>
+          <input class="bd-in" name="badge_icon" value="🔥" placeholder="🔥">
+        </div>
+        <div>
+          <label class="form-label">لون النص</label>
+          <input type="color" class="bd-in" name="badge_color" value="#ffffff" style="height:38px;padding:4px">
+        </div>
+        <div>
+          <label class="form-label">لون الخلفية</label>
+          <input type="color" class="bd-in" name="badge_bg" value="#dc2626" style="height:38px;padding:4px">
+        </div>
+        <div>
+          <label class="form-label">القطاع (اختياري)</label>
+          <select class="bd-in" name="sector_key">
+            <option value="">جميع القطاعات</option>
+            {% for code, name in industry_types %}
+            <option value="{{ code }}">{{ name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="form-label">الترتيب</label>
+          <input class="bd-in" name="sort_order" type="number" value="0">
+        </div>
+        <div>
+          <label class="form-label">تاريخ الانتهاء</label>
+          <input class="bd-in" name="expires_at" type="datetime-local">
+        </div>
+        <div style="display:flex;align-items:center;gap:20px;padding-top:20px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;color:#e2e8f0;cursor:pointer">
+            <input type="checkbox" name="show_on_login" checked> في صفحة الدخول
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;color:#e2e8f0;cursor:pointer">
+            <input type="checkbox" name="show_on_register" checked> في صفحة التسجيل
+          </label>
+        </div>
+      </div>
+      <button class="bd-btn btn-primary" type="submit" style="margin-top:14px">إضافة الشارة</button>
+    </form>
+  </div>
+
+  <!-- قائمة الشارات -->
+  <div class="bd-card">
+    <div class="sec-title">🏷️ الشارات الحالية ({{ badges | length }})</div>
+    {% if badges %}
+    <div class="bd-grid">
+      {% for b in badges %}
+      <div class="badge-item">
+        <div class="badge-preview" style="background:{{ b.badge_bg }};color:{{ b.badge_color }}">
+          {{ b.badge_icon }} {{ b.badge_text }}
+        </div>
+        <div class="badge-meta">
+          {% if b.sector_key %}قطاع: {{ b.sector_key }}{% else %}جميع القطاعات{% endif %} ·
+          ترتيب: {{ b.sort_order }}
+          {% if b.expires_at %}<br>ينتهي: {{ b.expires_at[:10] }}{% endif %}
+          <br>
+          {% if b.show_on_login %}<span style="color:#4ade80">✓ دخول</span>{% endif %}
+          {% if b.show_on_register %} <span style="color:#60a5fa">✓ تسجيل</span>{% endif %}
+        </div>
+        <div class="badge-actions">
+          <form method="POST" action="{{ url_for('admin.admin_badges') }}" style="margin:0">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="action" value="toggle">
+            <input type="hidden" name="badge_id" value="{{ b.id }}">
+            <button class="bd-btn btn-edit" style="padding:5px 12px;font-size:.75rem" type="submit">
+              {{ '🔴 إيقاف' if b.is_active else '🟢 تفعيل' }}
+            </button>
+          </form>
+          <form method="POST" action="{{ url_for('admin.admin_badges') }}" style="margin:0">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="badge_id" value="{{ b.id }}">
+            <button class="bd-btn btn-danger" style="padding:5px 12px;font-size:.75rem" type="submit" onclick="return confirm('حذف هذه الشارة؟')">🗑️ حذف</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+      <p style="color:#64748b;text-align:center;margin:24px 0">لا توجد شارات حتى الآن</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
