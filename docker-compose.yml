@@ -1,0 +1,18 @@
+services:
+  jenan-biz:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jenan-biz
+    ports:
+      - "5001:5001"
+    environment:
+      FLASK_ENV: production
+      HOST: 0.0.0.0
+      PORT: 5001
+      WAITRESS_THREADS: 16
+      SESSION_COOKIE_SECURE: "false"
+      BEHIND_PROXY: "false"
+    volumes:
+      - ./docker-data:/app/data
+    restart: unless-stopped
