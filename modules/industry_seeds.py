@@ -1552,6 +1552,24 @@ def _get_seed(industry_type: str) -> dict:
     return _DEFAULT_SEEDS
 
 
+def _ensure_complete_seed_coverage() -> None:
+    """يضمن وجود seed لكل نشاط معرف في INDUSTRY_TYPES (upsert at import-time)."""
+    try:
+        from modules.config import INDUSTRY_TYPES as _INDUSTRY_TYPES  # import محلي لتفادي أي تعارضات
+    except Exception:
+        return
+
+    for code, _ in _INDUSTRY_TYPES:
+        if code in _SEEDS:
+            continue
+        # ننسخ fallback حتى لا يتم تعديل seed الأصلية بالمرجع.
+        _SEEDS[code] = copy.deepcopy(_get_seed(code))
+
+
+# تشغيل فحص التغطية مرة واحدة عند تحميل الملف.
+_ensure_complete_seed_coverage()
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # 2. دالة التهيئة الرئيسية
 # ═══════════════════════════════════════════════════════════════════════════════
