@@ -21,6 +21,9 @@
   "editor.unicodeHighlight.nonBasicASCII": false,
   "editor.unicodeHighlight.ambiguousCharacters": false,
   "editor.unicodeHighlight.invisibleCharacters": true,
+  "files.associations": {
+    "migrations/*.sql": "sqlite"
+  },
   "files.exclude": {
     "**/__pycache__": true,
     "**/.pytest_cache": true,
@@ -48,6 +51,7 @@
   "css.validate": false,
   "scss.validate": false,
   "less.validate": false,
-  "sqltools.results.location": "tab",
+  "mssql.intelliSense.enableErrorChecking": false,
+  "sqltools.results.location": "current",
   "sqltools.connections": []
 }
