@@ -6,6 +6,7 @@ import os
 import secrets
 from datetime import timedelta
 from pathlib import Path
+from typing import Optional
 
 # ── تحميل .env تلقائياً إذا توفر python-dotenv ──────────────────────────────
 try:
@@ -682,7 +683,7 @@ STUB_PAGES = [
 # ─── حماية المسارات حسب نوع النشاط ──────────────────────────────────────────
 # key = بادئة URL   value = مجموعة أنواع النشاط المسموح لها
 # None = مفتوح لجميع الأنشطة
-INDUSTRY_ROUTE_GUARD: dict[str, set | None] = {
+INDUSTRY_ROUTE_GUARD: dict[str, Optional[set]] = {
     "/medical":       {"medical"},
     "/rental":        {"car_rental"},
     "/projects":      {"construction"},
@@ -695,7 +696,7 @@ INDUSTRY_ROUTE_GUARD: dict[str, set | None] = {
     "/pos":           set(),
 }
 
-def _build_industry_route_guards() -> dict[str, set | None]:
+def _build_industry_route_guards() -> dict[str, Optional[set]]:
     """يبني خريطة الحماية بعد تحميل INDUSTRY_TYPES."""
     restaurant_types = {t for t, _ in INDUSTRY_TYPES if t.startswith("food_") or t in ("restaurant", "cafe", "coffeeshop")}
     retail_types     = {t for t, _ in INDUSTRY_TYPES if t.startswith("retail_")} | {"retail"}
