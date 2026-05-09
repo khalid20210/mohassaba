@@ -309,7 +309,8 @@ def load_user():
                 itype_sidebar = get_sidebar_key(itype)
                 for prefix, allowed_set in INDUSTRY_ROUTE_GUARDS.items():
                     if path.startswith(prefix):
-                        if itype not in allowed_set and itype_sidebar not in allowed_set:
+                        allowed = allowed_set or set()
+                        if itype not in allowed and itype_sidebar not in allowed:
                             flash("هذا القسم غير متاح لنشاطك التجاري", "error")
                             return redirect(url_for("core.dashboard"))
                         break
@@ -436,9 +437,10 @@ def inject_globals():
         if hasattr(_db, 'commit'):
             _db.commit()
         def _get_ps(key, default=""):
-            row = _db.execute(
+            cur = _db.execute(
                 "SELECT setting_value FROM platform_settings WHERE setting_key=?", (key,)
-            ).fetchone()
+            )
+            row = cur.fetchone() if cur is not None else None
             if row:
                 v = row[0] if not isinstance(row, dict) else row.get("setting_value", "")
                 return v or default
@@ -459,7 +461,8 @@ def inject_globals():
         from .db_adapter import get_db_adapter as _gda
         _db2 = _gda()
         def _ux(k):
-            r = _db2.execute("SELECT setting_value FROM platform_settings WHERE setting_key=?", (k,)).fetchone()
+            cur = _db2.execute("SELECT setting_value FROM platform_settings WHERE setting_key=?", (k,))
+            r = cur.fetchone() if cur is not None else None
             return (r[0] if r and not isinstance(r, dict) else (r.get("setting_value","") if r else "")) or ""
         ux_login_bg_url    = _ux("ux_login_bg_url")
         ux_register_bg_url = _ux("ux_register_bg_url")
