@@ -13,6 +13,8 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}
     strategy:
       fail-fast: false
       matrix:
@@ -38,7 +40,7 @@ jobs:
       run: |
         # run tests only when a dedicated tests directory exists
         if [ -d tests ]; then
-          pytest tests -q
+          python -m pytest tests -q
         else
           echo "No tests directory found; skipping pytest."
         fi
