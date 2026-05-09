@@ -4,15 +4,25 @@
     "donjayamanne.githistory",
     "eamodio.gitlens",
     "qwtel.sqlite-viewer",
+    "ms-mssql.mssql",
+    "ms-mssql.data-workspace-vscode",
+    "ms-mssql.sql-database-projects-vscode",
     "snyk-security.snyk-vulnerability-scanner",
     "rangav.vscode-thunder-client",
     "usernamehw.errorlens",
     "firefox-devtools.vscode-firefox-debug",
+    "ms-azuretools.vscode-containers",
+    "ms-dotnettools.vscode-dotnet-runtime",
     "ms-python.python",
     "ms-python.vscode-pylance",
     "github.vscode-pull-request-github",
     "github.vscode-github-actions",
-    "ms-vscode.powershell"
+    "ms-vscode.powershell",
+    "arabic-language.vscode-ar",
+    "davidanson.vscode-markdownlint",
+    "gruntfuggly.todo-tree",
+    "mechatroner.rainbow-csv",
+    "pkief.material-icon-theme"
   ],
   "unwantedRecommendations": []
 }
