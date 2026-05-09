@@ -43,6 +43,8 @@ with app.app_context():
         "journal_link":         0,
         "stock_movements":      0,
         "customer_ledger":      0,
+        "legacy_tax_model":     0,
+        "service_only_invoices": 0,
     }
 
     for inv in invoices:
@@ -54,7 +56,11 @@ with app.app_context():
         # الفحص 1: مجموع البنود يساوي إجمالي الفاتورة
         # ══════════════════════════════════════════════════════════════════════
         lines = db.execute(
-            "SELECT quantity, unit_price, tax_amount, total FROM invoice_lines WHERE invoice_id=?",
+            """SELECT il.product_id, il.quantity, il.unit_price, il.discount_amount,
+                      il.tax_amount, il.total, COALESCE(p.track_stock, 0) AS track_stock
+               FROM invoice_lines il
+               LEFT JOIN products p ON p.id = il.product_id
+               WHERE il.invoice_id=?""",
             (inv_id,)
         ).fetchall()
 
@@ -65,7 +71,7 @@ with app.app_context():
                 "detail": "لا توجد بنود لهذه الفاتورة"
             })
         else:
-            lines_subtotal = round(sum(r["quantity"] * r["unit_price"] for r in lines), 2)
+            lines_subtotal = round(sum((float(r["quantity"] or 0) * float(r["unit_price"] or 0)) - float(r["discount_amount"] or 0) for r in lines), 2)
             lines_tax      = round(sum(r["tax_amount"] for r in lines), 2)
             lines_total    = round(sum(r["total"] for r in lines), 2)
 
@@ -73,13 +79,23 @@ with app.app_context():
             header_tax      = round(float(inv["tax_amount"] or 0), 2)
             header_total    = round(float(inv["total"] or 0), 2)
 
-            if abs(lines_total - header_total) > TOLERANCE:
+            header_matches_line_total = abs(lines_total - header_total) <= TOLERANCE
+            header_matches_legacy_tax = abs((lines_total + header_tax) - header_total) <= TOLERANCE
+            line_tax_matches_header = abs(lines_tax - header_tax) <= TOLERANCE
+
+            if not header_matches_line_total and not header_matches_legacy_tax:
                 issues.append({
                     "invoice": inv_num,
                     "check": "مجموع البنود ≠ إجمالي الفاتورة",
                     "detail": f"البنود={lines_total} | الفاتورة={header_total} | فرق={round(lines_total-header_total,4)}"
                 })
-            if abs(lines_tax - header_tax) > TOLERANCE:
+
+            # نمط تاريخي: ضريبة الفاتورة محفوظة بالرأس بينما tax_amount في البنود = 0
+            if line_tax_matches_header:
+                pass
+            elif abs(lines_tax) <= TOLERANCE and header_matches_legacy_tax:
+                checked["legacy_tax_model"] += 1
+            else:
                 issues.append({
                     "invoice": inv_num,
                     "check": "ضريبة البنود ≠ ضريبة الفاتورة",
@@ -141,19 +157,28 @@ with app.app_context():
         # ══════════════════════════════════════════════════════════════════════
         # الفحص 4: حركات المخزون مقابل كميات البنود
         # ══════════════════════════════════════════════════════════════════════
-        for line in lines:
-            if not line["quantity"]:
-                continue
-            mv = db.execute(
+        stock_lines = [r for r in lines if r["product_id"] and int(r["track_stock"] or 0) == 1]
+        if not stock_lines:
+            checked["service_only_invoices"] += 1
+        else:
+            sm = db.execute(
                 """SELECT COALESCE(SUM(ABS(quantity)),0) AS moved
                    FROM stock_movements
                    WHERE reference_type='invoice' AND reference_id=?""",
                 (inv_id,)
             ).fetchone()
+            im = db.execute(
+                """SELECT COALESCE(SUM(ABS(quantity)),0) AS moved
+                   FROM inventory_movements
+                   WHERE reference_type='invoice' AND reference_id=?""",
+                (inv_id,)
+            ).fetchone()
             checked["stock_movements"] += 1
 
-            total_lines_qty = round(sum(float(r["quantity"]) for r in lines), 4)
-            total_moved_qty = round(float(mv["moved"] or 0), 4)
+            total_lines_qty = round(sum(float(r["quantity"] or 0) for r in stock_lines), 4)
+            moved_stock_qty = float(sm["moved"] or 0)
+            moved_inventory_qty = float(im["moved"] or 0)
+            total_moved_qty = round(max(moved_stock_qty, moved_inventory_qty), 4)
 
             if total_lines_qty > 0 and abs(total_lines_qty - total_moved_qty) > 0.001:
                 issues.append({
@@ -161,7 +186,6 @@ with app.app_context():
                     "check": "كمية المخزون ≠ كمية البنود",
                     "detail": f"بنود={total_lines_qty} | حركة مخزون={total_moved_qty} | فرق={round(total_lines_qty-total_moved_qty,4)}"
                 })
-            break  # نفحص مرة واحدة لكل فاتورة (ليس لكل بند)
 
         # ══════════════════════════════════════════════════════════════════════
         # الفحص 5: رصيد العميل للمبيعات الآجلة
@@ -197,6 +221,8 @@ with app.app_context():
     print(f"    ✔  توافق بنود القيد مع رأس القيد       : {checked['journal_link']} قيد")
     print(f"    ✔  حركات المخزون مقابل الكميات         : {checked['stock_movements']} فاتورة")
     print(f"    ✔  ذمم العملاء للمبيعات الآجلة         : {checked['customer_ledger']} فاتورة")
+    print(f"    ℹ️  فواتير خدمات (بدون مخزون)           : {checked['service_only_invoices']} فاتورة")
+    print(f"    ℹ️  نمط ضريبة رأسي legacy               : {checked['legacy_tax_model']} فاتورة")
     print()
 
     if not issues:
