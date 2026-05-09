@@ -4,10 +4,8 @@ blueprints/core/routes.py — الصفحات الأساسية: dashboard، analy
 """
 import io
 import json
-import secrets
-import sqlite3
 from datetime import datetime, timedelta
-from pathlib import Path
+from typing import Dict, Optional
 
 from flask import (
     Blueprint, flash, g, jsonify, redirect, render_template,
@@ -17,7 +15,7 @@ from flask import (
 from modules.config import (
     ALLOWED_LOGO_EXT, BASE_DIR, INDUSTRY_TYPES,
     LOGO_FOLDER, STUB_PAGES, PLATFORM_NAME, SAAS_REGION,
-    FLASK_ENV, DB_PATH, HEALTH_DB_TIMEOUT_MS, IS_PROD,
+    FLASK_ENV, DB_PATH,
     get_sidebar_key, SIDEBAR_CONFIG,
     REDIS_REQUIRED, QUEUE_REQUIRED
 )
@@ -265,7 +263,13 @@ def readyz():
     """فحص الجاهزية: يتحقق من جودة الخدمة الكاملة."""
     db = get_db()
     started = datetime.now()
-    checks = {"db": None, "tables": None, "migrations": None, "redis": None, "queue": None}
+    checks: Dict[str, Optional[str]] = {
+        "db": None,
+        "tables": None,
+        "migrations": None,
+        "redis": None,
+        "queue": None,
+    }
     
     try:
         db.execute("SELECT 1").fetchone()

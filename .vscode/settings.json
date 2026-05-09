@@ -45,6 +45,9 @@
     "**/uploads/**": true,
     "**/instance/**": true
   },
+  "css.validate": false,
+  "scss.validate": false,
+  "less.validate": false,
   "sqltools.results.location": "tab",
   "sqltools.connections": []
 }
