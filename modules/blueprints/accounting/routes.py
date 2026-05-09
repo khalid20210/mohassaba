@@ -171,6 +171,28 @@ def invoice_print(inv_id: int):
                            float(inv["tax_amount"] or 0))
     mode = request.args.get("mode", "a4")
 
+    # الرقم الضريبي للعميل — من العمود المستقل أو fallback لـ parse الملاحظات (للفواتير القديمة)
+    import re as _re
+    notes_raw = inv["notes"] or ""
+    client_vat = inv.get("party_vat") or ""
+    if not client_vat:
+        # fallback للفواتير القديمة المخزّنة في الملاحظات
+        m = _re.search(r"الرقم الضريبي للعميل:\s*([^\n]+)", notes_raw)
+        client_vat = m.group(1).strip() if m else ""
+    # إزالة سطر الرقم الضريبي من الملاحظات القديمة للعرض النظيف
+    clean_notes = _re.sub(r"الرقم الضريبي للعميل:\s*[^\n]+\n?", "", notes_raw).strip()
+
+    # قاموس طرق الدفع
+    payment_labels = {
+        "cash":   "نقدي",
+        "bank":   "تحويل بنكي",
+        "credit": "آجل",
+        "card":   "بطاقة",
+        "cheque": "شيك",
+        "pos":    "نقطة بيع",
+    }
+    payment_label = payment_labels.get(inv["payment_method"] or "cash", inv["payment_method"] or "نقدي")
+
     return render_template(
         "invoice_print.html",
         inv=dict(inv),
@@ -178,6 +200,9 @@ def invoice_print(inv_id: int):
         biz=dict(biz) if biz else {},
         qr_b64=qr_b64,
         mode=mode,
+        client_vat=client_vat,
+        clean_notes=clean_notes,
+        payment_label=payment_label,
     )
 
 

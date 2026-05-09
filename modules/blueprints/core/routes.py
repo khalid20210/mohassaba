@@ -1151,6 +1151,16 @@ def settings():
             flash("اسم المنشأة مطلوب", "error")
             return redirect(url_for("core.settings"))
 
+        # التحقق من صحة الرقم الضريبي (15 رقماً إذا تم إدخاله)
+        if tax_number and (not tax_number.isdigit() or len(tax_number) != 15):
+            flash("❌ الرقم الضريبي يجب أن يكون 15 رقماً بالضبط", "error")
+            return redirect(url_for("core.settings"))
+
+        # التحقق من رقم السجل التجاري (10 أرقام إذا تم إدخاله)
+        if cr_number and (not cr_number.isdigit() or len(cr_number) != 10):
+            flash("❌ رقم السجل التجاري يجب أن يكون 10 أرقام بالضبط", "error")
+            return redirect(url_for("core.settings"))
+
         logo_path = None
         old_biz = db.execute("SELECT * FROM businesses WHERE id=?", (biz_id,)).fetchone()
         old_inv_prefix = db.execute(

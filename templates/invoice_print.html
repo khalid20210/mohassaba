@@ -172,6 +172,12 @@
   <button class="btn-back" onclick="history.back()">← رجوع</button>
 </div>
 
+{% if not biz.tax_number %}
+<div style="position:fixed;top:50px;left:0;right:0;z-index:99;background:#fef3c7;color:#92400e;border-top:3px solid #f59e0b;font-size:.85rem;padding:8px 20px;display:flex;align-items:center;gap:10px" class="no-print">
+  ⚠️ <strong>تحذير ZATCA:</strong> الرقم الضريبي للمنشأة غير مُضاف! رمز QR لن يكون صالحاً.
+  <a href="{{ url_for('core.settings') }}" style="color:#1d4ed8;font-weight:700;text-decoration:underline">← الإعدادات لإضافته</a>
+</div>
+{% endif %}
 
 {% if mode == 'thermal' %}
 <!-- ═════════════════════════════════════════════════
@@ -291,10 +297,11 @@
       <div class="inv-num">{{ inv.invoice_number }}</div>
       <div style="margin-top:6px;font-size:.82rem">
         <div><strong>التاريخ:</strong> {{ inv.invoice_date or inv.created_at[:10] }}</div>
-        <div><strong>طريقة الدفع:</strong> نقد</div>
+        {% if inv.due_date %}<div><strong>تاريخ الاستحقاق:</strong> {{ inv.due_date }}</div>{% endif %}
+        <div><strong>طريقة الدفع:</strong> {{ payment_label or 'نقدي' }}</div>
         <div><strong>الحالة:</strong>
-          <span style="color:{% if inv.status=='paid' %}#10b981{% else %}#ef4444{% endif %}">
-            {% if inv.status == 'paid' %}مدفوعة{% elif inv.status == 'draft' %}مسودة{% else %}{{ inv.status }}{% endif %}
+          <span style="color:{% if inv.status=='paid' %}#10b981{% elif inv.status=='draft' %}#f59e0b{% else %}#ef4444{% endif %}">
+            {% if inv.status == 'paid' %}مدفوعة{% elif inv.status == 'draft' %}مسودة{% elif inv.status == 'partial' %}مدفوعة جزئياً{% elif inv.status == 'overdue' %}متأخرة{% else %}{{ inv.status }}{% endif %}
           </span>
         </div>
       </div>
@@ -312,7 +319,7 @@
     <div class="inv-party-box">
       <h4>إلى (المشتري / العميل)</h4>
       <div class="party-name">{{ inv.party_name or 'عميل نقدي' }}</div>
-
+      {% if client_vat %}<p>الرقم الضريبي: <strong dir="ltr">{{ client_vat }}</strong></p>{% endif %}
     </div>
   </div>
 
@@ -324,7 +331,8 @@
         <th>الصنف / الوصف</th>
         <th class="num">الكمية</th>
         <th class="num">سعر الوحدة</th>
-        <th class="num">الضريبة</th>
+        {% if inv.tax_amount and inv.tax_amount > 0 %}<th class="num">ضريبة 15%</th>{% endif %}
+        {% if inv.discount_amount and inv.discount_amount > 0 %}<th class="num">الخصم</th>{% endif %}
         <th class="num">الإجمالي</th>
       </tr>
     </thead>
@@ -335,7 +343,12 @@
         <td>{{ l.description }}</td>
         <td class="num">{{ l.quantity|int if l.quantity == l.quantity|int else "%.3f"|format(l.quantity) }}</td>
         <td class="num">{{ "%.2f"|format(l.unit_price) }}</td>
-        <td class="num">{{ "%.2f"|format((l.total * 0.15) if inv.tax_amount else 0) }}</td>
+        {% if inv.tax_amount and inv.tax_amount > 0 %}
+          <td class="num">{{ "%.2f"|format(l.tax_amount or 0) }}</td>
+        {% endif %}
+        {% if inv.discount_amount and inv.discount_amount > 0 %}
+          <td class="num" style="color:#ef4444">{% if l.discount_amount and l.discount_amount > 0 %}-{{ "%.2f"|format(l.discount_amount) }}{% else %}—{% endif %}</td>
+        {% endif %}
         <td class="num">{{ "%.2f"|format(l.total) }}</td>
       </tr>
       {% endfor %}
@@ -367,7 +380,9 @@
   <!-- ── تذييل A4: ملاحظات + QR ──────────────── -->
   <div class="inv-footer-a4">
     <div class="inv-notes">
-      {% if inv.notes %}
+      {% if clean_notes %}
+      <strong>ملاحظات:</strong><br>{{ clean_notes }}
+      {% elif inv.notes and not client_vat %}
       <strong>ملاحظات:</strong><br>{{ inv.notes }}
       {% endif %}
       <br>

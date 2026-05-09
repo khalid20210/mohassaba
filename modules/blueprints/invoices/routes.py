@@ -229,7 +229,7 @@ def new_invoice():
         valid_statuses = {"draft", "pending", "paid"}
         if inv_status not in valid_statuses:
             inv_status = "pending"
-        valid_methods = {"cash", "bank", "credit", "card"}
+        valid_methods = {"cash", "bank", "credit", "card", "cheque", "pos"}
         if payment_method not in valid_methods:
             payment_method = "cash"
 
@@ -251,10 +251,15 @@ def new_invoice():
                 disc  = min(100.0, max(0.0, float(discs[i] if i < len(discs) else 0)))
             except (ValueError, IndexError):
                 continue
-            line_total = qty * price * (1 - disc / 100)
-            subtotal  += line_total
+            line_base     = qty * price
+            disc_amount   = round(line_base * disc / 100, 4)
+            line_after_disc = line_base - disc_amount
+            line_tax_amount = round(line_after_disc * 0.15, 4) if apply_vat else 0.0
+            line_total    = round(line_after_disc, 4)
+            subtotal     += line_total
             lines.append({"desc": desc, "qty": qty, "price": price,
-                           "disc": disc, "total": line_total})
+                           "disc": disc, "disc_amount": disc_amount,
+                           "tax_amount": line_tax_amount, "total": line_total})
 
         if not lines:
             flash("يجب إضافة سطر واحد على الأقل في الفاتورة", "error")
@@ -272,27 +277,32 @@ def new_invoice():
         inv_id = db.execute(
             """INSERT INTO invoices
                (business_id, invoice_number, invoice_type, invoice_date, due_date,
-                party_name, subtotal, tax_amount, total, paid_amount,
+                party_name, party_vat, subtotal, tax_amount, total, paid_amount,
                 payment_method, status, notes, created_by, created_at)
                VALUES (?, ?, 'sale', DATE('now'), ?,
-                       ?, ?, ?, ?, 0,
+                       ?, ?, ?, ?, ?, 0,
                        ?, ?, ?, ?, ?)""",
             (
                 biz_id, inv_number, due_date,
-                party_name, subtotal, tax_amount, total,
+                party_name, client_vat, subtotal, tax_amount, total,
                 payment_method, inv_status,
-                (f"الرقم الضريبي للعميل: {client_vat}\n" if client_vat else "") + notes,
+                notes,
                 session.get("user_id"), now,
             )
         ).lastrowid
 
         # ── حفظ أسطر الفاتورة ────────────────────────────────────────────────
+        tax_rate_val = 15.0 if apply_vat else 0.0
         for idx, line in enumerate(lines, start=1):
             db.execute(
                 """INSERT INTO invoice_lines
-                   (invoice_id, description, quantity, unit_price, total, line_order)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
-                (inv_id, line["desc"], line["qty"], line["price"], line["total"], idx)
+                   (invoice_id, description, quantity, unit_price,
+                    discount_pct, discount_amount, tax_rate, tax_amount, total, line_order)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (inv_id, line["desc"], line["qty"], line["price"],
+                 line["disc"], line["disc_amount"],
+                 tax_rate_val, line["tax_amount"],
+                 line["total"], idx)
             )
 
         db.commit()

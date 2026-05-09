@@ -19,6 +19,55 @@
 </div>
 {% endif %}
 
+<!-- ═══════════════ بطاقة جاهزية ZATCA ═══════════════ -->
+{% set zatca_score = 0 %}
+{% if biz.tax_number and biz.tax_number|length == 15 %}{% set zatca_score = zatca_score + 35 %}{% endif %}
+{% if biz.cr_number %}{% set zatca_score = zatca_score + 25 %}{% endif %}
+{% if biz.name %}{% set zatca_score = zatca_score + 15 %}{% endif %}
+{% if biz.address %}{% set zatca_score = zatca_score + 10 %}{% endif %}
+{% if biz.city %}{% set zatca_score = zatca_score + 10 %}{% endif %}
+{% if biz.logo_path %}{% set zatca_score = zatca_score + 5 %}{% endif %}
+
+<div class="card" style="margin-bottom:20px;border:2px solid {% if zatca_score >= 85 %}#6ee7b7{% elif zatca_score >= 50 %}#fcd34d{% else %}#fca5a5{% endif %};border-radius:14px;overflow:hidden">
+  <div style="background:{% if zatca_score >= 85 %}linear-gradient(90deg,#064e3b,#065f46){% elif zatca_score >= 50 %}linear-gradient(90deg,#78350f,#92400e){% else %}linear-gradient(90deg,#7f1d1d,#991b1b){% endif %};padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+    <div style="color:#fff">
+      <span style="font-size:1.1rem;font-weight:700">
+        {% if zatca_score >= 85 %}✅ ZATCA — جاهز للتقديم{% elif zatca_score >= 50 %}⚠️ ZATCA — يحتاج اكتمال{% else %}❌ ZATCA — بيانات ناقصة{% endif %}
+      </span>
+      <div style="font-size:.8rem;opacity:.85;margin-top:3px">درجة الجاهزية: {{ zatca_score }}%</div>
+    </div>
+    <div style="background:rgba(255,255,255,.15);border-radius:50px;padding:6px 20px;color:#fff;font-weight:700;font-size:1.3rem">
+      {{ zatca_score }}%
+    </div>
+  </div>
+  <div style="padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
+    {% macro zatca_item(label, val, points, hint='') %}
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;background:{% if val %}#f0fdf4{% else %}#fff1f2{% endif %};border:1px solid {% if val %}#86efac{% else %}#fca5a5{% endif %}">
+      <div style="font-size:1.4rem">{% if val %}✅{% else %}❌{% endif %}</div>
+      <div>
+        <div style="font-size:.85rem;font-weight:600;color:{% if val %}#15803d{% else %}#b91c1c{% endif %}">{{ label }}</div>
+        <div style="font-size:.75rem;color:#6b7280">
+          {% if val %}{{ val[:25] }}{% if val|length > 25 %}...{% endif %}{% else %}{{ hint or 'غير مُدخل' }}{% endif %}
+          <span style="color:{% if val %}#059669{% else %}#dc2626{% endif %}">(+{{ points }}%)</span>
+        </div>
+      </div>
+    </div>
+    {% endmacro %}
+
+    {{ zatca_item('الرقم الضريبي (VAT)', biz.tax_number if biz.tax_number and biz.tax_number|length == 15 else '', 35, 'يجب أن يكون 15 رقماً') }}
+    {{ zatca_item('رقم السجل التجاري', biz.cr_number, 25, 'مطلوب للفواتير') }}
+    {{ zatca_item('اسم المنشأة', biz.name, 15) }}
+    {{ zatca_item('العنوان', biz.address, 10, 'العنوان التفصيلي') }}
+    {{ zatca_item('المدينة', biz.city, 10) }}
+    {{ zatca_item('الشعار', biz.logo_path, 5, 'لإضفاء الاحترافية') }}
+  </div>
+  {% if zatca_score < 100 %}
+  <div style="padding:0 20px 16px;color:#6b7280;font-size:.82rem">
+    💡 <strong>للارتقاء بدرجة الجاهزية:</strong> أكمل الحقول الناقصة في نموذج هوية المنشأة أدناه ثم احفظ.
+  </div>
+  {% endif %}
+</div>
+
 <!-- ═══════════════ الخدمات المحاسبية المشتركة (مجانية) ═══════════════ -->
 <div class="card" id="shared-services-section" style="margin-bottom:20px;border:1px solid #d1fae5;box-shadow:0 10px 25px rgba(2,6,23,.06)">
   <div class="card-header" style="background:linear-gradient(90deg,#065f46,#047857);color:#fff;border-radius:12px 12px 0 0">
