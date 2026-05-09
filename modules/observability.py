@@ -8,7 +8,7 @@ import time
 from datetime import datetime
 from typing import Any, Optional
 
-from flask import g, request
+from flask import g, request, has_app_context, has_request_context
 
 # ── إعداد Logger موحد ──
 def setup_logging(app, log_level: str = "INFO") -> logging.Logger:
@@ -52,16 +52,17 @@ class _JSONFormatter(logging.Formatter):
             "line": record.lineno,
         }
         
-        # أضف metadata من Flask g
-        if hasattr(g, "request_id"):
-            log_obj["request_id"] = g.request_id
-        if hasattr(g, "business_id"):
-            log_obj["business_id"] = g.business_id
-        if hasattr(g, "user_id"):
-            log_obj["user_id"] = g.user_id
-        
-        # معلومات الطلب
-        if request:
+        # أضف metadata من Flask g فقط داخل app context
+        if has_app_context():
+            if hasattr(g, "request_id"):
+                log_obj["request_id"] = g.request_id
+            if hasattr(g, "business_id"):
+                log_obj["business_id"] = g.business_id
+            if hasattr(g, "user_id"):
+                log_obj["user_id"] = g.user_id
+
+        # معلومات الطلب فقط داخل request context
+        if has_request_context():
             log_obj["http"] = {
                 "method": request.method,
                 "path": request.path,
