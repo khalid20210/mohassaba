@@ -730,7 +730,8 @@ def _build_industry_route_guards() -> dict[str, Optional[set]]:
 INDUSTRY_ROUTE_GUARDS = _build_industry_route_guards()
 
 # مجلدات
-UPLOAD_FOLDER = BASE_DIR / "uploads"
-LOGO_FOLDER   = BASE_DIR / "static" / "logos"
+# يمكن override عبر environment عند التشغيل كنسخة مُثبتة (Installed build).
+UPLOAD_FOLDER = Path(os.environ.get("UPLOAD_FOLDER", str(BASE_DIR / "uploads")))
+LOGO_FOLDER   = Path(os.environ.get("LOGO_FOLDER", str(BASE_DIR / "static" / "logos")))
 ALLOWED_EXT   = {"pdf", "png", "jpg", "jpeg", "webp"}
 ALLOWED_LOGO_EXT = {"png", "jpg", "jpeg", "webp"}
