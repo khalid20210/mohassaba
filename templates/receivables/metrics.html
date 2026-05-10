@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}مقاييس أداء الذمم{% endblock %}
+{% block page_title %}📈 مقاييس أداء الذمم المالية{% endblock %}
+
+{% block head %}
+<style>
+.met-wrap { max-width: 1000px; margin: 0 auto; }
+.met-card { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 22px; margin-bottom: 18px; }
+.met-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.met-chip { background: #0b1220; border: 1px solid rgba(148,163,184,.15); border-radius: 12px; padding: 18px 20px; }
+.met-chip .val { font-size: 2rem; font-weight: 800; }
+.met-chip .lbl { color: #64748b; font-size: .75rem; margin-top: 6px; }
+.met-chip .sub { color: #94a3b8; font-size: .78rem; margin-top: 3px; }
+.progress-bar { background: rgba(148,163,184,.1); border-radius: 999px; height: 8px; overflow: hidden; margin-top: 8px; }
+.progress-bar .fill { height: 100%; border-radius: 999px; transition: width .5s; }
+.kpi-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(148,163,184,.07); }
+.kpi-row:last-child { border-bottom: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="met-wrap">
+  <a href="/receivables/" style="color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px">← العودة لقائمة الذمم</a>
+
+  <!-- فلتر الفترة -->
+  <div class="met-card">
+    <form method="GET" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+      <div>
+        <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:4px">من</label>
+        <input type="date" name="from" value="{{ request.args.get('from','') }}" style="background:#0b1220;color:#e2e8f0;border:1px solid rgba(148,163,184,.25);border-radius:9px;padding:8px 12px;font-family:inherit;font-size:.84rem">
+      </div>
+      <div>
+        <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:4px">إلى</label>
+        <input type="date" name="to" value="{{ request.args.get('to','') }}" style="background:#0b1220;color:#e2e8f0;border:1px solid rgba(148,163,184,.25);border-radius:9px;padding:8px 12px;font-family:inherit;font-size:.84rem">
+      </div>
+      <button type="submit" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:9px;padding:8px 18px;font-weight:700;cursor:pointer;font-family:inherit;font-size:.84rem">تطبيق</button>
+    </form>
+  </div>
+
+  {% if metrics %}
+  <!-- المقاييس الرئيسية -->
+  <div class="met-grid">
+    <div class="met-chip">
+      <div class="val" style="color:#60a5fa">{{ "{:.1f}".format(metrics.dso or 0) }}</div>
+      <div class="lbl">DSO — أيام المبيعات المعلقة</div>
+      <div class="sub">Days Sales Outstanding</div>
+    </div>
+    <div class="met-chip">
+      <div class="val" style="color:#4ade80">{{ "{:.1f}".format(metrics.collection_rate or 0) }}%</div>
+      <div class="lbl">معدل التحصيل</div>
+      <div class="progress-bar"><div class="fill" style="width:{{ [metrics.collection_rate or 0, 100] | min }}%;background:#4ade80"></div></div>
+    </div>
+    <div class="met-chip">
+      <div class="val" style="color:#f87171">{{ "{:,.0f}".format(metrics.open_receivables or 0) }}</div>
+      <div class="lbl">الذمم المفتوحة (ريال)</div>
+    </div>
+    <div class="met-chip">
+      <div class="val" style="color:#fbbf24">{{ "{:.1f}".format(metrics.bad_debt_percentage or 0) }}%</div>
+      <div class="lbl">نسبة الديون المعدومة</div>
+      <div class="progress-bar"><div class="fill" style="width:{{ [metrics.bad_debt_percentage or 0, 100] | min }}%;background:#f87171"></div></div>
+    </div>
+  </div>
+
+  <!-- تفاصيل إضافية -->
+  <div class="met-card">
+    <h3 style="color:#94a3b8;font-size:.88rem;font-weight:700;margin:0 0 16px">📋 تفاصيل المقاييس</h3>
+    {% for key, val in metrics.items() %}
+    {% if key not in ('dso','collection_rate','open_receivables','bad_debt_percentage') %}
+    <div class="kpi-row">
+      <span style="color:#94a3b8;font-size:.83rem">{{ key }}</span>
+      <strong style="color:#dbeafe;font-size:.84rem">
+        {% if val is number %}{{ "{:,.2f}".format(val) }}{% else %}{{ val }}{% endif %}
+      </strong>
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="met-card">
+    <div style="text-align:center;padding:50px;color:#64748b">لا توجد بيانات للمقاييس</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block title %}لوحة الإدارة المركزية{% endblock %}
+{% block page_title %}🛡️ لوحة الإدارة المركزية{% endblock %}
+
+{% block head %}
+<style>
+.adm-wrap { max-width: 1400px; margin: 0 auto; }
+.adm-card { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+.adm-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(200px,1fr)); gap: 14px; margin-bottom: 18px; }
+.kpi-chip { background: #0b1220; border: 1px solid rgba(148,163,184,.15); border-radius: 12px; padding: 16px; }
+.kpi-chip .n { font-size: 1.8rem; font-weight: 800; color: #dbeafe; }
+.kpi-chip .l { color: #94a3b8; font-size: .78rem; margin-top: 4px; }
+.adm-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.adm-table th { background: rgba(148,163,184,.08); color: #94a3b8; padding: 10px 14px; text-align: right; font-weight: 700; font-size: .78rem; }
+.adm-table td { padding: 10px 14px; color: #e2e8f0; border-bottom: 1px solid rgba(148,163,184,.1); vertical-align: middle; }
+.adm-table tr:last-child td { border-bottom: none; }
+.badge { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: .72rem; font-weight: 700; }
+.badge-green { background: rgba(34,197,94,.15); color: #4ade80; }
+.badge-red { background: rgba(239,68,68,.15); color: #f87171; }
+.badge-yellow { background: rgba(245,158,11,.15); color: #fbbf24; }
+.badge-blue { background: rgba(37,99,235,.15); color: #93c5fd; }
+.adm-nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 22px; }
+.adm-nav a { background: #0b1220; border: 1px solid rgba(148,163,184,.2); color: #93c5fd; border-radius: 10px; padding: 9px 16px; font-size: .83rem; font-weight: 600; text-decoration: none; transition: background .2s; }
+.adm-nav a:hover { background: rgba(37,99,235,.2); }
+h3.sec-title { color: #94a3b8; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 14px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="adm-wrap">
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}
+      <div style="background:rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.12);border:1px solid rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.3);border-radius:10px;padding:12px 16px;margin-bottom:14px;color:{% if cat=='success' %}#4ade80{% else %}#f87171{% endif %};font-size:.85rem">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <!-- روابط التنقل -->
+  <nav class="adm-nav">
+    <a href="/admin/">🏠 الرئيسية</a>
+    <a href="/admin/users">👥 المستخدمون</a>
+    <a href="/admin/registrations">📋 التسجيلات</a>
+    <a href="/admin/audit-logs">📜 سجلات الرقابة</a>
+    <a href="/admin/feature-flags">🚩 Feature Flags</a>
+    <a href="/admin/release-center">🚀 مركز الإصدارات</a>
+    <a href="/admin/backups">💾 النسخ الاحتياطية</a>
+    <a href="/admin/recycle-bin">🗑️ سلة المهملات</a>
+    <a href="/admin/system-health">🩺 صحة النظام</a>
+    <a href="/admin/security-alerts">🔐 تنبيهات الأمان</a>
+    <a href="/admin/sidebar">📌 محرر القائمة</a>
+    <a href="/admin/enable-premium">⭐ ميزات مميزة</a>
+    <a href="/admin/bypass-merge">🔀 تجاوز الدمج</a>
+    <a href="/admin/analytics">📊 التحليلات</a>
+  </nav>
+
+  <!-- KPIs -->
+  <div class="adm-grid">
+    <div class="kpi-chip">
+      <div class="n">{{ businesses_count | default(0) }}</div>
+      <div class="l">إجمالي المنشآت</div>
+    </div>
+    <div class="kpi-chip">
+      <div class="n">{{ users_count | default(0) }}</div>
+      <div class="l">إجمالي المستخدمين</div>
+    </div>
+    <div class="kpi-chip">
+      <div class="n">{{ invoices_count | default(0) }}</div>
+      <div class="l">إجمالي الفواتير</div>
+    </div>
+    <div class="kpi-chip">
+      <div class="n" style="font-size:1.3rem">{{ "{:,.0f}".format(invoices_total | default(0)) }}</div>
+      <div class="l">حجم المبيعات (ريال)</div>
+    </div>
+    <div class="kpi-chip">
+      <div class="n">{{ products_count | default(0) }}</div>
+      <div class="l">إجمالي المنتجات</div>
+    </div>
+    <div class="kpi-chip">
+      <div class="n">{{ contacts_count | default(0) }}</div>
+      <div class="l">العملاء والموردون</div>
+    </div>
+    <div class="kpi-chip">
+      <div class="n" style="color:#4ade80">{{ active_today | default(0) }}</div>
+      <div class="l">منشآت نشطة (آخر 24 ساعة)</div>
+    </div>
+    <div class="kpi-chip">
+      <div class="n" style="color:#60a5fa">{{ ops_today | default(0) }}</div>
+      <div class="l">عمليات اليوم</div>
+    </div>
+    {% if pending_registrations %}
+    <div class="kpi-chip" style="border-color:rgba(245,158,11,.4)">
+      <div class="n" style="color:#fbbf24">{{ pending_registrations }}</div>
+      <div class="l">تسجيلات في الانتظار</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+
+    <!-- آخر المنشآت -->
+    <div class="adm-card">
+      <h3 class="sec-title">🏢 آخر المنشآت المسجلة</h3>
+      {% if recent_businesses %}
+      <table class="adm-table">
+        <thead><tr><th>#</th><th>الاسم</th><th>القطاع</th><th>تاريخ التسجيل</th></tr></thead>
+        <tbody>
+          {% for b in recent_businesses %}
+          <tr>
+            <td>{{ b.id }}</td>
+            <td>{{ b.name }}</td>
+            <td><span class="badge badge-blue">{{ b.industry_type or '—' }}</span></td>
+            <td style="color:#94a3b8;font-size:.78rem">{{ (b.created_at or '')[:10] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="color:#64748b;text-align:center;padding:20px">لا توجد بيانات</div>
+      {% endif %}
+    </div>
+
+    <!-- توزيع القطاعات -->
+    <div class="adm-card">
+      <h3 class="sec-title">📊 توزيع القطاعات</h3>
+      {% if sector_dist %}
+      {% for s in sector_dist %}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(148,163,184,.08)">
+        <span style="color:#e2e8f0;font-size:.84rem">{{ s.industry_type or 'غير محدد' }}</span>
+        <span class="badge badge-blue">{{ s.cnt }}</span>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div style="color:#64748b;text-align:center;padding:20px">لا توجد بيانات</div>
+      {% endif %}
+    </div>
+
+    <!-- آخر سجلات الرقابة -->
+    <div class="adm-card">
+      <h3 class="sec-title">📜 آخر سجلات الرقابة</h3>
+      {% if recent_audits %}
+      <table class="adm-table">
+        <thead><tr><th>الإجراء</th><th>المنفذ</th><th>التاريخ</th></tr></thead>
+        <tbody>
+          {% for log in recent_audits %}
+          <tr>
+            <td><span class="badge badge-blue">{{ log.action or '—' }}</span></td>
+            <td style="color:#94a3b8">{{ log.actor_name or '—' }}</td>
+            <td style="color:#64748b;font-size:.77rem">{{ (log.created_at or '')[:16] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="color:#64748b;text-align:center;padding:20px">لا توجد سجلات</div>
+      {% endif %}
+      <div style="margin-top:12px"><a href="/admin/audit-logs" style="color:#60a5fa;font-size:.83rem">عرض جميع السجلات ←</a></div>
+    </div>
+
+    <!-- تنبيهات الأمان -->
+    <div class="adm-card">
+      <h3 class="sec-title">🔐 تنبيهات الأمان</h3>
+      {% if security_alerts %}
+      {% for alert in security_alerts %}
+      <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:10px 14px;margin-bottom:8px">
+        <div style="color:#f87171;font-size:.84rem;font-weight:700">{{ alert.alert_type or 'تنبيه' }}</div>
+        <div style="color:#94a3b8;font-size:.77rem;margin-top:3px">{{ alert.description or '' }}</div>
+        <div style="color:#64748b;font-size:.73rem;margin-top:4px">{{ (alert.created_at or '')[:16] }}</div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div style="color:#4ade80;text-align:center;padding:20px">✅ لا توجد تنبيهات أمان نشطة</div>
+      {% endif %}
+      <div style="margin-top:12px"><a href="/admin/security-alerts" style="color:#60a5fa;font-size:.83rem">عرض جميع التنبيهات ←</a></div>
+    </div>
+
+  </div>
+
+  <!-- آخر الإصدارات -->
+  {% if latest_releases %}
+  <div class="adm-card">
+    <h3 class="sec-title">🚀 آخر الإصدارات</h3>
+    <table class="adm-table">
+      <thead><tr><th>الإصدار</th><th>العنوان</th><th>إلزامي</th><th>التاريخ</th></tr></thead>
+      <tbody>
+        {% for r in latest_releases %}
+        <tr>
+          <td><span class="badge badge-blue">{{ r.version }}</span></td>
+          <td>{{ r.title }}</td>
+          <td>{% if r.is_mandatory %}<span class="badge badge-red">نعم</span>{% else %}<span class="badge badge-green">لا</span>{% endif %}</td>
+          <td style="color:#94a3b8;font-size:.78rem">{{ (r.created_at or '')[:10] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div style="margin-top:12px"><a href="/admin/release-center" style="color:#60a5fa;font-size:.83rem">إدارة الإصدارات ←</a></div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

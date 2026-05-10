@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}سلة المهملات (إدارة){% endblock %}
+{% block page_title %}🗑️ سلة المهملات — إدارة المنصة{% endblock %}
+
+{% block head %}
+<style>
+.rb-wrap { max-width: 1200px; margin: 0 auto; }
+.rb-card { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 22px; margin-bottom: 18px; }
+.rb-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
+.rb-table th { background: rgba(148,163,184,.08); color: #94a3b8; padding: 10px 14px; text-align: right; font-weight: 700; font-size: .77rem; }
+.rb-table td { padding: 9px 14px; color: #e2e8f0; border-bottom: 1px solid rgba(148,163,184,.08); vertical-align: middle; }
+.rb-table tr:last-child td { border-bottom: none; }
+.badge { display: inline-block; border-radius: 999px; padding: 2px 9px; font-size: .71rem; font-weight: 700; }
+.badge-red { background: rgba(239,68,68,.15); color: #f87171; }
+.badge-blue { background: rgba(37,99,235,.15); color: #93c5fd; }
+.badge-green { background: rgba(34,197,94,.15); color: #4ade80; }
+.btn-sm { border: none; border-radius: 7px; padding: 4px 11px; font-size: .73rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+.btn-success { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.3); }
+.pager { display: flex; gap: 8px; align-items: center; justify-content: flex-end; margin-top: 14px; }
+.pager a { background: #0b1220; border: 1px solid rgba(148,163,184,.2); color: #93c5fd; border-radius: 8px; padding: 6px 14px; font-size: .82rem; text-decoration: none; }
+.pager span { color: #94a3b8; font-size: .82rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rb-wrap">
+  <a href="/admin/" style="color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px">← العودة للوحة الإدارة</a>
+
+  <div class="rb-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="color:#f87171;font-size:.9rem;font-weight:700;margin:0">
+        🗑️ العناصر المحذوفة: {{ total | default(0) }}
+      </h3>
+      <span style="color:#64748b;font-size:.8rem">الصفحة {{ page }}/{{ pages }}</span>
+    </div>
+
+    {% if records %}
+    <table class="rb-table">
+      <thead>
+        <tr>
+          <th>#</th><th>الجدول</th><th>معرف السجل</th><th>محذوف بواسطة</th>
+          <th>سبب الحذف</th><th>تاريخ الحذف</th><th>مقفل</th><th>استعادة</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr>
+          <td style="color:#64748b">{{ r.id }}</td>
+          <td><span class="badge badge-blue">{{ r.table_name or '—' }}</span></td>
+          <td style="color:#94a3b8">{{ r.record_id or '—' }}</td>
+          <td style="color:#94a3b8">{{ r.deleted_by or '—' }}</td>
+          <td style="color:#64748b;font-size:.76rem;max-width:200px">{{ (r.deletion_reason or r.notes or '—')[:80] }}</td>
+          <td style="color:#64748b;font-size:.76rem;white-space:nowrap">{{ (r.deleted_at or '')[:16] }}</td>
+          <td>
+            {% if r.is_admin_locked %}
+              <span class="badge badge-red">🔒</span>
+            {% else %}
+              <span class="badge badge-green">🔓</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if not r.is_admin_locked %}
+            <form method="POST" action="/admin/recycle-bin/restore/{{ r.id }}" style="display:inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+              <button class="btn-sm btn-success" type="submit" onclick="return confirm('استعادة هذا السجل؟')">↩ استعادة</button>
+            </form>
+            {% else %}
+            <span style="color:#64748b;font-size:.75rem">مقفل</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="pager">
+      {% if page > 1 %}<a href="?page={{ page - 1 }}">← السابق</a>{% endif %}
+      <span>{{ page }} / {{ pages }}</span>
+      {% if page < pages %}<a href="?page={{ page + 1 }}">التالي →</a>{% endif %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:40px;color:#4ade80">✅ سلة المهملات فارغة</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

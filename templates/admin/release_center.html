@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}مركز الإصدارات{% endblock %}
+{% block page_title %}🚀 مركز الإصدارات والتحديثات{% endblock %}
+
+{% block head %}
+<style>
+.rc-wrap { max-width: 1100px; margin: 0 auto; }
+.rc-card { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 22px; margin-bottom: 18px; }
+.rc-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.rc-table th { background: rgba(148,163,184,.08); color: #94a3b8; padding: 10px 14px; text-align: right; font-weight: 700; font-size: .78rem; }
+.rc-table td { padding: 10px 14px; color: #e2e8f0; border-bottom: 1px solid rgba(148,163,184,.1); vertical-align: middle; }
+.rc-table tr:last-child td { border-bottom: none; }
+.rc-in { background: #0b1220; color: #e2e8f0; border: 1px solid rgba(148,163,184,.25); border-radius: 10px; padding: 9px 13px; font-family: inherit; font-size: .86rem; width: 100%; box-sizing: border-box; }
+.rc-label { color: #94a3b8; font-size: .78rem; font-weight: 700; display: block; margin-bottom: 5px; }
+.btn-primary { background: linear-gradient(135deg,#059669,#047857); color: #fff; border: none; border-radius: 10px; padding: 9px 20px; font-weight: 800; cursor: pointer; font-family: inherit; font-size: .86rem; }
+.btn-blue { background: linear-gradient(135deg,#2563eb,#1d4ed8); color: #fff; border: none; border-radius: 10px; padding: 9px 20px; font-weight: 800; cursor: pointer; font-family: inherit; font-size: .86rem; }
+.badge { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: .72rem; font-weight: 700; }
+.badge-green { background: rgba(34,197,94,.15); color: #4ade80; }
+.badge-red { background: rgba(239,68,68,.15); color: #f87171; }
+.badge-blue { background: rgba(37,99,235,.15); color: #93c5fd; }
+.form-group { margin-bottom: 14px; }
+.setting-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(148,163,184,.08); }
+.setting-row:last-child { border-bottom: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rc-wrap">
+  <a href="/admin/" style="color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px">← العودة للوحة الإدارة</a>
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}
+      <div style="background:rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.12);border:1px solid rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.3);border-radius:10px;padding:12px 16px;margin-bottom:14px;color:{% if cat=='success' %}#4ade80{% else %}#f87171{% endif %};font-size:.85rem">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+
+    <!-- نشر إصدار جديد -->
+    <div class="rc-card">
+      <h3 style="color:#4ade80;font-size:.95rem;font-weight:700;margin:0 0 20px">🚀 نشر إصدار جديد</h3>
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+        <input type="hidden" name="action" value="create_release">
+        <div class="form-group">
+          <label class="rc-label">رقم الإصدار (مثال: 2.3.1)</label>
+          <input class="rc-in" name="version" type="text" placeholder="x.y.z" required>
+        </div>
+        <div class="form-group">
+          <label class="rc-label">عنوان التحديث</label>
+          <input class="rc-in" name="title" type="text" placeholder="ملخص التحديث" required>
+        </div>
+        <div class="form-group">
+          <label class="rc-label">ملاحظات الإصدار</label>
+          <textarea class="rc-in" name="notes" rows="4" placeholder="قائمة التغييرات..."></textarea>
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;gap:10px">
+          <input type="checkbox" name="is_mandatory" id="mandatory" style="width:16px;height:16px">
+          <label for="mandatory" style="color:#e2e8f0;font-size:.85rem">تحديث إلزامي (يُلزم جميع المستخدمين)</label>
+        </div>
+        <button class="btn-primary" type="submit">🚀 نشر الإصدار</button>
+      </form>
+    </div>
+
+    <!-- إعدادات التحكم المركزية -->
+    <div class="rc-card">
+      <h3 style="color:#fbbf24;font-size:.95rem;font-weight:700;margin:0 0 20px">⚙️ إعدادات التحكم المركزية</h3>
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+        <input type="hidden" name="action" value="update_controls">
+        <div class="setting-row">
+          <div>
+            <div style="color:#e2e8f0;font-size:.85rem;font-weight:600">وضع الصيانة</div>
+            <div style="color:#64748b;font-size:.75rem">تعطيل الوصول للمنصة مؤقتاً</div>
+          </div>
+          <input type="checkbox" name="maintenance_mode" {% if settings.get('maintenance_mode')=='1' %}checked{% endif %} style="width:18px;height:18px">
+        </div>
+        <div class="setting-row">
+          <div>
+            <div style="color:#e2e8f0;font-size:.85rem;font-weight:600">فتح التسجيل العام</div>
+            <div style="color:#64748b;font-size:.75rem">السماح لمنشآت جديدة بالتسجيل</div>
+          </div>
+          <input type="checkbox" name="public_registration_open" {% if settings.get('public_registration_open')=='1' %}checked{% endif %} style="width:18px;height:18px">
+        </div>
+        <div class="form-group" style="margin-top:14px">
+          <label class="rc-label">أدنى إصدار مدعوم</label>
+          <input class="rc-in" name="min_supported_version" type="text" placeholder="مثال: 2.0.0" value="{{ settings.get('min_supported_version','') }}">
+        </div>
+        <button class="btn-blue" type="submit">💾 حفظ الإعدادات</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- سجل الإصدارات -->
+  <div class="rc-card">
+    <h3 style="color:#94a3b8;font-size:.88rem;font-weight:700;margin:0 0 16px">📋 سجل الإصدارات ({{ releases | length }})</h3>
+    {% if releases %}
+    <table class="rc-table">
+      <thead>
+        <tr><th>الإصدار</th><th>العنوان</th><th>الملاحظات</th><th>إلزامي</th><th>التاريخ</th></tr>
+      </thead>
+      <tbody>
+        {% for r in releases %}
+        <tr>
+          <td><span class="badge badge-blue">{{ r.version }}</span></td>
+          <td><strong>{{ r.title }}</strong></td>
+          <td style="color:#94a3b8;font-size:.78rem;max-width:300px">{{ (r.notes or '')[:100] }}</td>
+          <td>{% if r.is_mandatory %}<span class="badge badge-red">إلزامي</span>{% else %}<span class="badge badge-green">اختياري</span>{% endif %}</td>
+          <td style="color:#64748b;font-size:.78rem">{{ (r.created_at or '')[:10] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div style="text-align:center;padding:30px;color:#64748b">لم يُنشر أي إصدار بعد</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

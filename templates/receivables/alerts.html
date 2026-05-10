@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}تنبيهات الذمم الائتمانية{% endblock %}
+{% block page_title %}🔔 تنبيهات الذمم الائتمانية{% endblock %}
+
+{% block head %}
+<style>
+.al-wrap { max-width: 1000px; margin: 0 auto; }
+.al-card { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 22px; margin-bottom: 18px; }
+.al-item { border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; border: 1px solid; }
+.al-item:last-child { margin-bottom: 0; }
+.al-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.al-type { font-size: .83rem; font-weight: 700; }
+.al-msg { color: #94a3b8; font-size: .82rem; margin-top: 6px; }
+.al-footer { display: flex; gap: 14px; align-items: center; margin-top: 8px; }
+.al-footer span { color: #64748b; font-size: .75rem; }
+.badge { display: inline-block; border-radius: 999px; padding: 2px 9px; font-size: .71rem; font-weight: 700; }
+.badge-red { background: rgba(239,68,68,.15); color: #f87171; }
+.badge-yellow { background: rgba(245,158,11,.15); color: #fbbf24; }
+.badge-blue { background: rgba(37,99,235,.15); color: #93c5fd; }
+.badge-green { background: rgba(34,197,94,.15); color: #4ade80; }
+.quick-nav { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+.quick-nav a { background: #0b1220; border: 1px solid rgba(148,163,184,.15); color: #93c5fd; border-radius: 9px; padding: 8px 16px; font-size: .82rem; font-weight: 600; text-decoration: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="al-wrap">
+  <div class="quick-nav">
+    <a href="/receivables/">💰 الذمم</a>
+    <a href="/receivables/aging-report">📊 التقادم</a>
+    <a href="/receivables/metrics">📈 المقاييس</a>
+  </div>
+
+  <div class="al-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <h3 style="color:#fbbf24;font-size:.95rem;font-weight:700;margin:0">
+        ⚠️ التنبيهات النشطة
+      </h3>
+      <span style="color:#64748b;font-size:.82rem">{{ alerts | length if alerts else 0 }} تنبيه</span>
+    </div>
+
+    {% if alerts %}
+    {% for alert in alerts %}
+    {% set severity = alert.severity if alert is mapping else '' %}
+    {% set is_critical = severity == 'critical' %}
+    {% set is_warning = severity == 'warning' %}
+    <div class="al-item" style="
+      background: rgba({% if is_critical %}239,68,68{% elif is_warning %}245,158,11{% else %}37,99,235{% endif %},.07);
+      border-color: rgba({% if is_critical %}239,68,68{% elif is_warning %}245,158,11{% else %}37,99,235{% endif %},.25);
+    ">
+      <div class="al-header">
+        <div>
+          <div class="al-type" style="color:{% if is_critical %}#f87171{% elif is_warning %}#fbbf24{% else %}#93c5fd{% endif %}">
+            {% if is_critical %}🔴{% elif is_warning %}🟡{% else %}🔵{% endif %}
+            {{ (alert.alert_type if alert is mapping else '') or 'تنبيه ائتماني' }}
+          </div>
+          {% set contact_name = alert.contact_name if alert is mapping else '' %}
+          {% if contact_name %}
+          <div style="color:#dbeafe;font-size:.85rem;font-weight:600;margin-top:4px">{{ contact_name }}</div>
+          {% endif %}
+        </div>
+        {% if severity %}
+        <span class="badge {% if is_critical %}badge-red{% elif is_warning %}badge-yellow{% else %}badge-blue{% endif %}">
+          {{ severity }}
+        </span>
+        {% endif %}
+      </div>
+      <div class="al-msg">
+        {{ (alert.message if alert is mapping else '') or '' }}
+      </div>
+      <div class="al-footer">
+        {% set amount = alert.amount if alert is mapping else None %}
+        {% if amount %}
+        <span>💰 {{ "{:,.2f}".format(amount) }} ريال</span>
+        {% endif %}
+        {% set days = alert.days_overdue if alert is mapping else None %}
+        {% if days %}
+        <span>📅 {{ days }} يوم تأخر</span>
+        {% endif %}
+        {% set contact_id = alert.contact_id if alert is mapping else None %}
+        {% if contact_id %}
+        <a href="/receivables/{{ contact_id }}" style="color:#60a5fa;font-size:.78rem;text-decoration:none">عرض التفاصيل →</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <div style="text-align:center;padding:60px 20px">
+      <div style="font-size:3rem;margin-bottom:14px">✅</div>
+      <div style="color:#4ade80;font-size:1rem;font-weight:700">لا توجد تنبيهات ائتمانية نشطة</div>
+      <div style="color:#64748b;font-size:.82rem;margin-top:6px">جميع الذمم في الوضع الطبيعي</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

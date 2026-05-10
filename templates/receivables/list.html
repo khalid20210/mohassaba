@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}إدارة الذمم المدينة والدائنة{% endblock %}
+{% block page_title %}💰 إدارة الذمم المدينة والدائنة{% endblock %}
+
+{% block head %}
+<style>
+.rec-wrap { max-width: 1300px; margin: 0 auto; }
+.rec-card { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+.rec-filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+.rec-in { background: #0b1220; color: #e2e8f0; border: 1px solid rgba(148,163,184,.25); border-radius: 9px; padding: 8px 12px; font-family: inherit; font-size: .84rem; }
+.rec-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.rec-table th { background: rgba(148,163,184,.08); color: #94a3b8; padding: 10px 14px; text-align: right; font-weight: 700; font-size: .78rem; }
+.rec-table td { padding: 10px 14px; color: #e2e8f0; border-bottom: 1px solid rgba(148,163,184,.08); vertical-align: middle; }
+.rec-table tr:last-child td { border-bottom: none; }
+.rec-table tr:hover td { background: rgba(148,163,184,.04); }
+.badge { display: inline-block; border-radius: 999px; padding: 2px 9px; font-size: .71rem; font-weight: 700; }
+.badge-red { background: rgba(239,68,68,.15); color: #f87171; }
+.badge-yellow { background: rgba(245,158,11,.15); color: #fbbf24; }
+.badge-green { background: rgba(34,197,94,.15); color: #4ade80; }
+.badge-blue { background: rgba(37,99,235,.15); color: #93c5fd; }
+.tab-btns { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+.tab-btn { background: #0b1220; border: 1px solid rgba(148,163,184,.2); color: #94a3b8; border-radius: 9px; padding: 7px 16px; font-size: .83rem; font-weight: 600; text-decoration: none; }
+.tab-btn.active { background: rgba(37,99,235,.2); border-color: rgba(37,99,235,.5); color: #93c5fd; }
+.btn-sm { border: none; border-radius: 7px; padding: 5px 12px; font-size: .74rem; font-weight: 700; cursor: pointer; font-family: inherit; background: rgba(37,99,235,.15); color: #93c5fd; border: 1px solid rgba(37,99,235,.3); }
+.quick-links { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+.quick-links a { background: #0b1220; border: 1px solid rgba(148,163,184,.15); color: #93c5fd; border-radius: 9px; padding: 8px 16px; font-size: .82rem; font-weight: 600; text-decoration: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rec-wrap">
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}
+      <div style="background:rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.12);border:1px solid rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.3);border-radius:10px;padding:12px 16px;margin-bottom:14px;color:{% if cat=='success' %}#4ade80{% else %}#f87171{% endif %};font-size:.85rem">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <!-- روابط سريعة -->
+  <div class="quick-links">
+    <a href="/receivables/aging-report">📊 تقرير التقادم</a>
+    <a href="/receivables/metrics">📈 مقاييس الأداء</a>
+    <a href="/receivables/alerts">🔔 التنبيهات</a>
+  </div>
+
+  <!-- فلاتر -->
+  <div class="rec-card">
+    <form method="GET" class="rec-filters">
+      <div>
+        <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:4px">النوع</label>
+        <select class="rec-in" name="view">
+          <option value="receivable" {% if view_type=='receivable' %}selected{% endif %}>ذمم مدينة (عملاء)</option>
+          <option value="payable" {% if view_type=='payable' %}selected{% endif %}>ذمم دائنة (موردون)</option>
+          <option value="all" {% if view_type=='all' %}selected{% endif %}>الكل</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:4px">الحالة</label>
+        <select class="rec-in" name="status">
+          <option value="all" {% if status_filter=='all' %}selected{% endif %}>جميع الحالات</option>
+          <option value="open" {% if status_filter=='open' %}selected{% endif %}>مفتوح</option>
+          <option value="overdue" {% if status_filter=='overdue' %}selected{% endif %}>متأخر</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:4px">بحث</label>
+        <input class="rec-in" name="q" type="text" placeholder="اسم العميل..." value="{{ search_q or '' }}" style="width:180px">
+      </div>
+      <button type="submit" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:9px;padding:8px 18px;font-weight:700;cursor:pointer;font-family:inherit;font-size:.84rem">بحث</button>
+      <a href="/receivables/" style="color:#94a3b8;font-size:.83rem;padding:8px 14px;border:1px solid rgba(148,163,184,.2);border-radius:9px;text-decoration:none">مسح</a>
+    </form>
+  </div>
+
+  <!-- الجدول -->
+  <div class="rec-card">
+    <div style="margin-bottom:14px;color:#94a3b8;font-size:.82rem">
+      إجمالي النتائج: <strong style="color:#dbeafe">{{ receivables | length }}</strong>
+    </div>
+    {% if receivables %}
+    <table class="rec-table">
+      <thead>
+        <tr>
+          <th>الاسم</th><th>النوع</th><th>الرصيد المستحق</th>
+          <th>العمليات المفتوحة</th><th>حالة التأخر</th>
+          <th>آخر دفعة</th><th>تفاصيل</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rec in receivables %}
+        <tr>
+          <td>
+            <div style="font-weight:600">{{ rec.name }}</div>
+            <div style="color:#64748b;font-size:.76rem">{{ rec.phone or '' }}</div>
+          </td>
+          <td>
+            {% if rec.summary_type == 'receivable' %}
+              <span class="badge badge-blue">مدين</span>
+            {% else %}
+              <span class="badge badge-yellow">دائن</span>
+            {% endif %}
+          </td>
+          <td>
+            <strong style="color:{% if rec.current_balance > 0 %}#f87171{% else %}#4ade80{% endif %}">
+              {{ "{:,.2f}".format(rec.current_balance or 0) }}
+            </strong>
+          </td>
+          <td style="color:#94a3b8">{{ rec.open_count or 0 }}</td>
+          <td>
+            {% if rec.is_overdue %}
+              <span class="badge badge-red">⚠️ متأخر {{ rec.days_overdue or 0 }} يوم</span>
+            {% else %}
+              <span class="badge badge-green">✅ منتظم</span>
+            {% endif %}
+          </td>
+          <td style="color:#64748b;font-size:.78rem">{{ (rec.last_payment_date or '—')[:10] }}</td>
+          <td>
+            <a href="/receivables/{{ rec.contact_id }}" class="btn-sm">عرض</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div style="text-align:center;padding:50px;color:#64748b">
+      <div style="font-size:2.5rem;margin-bottom:12px">💰</div>
+      <div>لا توجد ذمم مطابقة للبحث</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}تقرير التقادم{% endblock %}
+{% block page_title %}📊 تقرير تقادم الذمم (Aging Report){% endblock %}
+
+{% block head %}
+<style>
+.ag-wrap { max-width: 1100px; margin: 0 auto; }
+.ag-card { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 22px; margin-bottom: 18px; }
+.ag-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.ag-bucket { border-radius: 12px; padding: 18px 20px; border: 1px solid; }
+.ag-bucket .amt { font-size: 1.5rem; font-weight: 800; }
+.ag-bucket .cnt { color: #94a3b8; font-size: .75rem; margin-top: 4px; }
+.ag-bucket .lbl { font-size: .82rem; font-weight: 700; margin-bottom: 8px; }
+.ag-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.ag-table th { background: rgba(148,163,184,.08); color: #94a3b8; padding: 10px 14px; text-align: right; font-weight: 700; font-size: .78rem; }
+.ag-table td { padding: 9px 14px; color: #e2e8f0; border-bottom: 1px solid rgba(148,163,184,.08); vertical-align: middle; }
+.ag-table tr:last-child td { border-bottom: none; }
+.badge { display: inline-block; border-radius: 999px; padding: 2px 9px; font-size: .71rem; font-weight: 700; }
+.badge-green { background: rgba(34,197,94,.15); color: #4ade80; }
+.badge-yellow { background: rgba(245,158,11,.15); color: #fbbf24; }
+.badge-orange { background: rgba(249,115,22,.15); color: #fb923c; }
+.badge-red { background: rgba(239,68,68,.15); color: #f87171; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ag-wrap">
+  <a href="/receivables/" style="color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px">← العودة لقائمة الذمم</a>
+
+  {% if report %}
+  <div class="ag-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <h3 style="color:#94a3b8;font-size:.88rem;font-weight:700;margin:0">تاريخ التقرير: {{ report.report_date or '' }}</h3>
+      <div style="color:#64748b;font-size:.82rem">إجمالي: <strong style="color:#dbeafe">{{ "{:,.2f}".format(report.grand_total or 0) }} ريال</strong></div>
+    </div>
+
+    <!-- المجمعات حسب الفترة -->
+    <div class="ag-grid">
+      {% set buckets = [
+        ('0-30', 'جاري (0-30 يوم)', '#4ade80', 'rgba(34,197,94,.15)', 'rgba(34,197,94,.3)'),
+        ('31-60', 'متأخر (31-60 يوم)', '#fbbf24', 'rgba(245,158,11,.15)', 'rgba(245,158,11,.3)'),
+        ('61-90', 'متأخر (61-90 يوم)', '#fb923c', 'rgba(249,115,22,.15)', 'rgba(249,115,22,.3)'),
+        ('90+', 'متأخر جداً (+90 يوم)', '#f87171', 'rgba(239,68,68,.15)', 'rgba(239,68,68,.3)'),
+      ] %}
+      {% for key, label, color, bg, border in buckets %}
+      {% set bucket = report.aging.get(key, {}) if report.aging else {} %}
+      <div class="ag-bucket" style="background:{{ bg }};border-color:{{ border }}">
+        <div class="lbl" style="color:{{ color }}">{{ label }}</div>
+        <div class="amt" style="color:{{ color }}">{{ "{:,.2f}".format(bucket.amount or 0) }}</div>
+        <div class="cnt">{{ bucket.count or 0 }} حركة</div>
+        {% if report.grand_total and report.grand_total > 0 %}
+        <div style="color:{{ color }};font-size:.75rem;margin-top:6px">
+          {{ "{:.1f}".format(((bucket.amount or 0) / report.grand_total) * 100) }}%
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- تفاصيل العملاء -->
+  {% if report.details %}
+  <div class="ag-card">
+    <h3 style="color:#94a3b8;font-size:.88rem;font-weight:700;margin:0 0 16px">تفاصيل العملاء</h3>
+    <table class="ag-table">
+      <thead>
+        <tr>
+          <th>العميل</th>
+          <th>0-30 يوم</th><th>31-60 يوم</th>
+          <th>61-90 يوم</th><th>+90 يوم</th>
+          <th>الإجمالي</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for detail in report.details %}
+        <tr>
+          <td><a href="/receivables/{{ detail.contact_id }}" style="color:#93c5fd;text-decoration:none">{{ detail.contact_name or '—' }}</a></td>
+          <td style="color:#4ade80">{{ "{:,.2f}".format(detail.get('0-30', 0) or 0) }}</td>
+          <td style="color:#fbbf24">{{ "{:,.2f}".format(detail.get('31-60', 0) or 0) }}</td>
+          <td style="color:#fb923c">{{ "{:,.2f}".format(detail.get('61-90', 0) or 0) }}</td>
+          <td style="color:#f87171">{{ "{:,.2f}".format(detail.get('90+', 0) or 0) }}</td>
+          <td><strong>{{ "{:,.2f}".format(detail.total or 0) }}</strong></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="ag-card">
+    <div style="text-align:center;padding:50px;color:#64748b">لا توجد بيانات للتقرير</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}تجاوز قيود الدمج{% endblock %}
+{% block page_title %}🔀 تجاوز قيود الدمج الإداري{% endblock %}
+
+{% block head %}
+<style>
+.bm-wrap { max-width: 900px; margin: 0 auto; }
+.bm-card { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 24px; margin-bottom: 18px; }
+.bm-in { background: #0b1220; color: #e2e8f0; border: 1px solid rgba(148,163,184,.25); border-radius: 10px; padding: 9px 13px; font-family: inherit; font-size: .88rem; width: 100%; box-sizing: border-box; }
+.bm-label { color: #94a3b8; font-size: .78rem; font-weight: 700; display: block; margin-bottom: 5px; }
+.btn-primary { background: linear-gradient(135deg,#7c3aed,#5b21b6); color: #fff; border: none; border-radius: 10px; padding: 10px 24px; font-weight: 800; cursor: pointer; font-family: inherit; font-size: .88rem; }
+.form-group { margin-bottom: 16px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bm-wrap">
+  <a href="/admin/" style="color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px">← العودة للوحة الإدارة</a>
+
+  <div class="bm-card" style="border-color:rgba(124,58,237,.3)">
+    <div style="background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.3);border-radius:10px;padding:12px 16px;margin-bottom:20px;color:#c4b5fd;font-size:.84rem">
+      ⚠️ <strong>تحذير:</strong> هذه الأداة تتجاوز القيود الاعتيادية. يتم تسجيل كل استخدام في سجل الرقابة.
+    </div>
+
+    <h3 style="color:#c4b5fd;font-size:1rem;font-weight:700;margin:0 0 20px">دمج نشاط → نشاط آخر بتجاوز القيود</h3>
+
+    <div class="form-group">
+      <label class="bm-label">المنشأة</label>
+      <select class="bm-in" id="biz-sel">
+        <option value="">— اختر المنشأة —</option>
+        {% for b in businesses %}
+        <option value="{{ b.id }}">{{ b.name }} (#{{ b.id }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="bm-label">النشاط المصدر (من)</label>
+      <select class="bm-in" id="from-sel">
+        <option value="">— اختر النشاط المصدر —</option>
+        {% for a in activities %}
+        <option value="{{ a.id }}">{{ a.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="bm-label">النشاط الهدف (إلى)</label>
+      <select class="bm-in" id="to-sel">
+        <option value="">— اختر النشاط الهدف —</option>
+        {% for a in activities %}
+        <option value="{{ a.id }}">{{ a.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="bm-label">سبب التجاوز</label>
+      <input class="bm-in" id="reason-in" type="text" placeholder="اكتب السبب...">
+    </div>
+    <button class="btn-primary" id="bypass-btn">🔀 تنفيذ تجاوز الدمج</button>
+    <div id="bypass-msg" style="margin-top:14px;font-size:.85rem"></div>
+  </div>
+</div>
+
+<script>
+document.getElementById('bypass-btn').addEventListener('click', async function() {
+  const biz = document.getElementById('biz-sel').value;
+  const from = document.getElementById('from-sel').value;
+  const to = document.getElementById('to-sel').value;
+  const reason = document.getElementById('reason-in').value.trim();
+  const msg = document.getElementById('bypass-msg');
+  if (!biz || !from || !to || !reason) {
+    msg.style.color = '#f87171';
+    msg.textContent = 'يرجى تعبئة جميع الحقول';
+    return;
+  }
+  const fd = new FormData();
+  fd.append('business_id', biz);
+  fd.append('from_activity_id', from);
+  fd.append('to_activity_id', to);
+  fd.append('reason', reason);
+  const resp = await fetch('/admin/bypass-merge', {method:'POST', body:fd});
+  const data = await resp.json();
+  msg.style.color = data.success ? '#4ade80' : '#f87171';
+  msg.textContent = data.message;
+});
+</script>
+{% endblock %}

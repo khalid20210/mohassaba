@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}تفعيل الميزات المميزة{% endblock %}
+{% block page_title %}⭐ تفعيل الميزات المميزة{% endblock %}
+
+{% block head %}
+<style>
+.ep-wrap { max-width: 900px; margin: 0 auto; }
+.ep-card { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 24px; margin-bottom: 18px; }
+.ep-in { background: #0b1220; color: #e2e8f0; border: 1px solid rgba(148,163,184,.25); border-radius: 10px; padding: 9px 13px; font-family: inherit; font-size: .88rem; width: 100%; box-sizing: border-box; }
+.ep-label { color: #94a3b8; font-size: .78rem; font-weight: 700; display: block; margin-bottom: 5px; }
+.btn-primary { background: linear-gradient(135deg,#2563eb,#1d4ed8); color: #fff; border: none; border-radius: 10px; padding: 10px 24px; font-weight: 800; cursor: pointer; font-family: inherit; font-size: .88rem; }
+.form-group { margin-bottom: 16px; }
+.feature-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-bottom: 18px; }
+.feature-chip { background: #0b1220; border: 1px solid rgba(148,163,184,.15); border-radius: 10px; padding: 12px 16px; }
+.feature-chip code { color: #93c5fd; font-size: .83rem; }
+.feature-chip p { color: #64748b; font-size: .73rem; margin: 4px 0 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ep-wrap">
+  <a href="/admin/" style="color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px">← العودة للوحة الإدارة</a>
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}
+      <div style="background:rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.12);border:1px solid rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.3);border-radius:10px;padding:12px 16px;margin-bottom:14px;color:{% if cat=='success' %}#4ade80{% else %}#f87171{% endif %};font-size:.85rem">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <!-- قائمة الميزات المتاحة -->
+  <div class="ep-card">
+    <h3 style="color:#94a3b8;font-size:.85rem;font-weight:700;margin:0 0 14px">الميزات المميزة المتاحة</h3>
+    <div class="feature-list">
+      {% for feat in premium_features %}
+      <div class="feature-chip">
+        <code>{{ feat }}</code>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- نموذج التفعيل -->
+  <div class="ep-card">
+    <h3 style="color:#fbbf24;font-size:1rem;font-weight:700;margin:0 0 20px">⭐ تفعيل ميزة مميزة</h3>
+    <div class="form-group">
+      <label class="ep-label">المنشأة</label>
+      <select class="ep-in" id="biz-sel">
+        <option value="">— اختر المنشأة —</option>
+        {% for b in businesses %}
+        <option value="{{ b.id }}">{{ b.name }} (#{{ b.id }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="ep-label">اسم الميزة</label>
+      <select class="ep-in" id="feat-sel">
+        <option value="">— اختر الميزة —</option>
+        {% for feat in premium_features %}
+        <option value="{{ feat }}">{{ feat }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn-primary" id="enable-btn">⭐ تفعيل الميزة</button>
+    <div id="enable-msg" style="margin-top:14px;font-size:.85rem"></div>
+  </div>
+</div>
+
+<script>
+document.getElementById('enable-btn').addEventListener('click', async function() {
+  const biz = document.getElementById('biz-sel').value;
+  const feat = document.getElementById('feat-sel').value;
+  const msg = document.getElementById('enable-msg');
+  if (!biz || !feat) { msg.style.color='#f87171'; msg.textContent='اختر المنشأة والميزة'; return; }
+  const fd = new FormData();
+  fd.append('business_id', biz);
+  fd.append('feature_name', feat);
+  const resp = await fetch('/admin/enable-premium', {method:'POST', body:fd});
+  const data = await resp.json();
+  msg.style.color = data.success ? '#4ade80' : '#f87171';
+  msg.textContent = data.message;
+});
+</script>
+{% endblock %}

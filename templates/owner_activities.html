@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}إدارة الأنشطة والدمج{% endblock %}
+{% block page_title %}🔀 إدارة أنشطة المنشأة{% endblock %}
+
+{% block head %}
+<style>
+.act-wrap { max-width: 1000px; margin: 0 auto; }
+.act-card { background: #0f172a; border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 22px; margin-bottom: 18px; }
+.badge { display: inline-block; border-radius: 999px; padding: 3px 12px; font-size: .75rem; font-weight: 700; }
+.badge-primary { background: rgba(37,99,235,.2); color: #93c5fd; border: 1px solid rgba(37,99,235,.4); }
+.badge-merged { background: rgba(124,58,237,.15); color: #c4b5fd; border: 1px solid rgba(124,58,237,.3); }
+.badge-green { background: rgba(34,197,94,.15); color: #4ade80; }
+.stat-row { display: flex; gap: 14px; margin-bottom: 20px; }
+.stat-chip { background: #0b1220; border: 1px solid rgba(148,163,184,.15); border-radius: 10px; padding: 12px 20px; }
+.stat-chip .n { font-size: 1.5rem; font-weight: 800; color: #dbeafe; }
+.stat-chip .l { color: #64748b; font-size: .75rem; }
+.act-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(148,163,184,.07); }
+.act-item:last-child { border-bottom: none; }
+.act-in { background: #0b1220; color: #e2e8f0; border: 1px solid rgba(148,163,184,.25); border-radius: 9px; padding: 8px 13px; font-family: inherit; font-size: .85rem; width: 100%; box-sizing: border-box; }
+.btn-primary { background: linear-gradient(135deg,#7c3aed,#5b21b6); color: #fff; border: none; border-radius: 10px; padding: 10px 22px; font-weight: 800; cursor: pointer; font-family: inherit; font-size: .86rem; }
+.form-group { margin-bottom: 14px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="act-wrap">
+  <a href="/owner/" style="color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px">← العودة لقمرة القيادة</a>
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}
+      <div style="background:rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.12);border:1px solid rgba({% if cat=='success' %}34,197,94{% else %}239,68,68{% endif %},.3);border-radius:10px;padding:12px 16px;margin-bottom:14px;color:{% if cat=='success' %}#4ade80{% else %}#f87171{% endif %};font-size:.85rem">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <!-- النشاط الرئيسي -->
+  <div class="act-card">
+    <h3 style="color:#94a3b8;font-size:.85rem;font-weight:700;margin:0 0 16px">النشاط الرئيسي</h3>
+    <div class="stat-row">
+      <div class="stat-chip">
+        <div class="n"><span class="badge badge-primary">{{ primary_label or primary }}</span></div>
+        <div class="l">النشاط الحالي</div>
+      </div>
+      <div class="stat-chip">
+        <div class="n" style="color:#c4b5fd">{{ merged | length }}</div>
+        <div class="l">أنشطة مدموجة</div>
+      </div>
+      <div class="stat-chip">
+        <div class="n">{{ cat_count | default(0) }}</div>
+        <div class="l">تصنيفات المنتجات</div>
+      </div>
+      <div class="stat-chip">
+        <div class="n">{{ prod_count | default(0) }}</div>
+        <div class="l">إجمالي المنتجات</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- الأنشطة المدموجة -->
+  {% if merged %}
+  <div class="act-card">
+    <h3 style="color:#c4b5fd;font-size:.88rem;font-weight:700;margin:0 0 14px">🔗 الأنشطة المدموجة حالياً</h3>
+    {% for act_code in merged %}
+    <div class="act-item">
+      <span class="badge badge-merged">{{ industry_labels.get(act_code, act_code) }}</span>
+      <code style="color:#64748b;font-size:.77rem">{{ act_code }}</code>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- دمج نشاط جديد -->
+  {% if all_same_sector %}
+  <div class="act-card">
+    <h3 style="color:#fbbf24;font-size:.9rem;font-weight:700;margin:0 0 18px">➕ دمج نشاط جديد من نفس القطاع</h3>
+    <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:9px;padding:10px 14px;margin-bottom:16px;color:#fbbf24;font-size:.82rem">
+      ⚠️ الدمج يضيف تصنيفات ومنتجات النشاط الجديد إلى منشأتك. لا يمكن التراجع.
+    </div>
+    <form method="POST" action="/owner/activities/merge">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+      <div class="form-group">
+        <label style="color:#94a3b8;font-size:.78rem;font-weight:700;display:block;margin-bottom:5px">اختر النشاط للدمج</label>
+        <select class="act-in" name="target_activity">
+          <option value="">— اختر نشاطاً —</option>
+          {% for code, label in all_same_sector %}
+          <option value="{{ code }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="btn-primary" type="submit" onclick="return confirm('تأكيد دمج هذا النشاط؟')">🔀 تنفيذ الدمج</button>
+    </form>
+  </div>
+  {% else %}
+  <div class="act-card" style="border-color:rgba(100,116,139,.2)">
+    <div style="text-align:center;padding:20px;color:#64748b">
+      لا توجد أنشطة أخرى متاحة للدمج في قطاع <strong>{{ sector }}</strong>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
