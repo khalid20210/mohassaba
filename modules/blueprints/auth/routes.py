@@ -144,18 +144,38 @@ def _social_signin_or_register(db, provider: str, social_sub: str, email: str, f
     full_name = (full_name or "").strip() or _SOCIAL_PROVIDER_LABELS.get(provider, "مستخدم")
 
     linked_user = db.execute(
-        "SELECT * FROM users WHERE social_provider=? AND social_sub=? AND is_active=1 LIMIT 1",
+        "SELECT u.*, b.account_status FROM users u "
+        "JOIN businesses b ON b.id = u.business_id "
+        "WHERE u.social_provider=? AND u.social_sub=? AND u.is_active=1 LIMIT 1",
         (provider, social_sub),
     ).fetchone()
     if linked_user:
+        acc_status = (linked_user["account_status"] or "approved")
+        if acc_status == "pending":
+            return render_template("auth/pending_approval.html",
+                                   username=linked_user["username"],
+                                   full_name=linked_user["full_name"])
+        if acc_status == "rejected":
+            flash("تم رفض طلب تسجيلك. تواصل مع الإدارة لمزيد من المعلومات.", "error")
+            return redirect(url_for("auth.auth_login"))
         return _complete_login_session(db, int(linked_user["id"]), int(linked_user["business_id"]))
 
     if email:
         existing = db.execute(
-            "SELECT * FROM users WHERE LOWER(email)=LOWER(?) AND is_active=1 LIMIT 1",
+            "SELECT u.*, b.account_status FROM users u "
+            "JOIN businesses b ON b.id = u.business_id "
+            "WHERE LOWER(u.email)=LOWER(?) AND u.is_active=1 LIMIT 1",
             (email,),
         ).fetchone()
         if existing:
+            acc_status = (existing["account_status"] or "approved")
+            if acc_status == "pending":
+                return render_template("auth/pending_approval.html",
+                                       username=existing["username"],
+                                       full_name=existing["full_name"])
+            if acc_status == "rejected":
+                flash("تم رفض طلب تسجيلك. تواصل مع الإدارة لمزيد من المعلومات.", "error")
+                return redirect(url_for("auth.auth_login"))
             db.execute(
                 """
                 UPDATE users
@@ -174,7 +194,7 @@ def _social_signin_or_register(db, provider: str, social_sub: str, email: str, f
 
     try:
         db.execute(
-            "INSERT INTO businesses (name, is_active, country_code) VALUES (?, 0, ?)",
+            "INSERT INTO businesses (name, is_active, country_code, account_status) VALUES (?, 0, ?, 'pending')",
             (f"منشأة {username}", "SA"),
         )
         biz_id = int(db.execute("SELECT last_insert_rowid()").fetchone()[0])
@@ -208,9 +228,9 @@ def _social_signin_or_register(db, provider: str, social_sub: str, email: str, f
     except Exception:
         pass
 
-    write_audit_log(db, biz_id, "register", entity_type="user", entity_id=user_id)
-    flash("تم إنشاء حسابك عبر الدخول الاجتماعي بنجاح", "success")
-    return _complete_login_session(db, user_id, biz_id)
+    write_audit_log(db, biz_id, "register_pending", entity_type="user", entity_id=user_id)
+    return render_template("auth/pending_approval.html",
+                           username=username, full_name=full_name)
 
 
 @bp.route("/")

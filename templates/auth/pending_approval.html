@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}في انتظار الموافقة — Jenan Biz{% endblock %}
+
+{% block head %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap');
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100dvh;
+  background: #070f1c;
+  color: #e8f0ff;
+  font-family: 'Tajawal', 'Segoe UI', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pending-card {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(148,163,184,.2);
+  border-radius: 20px;
+  padding: 3rem 2.5rem;
+  max-width: 480px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(7,15,28,.4);
+}
+
+.pending-icon {
+  font-size: 4rem;
+  margin-bottom: 1.2rem;
+}
+
+.pending-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #93c5fd;
+  margin-bottom: 0.6rem;
+}
+
+.pending-username {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fde68a;
+  margin-bottom: 1.2rem;
+}
+
+.pending-msg {
+  font-size: 1rem;
+  color: #94a3b8;
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+
+.pending-msg strong {
+  color: #e2e8f0;
+}
+
+.btn-login {
+  display: inline-block;
+  padding: .75rem 2.2rem;
+  background: linear-gradient(135deg, #1a4fa0, #0ea5e9);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity .2s;
+}
+
+.btn-login:hover { opacity: .85; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pending-card" dir="rtl">
+  <div class="pending-icon">⏳</div>
+  <div class="pending-title">طلبك قيد المراجعة</div>
+  {% if full_name %}
+  <div class="pending-username">مرحباً، {{ full_name }}</div>
+  {% endif %}
+  <p class="pending-msg">
+    تم استلام طلب إنشاء حسابك بنجاح.<br>
+    <strong>لا يمكن تسجيل الدخول إلا بعد موافقة مالك البرنامج.</strong><br><br>
+    ستتمكن من الدخول فور الموافقة على طلبك.
+    يُرجى التواصل مع الإدارة إذا تأخرت الموافقة.
+  </p>
+  <a href="{{ url_for('auth.auth_login') }}" class="btn-login">العودة لتسجيل الدخول</a>
+</div>
+{% endblock %}
