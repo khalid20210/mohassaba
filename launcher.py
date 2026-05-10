@@ -20,6 +20,8 @@ RUN_SCRIPT = APP_DIR / "run_production.py"
 PORT      = 5001
 URL       = f"http://localhost:{PORT}"
 ICON_PATH = APP_DIR / "static" / "icons" / "app_icon.ico"
+LOG_DIR   = APP_DIR / "logs"
+LOG_FILE  = LOG_DIR / "desktop_launcher.log"
 
 
 def is_port_open(port: int, timeout: float = 0.5) -> bool:
@@ -36,15 +38,32 @@ def start_server() -> subprocess.Popen:
     env["PORT"] = str(PORT)
     env["HOST"] = "127.0.0.1"  # محلي فقط (أمان)
     env["WAITRESS_THREADS"] = "8"
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    log_handle = open(LOG_FILE, "a", encoding="utf-8", errors="replace")
+    log_handle.write(f"\n\n=== launcher start {time.strftime('%Y-%m-%d %H:%M:%S')} ===\n")
+    log_handle.flush()
+    creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
-    return subprocess.Popen(
+    proc = subprocess.Popen(
         [str(VENV_PY), str(RUN_SCRIPT)],
         cwd=str(APP_DIR),
         env=env,
-        creationflags=subprocess.CREATE_NO_WINDOW,  # Windows — بلا نافذة سوداء
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        creationflags=creationflags,  # Windows — بلا نافذة سوداء
+        stdout=log_handle,
+        stderr=subprocess.STDOUT,
     )
+    proc._log_handle = log_handle  # type: ignore[attr-defined]
+    return proc
+
+
+def _tail_log_lines(path: Path, max_lines: int = 20) -> str:
+    try:
+        if not path.exists():
+            return "لا يوجد ملف سجل بعد."
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        return "\n".join(lines[-max_lines:]) if lines else "ملف السجل فارغ."
+    except Exception:
+        return "تعذر قراءة سجل التشغيل."
 
 
 def wait_and_open(proc: subprocess.Popen, splash_root: tk.Tk):
@@ -52,8 +71,12 @@ def wait_and_open(proc: subprocess.Popen, splash_root: tk.Tk):
     for attempt in range(40):  # حتى 20 ثانية
         if proc.poll() is not None:
             # الخادم انهار
+            details = _tail_log_lines(LOG_FILE, 16)
             splash_root.after(0, lambda: messagebox.showerror(
-                "خطأ", "فشل تشغيل الخادم!\nتأكد من تثبيت المتطلبات."
+                "خطأ",
+                "فشل تشغيل الخادم!\n"
+                f"راجع السجل:\n{LOG_FILE}\n\n"
+                f"آخر رسائل:\n{details}"
             ))
             splash_root.after(0, splash_root.destroy)
             return

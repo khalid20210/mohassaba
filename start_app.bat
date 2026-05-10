@@ -16,7 +16,7 @@ echo  ============================================
 echo.
 
 REM تشغيل الخادم في الخلفية
-start "" /B "%PYTHON%" "%SCRIPT%"
+for /f %%i in ('powershell -NoProfile -Command "$p=Start-Process -FilePath '%PYTHON%' -ArgumentList '\"%SCRIPT%\"' -WorkingDirectory '%APP_DIR%' -PassThru; $p.Id"') do set APP_PID=%%i
 
 REM انتظار 4 ثوان لبدء الخادم
 timeout /t 4 /nobreak >nul
@@ -30,6 +30,10 @@ echo.
 echo   اضغط اي مفتاح لايقاف الخادم وإغلاق البرنامج.
 pause >nul
 
-REM إيقاف العملية عند الإغلاق
-taskkill /F /IM python.exe /T >nul 2>&1
-echo   تم ايقاف الخادم.
+REM إيقاف العملية التي بدأناها فقط
+if defined APP_PID (
+    taskkill /F /PID %APP_PID% /T >nul 2>&1
+    echo   تم ايقاف الخادم.
+) else (
+    echo   لم يتم العثور على PID للخادم.
+)

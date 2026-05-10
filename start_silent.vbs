@@ -2,10 +2,20 @@
 Set objShell = CreateObject("WScript.Shell")
 Set objFSO = CreateObject("Scripting.FileSystemObject")
 
-APP_DIR = "C:\Users\JEN21\OneDrive\سطح المكتب\محاسبه"
+APP_DIR = objFSO.GetParentFolderName(WScript.ScriptFullName)
 PYTHON  = APP_DIR & "\.venv\Scripts\python.exe"
 SCRIPT  = APP_DIR & "\run_production.py"
-URL     = "http://127.0.0.1:5000"
+URL     = "http://127.0.0.1:5001"
+
+If Not objFSO.FileExists(PYTHON) Then
+  MsgBox "Python executable not found:" & vbCrLf & PYTHON, 16, "Launch Error"
+  WScript.Quit 1
+End If
+
+If Not objFSO.FileExists(SCRIPT) Then
+  MsgBox "Run script not found:" & vbCrLf & SCRIPT, 16, "Launch Error"
+  WScript.Quit 1
+End If
 
 ' تشغيل الخادم بدون نافذة (0 = مخفي)
 objShell.Run """" & PYTHON & """ """ & SCRIPT & """", 0, False

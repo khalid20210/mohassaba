@@ -1,9 +1,17 @@
 """تحديث اختصار سطح المكتب بالأيقونة الجديدة"""
-import subprocess, os
+import os
+import subprocess
+from pathlib import Path
 
-ico  = r"c:\Users\JEN21\OneDrive\سطح المكتب\محاسبه\app_icon.ico"
-ps1  = r"c:\Users\JEN21\OneDrive\سطح المكتب\محاسبه\start_silent.ps1"
-proj = r"c:\Users\JEN21\OneDrive\سطح المكتب\محاسبه"
+proj_path = Path(__file__).resolve().parent
+ico_path = proj_path / "static" / "icons" / "app_icon.ico"
+if not ico_path.exists():
+    ico_path = proj_path / "app_icon.ico"
+ps1_path = proj_path / "start_silent.ps1"
+
+ico = str(ico_path)
+ps1 = str(ps1_path)
+proj = str(proj_path)
 
 # نستخدم PowerShell مباشرة بدون ملف مؤقت
 # نخزن المسارات في متغيرات بيئة مؤقتة لتجنب مشكلة الترميز
@@ -30,4 +38,3 @@ r = subprocess.run(
     capture_output=True, text=True, env=env
 )
 print(r.stdout.strip() or r.stderr[:300])
-
