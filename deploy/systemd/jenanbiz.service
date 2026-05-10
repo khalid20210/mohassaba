@@ -1,0 +1,51 @@
+[Unit]
+Description=Jenan Biz — نظام محاسبة الأعمال
+Documentation=https://jenanbiz.com
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=jenanbiz
+Group=jenanbiz
+WorkingDirectory=/opt/jenanbiz
+
+# ── متغيرات البيئة ────────────────────────────────────────────────────────
+EnvironmentFile=/opt/jenanbiz/.env
+
+# ── أمر التشغيل ──────────────────────────────────────────────────────────
+ExecStart=/opt/jenanbiz/.venv/bin/python run_production.py
+
+# ── إعادة التشغيل التلقائية ───────────────────────────────────────────────
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+# ── حدود الموارد (أمان + استقرار) ───────────────────────────────────────
+# عدد الملفات المفتوحة (مهم لـ SQLite WAL)
+LimitNOFILE=65536
+# منع fork-bomb
+TasksMax=256
+# حد استخدام الذاكرة (4 GB — غيّره حسب خادمك)
+MemoryMax=4G
+# CPU quota (100% = 1 core كامل)
+# CPUQuota=200%
+
+# ── أمان إضافي (Hardening) ───────────────────────────────────────────────
+# منع الوصول للنظام الملفات خارج المجلد
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/jenanbiz/database /opt/jenanbiz/backups /opt/jenanbiz/exports /opt/jenanbiz/instance
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+# ── سجلات الأخطاء ────────────────────────────────────────────────────────
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=jenanbiz
+
+[Install]
+WantedBy=multi-user.target
