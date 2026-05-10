@@ -477,6 +477,10 @@ body { font-family: 'Plus Jakarta Sans', 'Cairo', 'Segoe UI', sans-serif; backgr
           <div class="reg-hint">{{ t('username_hint') }}</div>
         </div>
         <div class="reg-field span2">
+          <label class="reg-label">اسم المنشأة <span class="req">*</span></label>
+          <input type="text" name="business_name" class="reg-input" placeholder="مثال: مؤسسة النور التجارية" required value="{{ request.form.get('business_name', '') }}">
+        </div>
+        <div class="reg-field span2">
           <label class="reg-label">{{ t('country') }} <span class="req">*</span></label>
           <select name="country_code" id="countrySelect" class="reg-input" onchange="updateCountryHint(this)">
             {% for c in countries %}
@@ -494,6 +498,10 @@ body { font-family: 'Plus Jakarta Sans', 'Cairo', 'Segoe UI', sans-serif; backgr
         <div class="reg-field span2">
           <label class="reg-label">{{ t('email') }}</label>
           <input type="email" name="email" class="reg-input" placeholder="email@example.com" value="{{ request.form.get('email', '') }}">
+        </div>
+        <div class="reg-field span2">
+          <label class="reg-label">رقم الجوال <span class="req">*</span></label>
+          <input type="text" name="phone" class="reg-input" placeholder="05XXXXXXXX" required value="{{ request.form.get('phone', '') }}">
         </div>
         <div class="reg-field">
           <label class="reg-label">{{ t('password') }} <span class="req">*</span></label>
@@ -708,4 +716,3 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
-

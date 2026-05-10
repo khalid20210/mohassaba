@@ -144,7 +144,7 @@ def _social_signin_or_register(db, provider: str, social_sub: str, email: str, f
     full_name = (full_name or "").strip() or _SOCIAL_PROVIDER_LABELS.get(provider, "مستخدم")
 
     linked_user = db.execute(
-        "SELECT u.*, b.account_status FROM users u "
+        "SELECT u.*, b.account_status, b.name AS biz_name FROM users u "
         "JOIN businesses b ON b.id = u.business_id "
         "WHERE u.social_provider=? AND u.social_sub=? AND u.is_active=1 LIMIT 1",
         (provider, social_sub),
@@ -153,8 +153,10 @@ def _social_signin_or_register(db, provider: str, social_sub: str, email: str, f
         acc_status = (linked_user["account_status"] or "approved")
         if acc_status == "pending":
             return render_template("auth/pending_approval.html",
-                                   username=linked_user["username"],
-                                   full_name=linked_user["full_name"])
+                                    username=linked_user["username"],
+                                   full_name=linked_user["full_name"],
+                                   phone=linked_user["phone"],
+                                   business_name=linked_user["biz_name"])
         if acc_status == "rejected":
             flash("تم رفض طلب تسجيلك. تواصل مع الإدارة لمزيد من المعلومات.", "error")
             return redirect(url_for("auth.auth_login"))
@@ -162,7 +164,7 @@ def _social_signin_or_register(db, provider: str, social_sub: str, email: str, f
 
     if email:
         existing = db.execute(
-            "SELECT u.*, b.account_status FROM users u "
+            "SELECT u.*, b.account_status, b.name AS biz_name FROM users u "
             "JOIN businesses b ON b.id = u.business_id "
             "WHERE LOWER(u.email)=LOWER(?) AND u.is_active=1 LIMIT 1",
             (email,),
@@ -172,7 +174,9 @@ def _social_signin_or_register(db, provider: str, social_sub: str, email: str, f
             if acc_status == "pending":
                 return render_template("auth/pending_approval.html",
                                        username=existing["username"],
-                                       full_name=existing["full_name"])
+                                       full_name=existing["full_name"],
+                                       phone=existing["phone"],
+                                       business_name=existing["biz_name"])
             if acc_status == "rejected":
                 flash("تم رفض طلب تسجيلك. تواصل مع الإدارة لمزيد من المعلومات.", "error")
                 return redirect(url_for("auth.auth_login"))
@@ -230,7 +234,7 @@ def _social_signin_or_register(db, provider: str, social_sub: str, email: str, f
 
     write_audit_log(db, biz_id, "register_pending", entity_type="user", entity_id=user_id)
     return render_template("auth/pending_approval.html",
-                           username=username, full_name=full_name)
+                           username=username, full_name=full_name, business_name=f"منشأة {username}")
 
 
 @bp.route("/")
@@ -516,7 +520,7 @@ def auth_login():
 
         db   = get_db()
         user = db.execute(
-            "SELECT u.*, b.account_status FROM users u "
+            "SELECT u.*, b.account_status, b.name AS biz_name FROM users u "
             "JOIN businesses b ON b.id = u.business_id "
             "WHERE u.username = ?", (username,)
         ).fetchone()
@@ -536,7 +540,10 @@ def auth_login():
         status = (user["account_status"] or "approved") if user else "approved"
         if status == "pending":
             return render_template("auth/pending_approval.html",
-                                   username=username, full_name=user["full_name"])
+                                   username=username,
+                                   full_name=user["full_name"],
+                                   phone=user["phone"],
+                                   business_name=user["biz_name"])
         if status == "rejected":
             flash("تم رفض طلب تسجيلك. تواصل مع الإدارة لمزيد من المعلومات.", "error")
             try:
@@ -582,7 +589,9 @@ def auth_register():
 
         username     = request.form.get("username",  "").strip()
         full_name    = request.form.get("full_name",  "").strip()
+        business_name = request.form.get("business_name", "").strip()
         email        = request.form.get("email",      "").strip().lower()
+        phone        = request.form.get("phone", "").strip()
         password     = request.form.get("password",   "")
         confirm      = request.form.get("confirm_password", "")
         country_code = request.form.get("country_code", "SA").strip().upper() or "SA"
@@ -590,6 +599,8 @@ def auth_register():
         errors = []
         if not username:        errors.append("اسم المستخدم مطلوب")
         if not full_name:       errors.append("الاسم الكامل مطلوب")
+        if not business_name:   errors.append("اسم المنشأة مطلوب")
+        if not phone:           errors.append("رقم الجوال مطلوب")
         if not password:        errors.append("كلمة المرور مطلوبة")
         if len(password) < 8:  errors.append("كلمة المرور يجب أن تكون 8 أحرف على الأقل")
         if password != confirm: errors.append("كلمتا المرور غير متطابقتين")
@@ -621,7 +632,7 @@ def auth_register():
         try:
             db.execute(
                 "INSERT INTO businesses (name, is_active, country_code, account_status) VALUES (?, 0, ?, 'pending')",
-                (f"منشأة {username}", country_code)
+                (business_name, country_code)
             )
             biz_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
 
@@ -633,9 +644,9 @@ def auth_register():
 
             db.execute(
                 """INSERT INTO users
-                   (business_id, role_id, username, full_name, email, password_hash, is_active)
-                   VALUES (?,?,?,?,?,?,0)""",
-                (biz_id, role_id, username, full_name, email, hash_password(password))
+                   (business_id, role_id, username, full_name, email, phone, password_hash, is_active)
+                   VALUES (?,?,?,?,?,?,?,0)""",
+                (biz_id, role_id, username, full_name, email, phone, hash_password(password))
             )
             user_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
             db.commit()
@@ -669,7 +680,10 @@ def auth_register():
         # ── لا دخول تلقائي — الحساب بانتظار موافقة المالك ─────────────────
         write_audit_log(db, biz_id, "register_pending", entity_type="user", entity_id=user_id)
         return render_template("auth/pending_approval.html",
-                               username=username, full_name=full_name)
+                               username=username,
+                               full_name=full_name,
+                               phone=phone,
+                               business_name=business_name)
 
     # GET: جلب قائمة الدول للقالب
     try:

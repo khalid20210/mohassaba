@@ -61,6 +61,25 @@ body {
   color: #e2e8f0;
 }
 
+.pending-info {
+  text-align: right;
+  margin: 0 0 1.4rem 0;
+  padding: .85rem 1rem;
+  border: 1px solid rgba(148,163,184,.25);
+  background: rgba(15,23,42,.35);
+  border-radius: 12px;
+}
+
+.pending-info div {
+  font-size: .92rem;
+  color: #cbd5e1;
+  margin: .35rem 0;
+}
+
+.pending-info strong {
+  color: #e2e8f0;
+}
+
 .btn-login {
   display: inline-block;
   padding: .75rem 2.2rem;
@@ -86,11 +105,17 @@ body {
   {% if full_name %}
   <div class="pending-username">مرحباً، {{ full_name }}</div>
   {% endif %}
+  {% if full_name or phone or business_name %}
+  <div class="pending-info">
+    {% if full_name %}<div><strong>الاسم:</strong> {{ full_name }}</div>{% endif %}
+    {% if phone %}<div><strong>رقم الجوال:</strong> {{ phone }}</div>{% endif %}
+    {% if business_name %}<div><strong>اسم المنشأة:</strong> {{ business_name }}</div>{% endif %}
+  </div>
+  {% endif %}
   <p class="pending-msg">
-    تم استلام طلب إنشاء حسابك بنجاح.<br>
-    <strong>لا يمكن تسجيل الدخول إلا بعد موافقة مالك البرنامج.</strong><br><br>
-    ستتمكن من الدخول فور الموافقة على طلبك.
-    يُرجى التواصل مع الإدارة إذا تأخرت الموافقة.
+    تم إنشاء الحساب بنجاح، والبرنامج حالياً تحت التجربة.<br>
+    <strong>بمجرد الانتهاء واكتمال الجاهزية سيتم اعتماد طلبك وإبلاغكم جميعاً.</strong><br><br>
+    <strong>لا يمكن تسجيل الدخول إلا بعد موافقة مالك البرنامج.</strong>
   </p>
   <a href="{{ url_for('auth.auth_login') }}" class="btn-login">العودة لتسجيل الدخول</a>
 </div>
