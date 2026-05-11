@@ -936,7 +936,7 @@ body {
         {% endfor %}
       {% endwith %}
 
-      <form method="POST" action="{{ url_for('auth_login') }}" autocomplete="off">
+      <form method="POST" action="{{ url_for('auth.auth_login') }}" autocomplete="off">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
         <div class="jb-field">

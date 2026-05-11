@@ -100,7 +100,7 @@
           <span>{{ current_user.role_name or t('role_user') }}</span>
         </div>
       </div>
-      <a href="{{ url_for('auth_logout') }}" class="logout-btn">{{ t('logout') }}</a>
+      <a href="{{ url_for('auth.auth_logout') }}" class="logout-btn">{{ t('logout') }}</a>
     </div>
 
   </aside>

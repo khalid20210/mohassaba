@@ -523,7 +523,7 @@ body { font-family: 'Plus Jakarta Sans', 'Cairo', 'Segoe UI', sans-serif; backgr
       </a>
     </div>
 
-    <div class="reg-login-link">{{ t('have_account') }} <a href="{{ url_for('auth_login') }}">{{ t('signin_now') }}</a></div>
+    <div class="reg-login-link">{{ t('have_account') }} <a href="{{ url_for('auth.auth_login') }}">{{ t('signin_now') }}</a></div>
     <div class="reg-legal">
       <a href="/privacy-policy">سياسة الخصوصية</a>
       <span class="sep">•</span>
@@ -708,4 +708,3 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
-
