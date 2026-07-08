@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: jenan-biz
+    runtime: docker
+    plan: free
+    region: singapore   # أقرب مجاناً للسعودية
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 5001
+      - key: BEHIND_PROXY
+        value: "true"
+      - key: SESSION_COOKIE_SECURE
+        value: "false"
+      - key: SECRET_KEY
+        generateValue: true   # Render يولّده تلقائياً
+      - key: WAITRESS_THREADS
+        value: "4"
+      - key: MAX_INFLIGHT_REQUESTS
+        value: "200"
+    healthCheckPath: /healthz
+    autoDeploy: true

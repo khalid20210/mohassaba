@@ -1,0 +1,43 @@
+app = "jenan-biz"
+primary_region = "dxb"   # دبي — الأقرب للسعودية
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  FLASK_ENV      = "production"
+  HOST           = "0.0.0.0"
+  PORT           = "5001"
+  BEHIND_PROXY   = "true"
+  WAITRESS_THREADS = "4"
+  SESSION_COOKIE_SECURE = "false"
+
+[[services]]
+  protocol    = "tcp"
+  internal_port = 5001
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [services.concurrency]
+    type       = "requests"
+    hard_limit = 500
+    soft_limit = 400
+
+  [[services.http_checks]]
+    path     = "/healthz"
+    interval = "10s"
+    timeout  = "5s"
+
+[[mounts]]
+  source      = "jenan_data"
+  destination = "/app/data"
+
+[metrics]
+  port = 5001
+  path = "/metrics"
