@@ -1,14 +1,14 @@
 {
-  "name": "جنان بيز — نظام المحاسبة",
+  "name": "جنان بيز — نظام الأعمال",
   "short_name": "جنان بيز",
-  "description": "نظام محاسبة SaaS متكامل: مبيعات، مشتريات، POS، تقارير",
+  "description": "نظام محاسبة وإدارة أعمال متكامل: مبيعات، مشتريات، POS، تقارير",
   "id": "/",
-  "start_url": "/dashboard",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "browser"],
-  "background_color": "#0d1117",
-  "theme_color": "#3b82f6",
+  "background_color": "#0D1B2A",
+  "theme_color": "#4FA8E0",
   "orientation": "any",
   "lang": "ar",
   "dir": "rtl",
@@ -42,33 +42,21 @@
   "shortcuts": [
     {
       "name": "لوحة التحكم",
-      "short_name": "Dashboard",
-      "description": "ملخص الأداء والمؤشرات اليومية",
       "url": "/dashboard",
-      "icons": [{"src": "/static/icons/icon-192.png", "sizes": "192x192"}]
+      "description": "الصفحة الرئيسية"
     },
     {
-      "name": "كاشير — نقاط البيع",
-      "short_name": "POS",
-      "description": "شاشة الكاشير والبيع السريع",
+      "name": "الفواتير",
+      "url": "/invoices",
+      "description": "إدارة الفواتير"
+    },
+    {
+      "name": "نقطة البيع",
       "url": "/pos",
-      "icons": [{"src": "/static/icons/icon-192.png", "sizes": "192x192"}]
-    },
-    {
-      "name": "الفواتير والمشتريات",
-      "short_name": "فواتير",
-      "description": "إصدار الفواتير ومتابعة المشتريات",
-      "url": "/purchases",
-      "icons": [{"src": "/static/icons/icon-192.png", "sizes": "192x192"}]
-    },
-    {
-      "name": "الموظفون والمناديب",
-      "short_name": "Workforce",
-      "description": "إدارة الموظفين، الإقفال الأعمى، وعمولات المناديب",
-      "url": "/workforce",
-      "icons": [{"src": "/static/icons/icon-192.png", "sizes": "192x192"}]
+      "description": "الكاشير"
     }
   ],
-  "screenshots": [],
-  "prefer_related_applications": false
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "screenshots": []
 }
