@@ -25,7 +25,7 @@ SAAS_REGION   = os.environ.get("SAAS_REGION", "sa")
 RATE_LIMIT_WINDOW_SEC  = int(os.environ.get("RATE_LIMIT_WINDOW_SEC", "60"))
 RATE_LIMIT_MAX_REQUEST = int(os.environ.get("RATE_LIMIT_MAX_REQUEST", "240"))
 HEALTH_DB_TIMEOUT_MS   = int(os.environ.get("HEALTH_DB_TIMEOUT_MS", "1500"))
-MAX_INFLIGHT_REQUESTS  = int(os.environ.get("MAX_INFLIGHT_REQUESTS", "300"))
+MAX_INFLIGHT_REQUESTS  = int(os.environ.get("MAX_INFLIGHT_REQUESTS", "1000"))
 OVERLOAD_RETRY_AFTER_SEC = int(os.environ.get("OVERLOAD_RETRY_AFTER_SEC", "2"))
 
 # ─── Security Posture Controls ──────────────────────────────────────────────

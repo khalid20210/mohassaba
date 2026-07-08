@@ -3,6 +3,15 @@ run_production.py
 تشغيل إنتاجي موصى به (بدون Flask dev server)
 """
 import os
+import sys
+from pathlib import Path
+
+# ── ضمان أن مجلد المشروع موجود في sys.path بصرف النظر عن مسار التشغيل ──────
+_project_root = Path(__file__).resolve().parent
+if str(_project_root) not in sys.path:
+    sys.path.insert(0, str(_project_root))
+# ── تغيير مسار العمل إلى جذر المشروع لحل مشكلة الملفات النسبية ─────────────
+os.chdir(_project_root)
 
 from modules import create_app
 
