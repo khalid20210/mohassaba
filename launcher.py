@@ -30,10 +30,14 @@ PORT = int(os.environ.get("JENAN_PORT", "5001"))
 HOST = os.environ.get("JENAN_HOST", "127.0.0.1")
 URL = f"http://127.0.0.1:{PORT}"
 
-VENV_PY = APP_DIR / ".venv" / "Scripts" / "python.exe"
+VENV_PY   = APP_DIR / ".venv" / "Scripts" / "python.exe"
 RUN_SCRIPT = APP_DIR / "run_production.py"
-DB_SOURCE = BUNDLE_DIR / "database" / "accounting_dev.db"
-DB_TARGET = APP_HOME / "database" / "accounting_dev.db"
+
+# قاعدة البيانات: نفضّل الإنتاجية على التطويرية
+_prod_db  = BUNDLE_DIR / "database" / "accounting_prod.db"
+_dev_db   = BUNDLE_DIR / "database" / "accounting_dev.db"
+DB_SOURCE = _prod_db if _prod_db.exists() else _dev_db
+DB_TARGET = APP_HOME / "database" / DB_SOURCE.name
 
 
 def is_port_open(port: int, timeout: float = 0.5) -> bool:
@@ -58,6 +62,14 @@ def _prepare_runtime_environment() -> None:
     os.environ.setdefault("HOST", HOST)
     os.environ.setdefault("PORT", str(PORT))
     os.environ.setdefault("WAITRESS_THREADS", "8")
+    # تأكد من تحميل .env إن وُجد
+    _env_file = APP_DIR / ".env"
+    if _env_file.exists():
+        try:
+            from dotenv import load_dotenv as _ld
+            _ld(_env_file, override=False)
+        except ImportError:
+            pass
 
     # override مسارات الكتابة للنسخة المُثبتة.
     os.environ.setdefault("DB_PATH", str(DB_TARGET))
@@ -156,8 +168,9 @@ def show_splash(proc: subprocess.Popen) -> None:
 
     tk.Label(frame, text="جنان بيز", font=("Arial", 28, "bold"), bg="#0D1B2A", fg="#4FA8E0").pack(pady=(30, 2))
     tk.Label(frame, text="نظام إدارة الأعمال", font=("Arial", 13), bg="#0D1B2A", fg="#A0C4E0").pack()
+    tk.Label(frame, text=f"🌐 {URL}", font=("Arial", 9), bg="#0D1B2A", fg="#4FA8E0").pack(pady=(4, 0))
 
-    tk.Label(frame, text="جاري تشغيل الخادم...", font=("Arial", 10), bg="#0D1B2A", fg="#6B8FAD").pack(pady=(20, 5))
+    tk.Label(frame, text="جاري تشغيل الخادم...", font=("Arial", 10), bg="#0D1B2A", fg="#6B8FAD").pack(pady=(10, 5))
 
     canvas = tk.Canvas(frame, width=300, height=6, bg="#1E3A52", highlightthickness=0)
     canvas.pack()
