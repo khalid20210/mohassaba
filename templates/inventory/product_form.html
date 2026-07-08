@@ -82,6 +82,11 @@
   border-radius:12px;color:#94a3b8;font-size:.95rem;font-weight:600;
   text-decoration:none;transition:all .2s;}
 .btn-cancel:hover{background:rgba(255,255,255,.1);color:#f1f5f9;}
+.btn-edit{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;
+  background:rgba(14,165,233,.12);border:1px solid rgba(14,165,233,.25);
+  border-radius:12px;color:#7dd3fc;font-size:.95rem;font-weight:700;
+  cursor:pointer;transition:all .2s;}
+.btn-edit:hover{background:rgba(14,165,233,.2);color:#bae6fd;}
 @media(max-width:768px){
   .pf-grid{grid-template-columns:1fr;}
   .pf-section.half{grid-column:1/-1;}
@@ -94,6 +99,25 @@
 @media(max-width:480px){
   .pf-row,.pf-row.cols3{grid-template-columns:1fr;}
 }
+.u_e834f29d0f{background:rgba(14,165,233,.15);}
+.u_2870b8ca05{color:#94a3b8;font-size:.7rem;}
+.u_64aa4886ed{background:rgba(251,191,36,.15);}
+.u_fb99a8ca11{font-size:1.15rem;font-weight:700;color:#fbbf24;}
+.u_2ddf87696d{color:#fbbf24;}
+.u_114542e7a7{background:rgba(16,185,129,.15);}
+.u_b1d532c4e0{font-size:1.15rem;font-weight:700;color:#34d399;}
+.u_bfb0e999ae{color:#34d399;}
+.u_cfc294ffc2{color:#f59e0b;}
+.u_85c326dd65{margin-top:6px;border-color:#16a34a;}
+.u_b30143e1ee{background:rgba(139,92,246,.15);}
+.u_719864b4f5{border-color:rgba(99,102,241,.2);background:linear-gradient(145deg,rgba(30,41,59,.9),rgba(99,102,241,.04));}
+.u_9c4ccb6bce{background:rgba(99,102,241,.2);}
+.u_40232a468a{margin-right:auto;font-size:.7rem;color:#6366f1;background:rgba(99,102,241,.1);
+                     border:1px solid rgba(99,102,241,.25);border-radius:20px;padding:2px 10px;font-weight:500}
+.u_9c38a360a3{background:rgba(99,102,241,.12);border-radius:4px;padding:1px 6px;font-size:.7rem}
+.u_e83a79455e{font-size:.72rem;color:#475569;margin-top:2px}
+.u_7db6df49bf{font-size:.68rem;color:#64748b}
+.u_9d1cf06539{background:rgba(239,68,68,.12);}
 </style>
 
 <a href="/inventory/products" class="pf-back">← العودة لقائمة المنتجات</a>
@@ -113,7 +137,7 @@
     <!-- ══ المعلومات الأساسية ══ -->
     <div class="pf-section">
       <div class="pf-section-title">
-        <div class="pf-section-icon" style="background:rgba(14,165,233,.15);">ℹ️</div>
+        <div class="pf-section-icon u_e834f29d0f">ℹ️</div>
         المعلومات الأساسية
       </div>
       <div class="pf-row">
@@ -137,7 +161,7 @@
           </select>
         </div>
         <div class="pf-field">
-          <label class="pf-label">الرقم التسلسلي (SKU) <span style="color:#94a3b8;font-size:.7rem;">(اتركه فارغاً للتوليد التلقائي)</span></label>
+          <label class="pf-label">الرقم التسلسلي (SKU) <span class="u_2870b8ca05">(اتركه فارغاً للتوليد التلقائي)</span></label>
           <div class="sku-field-wrap">
             <span class="sku-auto-badge">تلقائي</span>
             <input type="text" name="sku" class="pf-input"
@@ -160,7 +184,7 @@
     <!-- ══ سعر الشراء ══ -->
     <div class="pf-section half">
       <div class="pf-section-title">
-        <div class="pf-section-icon" style="background:rgba(251,191,36,.15);">🛒</div>
+        <div class="pf-section-icon u_64aa4886ed">🛒</div>
         سعر الشراء
       </div>
       <div class="price-card purchase">
@@ -173,16 +197,16 @@
         </div>
         <div class="pf-field">
           <label class="pf-label">المبلغ (ر.س)</label>
-          <input type="number" name="cost_price" id="costRaw" class="pf-input"
+          <input type="number" name="cost_price" id="costRaw" class="pf-input u_fb99a8ca11"
                  value="0" min="0" step="0.01"
-                 oninput="calcCostNet()" style="font-size:1.15rem;font-weight:700;color:#fbbf24;">
+                 oninput="calcCostNet()">
         </div>
         <label class="tax-toggle">
           <input type="checkbox" name="cost_has_tax" value="1" id="costTax" onchange="calcCostNet()">
           <span class="tax-toggle-label">💡 السعر يشمل ضريبة القيمة المضافة (15%)</span>
         </label>
         <div class="tax-info" id="costNetInfo">
-          السعر بدون ضريبة: <strong id="costNet" style="color:#fbbf24;">0.00</strong> ر.س
+          السعر بدون ضريبة: <strong id="costNet" class="u_2ddf87696d">0.00</strong> ر.س
         </div>
       </div>
     </div>
@@ -190,7 +214,7 @@
     <!-- ══ سعر البيع ══ -->
     <div class="pf-section half">
       <div class="pf-section-title">
-        <div class="pf-section-icon" style="background:rgba(16,185,129,.15);">💰</div>
+        <div class="pf-section-icon u_114542e7a7">💰</div>
         سعر البيع
       </div>
       <div class="price-card sale">
@@ -203,20 +227,20 @@
         </div>
         <div class="pf-field">
           <label class="pf-label">المبلغ (ر.س)</label>
-          <input type="number" name="sell_price" id="sellRaw" class="pf-input"
+          <input type="number" name="sell_price" id="sellRaw" class="pf-input u_b1d532c4e0"
                  value="0" min="0" step="0.01"
-                 oninput="calcSellNet()" style="font-size:1.15rem;font-weight:700;color:#34d399;">
+                 oninput="calcSellNet()">
         </div>
         <label class="tax-toggle">
           <input type="checkbox" name="sell_has_tax" value="1" id="sellTax" onchange="calcSellNet()">
           <span class="tax-toggle-label">💡 السعر يشمل ضريبة القيمة المضافة (15%)</span>
         </label>
         <div class="tax-info" id="sellNetInfo">
-          بدون ضريبة: <strong id="sellNet" style="color:#34d399;">0.00</strong> |
-          الضريبة: <strong id="sellVat" style="color:#f59e0b;">0.00</strong> ر.س
+          بدون ضريبة: <strong id="sellNet" class="u_bfb0e999ae">0.00</strong> |
+          الضريبة: <strong id="sellVat" class="u_cfc294ffc2">0.00</strong> ر.س
         </div>
-        <div class="tax-info" style="margin-top:6px;border-color:#16a34a;">
-          هامش الربح: <strong id="profitMargin" style="color:#34d399;">—</strong>
+        <div class="tax-info u_85c326dd65">
+          هامش الربح: <strong id="profitMargin" class="u_bfb0e999ae">—</strong>
         </div>
       </div>
     </div>
@@ -224,7 +248,7 @@
     <!-- ══ بيانات المخزون ══ -->
     <div class="pf-section">
       <div class="pf-section-title">
-        <div class="pf-section-icon" style="background:rgba(139,92,246,.15);">📊</div>
+        <div class="pf-section-icon u_b30143e1ee">📊</div>
         بيانات المخزون
       </div>
       <div class="pf-row cols3">
@@ -267,19 +291,18 @@
     </div>
 
     <!-- ══ بيانات ZATCA الضريبية ══ -->
-    <div class="pf-section" style="border-color:rgba(99,102,241,.2);background:linear-gradient(145deg,rgba(30,41,59,.9),rgba(99,102,241,.04));">
+    <div class="pf-section u_719864b4f5">
       <div class="pf-section-title">
-        <div class="pf-section-icon" style="background:rgba(99,102,241,.2);">🧾</div>
+        <div class="pf-section-icon u_9c4ccb6bce">🧾</div>
         بيانات الضريبة والجمارك (ZATCA)
-        <span style="margin-right:auto;font-size:.7rem;color:#6366f1;background:rgba(99,102,241,.1);
-                     border:1px solid rgba(99,102,241,.25);border-radius:20px;padding:2px 10px;font-weight:500">
+        <span class="u_40232a468a">
           مطلوب للفاتورة الإلكترونية
         </span>
       </div>
       <div class="pf-row cols3">
         <div class="pf-field">
           <label class="pf-label">فئة الضريبة
-            <span style="background:rgba(99,102,241,.12);border-radius:4px;padding:1px 6px;font-size:.7rem">ZATCA</span>
+            <span class="u_9c38a360a3">ZATCA</span>
           </label>
           <select name="tax_category" class="pf-input pf-select">
             <option value="S">S — خاضع للضريبة (15%)</option>
@@ -287,19 +310,19 @@
             <option value="E">E — معفى من الضريبة</option>
             <option value="O">O — خارج النطاق الضريبي</option>
           </select>
-          <span style="font-size:.72rem;color:#475569;margin-top:2px">للمنتجات المعفاة أو ذات الصفر: اختر E أو Z</span>
+          <span class="u_e83a79455e">للمنتجات المعفاة أو ذات الصفر: اختر E أو Z</span>
         </div>
         <div class="pf-field">
           <label class="pf-label">رمز HS (للاستيراد/الجمارك)
-            <span style="font-size:.68rem;color:#64748b">اختياري</span>
+            <span class="u_7db6df49bf">اختياري</span>
           </label>
           <input type="text" name="hs_code" class="pf-input"
                  placeholder="مثال: 6109.10" dir="ltr" maxlength="20">
-          <span style="font-size:.72rem;color:#475569;margin-top:2px">رمز النظام المنسَّق الدولي (HS Code)</span>
+          <span class="u_e83a79455e">رمز النظام المنسَّق الدولي (HS Code)</span>
         </div>
         <div class="pf-field">
           <label class="pf-label">بلد المنشأ
-            <span style="font-size:.68rem;color:#64748b">اختياري</span>
+            <span class="u_7db6df49bf">اختياري</span>
           </label>
           <select name="origin_country" class="pf-input pf-select">
             <option value="">— غير محدد —</option>
@@ -321,7 +344,7 @@
         </div>
         <div class="pf-field full">
           <label class="pf-label">سبب الإعفاء الضريبي
-            <span style="font-size:.68rem;color:#64748b">مطلوب إذا كانت فئة الضريبة E أو Z</span>
+            <span class="u_7db6df49bf">مطلوب إذا كانت فئة الضريبة E أو Z</span>
           </label>
           <input type="text" name="tax_exemption_reason" class="pf-input"
                  placeholder="مثال: خدمات تعليمية — معفاة وفق المادة (...)">
@@ -332,7 +355,7 @@
     <!-- ══ معلومات إضافية ══ -->
     <div class="pf-section">
       <div class="pf-section-title">
-        <div class="pf-section-icon" style="background:rgba(239,68,68,.12);">📋</div>
+        <div class="pf-section-icon u_9d1cf06539">📋</div>
         معلومات إضافية
       </div>
       <div class="pf-row">
@@ -358,6 +381,8 @@
 
   <!-- شريط الإجراءات -->
   <div class="pf-actions">
+    <a href="/inventory/products" class="btn-cancel">↩️ رجوع</a>
+    <button type="button" class="btn-edit" onclick="document.querySelector('input[name=name]').focus()">✏️ تعديل</button>
     <a href="/inventory/products" class="btn-cancel">❌ إلغاء</a>
     <button type="submit" class="btn-save">💾 حفظ المنتج</button>
   </div>

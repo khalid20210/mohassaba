@@ -4,7 +4,9 @@ blueprints/core/routes.py — الصفحات الأساسية: dashboard، analy
 """
 import io
 import json
+import threading
 from datetime import datetime, timedelta
+from time import monotonic
 from typing import Dict, Optional
 
 from flask import (
@@ -23,12 +25,42 @@ from modules.extensions import (
     csrf_protect, get_db, seed_business_accounts, hash_password, safe_sql_identifier
 )
 from modules.industry_seeds import seed_industry_defaults
+from modules.core_utils import table_exists as db_table_exists
+from modules.engines.audit_approval_engine import (
+    ensure_operation_or_create_request,
+    list_pending_requests,
+    approve_request,
+    reject_request,
+    create_approval_request,
+    list_requests,
+    get_request_by_id,
+)
+from modules.engines.execution_engine import list_execution_queue, process_pending_queue
+from modules.engines.user_permissions_engine import (
+    DEFAULT_PERMISSION_KEYS,
+    ensure_role_permission_sync,
+    sync_role_permissions_from_legacy_json,
+    sync_user_role_assignment,
+)
 from modules.middleware import (
     login_required, onboarding_required, require_perm, user_has_perm,
     owner_required, write_audit_log
 )
 from modules.terminology import get_terms
 from modules.unit_localization import ensure_unit_localization_defaults
+from modules.tax_compliance import (
+    build_business_compliance_report,
+    validate_seller_tax_number_for_business,
+)
+from modules.policy_engine import ensure_default_policies
+from modules.notifications_service import (
+    count_unread_notifications,
+    list_notifications,
+    mark_all_notifications_read,
+    mark_notification_read,
+    create_notification,
+)
+from modules.observability import metrics
 from modules.runtime_services import (
     get_redis_client,
     queue_health_status,
@@ -38,6 +70,13 @@ from modules.runtime_services import (
 bp = Blueprint("core", __name__)
 
 LOGO_FOLDER.mkdir(exist_ok=True)
+
+_READY_AUX_TTL_SEC = 15.0
+_ready_aux_cache = {"at": 0.0, "checks": {}, "refreshing": False}
+_ready_aux_lock = threading.Lock()
+_HEALTH_AUX_TTL_SEC = 5.0
+_health_aux_cache = {"at": 0.0, "redis": "disabled", "queue": "disabled"}
+_health_aux_lock = threading.Lock()
 
 
 PREMIUM_ADDONS = [
@@ -150,6 +189,113 @@ def _column_exists(db, table: str, column: str) -> bool:
         return False
 
 
+def _get_ready_aux_checks(db) -> Dict[str, Optional[str]]:
+    """فحوصات جاهزية مساعدة بكاش قصير مع single-flight لمنع stampede."""
+    now = monotonic()
+    with _ready_aux_lock:
+        cached_at = float(_ready_aux_cache.get("at") or 0.0)
+        cached_checks = dict(_ready_aux_cache.get("checks") or {})
+        refreshing = bool(_ready_aux_cache.get("refreshing"))
+
+        if cached_checks and (now - cached_at) < _READY_AUX_TTL_SEC:
+            return cached_checks
+
+        # إذا كان تحديث جديد قيد التنفيذ نُرجع آخر نسخة فوراً لتقليل زمن الاستجابة.
+        if refreshing:
+            if cached_checks:
+                return cached_checks
+            return {
+                "tables": "warming",
+                "migrations": "warming",
+                "redis": "warming",
+                "queue": "warming",
+            }
+
+        _ready_aux_cache["refreshing"] = True
+
+    checks: Dict[str, Optional[str]] = {
+        "tables": None,
+        "migrations": None,
+        "redis": None,
+        "queue": None,
+    }
+
+    try:
+        try:
+            tables = db.execute(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='table'"
+            ).fetchone()[0]
+            checks["tables"] = f"{tables} tables"
+        except Exception as e:
+            checks["tables"] = str(e)
+
+        try:
+            migrations = db.execute(
+                "SELECT COUNT(*) FROM _schema_migrations"
+            ).fetchone()[0]
+            checks["migrations"] = f"{migrations} applied"
+        except Exception as e:
+            checks["migrations"] = str(e)
+
+        try:
+            redis_client = get_redis_client()
+            if redis_client is None:
+                checks["redis"] = "disabled"
+            else:
+                redis_client.ping()
+                checks["redis"] = "ok"
+        except Exception as e:
+            checks["redis"] = str(e)
+
+        try:
+            checks["queue"] = queue_health_status()
+        except Exception as e:
+            checks["queue"] = str(e)
+
+        with _ready_aux_lock:
+            _ready_aux_cache["at"] = now
+            _ready_aux_cache["checks"] = dict(checks)
+        return checks
+    finally:
+        with _ready_aux_lock:
+            _ready_aux_cache["refreshing"] = False
+
+
+def _get_health_runtime_status() -> Dict[str, str]:
+    """يجلب حالات Redis/Queue بكاش قصير لتقليل كلفة healthz تحت الحمل."""
+    now = monotonic()
+    with _health_aux_lock:
+        cached_at = float(_health_aux_cache.get("at") or 0.0)
+        if (now - cached_at) < _HEALTH_AUX_TTL_SEC:
+            return {
+                "redis": str(_health_aux_cache.get("redis") or "disabled"),
+                "queue": str(_health_aux_cache.get("queue") or "disabled"),
+            }
+
+    redis_status = "disabled"
+    redis_client = get_redis_client()
+    if redis_client is not None:
+        try:
+            redis_client.ping()
+            redis_status = "ok"
+        except Exception as exc:
+            redis_status = f"error: {exc}"
+    elif get_redis_error():
+        redis_status = f"disabled: {get_redis_error()}"
+
+    try:
+        queue_status = queue_health_status()
+    except Exception as exc:
+        queue_status = f"error: {exc}"
+
+    with _health_aux_lock:
+        _health_aux_cache["at"] = now
+        _health_aux_cache["redis"] = redis_status
+        _health_aux_cache["queue"] = queue_status
+
+    return {"redis": redis_status, "queue": queue_status}
+
+
 # ── تبديل اللغة ────────────────────────────────────────────────────────────────
 @bp.route("/set-lang/<lang>")
 def set_lang(lang):
@@ -175,24 +321,15 @@ def set_lang(lang):
 @bp.route("/healthz")
 def healthz():
     """فحص حياة الخدمة (للمراقبة و load balancer)."""
-    redis_status = "disabled"
-    redis_client = get_redis_client()
-    if redis_client is not None:
-        try:
-            redis_client.ping()
-            redis_status = "ok"
-        except Exception as exc:
-            redis_status = f"error: {exc}"
-    elif get_redis_error():
-        redis_status = f"disabled: {get_redis_error()}"
+    runtime = _get_health_runtime_status()
 
     return jsonify({
         "status": "ok",
         "platform": PLATFORM_NAME,
         "region": SAAS_REGION,
         "env": FLASK_ENV,
-        "redis": redis_status,
-        "queue": queue_health_status(),
+        "redis": runtime["redis"],
+        "queue": runtime["queue"],
         "time": datetime.now().isoformat(timespec="seconds"),
     }), 200
 
@@ -202,6 +339,101 @@ def healthz():
 def monitoring_dashboard():
     """لوحة مراقبة الأداء الحية."""
     return render_template("monitoring_dashboard.html")
+
+
+@bp.route("/api/v1/monitoring/summary")
+@owner_required
+def api_monitoring_summary():
+    db = get_db()
+    biz_id = int(session["business_id"])
+    user_id = int(session.get("user_id") or 0)
+    ensure_default_policies(db, biz_id)
+
+    pending_approvals = len(list_pending_requests(db, biz_id))
+    execution_pending = len(list_execution_queue(db, status="pending", limit=500, offset=0))
+    unread_notifications = count_unread_notifications(db, user_id=user_id) if user_id else 0
+
+    try:
+        audit_24h = db.execute(
+            """
+            SELECT COUNT(*)
+            FROM audit_logs
+            WHERE business_id=? AND datetime(created_at) >= datetime('now', '-24 hours')
+            """,
+            (biz_id,),
+        ).fetchone()[0]
+    except Exception:
+        audit_24h = 0
+
+    try:
+        policy_count = db.execute(
+            "SELECT COUNT(*) FROM operation_policies WHERE business_id=? AND is_active=1",
+            (biz_id,),
+        ).fetchone()[0]
+    except Exception:
+        policy_count = 0
+
+    try:
+        approval_policy_count = db.execute(
+            "SELECT COUNT(*) FROM approval_policies WHERE business_id=? AND is_active=1",
+            (biz_id,),
+        ).fetchone()[0]
+    except Exception:
+        approval_policy_count = 0
+
+    try:
+        recent_audit = db.execute(
+            """
+            SELECT action, entity_type, entity_id, created_at
+            FROM audit_logs
+            WHERE business_id=?
+            ORDER BY created_at DESC, id DESC
+            LIMIT 8
+            """,
+            (biz_id,),
+        ).fetchall()
+        recent_audit = [dict(r) for r in recent_audit]
+    except Exception:
+        recent_audit = []
+
+    try:
+        recent_requests = list_requests(db, biz_id, status=None, limit=8, offset=0)
+    except Exception:
+        recent_requests = []
+
+    try:
+        recent_queue = list_execution_queue(db, status=None, limit=8, offset=0)
+    except Exception:
+        recent_queue = []
+
+    try:
+        unread_preview = list_notifications(db, user_id=user_id, unread_only=True, limit=6, offset=0) if user_id else []
+    except Exception:
+        unread_preview = []
+
+    return jsonify({
+        "status": "ok",
+        "metrics": metrics.get_metrics_summary(),
+        "health": {
+            "queue": queue_health_status(),
+            "redis": "ok" if get_redis_client() else "disabled",
+        },
+        "summary": {
+            "pending_approvals": pending_approvals,
+            "execution_pending": execution_pending,
+            "unread_notifications": unread_notifications,
+            "audit_24h": int(audit_24h or 0),
+            "active_policies": int(policy_count or 0),
+            "active_approval_policies": int(approval_policy_count or 0),
+        },
+        "recent": {
+            "audit": recent_audit,
+            "approvals": recent_requests,
+            "queue": recent_queue,
+            "notifications": unread_preview,
+        },
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+    })
 
 
 @bp.route("/metrics")
@@ -277,36 +509,7 @@ def readyz():
     except Exception as e:
         checks["db"] = str(e)
     
-    try:
-        tables = db.execute(
-            "SELECT COUNT(*) FROM sqlite_master WHERE type='table'"
-        ).fetchone()[0]
-        checks["tables"] = f"{tables} tables"
-    except Exception as e:
-        checks["tables"] = str(e)
-    
-    try:
-        migrations = db.execute(
-            "SELECT COUNT(*) FROM _schema_migrations"
-        ).fetchone()[0]
-        checks["migrations"] = f"{migrations} applied"
-    except Exception as e:
-        checks["migrations"] = str(e)
-
-    try:
-        redis_client = get_redis_client()
-        if redis_client is None:
-            checks["redis"] = "disabled"
-        else:
-            redis_client.ping()
-            checks["redis"] = "ok"
-    except Exception as e:
-        checks["redis"] = str(e)
-
-    try:
-        checks["queue"] = queue_health_status()
-    except Exception as e:
-        checks["queue"] = str(e)
+    checks.update(_get_ready_aux_checks(db))
     
     elapsed_ms = int((datetime.now() - started).total_seconds() * 1000)
     ready = checks.get("db") == "ok"
@@ -944,6 +1147,7 @@ def onboarding():
 def settings():
     db     = get_db()
     biz_id = session["business_id"]
+    country_profile = g.country_profile
     can_edit_business = bool(user_has_perm("all") or user_has_perm("business_profile_edit"))
     can_skip_reason   = bool(user_has_perm("all") or user_has_perm("business_profile_reason_optional"))
     can_manage_premium = bool(user_has_perm("all"))
@@ -1155,14 +1359,20 @@ def settings():
             flash("اسم المنشأة مطلوب", "error")
             return redirect(url_for("core.settings"))
 
-        # التحقق من صحة الرقم الضريبي (15 رقماً إذا تم إدخاله)
-        if tax_number and (not tax_number.isdigit() or len(tax_number) != 15):
-            flash("❌ الرقم الضريبي يجب أن يكون 15 رقماً بالضبط", "error")
+        # تحقق ضريبي ديناميكي حسب الدولة بدل قواعد ثابتة.
+        tax_ok, tax_msg = validate_seller_tax_number_for_business(
+            db,
+            int(biz_id),
+            tax_number,
+            country_profile=country_profile,
+        )
+        if not tax_ok:
+            flash(f"❌ {tax_msg}", "error")
             return redirect(url_for("core.settings"))
 
-        # التحقق من رقم السجل التجاري (10 أرقام إذا تم إدخاله)
-        if cr_number and (not cr_number.isdigit() or len(cr_number) != 10):
-            flash("❌ رقم السجل التجاري يجب أن يكون 10 أرقام بالضبط", "error")
+        # تحقق مرن عالمي لرقم التسجيل التجاري.
+        if cr_number and (len(cr_number) < 6 or len(cr_number) > 25):
+            flash("❌ رقم التسجيل التجاري يجب أن يكون بين 6 و 25 خانة", "error")
             return redirect(url_for("core.settings"))
 
         logo_path = None
@@ -1280,6 +1490,11 @@ def settings():
         (biz_id,)
     ).fetchall()
     shared_services = [dict(r) for r in shared_services]
+    compliance_report = build_business_compliance_report(
+        db,
+        int(biz_id),
+        country_profile=country_profile,
+    )
 
     return render_template(
         "settings.html",
@@ -1291,6 +1506,7 @@ def settings():
         premium_addons=PREMIUM_ADDONS,
         premium_addons_state=premium_addons_state,
         shared_services=shared_services,
+        compliance_report=compliance_report,
     )
 
 
@@ -1407,6 +1623,7 @@ def api_team_add():
         )
         db.commit()
         role_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+        sync_role_permissions_from_legacy_json(db, int(role_id), "{}")
 
     pw_hash = hash_password(password)
     try:
@@ -1417,6 +1634,7 @@ def api_team_add():
         )
         db.commit()
         new_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+        sync_user_role_assignment(db, int(new_id), int(role_id) if role_id else None)
         return jsonify({"success": True, "id": new_id})
     except Exception as e:
         db.rollback()
@@ -1467,6 +1685,7 @@ def api_team_update(user_id: int):
             (full_name, phone, role_id, is_active, user_id)
         )
     db.commit()
+    sync_user_role_assignment(db, int(user_id), int(role_id) if role_id else None)
     return jsonify({"success": True})
 
 
@@ -1476,6 +1695,28 @@ def api_team_update(user_id: int):
 def api_team_user_perms(user_id: int):
     db     = get_db()
     biz_id = session["business_id"]
+    ensure_default_policies(db, int(biz_id))
+
+    gate = ensure_operation_or_create_request(
+        db,
+        business_id=int(biz_id),
+        user=(g.user or {}),
+        operation_key="permissions.update_user_permissions",
+        default_permission_key="settings",
+        entity_type="user",
+        entity_id=int(user_id),
+        reason="تحديث صلاحيات مستخدم",
+        payload={"requested_path": request.path},
+    )
+    if gate.get("approval_required"):
+        return jsonify({
+            "success": False,
+            "approval_required": True,
+            "request_id": gate.get("request_id"),
+            "message": "تم إنشاء طلب موافقة قبل تحديث الصلاحيات",
+        }), 202
+    if not gate.get("allowed"):
+        return jsonify({"error": gate.get("reason", "forbidden")}), 403
 
     row = db.execute(
         "SELECT u.role_id FROM users u WHERE u.id=? AND u.business_id=?",
@@ -1495,6 +1736,7 @@ def api_team_user_perms(user_id: int):
             "UPDATE roles SET permissions=? WHERE id=? AND business_id=?",
             (perms_j, role_id, biz_id)
         )
+        sync_role_permissions_from_legacy_json(db, int(role_id), perms_j)
     else:
         # إنشاء دور جديد خاص بهذا المستخدم
         db.execute(
@@ -1504,6 +1746,8 @@ def api_team_user_perms(user_id: int):
         db.commit()
         new_role_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
         db.execute("UPDATE users SET role_id=? WHERE id=?", (new_role_id, user_id))
+        sync_role_permissions_from_legacy_json(db, int(new_role_id), perms_j)
+        sync_user_role_assignment(db, int(user_id), int(new_role_id))
     db.commit()
     return jsonify({"success": True, "permissions": perms})
 
@@ -1514,11 +1758,22 @@ def api_team_user_perms(user_id: int):
 def api_roles_list():
     db     = get_db()
     biz_id = session["business_id"]
+    ensure_role_permission_sync(db)
     rows   = db.execute(
         "SELECT id, name, permissions, is_system FROM roles WHERE business_id=? ORDER BY name",
         (biz_id,)
     ).fetchall()
     return jsonify([dict(r) for r in rows])
+
+
+@bp.route("/api/v1/permissions", methods=["GET"])
+@owner_required
+def api_permissions_list():
+    db = get_db()
+    rows = db.execute("SELECT id, name FROM permissions ORDER BY name").fetchall()
+    if rows:
+        return jsonify({"items": [dict(r) for r in rows]})
+    return jsonify({"items": [{"id": i + 1, "name": name} for i, name in enumerate(DEFAULT_PERMISSION_KEYS)]})
 
 
 @bp.route("/api/v1/roles", methods=["POST"])
@@ -1538,6 +1793,7 @@ def api_roles_create():
         )
         db.commit()
         new_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+        sync_role_permissions_from_legacy_json(db, int(new_id), json.dumps(perms, ensure_ascii=False))
         return jsonify({"success": True, "id": new_id, "name": name, "permissions": perms})
     except Exception as e:
         db.rollback()
@@ -1565,6 +1821,7 @@ def api_roles_update(role_id: int):
         (name, json.dumps(perms, ensure_ascii=False), role_id)
     )
     db.commit()
+    sync_role_permissions_from_legacy_json(db, int(role_id), json.dumps(perms, ensure_ascii=False))
     return jsonify({"success": True})
 
 
@@ -1593,10 +1850,21 @@ def api_roles_delete(role_id: int):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def _table_exists(db, table: str) -> bool:
-    row = db.execute(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,)
-    ).fetchone()
-    return row is not None
+    return db_table_exists(db, table)
+
+
+def _parse_limit_offset_args(limit_default: int = 100, limit_max: int = 500) -> tuple[int, int]:
+    limit = max(1, min(int(request.args.get("limit", limit_default)), limit_max))
+    offset = max(0, int(request.args.get("offset", 0)))
+    return limit, offset
+
+
+def _extract_comment_value() -> str | None:
+    form_comment = request.form.get("comment") if request.form else None
+    if form_comment:
+        return form_comment
+    data = request.get_json(silent=True) or {}
+    return data.get("comment")
 
 
 @bp.route("/recycle-bin")
@@ -1698,6 +1966,7 @@ def api_recycle_restore(item_id: int):
 def api_recycle_delete_permanent(item_id: int):
     db     = get_db()
     biz_id = session["business_id"]
+    ensure_default_policies(db, int(biz_id))
     if not _table_exists(db, "recycle_bin"):
         return jsonify({"error": "سلة المهملات غير مهيأة"}), 500
 
@@ -1706,6 +1975,27 @@ def api_recycle_delete_permanent(item_id: int):
     ).fetchone()
     if not row:
         return jsonify({"error": "السجل غير موجود"}), 404
+
+    gate = ensure_operation_or_create_request(
+        db,
+        business_id=int(biz_id),
+        user=(g.user or {}),
+        operation_key="recycle_bin.permanent_delete",
+        default_permission_key="settings",
+        entity_type=str(row["entity_type"] or "recycle_bin"),
+        entity_id=int(row["entity_id"] or 0),
+        reason="حذف نهائي من سلة المهملات",
+        payload={"recycle_item_id": int(item_id)},
+    )
+    if gate.get("approval_required"):
+        return jsonify({
+            "success": False,
+            "approval_required": True,
+            "request_id": gate.get("request_id"),
+            "message": "تم إنشاء طلب موافقة قبل الحذف النهائي",
+        }), 202
+    if not gate.get("allowed"):
+        return jsonify({"error": gate.get("reason", "forbidden")}), 403
 
     try:
         write_audit_log(
@@ -1721,6 +2011,355 @@ def api_recycle_delete_permanent(item_id: int):
     except Exception as e:
         db.rollback()
         return jsonify({"error": str(e)}), 500
+
+
+# ── Policy & Approval APIs ───────────────────────────────────────────────────
+@bp.route("/api/v1/policies", methods=["GET"])
+@owner_required
+def api_policies_list():
+    db = get_db()
+    biz_id = int(session["business_id"])
+    ensure_default_policies(db, biz_id)
+    rows = db.execute(
+        """
+        SELECT operation_key, permission_key, requires_approval, min_approvals, owner_only, is_active, updated_at
+        FROM operation_policies
+        WHERE business_id=?
+        ORDER BY operation_key
+        """,
+        (biz_id,),
+    ).fetchall()
+    return jsonify({"items": [dict(r) for r in rows]})
+
+
+@bp.route("/api/v1/approval-policies", methods=["GET"])
+@owner_required
+def api_approval_policies_list():
+    db = get_db()
+    biz_id = int(session["business_id"])
+    ensure_default_policies(db, biz_id)
+
+    has_new_table = _table_exists(db, "approval_policies")
+    if not has_new_table:
+        return jsonify({"items": []})
+
+    rows = db.execute(
+        """
+        SELECT id, entity_type, action_type, requires_approval, conditions, role_based_rules, is_active
+        FROM approval_policies
+        WHERE business_id=?
+        ORDER BY entity_type, action_type
+        """,
+        (biz_id,),
+    ).fetchall()
+    return jsonify({"items": [dict(r) for r in rows]})
+
+
+@bp.route("/api/v1/approval-policies/<entity_type>/<action_type>", methods=["PUT"])
+@owner_required
+def api_approval_policies_upsert(entity_type: str, action_type: str):
+    db = get_db()
+    biz_id = int(session["business_id"])
+    ensure_default_policies(db, biz_id)
+
+    has_new_table = _table_exists(db, "approval_policies")
+    if not has_new_table:
+        return jsonify({"error": "approval_policies_not_initialized"}), 500
+
+    data = request.get_json(silent=True) or {}
+    requires_approval = int(bool(data.get("requires_approval", False)))
+    is_active = int(bool(data.get("is_active", True)))
+
+    conditions = data.get("conditions")
+    if not isinstance(conditions, dict):
+        conditions = {}
+    role_rules = data.get("role_based_rules")
+    if not isinstance(role_rules, dict):
+        role_rules = {}
+
+    db.execute(
+        """
+        INSERT INTO approval_policies (
+            business_id, entity_type, action_type,
+            requires_approval, conditions, role_based_rules, is_active, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        ON CONFLICT(business_id, entity_type, action_type) DO UPDATE SET
+            requires_approval=excluded.requires_approval,
+            conditions=excluded.conditions,
+            role_based_rules=excluded.role_based_rules,
+            is_active=excluded.is_active,
+            updated_at=datetime('now')
+        """,
+        (
+            biz_id,
+            entity_type,
+            action_type,
+            requires_approval,
+            json.dumps(conditions, ensure_ascii=False),
+            json.dumps(role_rules, ensure_ascii=False),
+            is_active,
+        ),
+    )
+    write_audit_log(
+        db,
+        biz_id,
+        action="approval_policy_updated",
+        entity_type="approval_policy",
+        entity_id=None,
+        new_value=json.dumps({
+            "entity_type": entity_type,
+            "action_type": action_type,
+            "requires_approval": requires_approval,
+            "conditions": conditions,
+            "role_based_rules": role_rules,
+            "is_active": is_active,
+        }, ensure_ascii=False),
+    )
+    if session.get("user_id"):
+        create_notification(
+            db,
+            user_id=int(session["user_id"]),
+            notif_type="policy_updated",
+            title="تم تحديث سياسة الموافقة",
+            message=f"{entity_type}/{action_type} تم تحديثه بنجاح.",
+        )
+    db.commit()
+    return jsonify({"success": True})
+
+
+@bp.route("/api/v1/policies/<operation_key>", methods=["PUT"])
+@owner_required
+def api_policies_upsert(operation_key: str):
+    db = get_db()
+    biz_id = int(session["business_id"])
+    user_id = int(session.get("user_id") or 0)
+    ensure_default_policies(db, biz_id)
+
+    data = request.get_json(silent=True) or {}
+    permission_key = (data.get("permission_key") or "").strip() or None
+    requires_approval = int(bool(data.get("requires_approval", False)))
+    min_approvals = max(1, int(data.get("min_approvals", 1) or 1))
+    owner_only = int(bool(data.get("owner_only", False)))
+    is_active = int(bool(data.get("is_active", True)))
+
+    db.execute(
+        """
+        INSERT INTO operation_policies (
+            business_id, operation_key, permission_key,
+            requires_approval, min_approvals, owner_only,
+            is_active, updated_by, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        ON CONFLICT(business_id, operation_key) DO UPDATE SET
+            permission_key=excluded.permission_key,
+            requires_approval=excluded.requires_approval,
+            min_approvals=excluded.min_approvals,
+            owner_only=excluded.owner_only,
+            is_active=excluded.is_active,
+            updated_by=excluded.updated_by,
+            updated_at=datetime('now')
+        """,
+        (biz_id, operation_key, permission_key, requires_approval, min_approvals, owner_only, is_active, user_id),
+    )
+    write_audit_log(
+        db,
+        biz_id,
+        action="policy_updated",
+        entity_type="operation_policy",
+        entity_id=None,
+        new_value=json.dumps({
+            "operation_key": operation_key,
+            "permission_key": permission_key,
+            "requires_approval": requires_approval,
+            "min_approvals": min_approvals,
+            "owner_only": owner_only,
+            "is_active": is_active,
+        }, ensure_ascii=False),
+    )
+    db.commit()
+    return jsonify({"success": True})
+
+
+@bp.route("/api/v1/approvals/pending", methods=["GET"])
+@owner_required
+def api_approvals_pending():
+    db = get_db()
+    biz_id = int(session["business_id"])
+    ensure_default_policies(db, biz_id)
+    items = list_pending_requests(db, biz_id)
+    return jsonify({"items": items})
+
+
+@bp.route("/api/v1/approvals", methods=["GET"])
+@owner_required
+def api_approvals_history():
+    db = get_db()
+    biz_id = int(session["business_id"])
+    ensure_default_policies(db, biz_id)
+    status = (request.args.get("status") or "").strip().lower() or None
+    limit, offset = _parse_limit_offset_args(limit_default=100, limit_max=500)
+    items = list_requests(db, biz_id, status=status, limit=limit, offset=offset)
+    return jsonify({"items": items})
+
+
+@bp.route("/api/v1/approvals/<int:req_id>", methods=["GET"])
+@owner_required
+def api_approvals_get(req_id: int):
+    db = get_db()
+    biz_id = int(session["business_id"])
+    ensure_default_policies(db, biz_id)
+    item = get_request_by_id(db, biz_id, int(req_id))
+    if not item:
+        return jsonify({"error": "request_not_found"}), 404
+    return jsonify(item)
+
+
+@bp.route("/api/v1/approvals/request", methods=["POST"])
+@onboarding_required
+def api_approvals_create():
+    db = get_db()
+    biz_id = int(session["business_id"])
+    ensure_default_policies(db, biz_id)
+
+    user_id = int(session.get("user_id") or 0)
+    data = request.get_json(silent=True) or {}
+
+    action_type = (data.get("action_type") or "").strip()
+    entity_type = (data.get("entity_type") or "").strip() or None
+    entity_id_raw = data.get("entity_id")
+    payload = data.get("payload")
+    reason = (data.get("reason") or "").strip()
+
+    if not action_type:
+        return jsonify({"error": "action_type_required"}), 400
+
+    entity_id = None
+    if entity_id_raw is not None and str(entity_id_raw).strip() != "":
+        try:
+            entity_id = int(entity_id_raw)
+        except Exception:
+            return jsonify({"error": "entity_id_must_be_integer"}), 400
+
+    req_id = create_approval_request(
+        db,
+        business_id=biz_id,
+        requested_by=user_id,
+        operation_key=action_type,
+        entity_type=entity_type,
+        entity_id=entity_id,
+        reason=reason or None,
+        payload=payload if isinstance(payload, dict) else {"value": payload} if payload is not None else None,
+        required_approvals=1,
+    )
+    return jsonify({"success": True, "id": req_id}), 201
+
+
+@bp.route("/api/v1/approvals/<int:req_id>/approve", methods=["POST"])
+@owner_required
+def api_approvals_approve(req_id: int):
+    db = get_db()
+    biz_id = int(session["business_id"])
+    ensure_default_policies(db, biz_id)
+    comment = _extract_comment_value()
+    out = approve_request(
+        db,
+        business_id=biz_id,
+        request_id=int(req_id),
+        approver_user=(g.user or {}),
+        comment=comment,
+    )
+    if not out.get("ok"):
+        return jsonify(out), 400
+    return jsonify(out)
+
+
+@bp.route("/api/v1/approvals/<int:req_id>/reject", methods=["POST"])
+@owner_required
+def api_approvals_reject(req_id: int):
+    db = get_db()
+    biz_id = int(session["business_id"])
+    ensure_default_policies(db, biz_id)
+    comment = _extract_comment_value()
+    out = reject_request(
+        db,
+        business_id=biz_id,
+        request_id=int(req_id),
+        approver_user=(g.user or {}),
+        comment=comment,
+    )
+    if not out.get("ok"):
+        return jsonify(out), 400
+    return jsonify(out)
+
+
+@bp.route("/api/v1/execution-queue", methods=["GET"])
+@owner_required
+def api_execution_queue_list():
+    db = get_db()
+    status = (request.args.get("status") or "").strip().lower() or None
+    limit, offset = _parse_limit_offset_args(limit_default=100, limit_max=500)
+    items = list_execution_queue(db, status=status, limit=limit, offset=offset)
+    return jsonify({"items": items})
+
+
+@bp.route("/api/v1/execution-queue/process", methods=["POST"])
+@owner_required
+def api_execution_queue_process():
+    db = get_db()
+    data = request.get_json(silent=True) or {}
+    limit = max(1, min(int(data.get("limit", 100)), 1000))
+    out = process_pending_queue(db, limit=limit)
+    write_audit_log(
+        db,
+        int(session["business_id"]),
+        action="execution_queue_processed",
+        entity_type="execution_queue",
+        entity_id=None,
+        new_value=json.dumps(out, ensure_ascii=False),
+    )
+    return jsonify({"success": True, **out})
+
+
+# ── Notifications ───────────────────────────────────────────────────────────
+@bp.route("/notifications")
+@onboarding_required
+def notifications_page():
+    return render_template("notifications.html")
+
+
+@bp.route("/api/v1/notifications")
+@onboarding_required
+def api_notifications_list():
+    db = get_db()
+    user_id = int(session.get("user_id") or 0)
+    unread_only = request.args.get("unread", "0") == "1"
+    limit, offset = _parse_limit_offset_args(limit_default=100, limit_max=500)
+    items = list_notifications(db, user_id=user_id, unread_only=unread_only, limit=limit, offset=offset)
+    return jsonify({"items": items, "unread_count": count_unread_notifications(db, user_id=user_id)})
+
+
+@bp.route("/api/v1/notifications/unread-count")
+@onboarding_required
+def api_notifications_unread_count():
+    db = get_db()
+    return jsonify({"unread_count": count_unread_notifications(db, user_id=int(session.get("user_id") or 0))})
+
+
+@bp.route("/api/v1/notifications/<int:notif_id>/read", methods=["POST"])
+@onboarding_required
+def api_notifications_mark_read(notif_id: int):
+    db = get_db()
+    ok = mark_notification_read(db, user_id=int(session.get("user_id") or 0), notification_id=int(notif_id))
+    return jsonify({"success": ok}) if ok else (jsonify({"error": "notification_not_found"}), 404)
+
+
+@bp.route("/api/v1/notifications/read-all", methods=["POST"])
+@onboarding_required
+def api_notifications_mark_all_read():
+    db = get_db()
+    marked = mark_all_notifications_read(db, user_id=int(session.get("user_id") or 0))
+    return jsonify({"success": True, "marked": marked})
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1953,6 +2592,7 @@ def api_backup_download():
         "contacts", "invoices", "invoice_lines",
         "accounts", "journal_entries", "journal_entry_lines",
         "tax_settings", "reminders",
+        "notifications",
     ]
 
     backup_data: dict = {
@@ -1970,11 +2610,16 @@ def api_backup_download():
                 rows = db.execute("SELECT * FROM businesses WHERE id=?", (biz_id,)).fetchall()
             elif table in ("users", "roles", "settings",
                            "products", "product_categories", "warehouses",
-                           "contacts", "accounts", "tax_settings", "reminders"):
+                           "contacts", "accounts", "tax_settings", "reminders", "notifications"):
                 safe_table = safe_sql_identifier(table)
-                rows = db.execute(
-                    f"SELECT * FROM {safe_table} WHERE business_id=?", (biz_id,)  # nosec B608
-                ).fetchall()
+                if table == "notifications":
+                    rows = db.execute(
+                        f"SELECT n.* FROM {safe_table} n JOIN users u ON u.id = n.user_id WHERE u.business_id=?", (biz_id,)  # nosec B608
+                    ).fetchall()
+                else:
+                    rows = db.execute(
+                        f"SELECT * FROM {safe_table} WHERE business_id=?", (biz_id,)  # nosec B608
+                    ).fetchall()
             elif table == "stock":
                 rows = db.execute(
                     """SELECT s.* FROM stock s

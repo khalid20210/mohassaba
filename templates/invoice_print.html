@@ -36,6 +36,11 @@
     .btn-print   { background: #10b981; color: #fff; }
     .btn-thermal { background: #6366f1; color: #fff; }
     .btn-back    { background: #475569; color: #fff; }
+    .btn-thermal-active { background: #6366f1; }
+    .btn-thermal-inactive { background: #475569; }
+    .invoice-status-paid { color: #10b981; }
+    .invoice-status-draft { color: #f59e0b; }
+    .invoice-status-other { color: #ef4444; }
 
     /* ═══ غلاف الورقة ═══ */
     .invoice-wrapper {
@@ -122,7 +127,7 @@
       .no-print { display: none !important; }
       .invoice-wrapper.a4 {
         margin: 0; border-radius: 0; box-shadow: none;
-        width: 100%; min-height: auto;
+        width: 100%; min-height: 0;
       }
     }
 
@@ -149,7 +154,23 @@
         margin: 0; box-shadow: none; border-radius: 0;
       }
     }
-  </style>
+  .u_80d654f9c8{text-decoration:none}
+.u_38d73cd120{position:fixed;top:50px;left:0;right:0;z-index:99;background:#fef3c7;color:#92400e;border-top:3px solid #f59e0b;font-size:.85rem;padding:8px 20px;display:flex;align-items:center;gap:10px}
+.u_7b81b7796e{color:#1d4ed8;font-weight:700;text-decoration:underline}
+.u_4e420aff3f{margin-bottom:6px}
+.u_e870b6dd8c{max-height:50px;max-width:60mm;object-fit:contain;margin-bottom:4px}
+.u_fb2957a37e{font-size:9px}
+.u_dfd85d4407{font-size:9px;margin-top:2px}
+.u_54c2afb7ba{text-align:right}
+.u_c2943c7b67{font-size:1.05em}
+.u_f82dbd936f{display:inline-block;margin:6px 0}
+.u_a3ea83cebd{font-size:8px;color:#888}
+.u_411bcb0dd3{margin-bottom:8px;display:block}
+.u_ea6e975eba{margin-top:6px;font-size:.82rem}
+.u_b0eb59c131{color:#ef4444}
+.u_dab557b96a{color:#6366f1}
+.u_6b4d39e2c1{margin-top:8px;color:#9ca3af;font-size:.72rem}
+</style>
 </head>
 <body>
 
@@ -157,25 +178,23 @@
 <div class="no-print">
   <h3>🧾 معاينة الفاتورة — {{ inv.invoice_number }}</h3>
   <button class="btn-print"   onclick="window.print()">🖨️ طباعة</button>
-  <a href="{{ url_for('invoice_print', inv_id=inv.id, mode='a4') }}"
-     style="text-decoration:none">
-    <button class="btn-thermal" style="background:{% if mode=='a4' %}#6366f1{% else %}#475569{% endif %}">
+  <a href="{{ url_for('accounting.invoice_print', inv_id=inv.id, mode='a4') }}" class="u_80d654f9c8">
+    <button class="btn-thermal {% if mode=='a4' %}btn-thermal-active{% else %}btn-thermal-inactive{% endif %}">
       📄 A4
     </button>
   </a>
-  <a href="{{ url_for('invoice_print', inv_id=inv.id, mode='thermal') }}"
-     style="text-decoration:none">
-    <button class="btn-thermal" style="background:{% if mode=='thermal' %}#6366f1{% else %}#475569{% endif %}">
+  <a href="{{ url_for('accounting.invoice_print', inv_id=inv.id, mode='thermal') }}" class="u_80d654f9c8">
+    <button class="btn-thermal {% if mode=='thermal' %}btn-thermal-active{% else %}btn-thermal-inactive{% endif %}">
       🧾 Thermal 80mm
     </button>
   </a>
   <button class="btn-back" onclick="history.back()">← رجوع</button>
 </div>
 
-{% if not biz.tax_number %}
-<div style="position:fixed;top:50px;left:0;right:0;z-index:99;background:#fef3c7;color:#92400e;border-top:3px solid #f59e0b;font-size:.85rem;padding:8px 20px;display:flex;align-items:center;gap:10px" class="no-print">
-  ⚠️ <strong>تحذير ZATCA:</strong> الرقم الضريبي للمنشأة غير مُضاف! رمز QR لن يكون صالحاً.
-  <a href="{{ url_for('core.settings') }}" style="color:#1d4ed8;font-weight:700;text-decoration:underline">← الإعدادات لإضافته</a>
+{% if requires_zatca and not biz.tax_number %}
+<div class="no-print u_38d73cd120">
+  ⚠️ <strong>تحذير ZATCA:</strong> {{ tax_number_label }} للمنشأة غير مُضاف! رمز QR لن يكون صالحاً.
+  <a href="{{ url_for('core.settings') }}" class="u_7b81b7796e">← الإعدادات لإضافته</a>
 </div>
 {% endif %}
 
@@ -185,24 +204,23 @@
 ═════════════════════════════════════════════════ -->
 <div class="invoice-wrapper thermal">
 
-  <div class="th-center" style="margin-bottom:6px">
+  <div class="th-center u_4e420aff3f">
     {% if biz.logo_path %}
-      <img src="{{ biz.logo_path }}" alt="logo"
-           style="max-height:50px;max-width:60mm;object-fit:contain;margin-bottom:4px">
+      <img src="{{ biz.logo_path }}" alt="logo" class="u_e870b6dd8c">
     {% endif %}
     <div class="th-biz-name">{{ biz.name or 'المنشأة' }}</div>
-    {% if biz.tax_number %}<div style="font-size:9px">الرقم الضريبي: {{ biz.tax_number }}</div>{% endif %}
-    {% if biz.phone %}<div style="font-size:9px">{{ biz.phone }}</div>{% endif %}
-    {% if biz.address %}<div style="font-size:9px">{{ biz.address }}</div>{% endif %}
+    {% if biz.tax_number %}<div class="u_fb2957a37e">{{ tax_number_label }}: {{ biz.tax_number }}</div>{% endif %}
+    {% if biz.phone %}<div class="u_fb2957a37e">{{ biz.phone }}</div>{% endif %}
+    {% if biz.address %}<div class="u_fb2957a37e">{{ biz.address }}</div>{% endif %}
   </div>
 
   <hr class="th-divider">
 
   <div class="th-center">
     <div class="th-inv-num">{{ inv.invoice_number }}</div>
-    <div style="font-size:9px">{{ inv.invoice_date }}</div>
+    <div class="u_fb2957a37e">{{ inv.invoice_date }}</div>
     {% if inv.party_name %}
-    <div style="font-size:9px;margin-top:2px">العميل: {{ inv.party_name }}</div>
+    <div class="u_dfd85d4407">العميل: {{ inv.party_name }}</div>
     {% endif %}
   </div>
 
@@ -229,24 +247,24 @@
     </tbody>
     <tfoot>
       <tr class="th-total-row">
-        <td colspan="3" style="text-align:right">المجموع قبل الضريبة</td>
+        <td colspan="3" class="u_54c2afb7ba">المجموع قبل الضريبة</td>
         <td class="r">{{ "%.2f"|format(inv.subtotal) }}</td>
       </tr>
       {% if inv.tax_amount and inv.tax_amount > 0 %}
       <tr>
-        <td colspan="3" style="text-align:right">ضريبة القيمة المضافة 15%</td>
+        <td colspan="3" class="u_54c2afb7ba">{{ tax_label_ar }} {{ '%.2f'|format(default_tax_rate) }}%</td>
         <td class="r">{{ "%.2f"|format(inv.tax_amount) }}</td>
       </tr>
       {% endif %}
       {% if inv.discount_amount and inv.discount_amount > 0 %}
       <tr>
-        <td colspan="3" style="text-align:right">الخصم</td>
+        <td colspan="3" class="u_54c2afb7ba">الخصم</td>
         <td class="r">-{{ "%.2f"|format(inv.discount_amount) }}</td>
       </tr>
       {% endif %}
-      <tr class="th-total-row" style="font-size:1.05em">
-        <td colspan="3" style="text-align:right">الإجمالي</td>
-        <td class="r">{{ "%.2f"|format(inv.total) }} {{ biz.currency or 'ر.س' }}</td>
+      <tr class="th-total-row u_c2943c7b67">
+        <td colspan="3" class="u_54c2afb7ba">الإجمالي</td>
+        <td class="r">{{ "%.2f"|format(inv.total) }} {{ biz.currency or currency_symbol }}</td>
       </tr>
     </tfoot>
   </table>
@@ -255,8 +273,8 @@
 
   <!-- QR Thermal -->
   <div class="th-center">
-    <div id="thermalQr" style="display:inline-block;margin:6px 0"></div>
-    <div style="font-size:8px;color:#888">ZATCA QR Code</div>
+    <div id="thermalQr" class="u_f82dbd936f"></div>
+    <div class="u_a3ea83cebd">{% if requires_zatca %}ZATCA{% else %}Tax{% endif %} QR Code</div>
   </div>
 
   <div class="th-footer">
@@ -276,12 +294,12 @@
   <div class="inv-header-a4">
     <div class="biz-info">
       {% if biz.logo_path %}
-        <img src="{{ biz.logo_path }}" alt="شعار" class="inv-logo" style="margin-bottom:8px;display:block">
+        <img src="{{ biz.logo_path }}" alt="شعار" class="inv-logo u_411bcb0dd3">
       {% else %}
         <div class="inv-logo-placeholder">🏪</div>
       {% endif %}
       <h1>{{ biz.name or 'المنشأة' }}</h1>
-      {% if biz.tax_number %}<p>الرقم الضريبي: {{ biz.tax_number }}</p>{% endif %}
+      {% if biz.tax_number %}<p>{{ tax_number_label }}: {{ biz.tax_number }}</p>{% endif %}
       {% if biz.cr_number  %}<p>السجل التجاري: {{ biz.cr_number }}</p>{% endif %}
       {% if biz.address    %}<p>{{ biz.address }}{% if biz.city %} — {{ biz.city }}{% endif %}</p>{% endif %}
       {% if biz.phone      %}<p>هاتف: {{ biz.phone }}</p>{% endif %}
@@ -295,12 +313,12 @@
         {% else %}فاتورة مبيعات{% endif %}
       </div>
       <div class="inv-num">{{ inv.invoice_number }}</div>
-      <div style="margin-top:6px;font-size:.82rem">
+      <div class="u_ea6e975eba">
         <div><strong>التاريخ:</strong> {{ inv.invoice_date or inv.created_at[:10] }}</div>
         {% if inv.due_date %}<div><strong>تاريخ الاستحقاق:</strong> {{ inv.due_date }}</div>{% endif %}
         <div><strong>طريقة الدفع:</strong> {{ payment_label or 'نقدي' }}</div>
         <div><strong>الحالة:</strong>
-          <span style="color:{% if inv.status=='paid' %}#10b981{% elif inv.status=='draft' %}#f59e0b{% else %}#ef4444{% endif %}">
+          <span class="{% if inv.status=='paid' %}invoice-status-paid{% elif inv.status=='draft' %}invoice-status-draft{% else %}invoice-status-other{% endif %}">
             {% if inv.status == 'paid' %}مدفوعة{% elif inv.status == 'draft' %}مسودة{% elif inv.status == 'partial' %}مدفوعة جزئياً{% elif inv.status == 'overdue' %}متأخرة{% else %}{{ inv.status }}{% endif %}
           </span>
         </div>
@@ -313,13 +331,13 @@
     <div class="inv-party-box">
       <h4>من (البائع)</h4>
       <div class="party-name">{{ biz.name or '—' }}</div>
-      {% if biz.tax_number %}<p>الرقم الضريبي: {{ biz.tax_number }}</p>{% endif %}
+      {% if biz.tax_number %}<p>{{ tax_number_label }}: {{ biz.tax_number }}</p>{% endif %}
       {% if biz.address    %}<p>{{ biz.address }}</p>{% endif %}
     </div>
     <div class="inv-party-box">
       <h4>إلى (المشتري / العميل)</h4>
       <div class="party-name">{{ inv.party_name or 'عميل نقدي' }}</div>
-      {% if client_vat %}<p>الرقم الضريبي: <strong dir="ltr">{{ client_vat }}</strong></p>{% endif %}
+      {% if client_vat %}<p>{{ tax_number_label }}: <strong dir="ltr">{{ client_vat }}</strong></p>{% endif %}
     </div>
   </div>
 
@@ -331,7 +349,7 @@
         <th>الصنف / الوصف</th>
         <th class="num">الكمية</th>
         <th class="num">سعر الوحدة</th>
-        {% if inv.tax_amount and inv.tax_amount > 0 %}<th class="num">ضريبة 15%</th>{% endif %}
+        {% if inv.tax_amount and inv.tax_amount > 0 %}<th class="num">{{ tax_label_ar }} {{ '%.2f'|format(default_tax_rate) }}%</th>{% endif %}
         {% if inv.discount_amount and inv.discount_amount > 0 %}<th class="num">الخصم</th>{% endif %}
         <th class="num">الإجمالي</th>
       </tr>
@@ -347,7 +365,7 @@
           <td class="num">{{ "%.2f"|format(l.tax_amount or 0) }}</td>
         {% endif %}
         {% if inv.discount_amount and inv.discount_amount > 0 %}
-          <td class="num" style="color:#ef4444">{% if l.discount_amount and l.discount_amount > 0 %}-{{ "%.2f"|format(l.discount_amount) }}{% else %}—{% endif %}</td>
+          <td class="num u_b0eb59c131">{% if l.discount_amount and l.discount_amount > 0 %}-{{ "%.2f"|format(l.discount_amount) }}{% else %}—{% endif %}</td>
         {% endif %}
         <td class="num">{{ "%.2f"|format(l.total) }}</td>
       </tr>
@@ -361,18 +379,18 @@
       {% if inv.discount_amount and inv.discount_amount > 0 %}
       <tr>
         <td colspan="5">الخصم</td>
-        <td class="num" style="color:#ef4444">-{{ "%.2f"|format(inv.discount_amount) }}</td>
+        <td class="num u_b0eb59c131">-{{ "%.2f"|format(inv.discount_amount) }}</td>
       </tr>
       {% endif %}
       {% if inv.tax_amount and inv.tax_amount > 0 %}
       <tr>
-        <td colspan="5">ضريبة القيمة المضافة (15%)</td>
-        <td class="num" style="color:#6366f1">{{ "%.2f"|format(inv.tax_amount) }}</td>
+        <td colspan="5">{{ tax_label_ar }} ({{ '%.2f'|format(default_tax_rate) }}%)</td>
+        <td class="num u_dab557b96a">{{ "%.2f"|format(inv.tax_amount) }}</td>
       </tr>
       {% endif %}
       <tr class="total-row">
         <td colspan="5">الإجمالي المستحق</td>
-        <td class="num">{{ "%.2f"|format(inv.total) }} {{ biz.currency or 'ر.س' }}</td>
+        <td class="num">{{ "%.2f"|format(inv.total) }} {{ biz.currency or currency_symbol }}</td>
       </tr>
     </tfoot>
   </table>
@@ -386,13 +404,13 @@
       <strong>ملاحظات:</strong><br>{{ inv.notes }}
       {% endif %}
       <br>
-      <div style="margin-top:8px;color:#9ca3af;font-size:.72rem">
+      <div class="u_6b4d39e2c1">
         تم إنشاء هذه الفاتورة إلكترونياً وهي صالحة بدون توقيع أو ختم.
       </div>
     </div>
     <div class="inv-qr-wrap">
       <div id="a4Qr"></div>
-      <p>QR Code ZATCA<br>{{ biz.tax_number or '' }}</p>
+      <p>QR Code {% if requires_zatca %}ZATCA{% else %}Tax{% endif %}<br>{{ biz.tax_number or '' }}</p>
     </div>
   </div>
 

@@ -12,15 +12,27 @@
   .badge-draft     { background:#f3f4f6; color:#6b7280; }
   .badge-converted { background:#d1fae5; color:#065f46; }
   .badge-cancelled { background:#fee2e2; color:#991b1b; }
+.u_24c1b8524e{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.filter-chip{padding:6px 14px;border-radius:6px;text-decoration:none;font-size:13px;display:inline-block}
+.filter-chip-active{background:#3b82f6;color:#fff}
+.filter-chip-idle{background:#f3f4f6;color:#374151}
+.u_81fe8756c4{background:#10b981;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold}
+.u_28aafc72c1{color:#3b82f6;font-weight:bold}
+.u_bff3d12c90{font-weight:bold}
+.u_49cd09213e{display:flex;gap:6px}
+.u_b683b721d0{background:#3b82f6;color:white;padding:4px 10px;border-radius:4px;text-decoration:none;font-size:12px}
+.u_cccfa4560d{display:inline}
+.u_d1412e4eaa{background:#10b981;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px}
+.u_e8d0fd0913{text-align:center;color:#999;padding:30px}
 </style>
 
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+<div class="u_24c1b8524e">
   <div>
-    <a href="?status=" style="padding:6px 14px;border-radius:6px;text-decoration:none;font-size:13px;{% if not status_filter %}background:#3b82f6;color:white{% else %}background:#f3f4f6;color:#374151{% endif %}">الكل</a>
-    <a href="?status=draft" style="padding:6px 14px;border-radius:6px;text-decoration:none;font-size:13px;{% if status_filter=='draft' %}background:#3b82f6;color:white{% else %}background:#f3f4f6;color:#374151{% endif %}">مسودة</a>
-    <a href="?status=converted" style="padding:6px 14px;border-radius:6px;text-decoration:none;font-size:13px;{% if status_filter=='converted' %}background:#3b82f6;color:white{% else %}background:#f3f4f6;color:#374151{% endif %}">محوّل</a>
+    <a href="?status=" class="filter-chip {% if not status_filter %}filter-chip-active{% else %}filter-chip-idle{% endif %}">الكل</a>
+    <a href="?status=draft" class="filter-chip {% if status_filter=='draft' %}filter-chip-active{% else %}filter-chip-idle{% endif %}">مسودة</a>
+    <a href="?status=converted" class="filter-chip {% if status_filter=='converted' %}filter-chip-active{% else %}filter-chip-idle{% endif %}">محوّل</a>
   </div>
-  <a href="/wholesale/quotes/new" style="background:#10b981;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold">+ عرض سعر جديد</a>
+  <a href="/wholesale/quotes/new" class="u_81fe8756c4">+ عرض سعر جديد</a>
 </div>
 
 <div class="card">
@@ -39,11 +51,11 @@
     <tbody>
       {% for q in quotes %}
       <tr>
-        <td><a href="/wholesale/quotes/{{ q.id }}" style="color:#3b82f6;font-weight:bold">{{ q.quote_number }}</a></td>
+        <td><a href="/wholesale/quotes/{{ q.id }}" class="u_28aafc72c1">{{ q.quote_number }}</a></td>
         <td>{{ q.customer_name or q.cname or '—' }}</td>
         <td>{{ q.quote_date }}</td>
         <td>{{ q.expiry_date or '—' }}</td>
-        <td style="font-weight:bold">{{ "{:,.2f}".format(q.total_amount) }} ر.س</td>
+        <td class="u_bff3d12c90">{{ "{:,.2f}".format(q.total_amount) }} ر.س</td>
         <td>
           {% if q.status == 'converted' %}
             <span class="badge badge-converted">محوّل لطلب</span>
@@ -53,17 +65,17 @@
             <span class="badge badge-draft">مسودة</span>
           {% endif %}
         </td>
-        <td style="display:flex;gap:6px">
-          <a href="/wholesale/quotes/{{ q.id }}" style="background:#3b82f6;color:white;padding:4px 10px;border-radius:4px;text-decoration:none;font-size:12px">عرض</a>
+        <td class="u_49cd09213e">
+          <a href="/wholesale/quotes/{{ q.id }}" class="u_b683b721d0">عرض</a>
           {% if q.status == 'draft' %}
-          <form method="post" action="/wholesale/quotes/{{ q.id }}/to-order" style="display:inline">
-            <button style="background:#10b981;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">تحويل لطلب</button>
+          <form method="post" action="/wholesale/quotes/{{ q.id }}/to-order" class="u_cccfa4560d">
+            <button type="submit" class="u_d1412e4eaa">تحويل لطلب</button>
           </form>
           {% endif %}
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="7" style="text-align:center;color:#999;padding:30px">لا توجد عروض أسعار بعد</td></tr>
+      <tr><td colspan="7" class="u_e8d0fd0913">لا توجد عروض أسعار بعد</td></tr>
       {% endfor %}
     </tbody>
   </table>

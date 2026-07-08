@@ -1,3 +1,35 @@
+<style>
+.u_6b00e75351{display:flex;gap:10px;}
+.u_7dde5e56b3{margin-bottom:20px;}
+.u_ccf6f57246{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.status-group-title{margin-bottom:12px;font-size:.95rem;}
+.status-group-in_progress{color:#38bdf8;}
+.status-group-planned{color:#a78bfa;}
+.status-group-completed{color:#22c55e;}
+.status-group-on_hold{color:#f59e0b;}
+.status-group-cancelled{color:#ef4444;}
+.u_4edeb9e71d{text-decoration:none;}
+.u_34680724d3{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+.u_69654ce970{margin:0;color:#e2e8f0;}
+.status-pill{background:rgba(255,255,255,.06);padding:2px 8px;border-radius:20px;font-size:.75rem;}
+.status-pill-in_progress{color:#38bdf8;}
+.status-pill-planned{color:#a78bfa;}
+.status-pill-completed{color:#22c55e;}
+.status-pill-on_hold{color:#f59e0b;}
+.status-pill-cancelled{color:#ef4444;}
+.u_3015848aec{color:#94a3b8;font-size:.83rem;margin:0 0 12px;}
+.u_1c389be547{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.82rem;}
+.u_93e6231cbb{color:#64748b;}
+.u_0cfaf7afe1{color:#38bdf8;font-weight:700;}
+.u_aa3ee35a72{color:#94a3b8;}
+.u_d935f8d5da{margin-top:12px;background:rgba(255,255,255,.06);border-radius:20px;height:6px;overflow:hidden;}
+.budget-progress-fill{height:100%;border-radius:20px;}
+.budget-progress-fill.within-budget{background:#38bdf8;}
+.budget-progress-fill.over-budget{background:#ef4444;}
+.u_badef93ce7{text-align:center;padding:60px;}
+.u_ed86f0e6c8{font-size:3rem;margin-bottom:16px;}
+.u_8a359a76eb{margin-top:16px;}
+</style>
 ﻿{% extends "base.html" %}
 {% block title %}ط§ظ„ظ…ط´ط§ط±ظٹط¹{% endblock %}
 {% block page_title %}ًںڈ—ï¸ڈ ظ‚ط§ط¦ظ…ط© ط§ظ„ظ…ط´ط§ط±ظٹط¹{% endblock %}
@@ -5,34 +37,34 @@
 {% block content %}
 <div class="page-header">
   <div><p class="page-subtitle">{{ projects|length }} ظ…ط´ط±ظˆط¹</p></div>
-  <div style="display:flex;gap:10px;">
+  <div class="u_6b00e75351">
     <a href="/projects/equipment" class="btn btn-secondary">ًں›‍ ط§ظ„ظ…ط¹ط¯ط§طھ</a>
-    <button class="btn btn-primary" onclick="document.getElementById('newProjectModal').classList.add('show')">+ ظ…ط´ط±ظˆط¹ ط¬ط¯ظٹط¯</button>
+    <a href="/projects/new" class="btn btn-primary">+ ظ…ط´ط±ظˆط¹ ط¬ط¯ظٹط¯</a>
   </div>
 </div>
 
-{% for status_label, status_key, color in [('ط¬ط§ط±ظٹط©','in_progress','#38bdf8'),('ظ…ظڈط®ط·ط·ط©','planned','#a78bfa'),('ظ…ظƒطھظ…ظ„ط©','completed','#22c55e'),('ظ…ط¤ط¬ظ„ط©','on_hold','#f59e0b'),('ظ…ظ„ط؛ظٹط©','cancelled','#ef4444')] %}
+{% for status_label, status_key in [('ط¬ط§ط±ظٹط©','in_progress'),('ظ…ظڈط®ط·ط·ط©','planned'),('ظ…ظƒطھظ…ظ„ط©','completed'),('ظ…ط¤ط¬ظ„ط©','on_hold'),('ظ…ظ„ط؛ظٹط©','cancelled')] %}
 {% set group = projects | selectattr('status','eq', status_key) | list %}
 {% if group %}
-<div style="margin-bottom:20px;">
-  <h3 style="color:{{ color }};margin-bottom:12px;font-size:.95rem;">â—ڈ {{ status_label }} ({{ group|length }})</h3>
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
+<div class="u_7dde5e56b3">
+  <h3 class="status-group-title status-group-{{ status_key }}">â—ڈ {{ status_label }} ({{ group|length }})</h3>
+  <div class="u_ccf6f57246">
     {% for p in group %}
-    <a href="/projects/{{ p.id }}" style="text-decoration:none;" class="card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
-        <h4 style="margin:0;color:#e2e8f0;">{{ p.project_name or p.name }}</h4>
-        <span style="background:rgba(255,255,255,.06);padding:2px 8px;border-radius:20px;font-size:.75rem;color:{{ color }};">{{ status_label }}</span>
+    <a href="/projects/{{ p.id }}" class="card u_4edeb9e71d">
+      <div class="u_34680724d3">
+        <h4 class="u_69654ce970">{{ p.project_name or p.name }}</h4>
+        <span class="status-pill status-pill-{{ status_key }}">{{ status_label }}</span>
       </div>
-      <p style="color:#94a3b8;font-size:.83rem;margin:0 0 12px;">ًں“چ {{ p.project_location or p.location or 'ظ…ظˆظ‚ط¹ ط؛ظٹط± ظ…ط­ط¯ط¯' }}</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.82rem;">
-        <div style="color:#64748b;">ط§ظ„ظ…ظٹط²ط§ظ†ظٹط©</div>
-        <div style="color:#38bdf8;font-weight:700;">{{ "{:,.0f}".format(p.budget or 0) }} ط±.ط³</div>
-        <div style="color:#64748b;">ط§ظ„ط¨ط¯ط،</div>
-        <div style="color:#94a3b8;">{{ p.planned_start_date or p.start_date or 'â€”' }}</div>
+      <p class="u_3015848aec">ًں“چ {{ p.project_location or p.location or 'ظ…ظˆظ‚ط¹ ط؛ظٹط± ظ…ط­ط¯ط¯' }}</p>
+      <div class="u_1c389be547">
+        <div class="u_93e6231cbb">ط§ظ„ظ…ظٹط²ط§ظ†ظٹط©</div>
+        <div class="u_0cfaf7afe1">{{ "{:,.0f}".format(p.budget or 0) }} ط±.ط³</div>
+        <div class="u_93e6231cbb">ط§ظ„ط¨ط¯ط،</div>
+        <div class="u_aa3ee35a72">{{ p.planned_start_date or p.start_date or 'â€”' }}</div>
       </div>
       {% if p.budget and p.budget > 0 %}
-      <div style="margin-top:12px;background:rgba(255,255,255,.06);border-radius:20px;height:6px;overflow:hidden;">
-        <div style="height:100%;width:{{ [((p.actual_cost or 0)/p.budget*100)|int, 100]|min }}%;background:{{ '#ef4444' if (p.actual_cost or 0) > p.budget else '#38bdf8' }};border-radius:20px;"></div>
+      <div class="u_d935f8d5da">
+        <div class="budget-progress-fill {% if (p.actual_cost or 0) > p.budget %}over-budget{% else %}within-budget{% endif %}" data-width="{{ [((p.actual_cost or 0)/p.budget*100)|int, 100]|min }}"></div>
       </div>
       {% endif %}
     </a>
@@ -43,65 +75,17 @@
 {% endfor %}
 
 {% if not projects %}
-<div class="card" style="text-align:center;padding:60px;">
-  <div style="font-size:3rem;margin-bottom:16px;">ًںڈ—ï¸ڈ</div>
+<div class="card u_badef93ce7">
+  <div class="u_ed86f0e6c8">ًںڈ—ï¸ڈ</div>
   <h3>ظ„ط§ طھظˆط¬ط¯ ظ…ط´ط§ط±ظٹط¹</h3>
-  <button class="btn btn-primary" style="margin-top:16px;" onclick="document.getElementById('newProjectModal').classList.add('show')">ط¥ط¶ط§ظپط© ظ…ط´ط±ظˆط¹ ط£ظˆظ„</button>
+  <a href="/projects/new" class="btn btn-primary u_8a359a76eb">ط¥ط¶ط§ظپط© ظ…ط´ط±ظˆط¹ ط£ظˆظ„</a>
 </div>
 {% endif %}
-
-<!-- Modal: ظ…ط´ط±ظˆط¹ ط¬ط¯ظٹط¯ -->
-<div class="modal-overlay" id="newProjectModal">
-  <div class="modal-box" style="max-width:560px;">
-    <div class="modal-header">
-      <h3 class="modal-title">ًںڈ—ï¸ڈ ظ…ط´ط±ظˆط¹ ط¬ط¯ظٹط¯</h3>
-      <button class="modal-close" onclick="document.getElementById('newProjectModal').classList.remove('show')">âœ•</button>
-    </div>
-    <form method="post" action="/projects/new">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="form-group" style="grid-column:1/-1;">
-          <label class="form-label">ط§ط³ظ… ط§ظ„ظ…ط´ط±ظˆط¹ *</label>
-          <input name="name" class="form-input" placeholder="ظ…ط´ط±ظˆط¹ ط¥ظ†ط´ط§ط، ظ…ط¨ظ†ظ‰..." required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">ط§ظ„ظ…ظˆظ‚ط¹</label>
-          <input name="location" class="form-input" placeholder="ط§ظ„ط±ظٹط§ط¶طŒ ط§ظ„ط¹ظ„ظٹط§">
-        </div>
-        <div class="form-group">
-          <label class="form-label">ط§ظ„ط¹ظ…ظٹظ„</label>
-          <input name="client" class="form-input" placeholder="ط§ط³ظ… ط§ظ„ط¹ظ…ظٹظ„">
-        </div>
-        <div class="form-group">
-          <label class="form-label">ط§ظ„ظ…ظٹط²ط§ظ†ظٹط© (ط±.ط³)</label>
-          <input name="budget" class="form-input" type="number" step="0.01" placeholder="0.00">
-        </div>
-        <div class="form-group">
-          <label class="form-label">ط§ظ„ط­ط§ظ„ط©</label>
-          <select name="status" class="form-input">
-            <option value="planned">ظ…ظڈط®ط·ط·</option>
-            <option value="in_progress">ط¬ط§ط±ظچ</option>
-            <option value="on_hold">ظ…ط¤ط¬ظ„</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">طھط§ط±ظٹط® ط§ظ„ط¨ط¯ط،</label>
-          <input name="start_date" type="date" class="form-input">
-        </div>
-        <div class="form-group">
-          <label class="form-label">طھط§ط±ظٹط® ط§ظ„ط§ظ†طھظ‡ط§ط، ط§ظ„ظ…طھظˆظ‚ط¹</label>
-          <input name="end_date" type="date" class="form-input">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">ظˆطµظپ ط§ظ„ظ…ط´ط±ظˆط¹</label>
-        <textarea name="description" class="form-input" rows="3" placeholder="طھظپط§طµظٹظ„ ط§ظ„ظ…ط´ط±ظˆط¹..."></textarea>
-      </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
-        <button type="button" class="btn btn-secondary" onclick="document.getElementById('newProjectModal').classList.remove('show')">ط¥ظ„ط؛ط§ط،</button>
-        <button type="submit" class="btn btn-primary">âœ… ط¥ظ†ط´ط§ط، ط§ظ„ظ…ط´ط±ظˆط¹</button>
-      </div>
-    </form>
-  </div>
-</div>
+<script>
+document.querySelectorAll('.budget-progress-fill[data-width]').forEach(function (el) {
+  var w = Number(el.getAttribute('data-width') || 0);
+  el.style.width = Math.max(0, Math.min(100, w)) + '%';
+});
+</script>
 {% endblock %}
 

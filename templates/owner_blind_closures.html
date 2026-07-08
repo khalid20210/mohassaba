@@ -15,14 +15,21 @@
 .deficit-num{color:#f87171;font-weight:800}
 .approve-btn{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:inherit}
 .approve-btn:disabled{opacity:.4;cursor:not-allowed}
+.u_c6783796bf{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.u_fe873f6800{color:#60a5fa;font-size:.83rem;text-decoration:none}
+.u_8de0820512{color:#64748b;font-size:.8rem}
+.u_e3ec02ace9{font-weight:700}
+.u_77c27e664b{color:#4ade80}
+.u_97c020ae4c{color:#64748b;font-size:.72rem}
+.u_6a5ca39731{text-align:center;color:#64748b;padding:30px}
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="bc-wrap">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-    <a href="{{ url_for('owner.owner_dashboard') }}" style="color:#60a5fa;font-size:.83rem;text-decoration:none">← العودة لقمرة القيادة</a>
-    <span style="color:#64748b;font-size:.8rem">{{ closures|length }} إقفال</span>
+  <div class="u_c6783796bf">
+    <a href="{{ url_for('owner.owner_dashboard') }}" class="u_fe873f6800">← العودة لقمرة القيادة</a>
+    <span class="u_8de0820512">{{ closures|length }} إقفال</span>
   </div>
 
   <div class="bc-card">
@@ -42,7 +49,7 @@
         {% if closures %}
           {% for c in closures %}
           <tr id="row-{{ c.id }}">
-            <td style="font-weight:700">{{ c.employee_name or '—' }}</td>
+            <td class="u_e3ec02ace9">{{ c.employee_name or '—' }}</td>
             <td>{{ c.shift_date }}</td>
             <td>{{ "{:,.2f}".format(c.expected_cash or 0) }}</td>
             <td>{{ "{:,.2f}".format(c.actual_cash or 0) }}</td>
@@ -50,7 +57,7 @@
               {% if (c.deficit or 0) > 0 %}
                 <span class="deficit-num">{{ "{:,.2f}".format(c.deficit) }}</span>
               {% else %}
-                <span style="color:#4ade80">لا يوجد</span>
+                <span class="u_77c27e664b">لا يوجد</span>
               {% endif %}
             </td>
             <td>
@@ -64,16 +71,16 @@
               {% if c.status == 'pending' and (c.deficit or 0) > 0 %}
                 <button class="approve-btn" onclick="approveClose({{ c.id }}, this)">اعتماد الخصم</button>
               {% elif c.status == 'approved' %}
-                <span style="color:#64748b;font-size:.72rem">تم</span>
+                <span class="u_97c020ae4c">تم</span>
               {% else %}
-                <span style="color:#64748b;font-size:.72rem">—</span>
+                <span class="u_97c020ae4c">—</span>
               {% endif %}
             </td>
           </tr>
           {% endfor %}
         {% else %}
           <tr>
-            <td colspan="7" style="text-align:center;color:#64748b;padding:30px">لا توجد سجلات إقفال</td>
+            <td colspan="7" class="u_6a5ca39731">لا توجد سجلات إقفال</td>
           </tr>
         {% endif %}
       </tbody>
@@ -97,7 +104,7 @@ function approveClose(id, btn){
     if(d.success){
       const row = document.getElementById('row-'+id);
       row.cells[5].innerHTML = '<span class="status-approved">معتمد ✓</span>';
-      row.cells[6].innerHTML = '<span style="color:#64748b;font-size:.72rem">تم</span>';
+      row.cells[6].innerHTML = '<span class="u_97c020ae4c">تم</span>';
     } else {
       alert(d.error || 'حدث خطأ');
       btn.disabled = false;

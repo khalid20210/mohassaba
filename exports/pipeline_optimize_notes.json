@@ -1,0 +1,13 @@
+﻿{
+    "timestamp":  "2026-06-19 18:20:57",
+    "observed":  {
+                     "ready_p95_ms":  55.49,
+                     "health_p95_ms":  28.14
+                 },
+    "actions":  [
+                    "Keep readyz cache TTL between 5-10 seconds for burst traffic",
+                    "Keep dashboard polling at \u003e=10 seconds",
+                    "Keep health checks separate from heavy authenticated endpoints"
+                ],
+    "status":  "applied-by-policy"
+}

@@ -35,6 +35,7 @@
     background: var(--db-glass-strong);
     border-left: 1px solid var(--db-border);
     box-shadow: var(--db-shadow);
+    -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
   }
 
@@ -64,6 +65,7 @@
     background: var(--db-glass-strong);
     border-bottom: 1px solid var(--db-border);
     color: var(--db-text);
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
   }
 
@@ -85,6 +87,7 @@
     border-radius: 22px;
     padding: 22px 22px;
     box-shadow: var(--db-shadow);
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     margin-bottom: 18px;
   }
@@ -160,6 +163,7 @@
     border: 1px solid rgba(79, 193, 241, 0.28);
     border-radius: 16px;
     padding: 18px 16px;
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     min-height: 138px;
     display: flex;
@@ -221,6 +225,7 @@
     border: 1px solid rgba(79, 193, 241, 0.25);
     border-radius: 16px;
     padding: 16px;
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
   }
 
@@ -263,6 +268,30 @@
     background: rgba(18, 80, 108, 0.46);
   }
 
+  .db-balance-positive { color: #22c55e; }
+  .db-balance-negative { color: #ef4444; }
+  .db-balance-neutral { color: #94a3b8; }
+  .db-reminder-widget { display: grid; gap: 8px; margin-top: 4px; }
+  .db-reminder-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(17,62,84,.38);
+    border: 1px solid rgba(84,203,255,.2);
+    border-radius: 11px;
+    padding: 10px 14px;
+  }
+  .db-reminder-title { font-size: .86rem; color: #b9e3f2; }
+  .db-reminder-badge {
+    font-size: .78rem;
+    font-weight: 700;
+    white-space: nowrap;
+    margin-right: 8px;
+  }
+  .db-reminder-badge.is-overdue { color: #ef4444; }
+  .db-reminder-badge.is-urgent { color: #f59e0b; }
+  .db-reminder-badge.is-normal { color: #a5f3fc; }
+
   .db-side-card {
     min-height: 100%;
     display: flex;
@@ -291,6 +320,38 @@
     color: #77a7bb;
     font-size: .76rem;
     margin-top: 2px;
+  }
+
+  .db-governance {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .db-governance-card {
+    background: var(--db-glass);
+    border: 1px solid rgba(79, 193, 241, 0.25);
+    border-radius: 16px;
+    padding: 15px 14px;
+  }
+
+  .db-governance-card .title {
+    color: #97bccb;
+    font-size: .8rem;
+    font-weight: 700;
+  }
+
+  .db-governance-card .count {
+    margin-top: 6px;
+    font-size: 1.7rem;
+    font-weight: 900;
+  }
+
+  .db-governance-card .sub {
+    color: #7ea3b3;
+    font-size: .78rem;
+    margin-top: 6px;
   }
 
   @media (max-width: 1000px) {
@@ -326,6 +387,105 @@
       font-size: 1.75rem;
     }
   }
+.u_5b6aad9a3f{margin-bottom:18px;}
+.u_7f56dbdc43{border-color:rgba(239,68,68,.38); background:linear-gradient(135deg, rgba(127,29,29,.22), rgba(69,10,10,.18));}
+.u_fb1a6147e4{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+.u_4e07ed0502{margin:0;color:#fecaca;}
+.u_4ec0d129bc{margin:.35rem 0 0;color:#fecaca;opacity:.92;}
+.u_1240b71fe6{margin:.25rem 0 0;color:#fecaca;font-weight:700;}
+.u_b062552635{background:rgba(127,29,29,.45);border-color:rgba(252,165,165,.55);color:#fee2e2;}
+.u_905d8b3da3{margin-bottom:18px}
+.u_73f3000675{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.u_1169661891{margin:0}
+.u_bc53d627a8{font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none}
+.u_0ddf068bfb{overflow-x:auto}
+.u_277033076b{width:100%;font-size:.85rem;border-collapse:collapse}
+.u_4df3f6d96c{border-bottom:1px solid rgba(75,195,255,.28)}
+.u_056c24fbc3{text-align:right;padding:8px 0;color:var(--db-muted);font-weight:600}
+.u_a8fa70bb4b{text-align:center;padding:8px 0;color:var(--db-muted);font-weight:600}
+.u_37860fdf1e{border-bottom:1px solid rgba(75,195,255,.12);padding:8px 0}
+.u_d8c02261de{padding:8px 0}
+.u_9201407de3{color:#ecfbff;font-weight:600}
+.u_ae08704a16{font-size:.75rem;color:var(--db-muted)}
+.u_1308792976{padding:8px 0;text-align:center;color:#45a8ff;font-weight:600}
+.u_b87ac9e10d{padding:8px 0;text-align:center;color:var(--db-muted)}
+.u_7011b67c55{padding:8px 0;text-align:center;color:#0ad0c5;font-weight:700}
+.u_765f8e8496{padding:8px 0;text-align:center}
+.u_2eaca8d44d{display:inline-block;padding:4px 10px;border-radius:8px;background:rgba(69,168,255,.2);color:#45a8ff;text-decoration:none;font-size:.78rem;font-weight:600}
+.u_9b385f4ef7{display:grid;gap:8px;max-height:210px;overflow-y:auto}
+.u_606e056332{display:flex;justify-content:space-between;align-items:center;background:rgba(17,62,84,.38);border:1px solid rgba(84,203,255,.2);border-radius:11px;padding:10px 12px}
+.u_aee0a8472d{color:#ecfbff;font-weight:700;font-size:.84rem}
+.u_413257230e{color:var(--db-muted);font-size:.72rem}
+.u_29277e1716{color:#0ad0c5;font-weight:800;font-size:.88rem}
+.u_4866f5120b{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.u_8bff063fad{background:rgba(69,168,255,.08);border:1px solid rgba(69,168,255,.22);border-radius:12px;padding:12px}
+.u_0ed5de1e33{color:var(--db-muted);font-size:.75rem}
+.u_c6cddc813b{color:#0ad0c5;font-weight:700;font-size:1.2rem;margin:8px 0}
+.u_17870b5c6b{background:linear-gradient(135deg,rgba(10,208,197,.12),rgba(69,168,255,.12));border:1px solid rgba(10,208,197,.22);border-radius:12px;padding:16px}
+.u_537397225e{display:flex;justify-content:space-between;align-items:baseline}
+.u_d1ee1d49cf{color:var(--db-muted);font-size:.85rem}
+.u_abc8cd7482{color:#0ad0c5;font-weight:700;font-size:1.6rem;margin-top:4px}
+.u_ef56483b7c{text-align:left;font-size:.75rem;color:var(--db-muted)}
+.u_acd97a46d0{color:#10b981}
+.u_6a6a237e2c{color:#f59e0b}
+.u_b0eb59c131{color:#ef4444}
+.u_043ca4e804{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;max-height:200px;overflow-y:auto}
+.u_36c48801b4{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.22);border-radius:12px;padding:12px;font-size:.85rem}
+.u_b010e7e06d{color:#ef4444;font-weight:700;margin-top:4px}
+.u_0c7ad9f97a{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;max-height:220px;overflow-y:auto}
+.u_7fd7d83dca{color:#0ad0c5;font-weight:700;font-size:1.05rem;margin:6px 0}
+.u_249d010502{margin:0 0 12px}
+.u_8c665ee83a{width:100%;font-size:.82rem;border-collapse:collapse}
+.u_e3d03689c3{text-align:right;padding:8px 0;color:var(--db-muted)}
+.u_55bf07c000{text-align:center;padding:8px 0;color:var(--db-muted)}
+.u_57ce3e24c5{border-bottom:1px solid rgba(75,195,255,.12)}
+.u_2a96828041{padding:8px 0;color:#ecfbff}
+.u_457e45231d{padding:8px 0;text-align:center;color:#f59e0b}
+.u_b57e5edb00{padding:8px 0;text-align:center;color:#0ad0c5}
+.u_067faba0e3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.u_8987ac6005{color:#0ad0c5;font-weight:800;font-size:1.15rem}
+.u_128aae9258{color:#45a8ff;font-weight:800;font-size:1.15rem}
+.u_4de948bfb4{color:#f5feff;font-weight:800;font-size:1.15rem}
+.u_bb1f86d904{background:rgba(10,208,197,.08);border:1px solid rgba(10,208,197,.22);border-radius:12px;padding:12px}
+.u_24a3c481a2{color:#ecfbff;font-weight:700;font-size:.82rem}
+.u_e870a3cef8{color:#0ad0c5;font-weight:800;margin-top:6px}
+.u_45cdd9d3f8{color:var(--db-muted);font-size:.74rem}
+.u_398a2df900{display:grid;gap:8px;max-height:220px;overflow-y:auto}
+.u_be57a4591a{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.22);border-radius:12px;padding:12px}
+.u_fd81d70cdc{color:#f59e0b;font-weight:800;font-size:1.15rem}
+.u_0a349e0342{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.u_be8f4473e0{background:rgba(17,62,84,.38);border:1px solid rgba(84,203,255,.2);border-radius:11px;padding:10px 12px;color:#b9e3f2;font-size:.82rem}
+.u_7075554cdc{color:#ecfbff}
+.u_b819610325{margin:0 0 12px;color:#ef4444}
+.u_eada5f1369{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.22);border-radius:12px;padding:12px;margin-bottom:10px}
+.u_0a33d2c19b{color:#ef4444;font-weight:800;font-size:1.2rem}
+.u_6be0d8ba2c{text-align:left}
+.u_7669676da6{color:#0ad0c5;font-weight:800;font-size:.84rem}
+.u_2749a26262{color:#94a3b8;font-size:.72rem}
+.u_5db3b16dd6{color:#f5feff;font-weight:800;font-size:.84rem}
+.u_d8f43cc35b{color:#f59e0b;font-size:.72rem}
+.u_a2d253fd87{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.u_f910dcdbee{background:linear-gradient(135deg,rgba(69,168,255,.12),rgba(10,208,197,.12));border:1px solid rgba(75,195,255,.22);border-radius:12px;padding:14px}
+.u_c0a8d7d912{color:#0ad0c5;font-weight:700;font-size:1.1rem;margin:8px 0}
+.u_2118bb49a6{margin:0;color:#ef4444}
+.u_73be97e2e1{width:100%;font-size:.8rem;border-collapse:collapse}
+.u_7cfe33f704{border-bottom:1px solid rgba(239,68,68,.28)}
+.u_4ad5eec9ff{border-bottom:1px solid rgba(239,68,68,.12)}
+.u_c08dc4f475{padding:8px 0;text-align:center;color:#ef4444;font-weight:700}
+.u_d6ea2b27b2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;max-height:180px;overflow-y:auto}
+.u_b651d8a39b{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.22);border-radius:12px;padding:12px;font-size:.8rem}
+.u_3e016ed906{color:var(--db-muted);font-size:.7rem}
+.u_e29980b523{display:flex;justify-content:space-between;margin-top:6px}
+.u_64e309605c{color:#f59e0b;font-weight:700}
+.u_3b2aa12f40{color:var(--db-muted)}
+.u_7780aac23f{color:#9ae6ff;text-decoration:none}
+.u_fa15b8ce99{margin-top:16px;display:none}
+.u_02f011ccfd{font-size:.75rem;font-weight:400;color:#6bc9e8;margin-right:8px;text-decoration:none}
+.u_eeafa25286{display:grid;gap:8px;margin-top:4px}
+.u_1f52258a96{display:flex;justify-content:space-between;align-items:center;
+                    background:rgba(17,62,84,.38);border:1px solid rgba(84,203,255,.2);
+                    border-radius:11px;padding:10px 14px}
+.u_eae5b6e969{font-size:.86rem;color:#b9e3f2}
 </style>
 {% endblock %}
 
@@ -367,17 +527,17 @@
 </section>
 
 {% if can_manage_cancel_requests and (pending_cancel_requests_count or 0) > 0 %}
-<section class="db-workspace" style="margin-bottom:18px;">
-  <div class="db-panel" style="border-color:rgba(239,68,68,.38); background:linear-gradient(135deg, rgba(127,29,29,.22), rgba(69,10,10,.18));">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+<section class="db-workspace u_5b6aad9a3f">
+  <div class="db-panel u_7f56dbdc43">
+    <div class="u_fb1a6147e4">
       <div>
-        <h3 style="margin:0;color:#fecaca;">🚨 تنبيه إداري: طلبات إلغاء مدفوعة معلقة</h3>
-        <p style="margin:.35rem 0 0;color:#fecaca;opacity:.92;">يوجد {{ pending_cancel_requests_count }} طلب بانتظار اعتماد المدير.</p>
+        <h3 class="u_4e07ed0502">🚨 تنبيه إداري: طلبات إلغاء مدفوعة معلقة</h3>
+        <p class="u_4ec0d129bc">يوجد {{ pending_cancel_requests_count }} طلب بانتظار اعتماد المدير.</p>
         {% if (pending_cancel_requests_sla_breached_count or 0) > 0 %}
-        <p style="margin:.25rem 0 0;color:#fecaca;font-weight:700;">متجاوز SLA: {{ pending_cancel_requests_sla_breached_count }} طلب</p>
+        <p class="u_1240b71fe6">متجاوز SLA: {{ pending_cancel_requests_sla_breached_count }} طلب</p>
         {% endif %}
       </div>
-      <a class="db-link" href="{{ url_for('invoices.pending_cancel_requests_page') }}" style="background:rgba(127,29,29,.45);border-color:rgba(252,165,165,.55);color:#fee2e2;">
+      <a class="db-link u_b062552635" href="{{ url_for('invoices.pending_cancel_requests_page') }}">
         فتح شاشة الاعتمادات ←
       </a>
     </div>
@@ -387,37 +547,37 @@
 
 <!-- ═══ اقتراحات إعادة الطلب (Retail Inventory Reorder Widget) ═══ -->
 {% if reorder_suggestions and reorder_suggestions|length > 0 %}
-<section class="db-workspace" style="margin-bottom:18px">
+<section class="db-workspace u_905d8b3da3">
   <div class="db-panel">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <h3 style="margin:0">📋 اقتراحات إعادة الطلب — المخزون منخفض</h3>
-      <a href="/inventory/products" style="font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none">إدارة المخزون ←</a>
+    <div class="u_73f3000675">
+      <h3 class="u_1169661891">📋 اقتراحات إعادة الطلب — المخزون منخفض</h3>
+      <a href="/inventory/products" class="u_bc53d627a8">إدارة المخزون ←</a>
     </div>
-    <div style="overflow-x:auto">
-      <table style="width:100%;font-size:.85rem;border-collapse:collapse">
+    <div class="u_0ddf068bfb">
+      <table class="u_277033076b">
         <thead>
-          <tr style="border-bottom:1px solid rgba(75,195,255,.28)">
-            <th style="text-align:right;padding:8px 0;color:var(--db-muted);font-weight:600">الصنف</th>
-            <th style="text-align:center;padding:8px 0;color:var(--db-muted);font-weight:600">المتاح</th>
-            <th style="text-align:center;padding:8px 0;color:var(--db-muted);font-weight:600">الحد الأدنى</th>
-            <th style="text-align:center;padding:8px 0;color:var(--db-muted);font-weight:600">الحد الأقصى</th>
-            <th style="text-align:center;padding:8px 0;color:var(--db-muted);font-weight:600">الكمية المقترحة</th>
-            <th style="text-align:center;padding:8px 0;color:var(--db-muted);font-weight:600">إجراء</th>
+          <tr class="u_4df3f6d96c">
+            <th class="u_056c24fbc3">الصنف</th>
+            <th class="u_a8fa70bb4b">المتاح</th>
+            <th class="u_a8fa70bb4b">الحد الأدنى</th>
+            <th class="u_a8fa70bb4b">الحد الأقصى</th>
+            <th class="u_a8fa70bb4b">الكمية المقترحة</th>
+            <th class="u_a8fa70bb4b">إجراء</th>
           </tr>
         </thead>
         <tbody>
           {% for item in reorder_suggestions %}
-          <tr style="border-bottom:1px solid rgba(75,195,255,.12);padding:8px 0">
-            <td style="padding:8px 0">
-              <div style="color:#ecfbff;font-weight:600">{{ item.sku }}</div>
-              {% if item.barcode %}<div style="font-size:.75rem;color:var(--db-muted)">{{ item.barcode }}</div>{% endif %}
+          <tr class="u_37860fdf1e">
+            <td class="u_d8c02261de">
+              <div class="u_9201407de3">{{ item.sku }}</div>
+              {% if item.barcode %}<div class="u_ae08704a16">{{ item.barcode }}</div>{% endif %}
             </td>
-            <td style="padding:8px 0;text-align:center;color:#45a8ff;font-weight:600">{{ item.current_qty|round(2) }}</td>
-            <td style="padding:8px 0;text-align:center;color:var(--db-muted)">{{ item.min_qty|round(2) }}</td>
-            <td style="padding:8px 0;text-align:center;color:var(--db-muted)">{{ item.max_qty|round(2) }}</td>
-            <td style="padding:8px 0;text-align:center;color:#0ad0c5;font-weight:700">{{ (item.max_qty - item.current_qty)|round(2) }}</td>
-            <td style="padding:8px 0;text-align:center">
-              <a href="/inventory/products/{{ item.id }}" style="display:inline-block;padding:4px 10px;border-radius:8px;background:rgba(69,168,255,.2);color:#45a8ff;text-decoration:none;font-size:.78rem;font-weight:600">عرض</a>
+            <td class="u_1308792976">{{ item.current_qty|round(2) }}</td>
+            <td class="u_b87ac9e10d">{{ item.min_qty|round(2) }}</td>
+            <td class="u_b87ac9e10d">{{ item.max_qty|round(2) }}</td>
+            <td class="u_7011b67c55">{{ (item.max_qty - item.current_qty)|round(2) }}</td>
+            <td class="u_765f8e8496">
+              <a href="/inventory/products/{{ item.id }}" class="u_2eaca8d44d">عرض</a>
             </td>
           </tr>
           {% endfor %}
@@ -430,21 +590,21 @@
 
 <!-- ═══ Widgets متقدمة حسب نوع النشاط ═══ -->
 {% if industry_kpis.sales_by_cashier_today or industry_kpis.sales_by_agent_today %}
-<section class="db-workspace" style="margin-bottom:18px">
+<section class="db-workspace u_905d8b3da3">
   {% if industry_kpis.sales_by_cashier_today %}
   <div class="db-panel">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <h3 style="margin:0">🧾 مبيعات اليوم حسب الكاشير</h3>
-      <a href="/invoices/" style="font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none">الفواتير ←</a>
+    <div class="u_73f3000675">
+      <h3 class="u_1169661891">🧾 مبيعات اليوم حسب الكاشير</h3>
+      <a href="/invoices/" class="u_bc53d627a8">الفواتير ←</a>
     </div>
-    <div style="display:grid;gap:8px;max-height:210px;overflow-y:auto">
+    <div class="u_9b385f4ef7">
       {% for row in industry_kpis.sales_by_cashier_today %}
-      <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(17,62,84,.38);border:1px solid rgba(84,203,255,.2);border-radius:11px;padding:10px 12px">
+      <div class="u_606e056332">
         <div>
-          <div style="color:#ecfbff;font-weight:700;font-size:.84rem">{{ row.actor_name }}</div>
-          <div style="color:var(--db-muted);font-size:.72rem">{{ row.invoices_count }} فاتورة</div>
+          <div class="u_aee0a8472d">{{ row.actor_name }}</div>
+          <div class="u_413257230e">{{ row.invoices_count }} فاتورة</div>
         </div>
-        <div style="color:#0ad0c5;font-weight:800;font-size:.88rem">{{ row.sales_total|round(0)|int }} ر.س</div>
+        <div class="u_29277e1716">{{ row.sales_total|round(0)|int }} ر.س</div>
       </div>
       {% endfor %}
     </div>
@@ -453,18 +613,18 @@
 
   {% if industry_kpis.sales_by_agent_today %}
   <div class="db-panel">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <h3 style="margin:0">🤝 مبيعات اليوم حسب المندوب</h3>
-      <a href="/agents/dashboard" style="font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none">المناديب ←</a>
+    <div class="u_73f3000675">
+      <h3 class="u_1169661891">🤝 مبيعات اليوم حسب المندوب</h3>
+      <a href="/agents/dashboard" class="u_bc53d627a8">المناديب ←</a>
     </div>
-    <div style="display:grid;gap:8px;max-height:210px;overflow-y:auto">
+    <div class="u_9b385f4ef7">
       {% for row in industry_kpis.sales_by_agent_today %}
-      <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(17,62,84,.38);border:1px solid rgba(84,203,255,.2);border-radius:11px;padding:10px 12px">
+      <div class="u_606e056332">
         <div>
-          <div style="color:#ecfbff;font-weight:700;font-size:.84rem">{{ row.actor_name }}</div>
-          <div style="color:var(--db-muted);font-size:.72rem">{{ row.invoices_count }} فاتورة</div>
+          <div class="u_aee0a8472d">{{ row.actor_name }}</div>
+          <div class="u_413257230e">{{ row.invoices_count }} فاتورة</div>
         </div>
-        <div style="color:#0ad0c5;font-weight:800;font-size:.88rem">{{ row.sales_total|round(0)|int }} ر.س</div>
+        <div class="u_29277e1716">{{ row.sales_total|round(0)|int }} ر.س</div>
       </div>
       {% endfor %}
     </div>
@@ -476,18 +636,18 @@
 <!-- للتجزئة: أفضل المبيعات اليوم + معدل الدوران + الأصناف البطيئة -->
 {% if industry_kpis.pos_mode in ('standard', 'retail', 'fashion') %}
   {% if industry_kpis.today_sales and industry_kpis.today_sales|length > 0 %}
-  <section class="db-workspace" style="margin-bottom:18px">
+  <section class="db-workspace u_905d8b3da3">
     <div class="db-panel">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <h3 style="margin:0">🔥 أفضل المبيعات — اليوم</h3>
-        <a href="/analytics" style="font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none">التحليلات ←</a>
+      <div class="u_73f3000675">
+        <h3 class="u_1169661891">🔥 أفضل المبيعات — اليوم</h3>
+        <a href="/analytics" class="u_bc53d627a8">التحليلات ←</a>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
+      <div class="u_4866f5120b">
         {% for item in industry_kpis.today_sales[:5] %}
-        <div style="background:rgba(69,168,255,.08);border:1px solid rgba(69,168,255,.22);border-radius:12px;padding:12px">
-          <div style="color:var(--db-muted);font-size:.75rem">{{ item.description[:20] }}</div>
-          <div style="color:#0ad0c5;font-weight:700;font-size:1.2rem;margin:8px 0">{{ item.rev|round(0)|int }} ر.س</div>
-          <div style="color:var(--db-muted);font-size:.75rem">{{ item.qty|round(0)|int }} وحدة</div>
+        <div class="u_8bff063fad">
+          <div class="u_0ed5de1e33">{{ item.description[:20] }}</div>
+          <div class="u_c6cddc813b">{{ item.rev|round(0)|int }} ر.س</div>
+          <div class="u_0ed5de1e33">{{ item.qty|round(0)|int }} وحدة</div>
         </div>
         {% endfor %}
       </div>
@@ -496,22 +656,22 @@
   {% endif %}
 
   {% if industry_kpis.inventory_turnover %}
-  <section class="db-workspace" style="margin-bottom:18px">
+  <section class="db-workspace u_905d8b3da3">
     <div class="db-panel">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <h3 style="margin:0">📊 معدل دوران المخزون</h3>
-        <a href="/inventory/reports/inventory-turnover" style="font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none">التقرير الكامل ←</a>
+      <div class="u_73f3000675">
+        <h3 class="u_1169661891">📊 معدل دوران المخزون</h3>
+        <a href="/inventory/reports/inventory-turnover" class="u_bc53d627a8">التقرير الكامل ←</a>
       </div>
-      <div style="background:linear-gradient(135deg,rgba(10,208,197,.12),rgba(69,168,255,.12));border:1px solid rgba(10,208,197,.22);border-radius:12px;padding:16px">
-        <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <div class="u_17870b5c6b">
+        <div class="u_537397225e">
           <div>
-            <div style="color:var(--db-muted);font-size:.85rem">معدل الدوران (30 يوم)</div>
-            <div style="color:#0ad0c5;font-weight:700;font-size:1.6rem;margin-top:4px">{{ industry_kpis.inventory_turnover|round(2) }}x</div>
+            <div class="u_d1ee1d49cf">معدل الدوران (30 يوم)</div>
+            <div class="u_abc8cd7482">{{ industry_kpis.inventory_turnover|round(2) }}x</div>
           </div>
-          <div style="text-align:left;font-size:.75rem;color:var(--db-muted)">
-            {% if industry_kpis.inventory_turnover >= 2 %}<span style="color:#10b981">✓ نشط جداً</span>
-            {% elif industry_kpis.inventory_turnover >= 0.5 %}<span style="color:#f59e0b">○ متوسط</span>
-            {% else %}<span style="color:#ef4444">✗ بطيء</span>
+          <div class="u_ef56483b7c">
+            {% if industry_kpis.inventory_turnover >= 2 %}<span class="u_acd97a46d0">✓ نشط جداً</span>
+            {% elif industry_kpis.inventory_turnover >= 0.5 %}<span class="u_6a6a237e2c">○ متوسط</span>
+            {% else %}<span class="u_b0eb59c131">✗ بطيء</span>
             {% endif %}
           </div>
         </div>
@@ -521,19 +681,19 @@
   {% endif %}
 
   {% if industry_kpis.slow_moving and industry_kpis.slow_moving|length > 0 %}
-  <section class="db-workspace" style="margin-bottom:18px">
+  <section class="db-workspace u_905d8b3da3">
     <div class="db-panel">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <h3 style="margin:0">🐌 الأصناف البطيئة (غير مباعة)</h3>
-        <a href="/inventory/reports/inventory-turnover?days=30" style="font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none">التقرير ←</a>
+      <div class="u_73f3000675">
+        <h3 class="u_1169661891">🐌 الأصناف البطيئة (غير مباعة)</h3>
+        <a href="/inventory/reports/inventory-turnover?days=30" class="u_bc53d627a8">التقرير ←</a>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;max-height:200px;overflow-y:auto">
+      <div class="u_043ca4e804">
         {% for item in industry_kpis.slow_moving[:8] %}
-        <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.22);border-radius:12px;padding:12px;font-size:.85rem">
-          <div style="color:#ecfbff;font-weight:600">{{ item.sku }}</div>
-          <div style="color:var(--db-muted);font-size:.75rem">{{ item.product_name[:18] }}</div>
-          <div style="color:#ef4444;font-weight:700;margin-top:4px">{{ (item.current_qty or 0)|round(2) }} وحدة</div>
-          <div style="color:var(--db-muted);font-size:.75rem">قيمة: {{ (item.stock_value or 0)|round(0)|int }} ر.س</div>
+        <div class="u_36c48801b4">
+          <div class="u_9201407de3">{{ item.sku }}</div>
+          <div class="u_0ed5de1e33">{{ item.product_name[:18] }}</div>
+          <div class="u_b010e7e06d">{{ (item.current_qty or 0)|round(2) }} وحدة</div>
+          <div class="u_0ed5de1e33">قيمة: {{ (item.stock_value or 0)|round(0)|int }} ر.س</div>
         </div>
         {% endfor %}
       </div>
@@ -544,18 +704,18 @@
 <!-- للصيدليات: الأعلى صرفاً + قرب انتهاء الصلاحية -->
 {% elif industry_kpis.pos_mode == 'pharmacy' %}
   {% if industry_kpis.top_drugs and industry_kpis.top_drugs|length > 0 %}
-  <section class="db-workspace" style="margin-bottom:18px">
+  <section class="db-workspace u_905d8b3da3">
     <div class="db-panel">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <h3 style="margin:0">💊 الأدوية الأعلى صرفًا (30 يوم)</h3>
-        <a href="/analytics" style="font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none">التحليلات ←</a>
+      <div class="u_73f3000675">
+        <h3 class="u_1169661891">💊 الأدوية الأعلى صرفًا (30 يوم)</h3>
+        <a href="/analytics" class="u_bc53d627a8">التحليلات ←</a>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;max-height:220px;overflow-y:auto">
+      <div class="u_0c7ad9f97a">
         {% for item in industry_kpis.top_drugs[:8] %}
-        <div style="background:rgba(69,168,255,.08);border:1px solid rgba(69,168,255,.22);border-radius:12px;padding:12px">
-          <div style="color:var(--db-muted);font-size:.75rem">{{ item.description[:26] }}</div>
-          <div style="color:#0ad0c5;font-weight:700;font-size:1.05rem;margin:6px 0">{{ item.rev|round(0)|int }} ر.س</div>
-          <div style="color:var(--db-muted);font-size:.75rem">{{ item.qty|round(0)|int }} عبوة</div>
+        <div class="u_8bff063fad">
+          <div class="u_0ed5de1e33">{{ item.description[:26] }}</div>
+          <div class="u_7fd7d83dca">{{ item.rev|round(0)|int }} ر.س</div>
+          <div class="u_0ed5de1e33">{{ item.qty|round(0)|int }} عبوة</div>
         </div>
         {% endfor %}
       </div>
@@ -564,26 +724,26 @@
   {% endif %}
 
   {% if industry_kpis.expiry_soon and industry_kpis.expiry_soon|length > 0 %}
-  <section class="db-workspace" style="margin-bottom:18px">
+  <section class="db-workspace u_905d8b3da3">
     <div class="db-panel">
-      <h3 style="margin:0 0 12px">⏳ أصناف تقترب من انتهاء الصلاحية (30 يوم)</h3>
-      <div style="overflow-x:auto">
-        <table style="width:100%;font-size:.82rem;border-collapse:collapse">
+      <h3 class="u_249d010502">⏳ أصناف تقترب من انتهاء الصلاحية (30 يوم)</h3>
+      <div class="u_0ddf068bfb">
+        <table class="u_8c665ee83a">
           <thead>
-            <tr style="border-bottom:1px solid rgba(75,195,255,.28)">
-              <th style="text-align:right;padding:8px 0;color:var(--db-muted)">الصنف</th>
-              <th style="text-align:center;padding:8px 0;color:var(--db-muted)">الباركود</th>
-              <th style="text-align:center;padding:8px 0;color:var(--db-muted)">الصلاحية</th>
-              <th style="text-align:center;padding:8px 0;color:var(--db-muted)">الكمية</th>
+            <tr class="u_4df3f6d96c">
+              <th class="u_e3d03689c3">الصنف</th>
+              <th class="u_55bf07c000">الباركود</th>
+              <th class="u_55bf07c000">الصلاحية</th>
+              <th class="u_55bf07c000">الكمية</th>
             </tr>
           </thead>
           <tbody>
             {% for ex in industry_kpis.expiry_soon[:10] %}
-            <tr style="border-bottom:1px solid rgba(75,195,255,.12)">
-              <td style="padding:8px 0;color:#ecfbff">{{ ex.name[:28] }}</td>
-              <td style="padding:8px 0;text-align:center;color:var(--db-muted)">{{ ex.barcode or '-' }}</td>
-              <td style="padding:8px 0;text-align:center;color:#f59e0b">{{ ex.expiry_date }}</td>
-              <td style="padding:8px 0;text-align:center;color:#0ad0c5">{{ (ex.qty or 0)|round(0)|int }}</td>
+            <tr class="u_57ce3e24c5">
+              <td class="u_2a96828041">{{ ex.name[:28] }}</td>
+              <td class="u_b87ac9e10d">{{ ex.barcode or '-' }}</td>
+              <td class="u_457e45231d">{{ ex.expiry_date }}</td>
+              <td class="u_b57e5edb00">{{ (ex.qty or 0)|round(0)|int }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -595,36 +755,36 @@
 
 <!-- للمطاعم: أكثر الطاولات/الأطباق + متوسط الطلب -->
 {% elif industry_kpis.pos_mode == 'restaurant' %}
-  <section class="db-workspace" style="margin-bottom:18px">
+  <section class="db-workspace u_905d8b3da3">
     <div class="db-panel">
-      <h3 style="margin:0 0 12px">🍽️ أداء المطعم (30 يوم)</h3>
-      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
-        <div style="background:rgba(69,168,255,.08);border:1px solid rgba(69,168,255,.22);border-radius:12px;padding:12px">
-          <div style="color:var(--db-muted);font-size:.75rem">متوسط الطلب</div>
-          <div style="color:#0ad0c5;font-weight:800;font-size:1.15rem">{{ industry_kpis.avg_order_value|round(0)|int }} ر.س</div>
+      <h3 class="u_249d010502">🍽️ أداء المطعم (30 يوم)</h3>
+      <div class="u_067faba0e3">
+        <div class="u_8bff063fad">
+          <div class="u_0ed5de1e33">متوسط الطلب</div>
+          <div class="u_8987ac6005">{{ industry_kpis.avg_order_value|round(0)|int }} ر.س</div>
         </div>
-        <div style="background:rgba(69,168,255,.08);border:1px solid rgba(69,168,255,.22);border-radius:12px;padding:12px">
-          <div style="color:var(--db-muted);font-size:.75rem">عدد الطلبات</div>
-          <div style="color:#45a8ff;font-weight:800;font-size:1.15rem">{{ industry_kpis.orders_count }}</div>
+        <div class="u_8bff063fad">
+          <div class="u_0ed5de1e33">عدد الطلبات</div>
+          <div class="u_128aae9258">{{ industry_kpis.orders_count }}</div>
         </div>
-        <div style="background:rgba(69,168,255,.08);border:1px solid rgba(69,168,255,.22);border-radius:12px;padding:12px">
-          <div style="color:var(--db-muted);font-size:.75rem">إيراد المطعم</div>
-          <div style="color:#f5feff;font-weight:800;font-size:1.15rem">{{ industry_kpis.total_restaurant_rev|round(0)|int }} ر.س</div>
+        <div class="u_8bff063fad">
+          <div class="u_0ed5de1e33">إيراد المطعم</div>
+          <div class="u_4de948bfb4">{{ industry_kpis.total_restaurant_rev|round(0)|int }} ر.س</div>
         </div>
       </div>
     </div>
   </section>
 
   {% if industry_kpis.top_dishes and industry_kpis.top_dishes|length > 0 %}
-  <section class="db-workspace" style="margin-bottom:18px">
+  <section class="db-workspace u_905d8b3da3">
     <div class="db-panel">
-      <h3 style="margin:0 0 12px">🔥 أكثر الأطباق مبيعًا</h3>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
+      <h3 class="u_249d010502">🔥 أكثر الأطباق مبيعًا</h3>
+      <div class="u_4866f5120b">
         {% for d in industry_kpis.top_dishes[:6] %}
-        <div style="background:rgba(10,208,197,.08);border:1px solid rgba(10,208,197,.22);border-radius:12px;padding:12px">
-          <div style="color:#ecfbff;font-weight:700;font-size:.82rem">{{ d.description[:24] }}</div>
-          <div style="color:#0ad0c5;font-weight:800;margin-top:6px">{{ d.qty|round(0)|int }} طلب</div>
-          <div style="color:var(--db-muted);font-size:.74rem">{{ d.rev|round(0)|int }} ر.س</div>
+        <div class="u_bb1f86d904">
+          <div class="u_24a3c481a2">{{ d.description[:24] }}</div>
+          <div class="u_e870a3cef8">{{ d.qty|round(0)|int }} طلب</div>
+          <div class="u_45cdd9d3f8">{{ d.rev|round(0)|int }} ر.س</div>
         </div>
         {% endfor %}
       </div>
@@ -632,15 +792,15 @@
 
     {% if industry_kpis.top_tables and industry_kpis.top_tables|length > 0 %}
     <div class="db-panel">
-      <h3 style="margin:0 0 12px">🪑 أعلى الطاولات/العملاء</h3>
-      <div style="display:grid;gap:8px;max-height:220px;overflow-y:auto">
+      <h3 class="u_249d010502">🪑 أعلى الطاولات/العملاء</h3>
+      <div class="u_398a2df900">
         {% for t in industry_kpis.top_tables[:8] %}
-        <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(17,62,84,.38);border:1px solid rgba(84,203,255,.2);border-radius:11px;padding:10px 12px">
+        <div class="u_606e056332">
           <div>
-            <div style="color:#ecfbff;font-weight:700;font-size:.84rem">{{ t.party_name or 'غير محدد' }}</div>
-            <div style="color:var(--db-muted);font-size:.72rem">{{ t.visits }} زيارة</div>
+            <div class="u_aee0a8472d">{{ t.party_name or 'غير محدد' }}</div>
+            <div class="u_413257230e">{{ t.visits }} زيارة</div>
           </div>
-          <div style="color:#0ad0c5;font-weight:800;font-size:.88rem">{{ t.revenue|round(0)|int }} ر.س</div>
+          <div class="u_29277e1716">{{ t.revenue|round(0)|int }} ر.س</div>
         </div>
         {% endfor %}
       </div>
@@ -651,50 +811,50 @@
 
 <!-- للمقاولات: ملخص المشاريع + الذمم + كبار العملاء -->
 {% elif industry_kpis.pos_mode == 'construction' %}
-  <section class="db-workspace" style="margin-bottom:18px">
+  <section class="db-workspace u_905d8b3da3">
     <div class="db-panel">
-      <h3 style="margin:0 0 12px">🏗️ ملخص المشاريع</h3>
-      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
-        <div style="background:rgba(69,168,255,.08);border:1px solid rgba(69,168,255,.22);border-radius:12px;padding:12px">
-          <div style="color:var(--db-muted);font-size:.75rem">إجمالي المشاريع</div>
-          <div style="color:#45a8ff;font-weight:800;font-size:1.15rem">{{ industry_kpis.projects_summary.total_projects or 0 }}</div>
+      <h3 class="u_249d010502">🏗️ ملخص المشاريع</h3>
+      <div class="u_067faba0e3">
+        <div class="u_8bff063fad">
+          <div class="u_0ed5de1e33">إجمالي المشاريع</div>
+          <div class="u_128aae9258">{{ industry_kpis.projects_summary.total_projects or 0 }}</div>
         </div>
-        <div style="background:rgba(10,208,197,.08);border:1px solid rgba(10,208,197,.22);border-radius:12px;padding:12px">
-          <div style="color:var(--db-muted);font-size:.75rem">نشطة حاليًا</div>
-          <div style="color:#0ad0c5;font-weight:800;font-size:1.15rem">{{ industry_kpis.projects_summary.active_projects or 0 }}</div>
+        <div class="u_bb1f86d904">
+          <div class="u_0ed5de1e33">نشطة حاليًا</div>
+          <div class="u_8987ac6005">{{ industry_kpis.projects_summary.active_projects or 0 }}</div>
         </div>
-        <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.22);border-radius:12px;padding:12px">
-          <div style="color:var(--db-muted);font-size:.75rem">مكتملة هذا الشهر</div>
-          <div style="color:#f59e0b;font-weight:800;font-size:1.15rem">{{ industry_kpis.projects_summary.completed_this_month or 0 }}</div>
+        <div class="u_be57a4591a">
+          <div class="u_0ed5de1e33">مكتملة هذا الشهر</div>
+          <div class="u_fd81d70cdc">{{ industry_kpis.projects_summary.completed_this_month or 0 }}</div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-        <div style="background:rgba(17,62,84,.38);border:1px solid rgba(84,203,255,.2);border-radius:11px;padding:10px 12px;color:#b9e3f2;font-size:.82rem">
-          مستخلصات الشهر: <b style="color:#ecfbff">{{ industry_kpis.extracts_summary.extracts_this_month or 0 }}</b>
+      <div class="u_0a349e0342">
+        <div class="u_be8f4473e0">
+          مستخلصات الشهر: <b class="u_7075554cdc">{{ industry_kpis.extracts_summary.extracts_this_month or 0 }}</b>
         </div>
-        <div style="background:rgba(17,62,84,.38);border:1px solid rgba(84,203,255,.2);border-radius:11px;padding:10px 12px;color:#b9e3f2;font-size:.82rem">
-          مستخلصات مفوترة: <b style="color:#ecfbff">{{ industry_kpis.extracts_summary.invoiced_extracts_this_month or 0 }}</b>
+        <div class="u_be8f4473e0">
+          مستخلصات مفوترة: <b class="u_7075554cdc">{{ industry_kpis.extracts_summary.invoiced_extracts_this_month or 0 }}</b>
         </div>
       </div>
     </div>
 
     <div class="db-panel">
-      <h3 style="margin:0 0 12px;color:#ef4444">💳 الذمم المفتوحة للمشاريع</h3>
-      <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.22);border-radius:12px;padding:12px;margin-bottom:10px">
-        <div style="color:var(--db-muted);font-size:.75rem">إجمالي الذمم المفتوحة</div>
-        <div style="color:#ef4444;font-weight:800;font-size:1.2rem">{{ industry_kpis.total_open_debt|round(0)|int }} ر.س</div>
+      <h3 class="u_b819610325">💳 الذمم المفتوحة للمشاريع</h3>
+      <div class="u_eada5f1369">
+        <div class="u_0ed5de1e33">إجمالي الذمم المفتوحة</div>
+        <div class="u_0a33d2c19b">{{ industry_kpis.total_open_debt|round(0)|int }} ر.س</div>
       </div>
       {% if industry_kpis.top_clients and industry_kpis.top_clients|length > 0 %}
-      <div style="display:grid;gap:8px;max-height:220px;overflow-y:auto">
+      <div class="u_398a2df900">
         {% for c in industry_kpis.top_clients[:6] %}
-        <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(17,62,84,.38);border:1px solid rgba(84,203,255,.2);border-radius:11px;padding:10px 12px">
+        <div class="u_606e056332">
           <div>
-            <div style="color:#ecfbff;font-weight:700;font-size:.84rem">{{ c.party_name or 'بدون اسم' }}</div>
-            <div style="color:var(--db-muted);font-size:.72rem">{{ c.projects }} عقد/فاتورة</div>
+            <div class="u_aee0a8472d">{{ c.party_name or 'بدون اسم' }}</div>
+            <div class="u_413257230e">{{ c.projects }} عقد/فاتورة</div>
           </div>
-          <div style="text-align:left">
-            <div style="color:#0ad0c5;font-weight:800;font-size:.84rem">{{ c.contracted_value|round(0)|int }} ر.س</div>
-            <div style="color:#94a3b8;font-size:.72rem">محصل {{ c.collected|round(0)|int }}</div>
+          <div class="u_6be0d8ba2c">
+            <div class="u_7669676da6">{{ c.contracted_value|round(0)|int }} ر.س</div>
+            <div class="u_2749a26262">محصل {{ c.collected|round(0)|int }}</div>
           </div>
         </div>
         {% endfor %}
@@ -705,20 +865,20 @@
 
 <!-- للورش/التأجير: أوامر مفتوحة + أعلى الخدمات -->
 {% elif industry_kpis.pos_mode in ('workshop', 'rental') %}
-  <section class="db-workspace" style="margin-bottom:18px">
+  <section class="db-workspace u_905d8b3da3">
     {% if industry_kpis.open_orders and industry_kpis.open_orders|length > 0 %}
     <div class="db-panel">
-      <h3 style="margin:0 0 12px">🛠️ الأوامر المفتوحة</h3>
-      <div style="display:grid;gap:8px;max-height:220px;overflow-y:auto">
+      <h3 class="u_249d010502">🛠️ الأوامر المفتوحة</h3>
+      <div class="u_398a2df900">
         {% for o in industry_kpis.open_orders[:8] %}
-        <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(17,62,84,.38);border:1px solid rgba(84,203,255,.2);border-radius:11px;padding:10px 12px">
+        <div class="u_606e056332">
           <div>
-            <div style="color:#ecfbff;font-weight:700;font-size:.82rem">{{ o.invoice_number }}</div>
-            <div style="color:var(--db-muted);font-size:.72rem">{{ o.party_name or 'عميل غير محدد' }}</div>
+            <div class="u_24a3c481a2">{{ o.invoice_number }}</div>
+            <div class="u_413257230e">{{ o.party_name or 'عميل غير محدد' }}</div>
           </div>
-          <div style="text-align:left">
-            <div style="color:#f5feff;font-weight:800;font-size:.84rem">{{ o.total|round(0)|int }} ر.س</div>
-            <div style="color:#f59e0b;font-size:.72rem">{{ o.status }}</div>
+          <div class="u_6be0d8ba2c">
+            <div class="u_5db3b16dd6">{{ o.total|round(0)|int }} ر.س</div>
+            <div class="u_d8f43cc35b">{{ o.status }}</div>
           </div>
         </div>
         {% endfor %}
@@ -728,13 +888,13 @@
 
     {% if industry_kpis.top_services and industry_kpis.top_services|length > 0 %}
     <div class="db-panel">
-      <h3 style="margin:0 0 12px">⭐ أعلى الخدمات مبيعًا</h3>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
+      <h3 class="u_249d010502">⭐ أعلى الخدمات مبيعًا</h3>
+      <div class="u_4866f5120b">
         {% for s in industry_kpis.top_services[:6] %}
-        <div style="background:rgba(10,208,197,.08);border:1px solid rgba(10,208,197,.22);border-radius:12px;padding:12px">
-          <div style="color:#ecfbff;font-weight:700;font-size:.82rem">{{ s.description[:24] }}</div>
-          <div style="color:#0ad0c5;font-weight:800;margin-top:6px">{{ s.cnt|round(0)|int }} عملية</div>
-          <div style="color:var(--db-muted);font-size:.74rem">{{ s.rev|round(0)|int }} ر.س</div>
+        <div class="u_bb1f86d904">
+          <div class="u_24a3c481a2">{{ s.description[:24] }}</div>
+          <div class="u_e870a3cef8">{{ s.cnt|round(0)|int }} عملية</div>
+          <div class="u_45cdd9d3f8">{{ s.rev|round(0)|int }} ر.س</div>
         </div>
         {% endfor %}
       </div>
@@ -745,18 +905,18 @@
 <!-- للجملة: أكثر الموزعين + الديون المتأخرة + أصناف منخفضة -->
 {% elif industry_kpis.pos_mode == 'wholesale' %}
   {% if industry_kpis.top_distributors and industry_kpis.top_distributors|length > 0 %}
-  <section class="db-workspace" style="margin-bottom:18px">
+  <section class="db-workspace u_905d8b3da3">
     <div class="db-panel">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <h3 style="margin:0">👥 أفضل الموزعين (30 يوم)</h3>
-        <a href="/inventory/reports/distributor-performance" style="font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none">التقرير الكامل ←</a>
+      <div class="u_73f3000675">
+        <h3 class="u_1169661891">👥 أفضل الموزعين (30 يوم)</h3>
+        <a href="/inventory/reports/distributor-performance" class="u_bc53d627a8">التقرير الكامل ←</a>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
+      <div class="u_a2d253fd87">
         {% for dist in industry_kpis.top_distributors[:5] %}
-        <div style="background:linear-gradient(135deg,rgba(69,168,255,.12),rgba(10,208,197,.12));border:1px solid rgba(75,195,255,.22);border-radius:12px;padding:14px">
-          <div style="color:var(--db-muted);font-size:.75rem">{{ dist.party_name[:20] }}</div>
-          <div style="color:#0ad0c5;font-weight:700;font-size:1.1rem;margin:8px 0">{{ dist.volume|round(0)|int }} ر.س</div>
-          <div style="color:var(--db-muted);font-size:.75rem">{{ dist.orders }} طلب</div>
+        <div class="u_f910dcdbee">
+          <div class="u_0ed5de1e33">{{ dist.party_name[:20] }}</div>
+          <div class="u_c0a8d7d912">{{ dist.volume|round(0)|int }} ر.س</div>
+          <div class="u_0ed5de1e33">{{ dist.orders }} طلب</div>
         </div>
         {% endfor %}
       </div>
@@ -765,27 +925,27 @@
   {% endif %}
 
   {% if industry_kpis.overdue_debts and industry_kpis.overdue_debts|length > 0 %}
-  <section class="db-workspace" style="margin-bottom:18px">
+  <section class="db-workspace u_905d8b3da3">
     <div class="db-panel">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <h3 style="margin:0;color:#ef4444">⚠️ ديون الموزعين المتأخرة</h3>
-        <a href="/wholesale/customers/overdue" style="font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none">جميع الديون ←</a>
+      <div class="u_73f3000675">
+        <h3 class="u_2118bb49a6">⚠️ ديون الموزعين المتأخرة</h3>
+        <a href="/wholesale/customers/overdue" class="u_bc53d627a8">جميع الديون ←</a>
       </div>
-      <div style="overflow-x:auto">
-        <table style="width:100%;font-size:.8rem;border-collapse:collapse">
+      <div class="u_0ddf068bfb">
+        <table class="u_73be97e2e1">
           <thead>
-            <tr style="border-bottom:1px solid rgba(239,68,68,.28)">
-              <th style="text-align:right;padding:8px 0;color:var(--db-muted);font-weight:600">الموزع</th>
-              <th style="text-align:center;padding:8px 0;color:var(--db-muted);font-weight:600">المبلغ</th>
-              <th style="text-align:center;padding:8px 0;color:var(--db-muted);font-weight:600">أيام التأخير</th>
+            <tr class="u_7cfe33f704">
+              <th class="u_056c24fbc3">الموزع</th>
+              <th class="u_a8fa70bb4b">المبلغ</th>
+              <th class="u_a8fa70bb4b">أيام التأخير</th>
             </tr>
           </thead>
           <tbody>
             {% for debt in industry_kpis.overdue_debts[:5] %}
-            <tr style="border-bottom:1px solid rgba(239,68,68,.12)">
-              <td style="padding:8px 0;color:#ecfbff">{{ debt.party_name[:18] }}</td>
-              <td style="padding:8px 0;text-align:center;color:#ef4444;font-weight:700">{{ debt.outstanding|round(0)|int }} ر.س</td>
-              <td style="padding:8px 0;text-align:center;color:#f59e0b">{{ debt.days_overdue }} أيام</td>
+            <tr class="u_4ad5eec9ff">
+              <td class="u_2a96828041">{{ debt.party_name[:18] }}</td>
+              <td class="u_c08dc4f475">{{ debt.outstanding|round(0)|int }} ر.س</td>
+              <td class="u_457e45231d">{{ debt.days_overdue }} أيام</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -796,20 +956,20 @@
   {% endif %}
 
   {% if industry_kpis.low_stock_wholesale and industry_kpis.low_stock_wholesale|length > 0 %}
-  <section class="db-workspace" style="margin-bottom:18px">
+  <section class="db-workspace u_905d8b3da3">
     <div class="db-panel">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <h3 style="margin:0">📦 أصناف منخفضة المخزون</h3>
-        <a href="/inventory/products" style="font-size:.75rem;font-weight:400;color:#6bc9e8;text-decoration:none">المخزون ←</a>
+      <div class="u_73f3000675">
+        <h3 class="u_1169661891">📦 أصناف منخفضة المخزون</h3>
+        <a href="/inventory/products" class="u_bc53d627a8">المخزون ←</a>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;max-height:180px;overflow-y:auto">
+      <div class="u_d6ea2b27b2">
         {% for item in industry_kpis.low_stock_wholesale[:8] %}
-        <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.22);border-radius:12px;padding:12px;font-size:.8rem">
-          <div style="color:#ecfbff;font-weight:600">{{ item.sku }}</div>
-          <div style="color:var(--db-muted);font-size:.7rem">{{ item.product_name[:16] }}</div>
-          <div style="display:flex;justify-content:space-between;margin-top:6px">
-            <div style="color:#f59e0b;font-weight:700">{{ item.current_qty|round(3) }}</div>
-            <div style="color:var(--db-muted)">الحد: {{ item.min_qty|round(3) }}</div>
+        <div class="u_b651d8a39b">
+          <div class="u_9201407de3">{{ item.sku }}</div>
+          <div class="u_3e016ed906">{{ item.product_name[:16] }}</div>
+          <div class="u_e29980b523">
+            <div class="u_64e309605c">{{ item.current_qty|round(3) }}</div>
+            <div class="u_3b2aa12f40">الحد: {{ item.min_qty|round(3) }}</div>
           </div>
         </div>
         {% endfor %}
@@ -859,11 +1019,34 @@
   </aside>
 </section>
 
+<section class="db-governance">
+  <div class="db-governance-card">
+    <div class="title">الموافقات المعلقة</div>
+    <div class="count" id="govApprovals">--</div>
+    <div class="sub">طلبات بانتظار الاعتماد</div>
+  </div>
+  <div class="db-governance-card">
+    <div class="title">صف التنفيذ</div>
+    <div class="count" id="govQueue">--</div>
+    <div class="sub">عناصر جاهزة للتنفيذ</div>
+  </div>
+  <div class="db-governance-card">
+    <div class="title">سجل التدقيق 24h</div>
+    <div class="count" id="govAudit">--</div>
+    <div class="sub">حركات محكومة وموثقة</div>
+  </div>
+  <div class="db-governance-card">
+    <div class="title">الإشعارات غير المقروءة</div>
+    <div class="count" id="govUnread">--</div>
+    <div class="sub"><a href="/notifications" class="u_7780aac23f">عرض الإشعارات ←</a></div>
+  </div>
+</section>
+
 <!-- ═══ التنبيهات القادمة (reminders widget) ═══ -->
-<div id="remindersWidget" style="margin-top:16px;display:none">
+<div id="remindersWidget" class="u_fa15b8ce99">
   <div class="db-panel">
     <h3>🔔 التزامات قادمة — خلال 30 يوماً
-      <a href="/reminders" style="font-size:.75rem;font-weight:400;color:#6bc9e8;margin-right:8px;text-decoration:none">إدارة الكل ←</a>
+      <a href="/reminders" class="u_02f011ccfd">إدارة الكل ←</a>
     </h3>
     <div id="remindersWidgetBody"></div>
   </div>
@@ -905,7 +1088,7 @@
         installment:'💳', license:'📄', custom:'🔔'
       };
 
-      body.innerHTML = `<div style="display:grid;gap:8px;margin-top:4px">` +
+      body.innerHTML = `<div class="u_eeafa25286">` +
         items.map(r => {
           const icon = TYPE_ICONS[r.reminder_type] || '🔔';
           const urgent = r.days_left <= 7;
@@ -914,16 +1097,24 @@
           const badge  = overdue ? `⚠️ متأخر ${Math.abs(r.days_left)} يوم`
                        : (r.days_left === 0 ? '🚨 اليوم'
                        : `${r.days_left} يوم`);
-          return `<div style="display:flex;justify-content:space-between;align-items:center;
-                    background:rgba(17,62,84,.38);border:1px solid rgba(84,203,255,.2);
-                    border-radius:11px;padding:10px 14px">
-            <span style="font-size:.86rem;color:#b9e3f2">${icon} ${r.title}</span>
-            <span style="font-size:.78rem;color:${color};font-weight:700;white-space:nowrap;margin-right:8px">
+          return `<div class="u_1f52258a96">
+            <span class="u_eae5b6e969">${icon} ${r.title}</span>
+            <span class="db-reminder-badge ${badgeClass}">
               ${badge}
             </span>
           </div>`;
         }).join('') + `</div>`;
     })
     .catch(() => {}); // بهدوء إذا لم يكن جدول reminders موجوداً بعد
+
+  fetch('/api/v1/monitoring/summary')
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('govApprovals').textContent = (data.summary?.pending_approvals || 0).toLocaleString('ar');
+      document.getElementById('govQueue').textContent = (data.summary?.execution_pending || 0).toLocaleString('ar');
+      document.getElementById('govAudit').textContent = (data.summary?.audit_24h || 0).toLocaleString('ar');
+      document.getElementById('govUnread').textContent = (data.summary?.unread_notifications || 0).toLocaleString('ar');
+    })
+    .catch(() => {});
 </script>
 {% endblock %}

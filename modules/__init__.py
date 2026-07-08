@@ -54,6 +54,9 @@ def create_app():
     # ── نظام المراقبة الشامل ──────────────────────────────────────────────────
     log_level = "INFO" if IS_PROD else "DEBUG"
     setup_logging(app, log_level)
+    # تقليل ضوضاء access logs في بيئة التشغيل لتخفيف حمل I/O تحت الضغط.
+    if not app.debug:
+        logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
     # ── ProxyFix: تفعيله عند وجود Proxy/nginx أمام التطبيق ─────────────────────
     if _BEHIND_PROXY:
@@ -83,10 +86,11 @@ def create_app():
     from .blueprints.invoices.routes   import bp as invoices_bp
     from .blueprints.recipes.routes    import bp as recipes_bp
     from .blueprints.admin.routes      import bp as admin_bp, api as api_v1_bp
+    from .blueprints.admin.super_admin_extensions import bp as super_admin_ext_bp
     from .blueprints.receivables.routes import bp as receivables_bp
     from .blueprints.hr.routes         import bp as hr_bp
 
-    for bp in (auth_bp, core_bp, accounting_bp, supply_bp, pos_bp, restaurant_bp, workforce_bp, owner_bp, inventory_bp, contacts_bp, barcode_bp, medical_bp, construction_bp, rental_bp, wholesale_bp, services_bp, invoices_bp, recipes_bp, admin_bp, api_v1_bp, receivables_bp, hr_bp):
+    for bp in (auth_bp, core_bp, accounting_bp, supply_bp, pos_bp, restaurant_bp, workforce_bp, owner_bp, inventory_bp, contacts_bp, barcode_bp, medical_bp, construction_bp, rental_bp, wholesale_bp, services_bp, invoices_bp, recipes_bp, admin_bp, super_admin_ext_bp, api_v1_bp, receivables_bp, hr_bp):
         app.register_blueprint(bp)
 
     # ── Jinja2 Custom Filters ─────────────────────────────────────────────────

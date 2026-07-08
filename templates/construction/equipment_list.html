@@ -1,3 +1,21 @@
+<style>
+.u_6b00e75351{display:flex;gap:10px;}
+.u_5f40b9dc3a{color:#64748b;font-size:.82rem;}
+.u_dac4fe6c9b{text-align:center;}
+.u_0cfaf7afe1{color:#38bdf8;font-weight:700;}
+.u_aa3ee35a72{color:#94a3b8;}
+.u_e4d86a1dd6{padding:4px 10px;font-size:.78rem;}
+.u_612a65f696{text-align:center;color:#64748b;padding:40px;}
+.equipment-status-badge{padding:2px 10px;border-radius:20px;font-size:.78rem;}
+.equipment-status-available{background:#14532d;color:#86efac;}
+.equipment-status-in-use{background:#1e3a5f;color:#93c5fd;}
+.equipment-status-maintenance{background:#78350f;color:#fcd34d;}
+.equipment-status-default{background:rgba(255,255,255,.06);color:#94a3b8;}
+.u_6add97efa7{max-width:480px;}
+.u_adf555b36b{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.u_97294b207c{grid-column:1/-1;}
+.u_5a7bda665c{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;}
+</style>
 ﻿{% extends "base.html" %}
 {% block title %}ط§ظ„ظ…ط¹ط¯ط§طھ{% endblock %}
 {% block page_title %}ï؟½ ط§ظ„ظ…ط¹ط¯ط§طھ ظˆط§ظ„ط¢ظ„ظٹط§طھ{% endblock %}
@@ -5,7 +23,7 @@
 {% block content %}
 <div class="page-header">
   <div><p class="page-subtitle">{{ equipment_list|length }} ظ…ط¹ط¯ط© ظ…ط³ط¬ظ„ط©</p></div>
-  <div style="display:flex;gap:10px;">
+  <div class="u_6b00e75351">
     <a href="/projects" class="btn btn-secondary">ًںڈ—ï¸ڈ ط§ظ„ظ…ط´ط§ط±ظٹط¹</a>
     <button class="btn btn-primary" onclick="document.getElementById('newEquipModal').classList.add('show')">+ ط¥ط¶ط§ظپط© ظ…ط¹ط¯ط©</button>
   </div>
@@ -19,28 +37,24 @@
     <tbody>
       {% for eq in equipment_list %}
       <tr>
-        <td style="color:#64748b;font-size:.82rem;">{{ eq.id }}</td>
+        <td class="u_5f40b9dc3a">{{ eq.id }}</td>
         <td><strong>{{ eq.equipment_name or eq.name }}</strong></td>
         <td>{{ eq.equipment_type or 'â€”' }}</td>
-        <td style="text-align:center;">{{ eq.quantity or 1 }}</td>
-        <td style="color:#38bdf8;font-weight:700;">{{ "{:,.2f}".format(eq.daily_rate or 0) }} ط±.ط³</td>
+        <td class="u_dac4fe6c9b">{{ eq.quantity or 1 }}</td>
+        <td class="u_0cfaf7afe1">{{ "{:,.2f}".format(eq.daily_rate or 0) }} ط±.ط³</td>
         <td>
-          <span style="padding:2px 10px;border-radius:20px;font-size:.78rem;
-            {% if eq.status=='available' %}background:#14532d;color:#86efac;
-            {% elif eq.status=='in_use' %}background:#1e3a5f;color:#93c5fd;
-            {% elif eq.status=='maintenance' %}background:#78350f;color:#fcd34d;
-            {% else %}background:rgba(255,255,255,.06);color:#94a3b8;{% endif %}">
+          <span class="equipment-status-badge {% if eq.status=='available' %}equipment-status-available{% elif eq.status=='in_use' %}equipment-status-in-use{% elif eq.status=='maintenance' %}equipment-status-maintenance{% else %}equipment-status-default{% endif %}">
             {% if eq.status=='available' %}âœ“ ظ…طھط§ط­
             {% elif eq.status=='in_use' %}â—ڈ ظ…ط³طھط®ط¯ظ…
             {% elif eq.status=='maintenance' %}ًں”§ طµظٹط§ظ†ط©
             {% else %}{{ eq.status or 'â€”' }}{% endif %}
           </span>
         </td>
-        <td style="color:#94a3b8;">{{ eq.project_name or 'â€”' }}</td>
-        <td><a href="/projects/equipment/{{ eq.id }}" class="btn btn-secondary" style="padding:4px 10px;font-size:.78rem;">طھظپط§طµظٹظ„</a></td>
+        <td class="u_aa3ee35a72">{{ eq.project_name or 'â€”' }}</td>
+        <td><a href="/projects/equipment/{{ eq.id }}" class="btn btn-secondary u_e4d86a1dd6">طھظپط§طµظٹظ„</a></td>
       </tr>
       {% else %}
-      <tr><td colspan="8" style="text-align:center;color:#64748b;padding:40px;">ظ„ط§ طھظˆط¬ط¯ ظ…ط¹ط¯ط§طھ ظ…ط³ط¬ظ„ط©</td></tr>
+      <tr><td colspan="8" class="u_612a65f696">ظ„ط§ طھظˆط¬ط¯ ظ…ط¹ط¯ط§طھ ظ…ط³ط¬ظ„ط©</td></tr>
       {% endfor %}
     </tbody>
   </table>
@@ -48,20 +62,20 @@
 
 <!-- Modal: ظ…ط¹ط¯ط© ط¬ط¯ظٹط¯ط© -->
 <div class="modal-overlay" id="newEquipModal">
-  <div class="modal-box" style="max-width:480px;">
+  <div class="modal-box u_6add97efa7">
     <div class="modal-header">
       <h3 class="modal-title">ًں›‍ ط¥ط¶ط§ظپط© ظ…ط¹ط¯ط© ط¬ط¯ظٹط¯ط©</h3>
       <button class="modal-close" onclick="document.getElementById('newEquipModal').classList.remove('show')">âœ•</button>
     </div>
     <form method="post" action="/projects/equipment/new">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="form-group" style="grid-column:1/-1;">
+      <div class="u_adf555b36b">
+        <div class="form-group u_97294b207c">
           <label class="form-label">ط§ط³ظ… ط§ظ„ظ…ط¹ط¯ط© *</label>
           <input name="name" class="form-input" placeholder="ط­ظپط§ط±ط© / ط±ط§ظپط¹ط© / ط®ظ„ط§ط·ط©..." required>
         </div>
         <div class="form-group">
           <label class="form-label">ط§ظ„ظ†ظˆط¹</label>
-          <select name="type" class="form-input">
+          <select name="type" class="form-input" title="اختيار نوع المعدة">
             <option value="heavy">ط«ظ‚ظٹظ„ط©</option>
             <option value="light">ط®ظپظٹظپط©</option>
             <option value="vehicle">ظ…ط±ظƒط¨ط©</option>
@@ -85,7 +99,7 @@
         <label class="form-label">ظ…ظ„ط§ط­ط¸ط§طھ</label>
         <textarea name="notes" class="form-input" rows="2" placeholder="ظ…ظ„ط§ط­ط¸ط§طھ ط§ط¶ط§ظپظٹط©..."></textarea>
       </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <div class="u_5a7bda665c">
         <button type="button" class="btn btn-secondary" onclick="document.getElementById('newEquipModal').classList.remove('show')">ط¥ظ„ط؛ط§ط،</button>
         <button type="submit" class="btn btn-primary">âœ… ط¥ط¶ط§ظپط©</button>
       </div>

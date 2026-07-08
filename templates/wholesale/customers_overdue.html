@@ -15,24 +15,33 @@
   .badge-warning { background: #fffbeb; color: #d97706; border: 1px solid #fcd34d; }
   .badge-ok      { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; }
   .stat-box { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; padding: 20px; border-radius: 8px; text-align: center; }
+.u_a5c582b5a8{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px}
+.u_3e644b66ba{font-size:12px;opacity:.8}
+.u_d08119318e{font-size:2rem;font-weight:900;margin:8px 0}
+.u_c6233852ba{background:linear-gradient(135deg,#f59e0b,#d97706);color:white;padding:20px;border-radius:8px;text-align:center}
+.u_4c07b04c8c{background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:white;padding:20px;border-radius:8px;text-align:center}
+.u_42f8ef6805{color:#dc2626;font-weight:bold}
+.u_03f7736aa4{background:#3b82f6;color:white;padding:5px 12px;border-radius:4px;text-decoration:none;font-size:13px}
+.u_e8d0fd0913{text-align:center;color:#999;padding:30px}
+.u_14a59c6694{color:#3b82f6}
 </style>
 
 <!-- إجمالي -->
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px">
+<div class="u_a5c582b5a8">
   <div class="stat-box">
-    <div style="font-size:12px;opacity:.8">إجمالي الديون المتأخرة</div>
-    <div style="font-size:2rem;font-weight:900;margin:8px 0">{{ "{:,.2f}".format(total_overdue) }}</div>
-    <div style="font-size:12px;opacity:.8">ريال سعودي</div>
+    <div class="u_3e644b66ba">إجمالي الديون المتأخرة</div>
+    <div class="u_d08119318e">{{ "{:,.2f}".format(total_overdue) }}</div>
+    <div class="u_3e644b66ba">ريال سعودي</div>
   </div>
-  <div style="background:linear-gradient(135deg,#f59e0b,#d97706);color:white;padding:20px;border-radius:8px;text-align:center">
-    <div style="font-size:12px;opacity:.8">عدد الموزعين المتأخرين</div>
-    <div style="font-size:2rem;font-weight:900;margin:8px 0">{{ overdue_by_customer|length }}</div>
-    <div style="font-size:12px;opacity:.8">موزع</div>
+  <div class="u_c6233852ba">
+    <div class="u_3e644b66ba">عدد الموزعين المتأخرين</div>
+    <div class="u_d08119318e">{{ overdue_by_customer|length }}</div>
+    <div class="u_3e644b66ba">موزع</div>
   </div>
-  <div style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:white;padding:20px;border-radius:8px;text-align:center">
-    <div style="font-size:12px;opacity:.8">إجمالي الفواتير</div>
-    <div style="font-size:2rem;font-weight:900;margin:8px 0">{{ overdue_invoices|length }}</div>
-    <div style="font-size:12px;opacity:.8">فاتورة معلقة</div>
+  <div class="u_4c07b04c8c">
+    <div class="u_3e644b66ba">إجمالي الفواتير</div>
+    <div class="u_d08119318e">{{ overdue_invoices|length }}</div>
+    <div class="u_3e644b66ba">فاتورة معلقة</div>
   </div>
 </div>
 
@@ -57,7 +66,7 @@
         <td><strong>{{ cust.customer_name }}</strong></td>
         <td>{{ cust.phone or '—' }}</td>
         <td>{{ cust.invoice_count }}</td>
-        <td style="color:#dc2626;font-weight:bold">{{ "{:,.2f}".format(cust.total_outstanding) }} ر.س</td>
+        <td class="u_42f8ef6805">{{ "{:,.2f}".format(cust.total_outstanding) }} ر.س</td>
         <td>{{ cust.oldest_due or '—' }}</td>
         <td>
           {% if cust.max_days_overdue > 90 %}
@@ -69,14 +78,13 @@
           {% endif %}
         </td>
         <td>
-          <a href="/wholesale/customers/{{ cust.customer_id }}/statement"
-             style="background:#3b82f6;color:white;padding:5px 12px;border-radius:4px;text-decoration:none;font-size:13px">
+          <a href="/wholesale/customers/{{ cust.customer_id }}/statement" class="u_03f7736aa4">
             عرض الكشف
           </a>
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="7" style="text-align:center;color:#999;padding:30px">لا توجد ديون متأخرة ✓</td></tr>
+      <tr><td colspan="7" class="u_e8d0fd0913">لا توجد ديون متأخرة ✓</td></tr>
       {% endfor %}
     </tbody>
   </table>
@@ -99,11 +107,11 @@
     <tbody>
       {% for inv in overdue_invoices %}
       <tr>
-        <td><a href="/invoices/{{ inv.id }}" style="color:#3b82f6">{{ inv.invoice_number }}</a></td>
+        <td><a href="/invoices/{{ inv.id }}" class="u_14a59c6694">{{ inv.invoice_number }}</a></td>
         <td>{{ inv.customer_name }}</td>
         <td>{{ inv.invoice_date }}</td>
         <td>{{ inv.due_date or '—' }}</td>
-        <td style="color:#dc2626;font-weight:bold">{{ "{:,.2f}".format(inv.outstanding) }} ر.س</td>
+        <td class="u_42f8ef6805">{{ "{:,.2f}".format(inv.outstanding) }} ر.س</td>
         <td>
           {% if inv.days_overdue > 90 %}
             <span class="badge badge-danger">{{ inv.days_overdue }} يوم</span>
@@ -115,7 +123,7 @@
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="6" style="text-align:center;color:#999;padding:30px">لا توجد فواتير متأخرة ✓</td></tr>
+      <tr><td colspan="6" class="u_e8d0fd0913">لا توجد فواتير متأخرة ✓</td></tr>
       {% endfor %}
     </tbody>
   </table>

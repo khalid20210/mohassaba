@@ -6,16 +6,22 @@ _real_company_test.py
 import requests
 import json
 import random
+import os
+import re
 import sys
 import time
 from datetime import datetime, timedelta
 from collections import defaultdict
+import sqlite3
+from pathlib import Path
 
-BASE = "http://127.0.0.1:5001"
+BASE = os.environ.get("LIVE_BASE_URL", "http://127.0.0.1:5001").strip() or "http://127.0.0.1:5001"
 RESULTS = []
 PASS = 0
 FAIL = 0
 WARN = 0
+SUBUSERS = []
+DB_PATH = Path(__file__).parent / "database" / "accounting_dev.db"
 
 # ─── أداة إعداد التقرير ──────────────────────────────────────────────────────
 def log(label, status, detail="", critical=False):
@@ -65,8 +71,27 @@ def check(r, label, ok_codes=(200, 201, 302), keyword=None):
     log(label, "PASS", f"HTTP {r.status_code}")
     return True
 
+def check_warn(cond, label):
+    if cond:
+        log(label, "PASS", "OK")
+        return True
+    log(label, "WARN", "condition not met")
+    return False
+
+def _extract_csrf_token(html_text):
+    if not html_text:
+        return None
+    m = re.search(r'name=["\']csrf_token["\']\s+value=["\']([^"\']+)["\']', html_text)
+    if m:
+        return m.group(1)
+    m = re.search(r'value=["\']([^"\']+)["\']\s+name=["\']csrf_token["\']', html_text)
+    if m:
+        return m.group(1)
+    return None
+
 # ─── 1. فحص صحة الخادم ────────────────────────────────────────────────────
 section("1️⃣  فحص صحة الخادم")
+print(f"  🌐 BASE URL: {BASE}")
 s = requests.Session()
 r = s.get(f"{BASE}/healthz", timeout=10)
 if r.status_code == 200:
@@ -631,14 +656,34 @@ if supermarket_sess:
         check(r, f"إعدادات — {name}", ok_codes=(200, 302, 404))
 
     # إنشاء مستخدم فرعي (كاشير)
+    cashier_email = f"cashier_{random.randint(1000,9999)}@jinan.biz"
     r_usr = post(supermarket_sess, "/settings/users/new", data={
         "name":     "سلمى أحمد",
-        "email":    f"cashier_{random.randint(1000,9999)}@jinan.biz",
+        "email":    cashier_email,
         "role":     "cashier",
         "password": "Cashier@2026",
     })
     if r_usr:
-        check(r_usr, "إعدادات — إضافة كاشير", ok_codes=(200, 201, 302, 400, 404))
+        created = check(r_usr, "إعدادات — إضافة كاشير", ok_codes=(200, 201, 302, 400, 404))
+        if created and r_usr.status_code in (200, 201, 302):
+            SUBUSERS.append({
+                "role": "cashier",
+                "email": cashier_email,
+                "password": "Cashier@2026",
+            })
+
+    # إنشاء مدير لاختبار الصلاحيات (قد لا يكون الدور مدعومًا في كل الإصدارات)
+    manager_email = f"manager_{random.randint(1000,9999)}@jinan.biz"
+    r_mgr = post(supermarket_sess, "/settings/users/new", data={
+        "name":     "مدير الفرع",
+        "email":    manager_email,
+        "role":     "manager",
+        "password": "Manager@2026",
+    })
+    if r_mgr:
+        created_mgr = check(r_mgr, "إعدادات — إضافة مدير", ok_codes=(200, 201, 302, 400, 404))
+        if created_mgr and r_mgr.status_code in (200, 201, 302):
+            SUBUSERS.append({"role": "manager", "email": manager_email, "password": "Manager@2026"})
 
 # ─── 20. المزامنة والضغط ─────────────────────────────────────────────────────
 section("2️⃣0️⃣  اختبار الضغط والمزامنة")
@@ -730,6 +775,134 @@ section("2️⃣3️⃣  النسخ الاحتياطي")
 if supermarket_sess:
     r_bk = get(supermarket_sess, "/backup")
     check(r_bk, "صفحة النسخ الاحتياطي", ok_codes=(200, 302, 404))
+
+# ─── 24. Monitoring + Audit + Execution + Notifications (Real-time) ─────────
+section("2️⃣4️⃣  المراقبة المباشرة والحوكمة")
+
+if supermarket_sess:
+    r_m = get(supermarket_sess, "/monitoring")
+    check(r_m, "Monitoring Dashboard", ok_codes=(200, 302, 404))
+
+    r_metrics = get(supermarket_sess, "/metrics")
+    check(r_metrics, "Metrics (owner)", ok_codes=(200, 302))
+
+    r_diag = get(supermarket_sess, "/diagnostics")
+    check(r_diag, "Diagnostics (owner)", ok_codes=(200, 302, 500))
+
+    # unread قبل العمليات
+    r_unread_before = get(supermarket_sess, "/api/v1/notifications/unread-count")
+    unread_before = 0
+    if r_unread_before and r_unread_before.status_code == 200:
+        try:
+            unread_before = int((r_unread_before.json() or {}).get("unread_count", 0))
+        except Exception:
+            unread_before = 0
+
+    # إنشاء Approval Request
+    r_req = post(supermarket_sess, "/api/v1/approvals/request", json_data={
+        "action_type": "invoice.cancel.paid",
+        "entity_type": "invoice",
+        "entity_id": 1,
+        "reason": "live_simulation_governance_check",
+        "payload": {"source": "live_simulation"},
+    })
+    req_id = None
+    if r_req and r_req.status_code in (200, 201):
+        try:
+            req_id = int((r_req.json() or {}).get("id"))
+        except Exception:
+            req_id = None
+    check(r_req, "Approval Flow — create request", ok_codes=(200, 201, 302, 400, 403))
+
+    if req_id:
+        r_app = post(supermarket_sess, f"/api/v1/approvals/{req_id}/approve", json_data={"comment": "live approve"})
+        check(r_app, "Approval Flow — approve", ok_codes=(200, 201, 302, 400))
+
+    r_eq = post(supermarket_sess, "/api/v1/execution-queue/process", json_data={"limit": 20})
+    check(r_eq, "Execution Queue — process", ok_codes=(200, 201, 302, 400))
+
+    r_notif = get(supermarket_sess, "/api/v1/notifications?limit=20")
+    check(r_notif, "Notifications API", ok_codes=(200, 302))
+
+    # unread بعد العمليات
+    r_unread_after = get(supermarket_sess, "/api/v1/notifications/unread-count")
+    unread_after = unread_before
+    if r_unread_after and r_unread_after.status_code == 200:
+        try:
+            unread_after = int((r_unread_after.json() or {}).get("unread_count", unread_before))
+        except Exception:
+            unread_after = unread_before
+    check_warn(unread_after >= unread_before, "Real-time Notifications: unread did not increase after governance actions")
+
+# ─── 25. Soft Delete حي (Recipe -> Recycle Bin) ─────────────────────────────
+section("2️⃣5️⃣  Soft Delete + Recycle Bin")
+
+if restaurant_sess:
+    recipe_name = f"Live Recipe {random.randint(1000,9999)}"
+    r_recipe_form = get(restaurant_sess, "/recipes/new")
+    csrf_token = _extract_csrf_token(r_recipe_form.text if r_recipe_form is not None else "")
+
+    r_new_recipe = post(restaurant_sess, "/recipes/new", data={
+        "csrf_token": csrf_token or "",
+        "recipe_name": recipe_name,
+        "category": "main",
+        "difficulty_level": "easy",
+        "preparation_time": "10",
+        "cooking_time": "15",
+        "yield_quantity": "1",
+        "yield_unit": "حصة",
+        "selling_price": "25",
+        "ingredients_json": "[]",
+        "description": "live soft delete scenario",
+    })
+    check(r_new_recipe, "Recipes — create for soft delete", ok_codes=(200, 201, 302, 400, 404))
+
+    recipe_id = None
+    try:
+        conn = sqlite3.connect(str(DB_PATH))
+        conn.row_factory = sqlite3.Row
+        row = conn.execute("SELECT id FROM recipes WHERE recipe_name=? ORDER BY id DESC LIMIT 1", (recipe_name,)).fetchone()
+        conn.close()
+        if row:
+            recipe_id = int(row["id"])
+    except Exception:
+        recipe_id = None
+
+    if recipe_id:
+        r_del_recipe = post(restaurant_sess, f"/recipes/{recipe_id}/delete", data={"csrf_token": csrf_token or ""})
+        check(r_del_recipe, "Recipes — soft delete to recycle bin", ok_codes=(200, 201, 302, 400, 404))
+
+    r_rb = get(restaurant_sess, "/api/v1/recycle-bin?page=1")
+    check(r_rb, "Recycle Bin API after soft delete", ok_codes=(200, 302, 404))
+
+# ─── 26. الصلاحيات: Owner vs Manager vs User ───────────────────────────────
+section("2️⃣6️⃣  الصلاحيات والتحكم")
+
+if supermarket_sess:
+    r_owner_full = get(supermarket_sess, "/metrics")
+    check(r_owner_full, "Owner access — metrics", ok_codes=(200, 302))
+
+for su in SUBUSERS:
+    if not su.get("email"):
+        continue
+    su_sess = requests.Session()
+    r_login_su = post(su_sess, "/auth/login", data={"email": su["email"], "password": su["password"]})
+    ok_login = check(r_login_su, f"Login subuser ({su['role']})", ok_codes=(200, 201, 302, 400, 401, 403, 404))
+    if not ok_login or not r_login_su or r_login_su.status_code not in (200, 302):
+        continue
+
+    r_owner_page = get(su_sess, "/owner")
+    # متوقع عدم الوصول المباشر للمستخدم غير المالك
+    if r_owner_page and r_owner_page.status_code in (200,):
+        log(f"RBAC breach check ({su['role']})", "WARN", "owner page returned 200 for subuser")
+    else:
+        log(f"RBAC guard ({su['role']})", "PASS", f"owner page blocked or redirected ({r_owner_page.status_code if r_owner_page else 'ERR'})")
+
+    r_metrics_sub = get(su_sess, "/metrics")
+    if r_metrics_sub and r_metrics_sub.status_code in (200,):
+        log(f"RBAC metrics check ({su['role']})", "WARN", "metrics returned 200 for subuser")
+    else:
+        log(f"RBAC metrics guard ({su['role']})", "PASS", f"metrics blocked or redirected ({r_metrics_sub.status_code if r_metrics_sub else 'ERR'})")
 
 # ─── التقرير النهائي ─────────────────────────────────────────────────────────
 section("📊  التقرير النهائي الشامل")

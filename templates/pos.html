@@ -191,6 +191,29 @@
   font-size:.74rem;
 }
 @media (max-width:840px) { .pos-app{flex-direction:column;height:auto} .pos-cart{flex:none} .pos-prods{min-height:340px} }
+.u_a7d19974ff{margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap}
+.u_6b99de8b69{display:none}
+.u_386ac514af{text-align:center;font-size:3rem}
+.u_d84af8fb59{max-width:460px}
+.u_e8374cdd14{text-align:right;margin-bottom:4px}
+.u_54c2afb7ba{text-align:right}
+.u_097cff257e{width:100%;padding:10px;margin-top:6px;background:var(--p-card2);
+                   border:1px solid var(--p-border);border-radius:7px;
+                   color:var(--p-text);font-family:inherit;font-size:.88rem;cursor:pointer;}
+.u_27266b33f9{max-width:470px}
+.u_57816ee94f{text-align:right;margin-bottom:8px}
+.u_54cecff4d2{font-size:.84rem;color:var(--p-muted);line-height:1.9}
+.u_d2c171b18b{margin-top:10px}
+.u_74b34911ae{width:100%;padding:10px;margin-top:8px;background:var(--p-card2);
+                   border:1px solid var(--p-border);border-radius:7px;
+                   color:var(--p-text);font-family:inherit;font-size:.88rem;cursor:pointer;}
+.u_04391f0812{max-width:520px}
+.u_fe641c019b{font-size:.84rem;color:var(--p-text);line-height:1.95;max-height:320px;overflow:auto}
+.u_6f832bdb0c{color:var(--p-muted);text-align:center;padding:20px 0}
+.u_25b5288699{display:flex;gap:6px;align-items:center}
+.u_ef5bb5e3be{border-color:var(--p-border)}
+.u_4e420aff3f{margin-bottom:6px}
+.u_bcd0c7f721{color:var(--p-muted)}
 </style>
 {% endblock %}
 
@@ -204,7 +227,7 @@
   <span class="pos-mode-chip">{{ ui_config.pos_mode }}</span>
 </div>
 {% if ui_config.show_tables or ui_config.show_expiry or ui_config.show_serial or ui_config.show_variant %}
-<div class="pos-mode-hints" style="margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap">
+<div class="pos-mode-hints u_a7d19974ff">
   {% if ui_config.show_tables  %}<span class="hint">🍽️ الطاولات</span>{% endif %}
   {% if ui_config.show_expiry  %}<span class="hint">⏳ الصلاحية</span>{% endif %}
   {% if ui_config.show_serial  %}<span class="hint">🔢 {{ ui_config.T_serial }}</span>{% endif %}
@@ -283,7 +306,7 @@
         <div class="pos-inv-num" id="invNum">#——</div>
       </div>
       <span class="pos-shift-chip" id="shiftChip">🕒 وردية مفتوحة</span>
-      <button class="pos-held-btn" id="heldBtn" onclick="showHeldModal()" style="display:none">
+      <button class="pos-held-btn u_6b99de8b69" id="heldBtn" onclick="showHeldModal()">
         ⏸ معلقة <span id="heldCnt">0</span>
       </button>
       <button class="pos-held-btn" onclick="toggleShiftModal()">🕒 وردية</button>
@@ -348,9 +371,9 @@
 </div>
 
 <!-- Modal: نجاح البيع -->
-<div id="modalSuccess" class="pos-overlay" style="display:none">
+<div id="modalSuccess" class="pos-overlay u_6b99de8b69">
   <div class="pos-mbox">
-    <div style="text-align:center;font-size:3rem">✅</div>
+    <div class="u_386ac514af">✅</div>
     <h2>تمت عملية البيع بنجاح</h2>
     <p id="mMsg">تم إصدار الفاتورة وتسجيل القيد المحاسبي</p>
     <div class="pos-receipt-amt" id="mAmount"></div>
@@ -362,50 +385,41 @@
 </div>
 
 <!-- Modal: الفواتير المعلقة -->
-<div id="modalHeld" class="pos-overlay" style="display:none"
+<div id="modalHeld" class="pos-overlay u_6b99de8b69"
      onclick="if(event.target===this)this.style.display='none'">
-  <div class="pos-mbox" style="max-width:460px">
-    <h2 style="text-align:right;margin-bottom:4px">⏸ الفواتير المعلقة</h2>
-    <p style="text-align:right">اختر فاتورة لاستعادتها إلى السلة</p>
+  <div class="pos-mbox u_d84af8fb59">
+    <h2 class="u_e8374cdd14">⏸ الفواتير المعلقة</h2>
+    <p class="u_54c2afb7ba">اختر فاتورة لاستعادتها إلى السلة</p>
     <div class="held-list" id="heldList"></div>
-    <button onclick="document.getElementById('modalHeld').style.display='none'"
-            style="width:100%;padding:10px;margin-top:6px;background:var(--p-card2);
-                   border:1px solid var(--p-border);border-radius:7px;
-                   color:var(--p-text);font-family:inherit;font-size:.88rem;cursor:pointer;">
+    <button onclick="document.getElementById('modalHeld').style.display='none'" class="u_097cff257e">
       إغلاق
     </button>
   </div>
 </div>
 
 <!-- Modal: إدارة الوردية -->
-<div id="modalShift" class="pos-overlay" style="display:none"
+<div id="modalShift" class="pos-overlay u_6b99de8b69"
      onclick="if(event.target===this)this.style.display='none'">
-  <div class="pos-mbox" style="max-width:470px">
-    <h2 style="text-align:right;margin-bottom:8px">🕒 إدارة الوردية</h2>
-    <div id="shiftInfo" style="font-size:.84rem;color:var(--p-muted);line-height:1.9"></div>
-    <div class="mbox-btns" style="margin-top:10px">
+  <div class="pos-mbox u_27266b33f9">
+    <h2 class="u_57816ee94f">🕒 إدارة الوردية</h2>
+    <div id="shiftInfo" class="u_54cecff4d2"></div>
+    <div class="mbox-btns u_d2c171b18b">
       <button class="mbtn-new" onclick="openShiftPrompt()">فتح وردية</button>
       <button class="mbtn-print" onclick="closeShiftPrompt()">إغلاق وردية (Z)</button>
     </div>
-    <button onclick="document.getElementById('modalShift').style.display='none'"
-            style="width:100%;padding:10px;margin-top:8px;background:var(--p-card2);
-                   border:1px solid var(--p-border);border-radius:7px;
-                   color:var(--p-text);font-family:inherit;font-size:.88rem;cursor:pointer;">
+    <button onclick="document.getElementById('modalShift').style.display='none'" class="u_74b34911ae">
       إغلاق
     </button>
   </div>
 </div>
 
 <!-- Modal: تقرير سريع -->
-<div id="modalReport" class="pos-overlay" style="display:none"
+<div id="modalReport" class="pos-overlay u_6b99de8b69"
      onclick="if(event.target===this)this.style.display='none'">
-  <div class="pos-mbox" style="max-width:520px">
-    <h2 style="text-align:right" id="reportTitle">📊 تقرير</h2>
-    <div id="reportBody" style="font-size:.84rem;color:var(--p-text);line-height:1.95;max-height:320px;overflow:auto"></div>
-    <button onclick="document.getElementById('modalReport').style.display='none'"
-            style="width:100%;padding:10px;margin-top:8px;background:var(--p-card2);
-                   border:1px solid var(--p-border);border-radius:7px;
-                   color:var(--p-text);font-family:inherit;font-size:.88rem;cursor:pointer;">
+  <div class="pos-mbox u_04391f0812">
+    <h2 id="reportTitle" class="u_54c2afb7ba">📊 تقرير</h2>
+    <div id="reportBody" class="u_fe641c019b"></div>
+    <button onclick="document.getElementById('modalReport').style.display='none'" class="u_74b34911ae">
       إغلاق
     </button>
   </div>
@@ -709,7 +723,7 @@ async function showHeldModal() {
   const held = await _fetchSuspended();
   const $list = document.getElementById('heldList');
   if (!held.length) {
-    $list.innerHTML = '<p style="color:var(--p-muted);text-align:center;padding:20px 0">لا توجد فواتير معلقة</p>';
+    $list.innerHTML = '<p class="u_6f832bdb0c">لا توجد فواتير معلقة</p>';
   } else {
     $list.innerHTML = held.map((h) => {
       const label = _h(h.label || `معلقة #${h.id}`);
@@ -721,7 +735,7 @@ async function showHeldModal() {
           <span>⏱ ${when} | ${itemsCount} أصناف | ${parseFloat(h.subtotal || 0).toFixed(2)} ${CUR}</span>
           <span>🏷 ${label}</span>
         </div>
-        <div style="display:flex;gap:6px;align-items:center">
+        <div class="u_25b5288699">
           <span class="held-restore">استعادة ←</span>
           <button class="held-del-btn" onclick="event.stopPropagation();delHeld(${h.id})">🗑</button>
         </div>
@@ -973,9 +987,9 @@ async function showDailyReport() {
     <div>مبيعات نقدي: <strong>${(parseFloat(s.cash_sales)||0).toFixed(2)} ${CUR}</strong></div>
     <div>مبيعات شبكة: <strong>${(parseFloat(s.bank_sales)||0).toFixed(2)} ${CUR}</strong></div>
     <div>مبيعات آجل: <strong>${(parseFloat(s.credit_sales)||0).toFixed(2)} ${CUR}</strong></div>
-    <hr style="border-color:var(--p-border)">
-    <div style="margin-bottom:6px"><strong>أعلى حركة أصناف:</strong></div>
-    ${top || '<div style="color:var(--p-muted)">لا توجد حركة أصناف في هذا اليوم.</div>'}
+    <hr class="u_ef5bb5e3be">
+    <div class="u_4e420aff3f"><strong>أعلى حركة أصناف:</strong></div>
+    ${top || '<div class="u_bcd0c7f721">لا توجد حركة أصناف في هذا اليوم.</div>'}
   `;
   document.getElementById('modalReport').style.display = 'flex';
 }

@@ -17,6 +17,9 @@ from flask import Blueprint, render_template, request, redirect, flash, g, jsoni
 from functools import wraps
 import json
 
+from modules.policy_engine import is_owner
+from modules.sovereign_controls import create_owner_action_request, ensure_sovereign_tables, get_owner_policy_bool, log_owner_impact
+
 bp = Blueprint("hr", __name__, url_prefix="/hr")
 
 
@@ -36,6 +39,20 @@ def _db():
 
 def _biz():
     return g.business["id"]
+
+
+def _ensure_hr_schema(db):
+    cols = {str(r[1]) for r in db.execute("PRAGMA table_info(employees)").fetchall()}
+    if "allowances" not in cols:
+        try:
+            db.execute("ALTER TABLE employees ADD COLUMN allowances REAL DEFAULT 0")
+        except Exception:
+            pass
+    if "status" not in cols:
+        try:
+            db.execute("ALTER TABLE employees ADD COLUMN status TEXT DEFAULT 'active'")
+        except Exception:
+            pass
 
 
 # ══════════════════════════════════════════════════════════
@@ -249,7 +266,54 @@ def employee_detail(emp_id):
 @_require_auth
 def edit_employee(emp_id):
     db = _db(); biz = _biz()
+    _ensure_hr_schema(db)
     f = request.form
+    ensure_sovereign_tables(db)
+    current = db.execute(
+        "SELECT id, full_name, base_salary, allowances FROM employees WHERE id=? AND business_id=?",
+        (emp_id, biz)
+    ).fetchone()
+    if not current:
+        flash("الموظف غير موجود", "error")
+        return redirect(url_for("hr.employees"))
+
+    new_base = float(f.get("base_salary") or 0)
+    new_allowances = float(f.get("allowances") or 0)
+    salary_changed = float(current["base_salary"] or 0) != new_base or float(current["allowances"] or 0) != new_allowances
+    if salary_changed and get_owner_policy_bool(db, int(biz), "payroll_manual_edit_requires_owner", True) and not is_owner(g.user or {}):
+        request_id = create_owner_action_request(
+            db,
+            business_id=int(biz),
+            request_type="payroll.salary_override",
+            entity_type="employee",
+            entity_id=int(emp_id),
+            requested_by=int((g.user or {}).get("id") or 0) or None,
+            reason=f.get("change_reason", "").strip() or "طلب تعديل يدوي على الراتب/البدلات",
+            payload={
+                "employee_name": current["full_name"],
+                "old_base_salary": float(current["base_salary"] or 0),
+                "new_base_salary": new_base,
+                "old_allowances": float(current["allowances"] or 0),
+                "new_allowances": new_allowances,
+            },
+        )
+        log_owner_impact(
+            db,
+            business_id=int(biz),
+            category="payroll_guard",
+            action_key="employee.salary_override_requested",
+            summary=f"تحويل تعديل راتب/بدلات الموظف {current['full_name']} إلى استثناء موافقة",
+            reason=f.get("change_reason", "").strip(),
+            entity_type="employee",
+            entity_id=int(emp_id),
+            actor_user_id=int((g.user or {}).get("id") or 0) or None,
+            protected_amount=abs(new_base - float(current["base_salary"] or 0)) + abs(new_allowances - float(current["allowances"] or 0)),
+            payload={"request_id": request_id},
+        )
+        db.commit()
+        flash(f"تم تحويل تعديل الراتب إلى طلب اعتماد رقم #{request_id} للمالك", "warning")
+        return redirect(url_for("hr.employee_detail", emp_id=emp_id))
+
     try:
         db.execute("""
             UPDATE employees SET
@@ -285,6 +349,7 @@ def edit_employee(emp_id):
 @_require_auth
 def payroll():
     db = _db(); biz = _biz()
+    _ensure_hr_schema(db)
     month = request.args.get("month", datetime.now().strftime("%Y-%m"))
 
     try:
@@ -330,7 +395,9 @@ def payroll():
 def run_payroll():
     """تشغيل الرواتب لجميع الموظفين النشطين"""
     db = _db(); biz = _biz()
+    _ensure_hr_schema(db)
     month = request.form.get("month", datetime.now().strftime("%Y-%m"))
+    ensure_sovereign_tables(db)
 
     try:
         employees = db.execute(
@@ -371,6 +438,19 @@ def run_payroll():
                   datetime.now().isoformat()))
             added += 1
 
+        log_owner_impact(
+            db,
+            business_id=int(biz),
+            category="payroll_guard",
+            action_key="payroll.robot_run",
+            summary=f"تشغيل آلي للرواتب لشهر {month} بعدد {added} موظف",
+            reason="توليد الرواتب آلياً من الرواتب الأساسية والبدلات والسلف",
+            entity_type="hr_payroll",
+            actor_user_id=int((g.user or {}).get("id") or 0) or None,
+            payload={"month": month, "generated_records": added},
+        )
+        db.commit()
+
         flash(f"✓ تم إعداد رواتب {added} موظف لشهر {month}", "success")
     except Exception as e:
         flash(f"خطأ في تشغيل الرواتب: {e}", "error")
@@ -381,11 +461,66 @@ def run_payroll():
 @_require_auth
 def pay_salary(payroll_id):
     db = _db(); biz = _biz()
+    ensure_sovereign_tables(db)
+    payroll_row = db.execute(
+        "SELECT id, employee_id, period_month, net_salary, status FROM hr_payroll WHERE id=? AND business_id=?",
+        (payroll_id, biz)
+    ).fetchone()
+    if not payroll_row:
+        flash("سجل الراتب غير موجود", "error")
+        return redirect(request.form.get("back_to", url_for("hr.payroll")))
+
+    if get_owner_policy_bool(db, int(biz), "payroll_manual_edit_requires_owner", True) and not is_owner(g.user or {}):
+        request_id = create_owner_action_request(
+            db,
+            business_id=int(biz),
+            request_type="payroll.manual_payment",
+            entity_type="hr_payroll",
+            entity_id=int(payroll_id),
+            requested_by=int((g.user or {}).get("id") or 0) or None,
+            reason=(request.form.get("reason") or "").strip() or "طلب صرف/تعديل يدوي على الراتب",
+            payload={
+                "employee_id": payroll_row["employee_id"],
+                "period_month": payroll_row["period_month"],
+                "net_salary": float(payroll_row["net_salary"] or 0),
+                "status": payroll_row["status"],
+            },
+        )
+        log_owner_impact(
+            db,
+            business_id=int(biz),
+            category="payroll_guard",
+            action_key="payroll.manual_payment_requested",
+            summary=f"منع صرف يدوي للراتب #{payroll_id} وتحويله لموافقة المالك",
+            reason=(request.form.get("reason") or "").strip(),
+            entity_type="hr_payroll",
+            entity_id=int(payroll_id),
+            actor_user_id=int((g.user or {}).get("id") or 0) or None,
+            protected_amount=float(payroll_row["net_salary"] or 0),
+            payload={"request_id": request_id},
+        )
+        db.commit()
+        flash(f"تم تحويل صرف الراتب إلى طلب اعتماد رقم #{request_id}", "warning")
+        return redirect(request.form.get("back_to", url_for("hr.payroll")))
+
     try:
         db.execute("""
             UPDATE hr_payroll SET status='paid', payment_date=?
             WHERE id=? AND business_id=?
         """, (datetime.now().strftime("%Y-%m-%d"), payroll_id, biz))
+        log_owner_impact(
+            db,
+            business_id=int(biz),
+            category="payroll_guard",
+            action_key="payroll.manual_payment_owner",
+            summary=f"تم اعتماد صرف يدوي للراتب #{payroll_id}",
+            entity_type="hr_payroll",
+            entity_id=int(payroll_id),
+            actor_user_id=int((g.user or {}).get("id") or 0) or None,
+            protected_amount=float(payroll_row["net_salary"] or 0),
+            payload={"period_month": payroll_row["period_month"]},
+        )
+        db.commit()
         flash("✓ تم تسجيل صرف الراتب", "success")
     except Exception as e:
         flash(f"خطأ: {e}", "error")

@@ -10,25 +10,25 @@
 </div>
 
 <!-- فلتر النوع -->
-<div class="card" style="margin-bottom:16px">
-  <div style="padding:14px 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-    <span style="font-weight:600;font-size:.85rem">التصفية:</span>
+<div class="card u_87c136dfd0">
+  <div class="u_5dc0f056ca">
+    <span class="u_9ad44ab960">التصفية:</span>
     <button onclick="loadItems('')"     class="btn btn-sm btn-outline filter-btn active" data-type="">الكل</button>
     <button onclick="loadItems('invoice')"  class="btn btn-sm btn-outline filter-btn" data-type="invoice">فواتير</button>
     <button onclick="loadItems('product')"  class="btn btn-sm btn-outline filter-btn" data-type="product">منتجات</button>
     <button onclick="loadItems('contact')"  class="btn btn-sm btn-outline filter-btn" data-type="contact">جهات الاتصال</button>
     <button onclick="loadItems('journal_entry')" class="btn btn-sm btn-outline filter-btn" data-type="journal_entry">قيود محاسبية</button>
-    <span id="totalCount" style="margin-right:auto;font-size:.8rem;color:var(--text-muted)"></span>
+    <span id="totalCount" class="u_8d49f00ae2"></span>
   </div>
 </div>
 
 <!-- الجدول -->
 <div class="card">
-  <div id="loadingState" style="padding:40px;text-align:center;color:var(--text-muted)">
-    <div style="font-size:2rem">⏳</div>
+  <div id="loadingState" class="u_111ad630c6">
+    <div class="u_ba1aab4093">⏳</div>
     <p>جارٍ التحميل...</p>
   </div>
-  <table id="itemsTable" class="data-table" style="display:none">
+  <table id="itemsTable" class="data-table u_6b99de8b69">
     <thead>
       <tr>
         <th>النوع</th>
@@ -42,22 +42,20 @@
     </thead>
     <tbody id="itemsBody"></tbody>
   </table>
-  <div id="emptyState" style="display:none;padding:60px;text-align:center">
-    <div style="font-size:3rem">✨</div>
-    <p style="color:var(--text-muted);margin-top:8px">سلة المهملات فارغة</p>
+  <div id="emptyState" class="u_27c95b5f4f">
+    <div class="u_2fe172631a">✨</div>
+    <p class="u_64f196fe8b">سلة المهملات فارغة</p>
   </div>
 </div>
 
 <!-- نافذة عرض تفاصيل السجل -->
-<div id="detailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;padding:20px;overflow:auto">
-  <div style="background:var(--card-bg);border-radius:16px;max-width:700px;margin:40px auto;padding:28px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <h3 style="margin:0">📋 تفاصيل السجل المحذوف</h3>
-      <button onclick="closeDetail()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted)">✕</button>
+<div id="detailModal" class="u_3a7c4c9d27">
+  <div class="u_1f28c71519">
+    <div class="u_24c1b8524e">
+      <h3 class="u_1169661891">📋 تفاصيل السجل المحذوف</h3>
+      <button onclick="closeDetail()" class="u_9fdbf3ca65">✕</button>
     </div>
-    <pre id="detailContent" style="background:var(--bg);border-radius:10px;padding:16px;
-         font-size:.78rem;overflow:auto;max-height:400px;direction:ltr;text-align:left;
-         white-space:pre-wrap;word-break:break-word;color:var(--text)"></pre>
+    <pre id="detailContent" class="u_8ef49c1f41"></pre>
   </div>
 </div>
 
@@ -66,16 +64,45 @@
 .type-badge {
   padding:2px 8px;border-radius:20px;font-size:.75rem;font-weight:600;
 }
+.type-badge-invoice{background:#dbeafe;color:#1d4ed8}
+.type-badge-product{background:#dcfce7;color:#15803d}
+.type-badge-contact{background:#fef9c3;color:#854d0e}
+.type-badge-journal_entry{background:#f3e8ff;color:#7e22ce}
+.type-badge-default{background:#f1f5f9;color:#475569}
+.u_87c136dfd0{margin-bottom:16px}
+.u_5dc0f056ca{padding:14px 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.u_9ad44ab960{font-weight:600;font-size:.85rem}
+.u_8d49f00ae2{margin-right:auto;font-size:.8rem;color:var(--text-muted)}
+.u_111ad630c6{padding:40px;text-align:center;color:var(--text-muted)}
+.u_ba1aab4093{font-size:2rem}
+.u_6b99de8b69{display:none}
+.u_27c95b5f4f{display:none;padding:60px;text-align:center}
+.u_2fe172631a{font-size:3rem}
+.u_64f196fe8b{color:var(--text-muted);margin-top:8px}
+.u_3a7c4c9d27{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;padding:20px;overflow:auto}
+.u_1f28c71519{background:var(--card-bg);border-radius:16px;max-width:700px;margin:40px auto;padding:28px}
+.u_24c1b8524e{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.u_1169661891{margin:0}
+.u_9fdbf3ca65{background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted)}
+.u_8ef49c1f41{background:var(--bg);border-radius:10px;padding:16px;
+         font-size:.78rem;overflow:auto;max-height:400px;direction:ltr;text-align:left;
+         white-space:pre-wrap;word-break:break-word;color:var(--text)}
+.u_5c26807a5b{font-size:.8rem;color:var(--text-muted)}
+.u_4bea48291a{font-size:.8rem;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis}
+.u_1d11be7db6{color:#10b981;font-size:.8rem}
+.u_972fab2517{color:#f59e0b;font-size:.8rem}
+.u_6157e89086{display:flex;gap:6px;flex-wrap:wrap}
+.u_24e6db6c5c{background:#10b981;color:#fff}
 </style>
 
 <script>
 const TYPE_LABELS = {
-  'invoice':       ['🧾','فاتورة',      '#dbeafe','#1d4ed8'],
-  'product':       ['📦','منتج',        '#dcfce7','#15803d'],
-  'contact':       ['👤','جهة اتصال',   '#fef9c3','#854d0e'],
-  'journal_entry': ['📒','قيد محاسبي', '#f3e8ff','#7e22ce'],
+  'invoice':       ['🧾','فاتورة',      'type-badge-invoice'],
+  'product':       ['📦','منتج',        'type-badge-product'],
+  'contact':       ['👤','جهة اتصال',   'type-badge-contact'],
+  'journal_entry': ['📒','قيد محاسبي', 'type-badge-journal_entry'],
 };
-const DEFAULT_TYPE = ['🗂️','سجل','#f1f5f9','#475569'];
+const DEFAULT_TYPE = ['🗂️','سجل','type-badge-default'];
 
 let currentType = '';
 
@@ -121,32 +148,32 @@ function loadItems(type='') {
       document.getElementById('itemsTable').style.display = 'table';
 
       data.items.forEach(item => {
-        const [icon, label, bg, color] = TYPE_LABELS[item.entity_type] || DEFAULT_TYPE;
+        const [icon, label, badgeClass] = TYPE_LABELS[item.entity_type] || DEFAULT_TYPE;
         const isRestored = !!item.restored_at;
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>
-            <span class="type-badge" style="background:${bg};color:${color}">
+            <span class="type-badge ${badgeClass}">
               ${icon} ${label}
             </span>
           </td>
           <td><strong>${escHtml(item.entity_label || '#' + item.entity_id)}</strong></td>
           <td>${escHtml(item.deleted_by_name || '—')}</td>
-          <td style="font-size:.8rem;color:var(--text-muted)">${escHtml((item.deleted_at||'').slice(0,16))}</td>
-          <td style="font-size:.8rem;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis" title="${escHtml(item.delete_reason||'')}">
+          <td class="u_5c26807a5b">${escHtml((item.deleted_at||'').slice(0,16))}</td>
+          <td title="${escHtml(item.delete_reason||'')}" class="u_4bea48291a">
             ${escHtml(item.delete_reason || '—')}
           </td>
           <td>
             ${isRestored
-              ? `<span style="color:#10b981;font-size:.8rem">✓ مُسترجَع (${escHtml((item.restored_at||'').slice(0,10))})</span>`
-              : `<span style="color:#f59e0b;font-size:.8rem">في السلة</span>`
+              ? `<span class="u_1d11be7db6">✓ مُسترجَع (${escHtml((item.restored_at||'').slice(0,10))})</span>`
+              : `<span class="u_972fab2517">في السلة</span>`
             }
           </td>
           <td>
-            <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <div class="u_6157e89086">
               <button data-detail="${escHtml(encodeDetailPayload(item.entity_data))}" onclick="showDetailEncoded(this.dataset.detail)" class="btn btn-sm btn-outline">👁️ عرض</button>
               ${!isRestored ? `
-              <button onclick="restoreItem(${item.id})" class="btn btn-sm" style="background:#10b981;color:#fff">↩️ استرجاع</button>
+              <button onclick="restoreItem(${item.id})" class="btn btn-sm u_24e6db6c5c">↩️ استرجاع</button>
               <button onclick="deletePermanent(${item.id})" class="btn btn-sm btn-danger">🗑️ حذف نهائي</button>
               ` : ''}
             </div>

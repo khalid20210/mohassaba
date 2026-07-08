@@ -273,10 +273,33 @@ def next_invoice_number(db: sqlite3.Connection, business_id: int) -> str:
            )"""
     )
     key = f"invoice_sale_{prefix}"
-    db.execute(
+    ins = db.execute(
         "INSERT OR IGNORE INTO biz_counters (business_id, counter_key, seq) VALUES (?,?,0)",
         (business_id, key)
     )
+
+    # مزامنة مرة واحدة فقط عند إنشاء العداد لأول مرة — لا تُشغَّل في كل استدعاء.
+    if ins.rowcount:
+        try:
+            like_pattern = f"{prefix}-%"
+            suffix_start = len(prefix) + 2
+            max_row = db.execute(
+                """SELECT MAX(CAST(SUBSTR(invoice_number, ?) AS INTEGER)) AS max_seq
+                   FROM invoices
+                   WHERE business_id=? AND invoice_number LIKE ?""",
+                (suffix_start, business_id, like_pattern),
+            ).fetchone()
+            max_existing = int((max_row["max_seq"] or 0) if max_row else 0)
+            if max_existing > 0:
+                db.execute(
+                    """UPDATE biz_counters
+                       SET seq = CASE WHEN seq < ? THEN ? ELSE seq END
+                       WHERE business_id=? AND counter_key=?""",
+                    (max_existing, max_existing, business_id, key),
+                )
+        except Exception:
+            pass
+
     db.execute(
         "UPDATE biz_counters SET seq=seq+1 WHERE business_id=? AND counter_key=?",
         (business_id, key)
@@ -300,10 +323,31 @@ def next_entry_number(db: sqlite3.Connection, business_id: int) -> str:
            )"""
     )
     key = "journal_entry"
-    db.execute(
+    ins = db.execute(
         "INSERT OR IGNORE INTO biz_counters (business_id, counter_key, seq) VALUES (?,?,0)",
         (business_id, key)
     )
+
+    # مزامنة مرة واحدة فقط عند إنشاء العداد — لا تُشغَّل في كل استدعاء.
+    if ins.rowcount:
+        try:
+            max_row = db.execute(
+                """SELECT MAX(CAST(SUBSTR(entry_number, 4) AS INTEGER)) AS max_seq
+                   FROM journal_entries
+                   WHERE business_id=? AND entry_number LIKE 'JE-%'""",
+                (business_id,),
+            ).fetchone()
+            max_existing = int((max_row["max_seq"] or 0) if max_row else 0)
+            if max_existing > 0:
+                db.execute(
+                    """UPDATE biz_counters
+                       SET seq = CASE WHEN seq < ? THEN ? ELSE seq END
+                       WHERE business_id=? AND counter_key=?""",
+                    (max_existing, max_existing, business_id, key),
+                )
+        except Exception:
+            pass
+
     db.execute(
         "UPDATE biz_counters SET seq=seq+1 WHERE business_id=? AND counter_key=?",
         (business_id, key)

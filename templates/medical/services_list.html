@@ -1,3 +1,20 @@
+<style>
+.u_79a1c5a5db{margin-bottom:16px;}
+.u_6d1bb3a4bf{font-family:monospace;color:#94a3b8;font-size:.82rem;}
+.u_6dcd808e50{color:#22d3ee;font-weight:700;}
+.u_26db632a73{color:#a78bfa;}
+.u_5f40b9dc3a{color:#64748b;font-size:.82rem;}
+.u_03a959d93d{background:#14532d;color:#86efac;padding:2px 8px;border-radius:20px;font-size:.78rem;}
+.u_d450675e3a{background:#374151;color:#9ca3af;padding:2px 8px;border-radius:20px;font-size:.78rem;}
+.u_3b7450306f{padding:60px;text-align:center;}
+.u_946c2fbffa{font-size:3rem;margin-bottom:12px;}
+.u_93e6231cbb{color:#64748b;}
+.u_9374e84210{margin-top:12px;}
+.u_6add97efa7{max-width:480px;}
+.u_adf555b36b{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.u_97294b207c{grid-column:1/-1;}
+.u_5a7bda665c{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;}
+</style>
 {% extends "base.html" %}
 {% block title %}الخدمات الطبية{% endblock %}
 {% block page_title %}🏥 قائمة الخدمات والأسعار{% endblock %}
@@ -14,7 +31,7 @@
 
 {% if categories %}
   {% for cat in categories %}
-  <div class="card" style="margin-bottom:16px;">
+  <div class="card u_79a1c5a5db">
     <div class="card-header">
       <h3 class="card-title">{{ cat or 'عام' }}</h3>
     </div>
@@ -25,16 +42,16 @@
       <tbody>
         {% for s in services if s.category == cat %}
         <tr>
-          <td style="font-family:monospace;color:#94a3b8;font-size:.82rem;">{{ s.service_code or '—' }}</td>
+          <td class="u_6d1bb3a4bf">{{ s.service_code or '—' }}</td>
           <td><strong>{{ s.name }}</strong></td>
-          <td style="color:#22d3ee;font-weight:700;">{{ '%.2f'|format(s.price or 0) }} ر.س</td>
-          <td style="color:#a78bfa;">{{ '%.2f'|format(s.insurance_price or 0) }} ر.س</td>
-          <td style="color:#64748b;font-size:.82rem;">{{ s.duration_min or 30 }} دقيقة</td>
+          <td class="u_6dcd808e50">{{ '%.2f'|format(s.price or 0) }} ر.س</td>
+          <td class="u_26db632a73">{{ '%.2f'|format(s.insurance_price or 0) }} ر.س</td>
+          <td class="u_5f40b9dc3a">{{ s.duration_min or 30 }} دقيقة</td>
           <td>
             {% if s.is_active %}
-            <span style="background:#14532d;color:#86efac;padding:2px 8px;border-radius:20px;font-size:.78rem;">✓ نشطة</span>
+            <span class="u_03a959d93d">✓ نشطة</span>
             {% else %}
-            <span style="background:#374151;color:#9ca3af;padding:2px 8px;border-radius:20px;font-size:.78rem;">متوقفة</span>
+            <span class="u_d450675e3a">متوقفة</span>
             {% endif %}
           </td>
         </tr>
@@ -44,23 +61,23 @@
   </div>
   {% endfor %}
 {% else %}
-<div class="card" style="padding:60px;text-align:center;">
-  <div style="font-size:3rem;margin-bottom:12px;">🏥</div>
-  <p style="color:#64748b;">لا توجد خدمات مسجلة — ابدأ بإضافة خدمات العيادة</p>
-  <button class="btn btn-primary" style="margin-top:12px;" onclick="document.getElementById('newSvcModal').classList.add('show')">إضافة خدمة</button>
+<div class="card u_3b7450306f">
+  <div class="u_946c2fbffa">🏥</div>
+  <p class="u_93e6231cbb">لا توجد خدمات مسجلة — ابدأ بإضافة خدمات العيادة</p>
+  <button class="btn btn-primary u_9374e84210" onclick="document.getElementById('newSvcModal').classList.add('show')">إضافة خدمة</button>
 </div>
 {% endif %}
 
 <!-- Modal: خدمة جديدة -->
 <div class="modal-overlay" id="newSvcModal">
-  <div class="modal-box" style="max-width:480px;">
+  <div class="modal-box u_6add97efa7">
     <div class="modal-header">
       <h3 class="modal-title">🏥 إضافة خدمة طبية</h3>
       <button class="modal-close" onclick="document.getElementById('newSvcModal').classList.remove('show')">✕</button>
     </div>
     <form method="post" action="/medical/services/new">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="form-group" style="grid-column:1/-1;">
+      <div class="u_adf555b36b">
+        <div class="form-group u_97294b207c">
           <label class="form-label">اسم الخدمة *</label>
           <input name="name" class="form-input" placeholder="مثال: كشف طبي عام" required>
         </div>
@@ -89,7 +106,7 @@
         <label class="form-label">ملاحظات</label>
         <textarea name="notes" class="form-input" rows="2"></textarea>
       </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <div class="u_5a7bda665c">
         <button type="button" class="btn btn-secondary" onclick="document.getElementById('newSvcModal').classList.remove('show')">إلغاء</button>
         <button type="submit" class="btn btn-primary">✅ إضافة الخدمة</button>
       </div>

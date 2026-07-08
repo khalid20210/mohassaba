@@ -99,9 +99,13 @@ def add_patient():
     db = get_db()
     business_id = g.business["id"]
 
-    # GET: إعادة توجيه لصفحة قائمة المرضى (النموذج موجود كـ modal)
+    # GET: صفحة إدخال كاملة بدل النافذة المنبثقة
     if request.method == "GET":
-        return redirect("/medical/patients?open_new=1")
+        insurance_cos = db.execute(
+            "SELECT * FROM insurance_companies WHERE business_id = ? AND is_active = 1 ORDER BY name",
+            (business_id,)
+        ).fetchall()
+        return render_template("medical/patient_form.html", insurance_cos=insurance_cos)
 
     d = request.form
     file_number = _next_file_number(db, business_id)

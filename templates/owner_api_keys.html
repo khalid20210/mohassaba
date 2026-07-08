@@ -22,45 +22,63 @@
 .key-meta{color:#64748b;font-size:.72rem;margin-top:2px}
 .key-inactive{opacity:.45}
 .scope-badge{display:inline-block;background:rgba(37,99,235,.15);color:#93c5fd;border-radius:6px;padding:2px 7px;font-size:.65rem;font-weight:700;margin:1px}
+.api-key-status{font-size:.75rem;font-weight:800}
+.api-key-status-active{color:#4ade80}
+.api-key-status-inactive{color:#ef4444}
+.u_4e2936c400{color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px}
+.u_0a3d67c4f2{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:14px 18px;margin-bottom:16px;color:#fbbf24;font-family:monospace;word-break:break-all;font-size:.85rem}
+.u_93dd517e90{color:#fff;font-size:.9rem}
+.u_2b583d7389{margin-bottom:14px}
+.u_bb2ac833a2{margin:0 0 14px;color:#dbeafe;font-size:.95rem;font-weight:800}
+.u_a2c8672475{font-size:.75rem;color:#94a3b8;display:block;margin-bottom:5px}
+.u_56f4356299{margin-top:12px}
+.u_522ed6d91a{font-size:.75rem;color:#94a3b8;width:100%;margin-bottom:4px}
+.u_96ad6099e2{margin-top:4px}
+.u_9bc0dbad34{padding:5px 10px;font-size:.73rem}
+.u_d2f844b1ed{color:#64748b;font-size:.82rem;text-align:center;margin:20px 0}
+.u_6720e39ed0{border-color:rgba(168,85,247,.25)}
+.u_c840a0c508{margin:0 0 12px;color:#c084fc;font-size:.9rem;font-weight:800}
+.u_7932e8a087{color:#94a3b8;font-size:.8rem;margin:0 0 8px}
+.u_040d1d40d0{background:#0b1220;border:1px solid rgba(148,163,184,.2);border-radius:10px;padding:12px;font-size:.78rem;color:#a5b4fc;overflow-x:auto}
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="ak-wrap">
-  <a href="{{ url_for('owner.owner_dashboard') }}" style="color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px">← العودة لقمرة القيادة</a>
+  <a href="{{ url_for('owner.owner_dashboard') }}" class="u_4e2936c400">← العودة لقمرة القيادة</a>
 
   {# ── Flash ─────────────────────────────────────────────────────────────── #}
   {% with msgs = get_flashed_messages(with_categories=true) %}
     {% for cat, msg in msgs %}
       {% if cat == 'key_reveal' %}
-        <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:14px 18px;margin-bottom:16px;color:#fbbf24;font-family:monospace;word-break:break-all;font-size:.85rem">
+        <div class="u_0a3d67c4f2">
           <b>🔑 احتفظ بهذا المفتاح الآن — لن يُعرض مرة أخرى:</b><br>
-          <span style="color:#fff;font-size:.9rem">{{ msg.split(': ', 1)[1] if ': ' in msg else msg }}</span>
+          <span class="u_93dd517e90">{{ msg.split(': ', 1)[1] if ': ' in msg else msg }}</span>
         </div>
       {% else %}
-        <div class="alert alert-{{ 'danger' if cat=='error' else cat }}" style="margin-bottom:14px">{{ msg }}</div>
+        <div class="alert alert-{{ 'danger' if cat=='error' else cat }} u_2b583d7389">{{ msg }}</div>
       {% endif %}
     {% endfor %}
   {% endwith %}
 
   {# ── نموذج إنشاء مفتاح جديد ─────────────────────────────────────────── #}
   <div class="ak-card">
-    <h3 style="margin:0 0 14px;color:#dbeafe;font-size:.95rem;font-weight:800">توليد مفتاح API جديد</h3>
+    <h3 class="u_bb2ac833a2">توليد مفتاح API جديد</h3>
     <form method="POST" action="{{ url_for('owner.create_api_key') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div class="ak-form-grid">
         <div>
-          <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:5px">اسم التطبيق / المنصة</label>
+          <label class="u_a2c8672475">اسم التطبيق / المنصة</label>
           <input class="ak-in" name="label" placeholder="مثال: مدونة Jinan Biz" required>
         </div>
         <div>
-          <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:5px">انتهاء الصلاحية (أيام، 0 = لا تنتهي)</label>
-          <input class="ak-in" name="expires_days" type="number" min="0" value="0">
+          <label class="u_a2c8672475">انتهاء الصلاحية (أيام، 0 = لا تنتهي)</label>
+          <input class="ak-in" name="expires_days" type="number" min="0" value="0" title="عدد أيام انتهاء صلاحية المفتاح">
         </div>
         <button class="ak-btn ak-btn-primary" type="submit">توليد المفتاح</button>
       </div>
-      <div class="ak-scope-list" style="margin-top:12px">
-        <label style="font-size:.75rem;color:#94a3b8;width:100%;margin-bottom:4px">الصلاحيات:</label>
+      <div class="ak-scope-list u_56f4356299">
+        <label class="u_522ed6d91a">الصلاحيات:</label>
         <label class="scope-check"><input type="checkbox" name="scopes" value="read" checked> قراءة (read)</label>
         <label class="scope-check"><input type="checkbox" name="scopes" value="write"> كتابة (write)</label>
         <label class="scope-check"><input type="checkbox" name="scopes" value="pos"> نقطة البيع (pos)</label>
@@ -72,7 +90,7 @@
 
   {# ── قائمة المفاتيح الحالية ────────────────────────────────────────── #}
   <div class="ak-card">
-    <h3 style="margin:0 0 14px;color:#dbeafe;font-size:.95rem;font-weight:800">المفاتيح الحالية ({{ api_keys | length }})</h3>
+    <h3 class="u_bb2ac833a2">المفاتيح الحالية ({{ api_keys | length }})</h3>
     {% if api_keys %}
       {% for k in api_keys %}
       <div class="key-row {% if not k.is_active %}key-inactive{% endif %}">
@@ -84,33 +102,33 @@
             {% if k.last_used_at %} · آخر استخدام: {{ k.last_used_at[:10] }}{% endif %}
             {% if k.expires_at %} · ينتهي: {{ k.expires_at[:10] }}{% endif %}
           </div>
-          <div style="margin-top:4px">
+          <div class="u_96ad6099e2">
             {% for s in (k.scopes | from_json([]))  %}
               <span class="scope-badge">{{ s }}</span>
             {% endfor %}
           </div>
         </div>
-        <div style="color:{% if k.is_active %}#4ade80{% else %}#ef4444{% endif %};font-size:.75rem;font-weight:800">
+        <div class="api-key-status {% if k.is_active %}api-key-status-active{% else %}api-key-status-inactive{% endif %}">
           {{ 'نشط' if k.is_active else 'ملغى' }}
         </div>
         <div>
           {% if k.is_active %}
-          <button class="ak-btn ak-btn-danger" style="padding:5px 10px;font-size:.73rem"
+          <button class="ak-btn ak-btn-danger u_9bc0dbad34"
                   onclick="revokeKey({{ k.id }}, this)">إلغاء</button>
           {% endif %}
         </div>
       </div>
       {% endfor %}
     {% else %}
-      <p style="color:#64748b;font-size:.82rem;text-align:center;margin:20px 0">لم يتم إنشاء أي مفاتيح حتى الآن</p>
+      <p class="u_d2f844b1ed">لم يتم إنشاء أي مفاتيح حتى الآن</p>
     {% endif %}
   </div>
 
   {# ── شرح الاستخدام ─────────────────────────────────────────────────── #}
-  <div class="ak-card" style="border-color:rgba(168,85,247,.25)">
-    <h3 style="margin:0 0 12px;color:#c084fc;font-size:.9rem;font-weight:800">🔗 كيفية استخدام المفتاح</h3>
-    <p style="color:#94a3b8;font-size:.8rem;margin:0 0 8px">أرسل المفتاح في رأس HTTP مع كل طلب API:</p>
-    <pre style="background:#0b1220;border:1px solid rgba(148,163,184,.2);border-radius:10px;padding:12px;font-size:.78rem;color:#a5b4fc;overflow-x:auto">Authorization: Bearer jb_live_xxxxxxxxxxxx...
+  <div class="ak-card u_6720e39ed0">
+    <h3 class="u_c840a0c508">🔗 كيفية استخدام المفتاح</h3>
+    <p class="u_7932e8a087">أرسل المفتاح في رأس HTTP مع كل طلب API:</p>
+    <pre class="u_040d1d40d0">Authorization: Bearer jb_live_xxxxxxxxxxxx...
 
 # مثال — جلب مبيعات اليوم:
 GET /api/v1/reports/today

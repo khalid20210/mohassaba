@@ -16,14 +16,23 @@
 .al-pager{display:flex;gap:8px;margin-top:16px;justify-content:center;flex-wrap:wrap}
 .al-pager a{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;background:#0f172a;border:1px solid rgba(148,163,184,.2);color:#94a3b8;text-decoration:none;font-size:.82rem;font-weight:700}
 .al-pager a.active{background:#2563eb;color:#fff;border-color:#2563eb}
+.u_c6783796bf{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.u_fe873f6800{color:#60a5fa;font-size:.83rem;text-decoration:none}
+.u_8de0820512{color:#64748b;font-size:.8rem}
+.u_0be7e307f5{background:#0f172a;border:1px solid rgba(148,163,184,.2);border-radius:14px;overflow:hidden}
+.u_76b23e501c{color:#94a3b8;font-size:.75rem}
+.u_064028e7a7{color:#64748b}
+.u_80ba0c2513{color:#475569;font-size:.72rem;font-family:monospace}
+.u_0dce67f2d0{color:#64748b;font-size:.73rem;white-space:nowrap}
+.u_6a5ca39731{text-align:center;color:#64748b;padding:30px}
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="al-wrap">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-    <a href="{{ url_for('owner.owner_dashboard') }}" style="color:#60a5fa;font-size:.83rem;text-decoration:none">← العودة لقمرة القيادة</a>
-    <span style="color:#64748b;font-size:.8rem">{{ total }} سجل</span>
+  <div class="u_c6783796bf">
+    <a href="{{ url_for('owner.owner_dashboard') }}" class="u_fe873f6800">← العودة لقمرة القيادة</a>
+    <span class="u_8de0820512">{{ total }} سجل</span>
   </div>
 
   <div class="al-filter">
@@ -37,7 +46,7 @@
     </form>
   </div>
 
-  <div style="background:#0f172a;border:1px solid rgba(148,163,184,.2);border-radius:14px;overflow:hidden">
+  <div class="u_0be7e307f5">
     <table class="al-table">
       <thead>
         <tr>
@@ -55,20 +64,20 @@
           <tr>
             <td><span class="al-badge">{{ log.action | replace('_',' ') }}</span></td>
             <td>{{ log.actor_name or log.user_full_name or '—' }}</td>
-            <td style="color:#94a3b8;font-size:.75rem">{{ log.actor_role or '—' }}</td>
+            <td class="u_76b23e501c">{{ log.actor_role or '—' }}</td>
             <td>
               {% if log.entity_type %}
                 <span class="al-entity">{{ log.entity_type }}</span>
-                {% if log.entity_id %} <span style="color:#64748b">#{{ log.entity_id }}</span>{% endif %}
+                {% if log.entity_id %} <span class="u_064028e7a7">#{{ log.entity_id }}</span>{% endif %}
               {% else %}—{% endif %}
             </td>
-            <td style="color:#475569;font-size:.72rem;font-family:monospace">{{ log.ip_address or '—' }}</td>
-            <td style="color:#64748b;font-size:.73rem;white-space:nowrap">{{ log.created_at[:16] if log.created_at else '—' }}</td>
+            <td class="u_80ba0c2513">{{ log.ip_address or '—' }}</td>
+            <td class="u_0dce67f2d0">{{ log.created_at[:16] if log.created_at else '—' }}</td>
           </tr>
           {% endfor %}
         {% else %}
           <tr>
-            <td colspan="6" style="text-align:center;color:#64748b;padding:30px">لا توجد سجلات نشاط حتى الآن</td>
+            <td colspan="6" class="u_6a5ca39731">لا توجد سجلات نشاط حتى الآن</td>
           </tr>
         {% endif %}
       </tbody>

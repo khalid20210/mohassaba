@@ -147,15 +147,14 @@ def _configure_filesystem_session(app) -> None:
     session_dir = Path(SESSION_FILE_DIR)
     session_dir.mkdir(parents=True, exist_ok=True)
 
-    app.config["SESSION_TYPE"] = "filesystem"
-    app.config["SESSION_FILE_DIR"] = str(session_dir)
-    app.config["SESSION_FILE_THRESHOLD"] = 10000
-    app.config["SESSION_USE_SIGNER"] = True
+    app.config["SESSION_TYPE"] = "cachelib"
     app.config["SESSION_PERMANENT"] = True
 
     try:
+        from cachelib.file import FileSystemCache
         from flask_session import Session
 
+        app.config["SESSION_CACHELIB"] = FileSystemCache(directory=str(session_dir), threshold=10000)
         Session(app)
     except Exception:
         # إذا Flask-Session غير مثبتة نترك Flask الافتراضي

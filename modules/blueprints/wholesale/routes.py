@@ -8,6 +8,7 @@ from functools import wraps
 import json
 from datetime import datetime
 from modules.extensions import safe_sql_identifier
+from modules.robot_runtime import process_invoice_robots
 
 bp = Blueprint("wholesale", __name__, url_prefix="/wholesale")
 
@@ -536,6 +537,18 @@ def order_to_invoice(order_id):
         (order_id, business_id)
     )
     db.commit()
+
+    try:
+        process_invoice_robots(
+            db,
+            business_id=int(business_id),
+            invoice_id=int(inv_id),
+            invoice_total=float(_safe_to_float(order.get("total_amount"), 0)),
+            actor_user_id=int((g.user or {}).get("id") or 0) or None,
+            source_channel="wholesale_order_to_invoice",
+        )
+    except Exception:
+        pass
 
     flash(f"✓ تم إنشاء الفاتورة {inv_number} بنجاح", "success")
     return redirect(f"/invoices/{inv_id}")

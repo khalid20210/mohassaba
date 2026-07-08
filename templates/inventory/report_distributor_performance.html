@@ -31,13 +31,33 @@
   .progress-fill {
     height: 100%; background: linear-gradient(90deg, #10b981, #06b6d4); transition: width 0.3s;
   }
+.u_e8bffc0aaa{color: white; margin: 0;}
+.u_b864eea42a{color: #333;}
+.u_cc8cb75701{display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;}
+.u_ccdca83d16{font-size: 12px; color: #666;}
+.u_e5ed399780{font-size: 28px; font-weight: bold; color: #0284c7;}
+.u_df8b0d5dba{font-size: 28px; font-weight: bold; color: #10b981;}
+.u_be7cdcae21{font-size: 28px; font-weight: bold; color: #ef4444;}
+.u_eb9978e83c{font-size: 28px; font-weight: bold; color: #f59e0b;}
+.u_3eaa7b5ced{margin-bottom: 4px;}
+.u_c71373e1e7{margin-top: 4px;}
+.u_970db817a9{text-align: center; color: #999;}
+.u_7d3372c34c{display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;}
+.u_b88c57aaf2{background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 16px; border-radius: 8px; color: white;}
+.u_7973518519{font-size: 16px; font-weight: bold; margin-bottom: 8px;}
+.u_3aeb685d81{display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;}
+.u_3a45f37dd4{opacity: 0.8;}
+.u_d819ecbab0{font-size: 18px; font-weight: bold;}
+.u_22f75f7116{background: #f59e0b; color: white; padding: 4px 8px; text-decoration: none; border-radius: 4px;}
+.u_a9bca57f6d{background: #fef3c7; border-right: 4px solid #f59e0b; padding: 16px; border-radius: 4px; margin-top: 20px;}
+.u_e4f379c8dd{margin: 8px 0 0 20px; color: #333;}
 </style>
 
 <div class="report-container">
   <!-- الفلاتر -->
   <div class="filter-bar">
-    <label style="color: white; margin: 0;">الفترة الزمنية:</label>
-    <select onchange="window.location.href='?months=' + this.value" style="color: #333;">
+    <label class="u_e8bffc0aaa">الفترة الزمنية:</label>
+    <select onchange="window.location.href='?months=' + this.value" class="u_b864eea42a" title="اختيار الفترة الزمنية للتقرير">
       <option value="1" {% if months == 1 %}selected{% endif %}>شهر واحد</option>
       <option value="3" {% if months == 3 %}selected{% endif %}>3 أشهر</option>
       <option value="6" {% if months == 6 %}selected{% endif %}>6 أشهر</option>
@@ -46,26 +66,26 @@
   </div>
 
   <!-- إحصائيات عامة -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
+  <div class="u_cc8cb75701">
     <div class="card">
-      <div style="font-size: 12px; color: #666;">إجمالي الموزعين</div>
-      <div style="font-size: 28px; font-weight: bold; color: #0284c7;">{{ distributors|length }}</div>
+      <div class="u_ccdca83d16">إجمالي الموزعين</div>
+      <div class="u_e5ed399780">{{ distributors|length }}</div>
     </div>
     <div class="card">
-      <div style="font-size: 12px; color: #666;">إجمالي الطلبات</div>
-      <div style="font-size: 28px; font-weight: bold; color: #10b981;">
+      <div class="u_ccdca83d16">إجمالي الطلبات</div>
+      <div class="u_df8b0d5dba">
         {{ "{:,}".format((distributors | map(attribute='total_orders') | list | sum)) }}
       </div>
     </div>
     <div class="card">
-      <div style="font-size: 12px; color: #666;">إجمالي الديون المتأخرة</div>
-      <div style="font-size: 28px; font-weight: bold; color: #ef4444;">
+      <div class="u_ccdca83d16">إجمالي الديون المتأخرة</div>
+      <div class="u_be7cdcae21">
         {{ "{:.2f}".format((distributors | map(attribute='outstanding_debt') | list | sum)) }} ر.س
       </div>
     </div>
     <div class="card">
-      <div style="font-size: 12px; color: #666;">إجمالي الحجم</div>
-      <div style="font-size: 28px; font-weight: bold; color: #f59e0b;">
+      <div class="u_ccdca83d16">إجمالي الحجم</div>
+      <div class="u_eb9978e83c">
         {{ "{:.2f}".format((distributors | map(attribute='total_volume') | list | sum)) }} ر.س
       </div>
     </div>
@@ -105,23 +125,23 @@
               {{ "%.2f"|format(dist.outstanding_debt) }} ر.س
             </td>
             <td>
-              <div style="margin-bottom: 4px;">{{ "%.0f"|format(dist.payment_rate) }}%</div>
+              <div class="u_3eaa7b5ced">{{ "%.0f"|format(dist.payment_rate) }}%</div>
               <div class="progress-bar">
-                <div class="progress-fill" style="width: {{ dist.payment_rate }}%;"></div>
+                <div class="progress-fill" data-width="{{ dist.payment_rate }}"></div>
               </div>
               {% if dist.payment_rate >= 80 %}
-                <span class="badge badge-success" style="margin-top: 4px;">ممتاز ✓</span>
+                <span class="badge badge-success u_c71373e1e7">ممتاز ✓</span>
               {% elif dist.payment_rate >= 50 %}
-                <span class="badge badge-warning" style="margin-top: 4px;">متوسط</span>
+                <span class="badge badge-warning u_c71373e1e7">متوسط</span>
               {% else %}
-                <span class="badge badge-danger" style="margin-top: 4px;">ضعيف</span>
+                <span class="badge badge-danger u_c71373e1e7">ضعيف</span>
               {% endif %}
             </td>
           </tr>
           {% endfor %}
         {% else %}
         <tr>
-          <td colspan="9" style="text-align: center; color: #999;">لا توجد بيانات</td>
+          <td colspan="9" class="u_970db817a9">لا توجد بيانات</td>
         </tr>
         {% endif %}
       </tbody>
@@ -131,18 +151,18 @@
   <!-- الموزعون بأعلى مبيعات -->
   <div class="card">
     <div class="card-title">🏆 أفضل الموزعين (حسب الحجم)</div>
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;">
+    <div class="u_7d3372c34c">
       {% for dist in distributors[:5] %}
-      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 16px; border-radius: 8px; color: white;">
-        <div style="font-size: 16px; font-weight: bold; margin-bottom: 8px;">{{ dist.distributor_name }}</div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
+      <div class="u_b88c57aaf2">
+        <div class="u_7973518519">{{ dist.distributor_name }}</div>
+        <div class="u_3aeb685d81">
           <div>
-            <div style="opacity: 0.8;">الحجم</div>
-            <div style="font-size: 18px; font-weight: bold;">{{ "%.0f"|format(dist.total_volume) }}</div>
+            <div class="u_3a45f37dd4">الحجم</div>
+            <div class="u_d819ecbab0">{{ "%.0f"|format(dist.total_volume) }}</div>
           </div>
           <div>
-            <div style="opacity: 0.8;">الطلبات</div>
-            <div style="font-size: 18px; font-weight: bold;">{{ dist.total_orders }}</div>
+            <div class="u_3a45f37dd4">الطلبات</div>
+            <div class="u_d819ecbab0">{{ dist.total_orders }}</div>
           </div>
         </div>
       </div>
@@ -171,7 +191,7 @@
           <td class="value-low">{{ "%.2f"|format(dist.outstanding_debt) }} ر.س</td>
           <td>{{ dist.pending_orders }}</td>
           <td>
-            <a href="/wholesale/customers/{{ dist.id }}/statement" class="btn btn-sm" style="background: #f59e0b; color: white; padding: 4px 8px; text-decoration: none; border-radius: 4px;">عرض الكشف</a>
+            <a href="/wholesale/customers/{{ dist.id }}/statement" class="btn btn-sm u_22f75f7116">عرض الكشف</a>
           </td>
         </tr>
         {% endfor %}
@@ -181,9 +201,9 @@
   {% endif %}
 
   <!-- ملاحظات -->
-  <div style="background: #fef3c7; border-right: 4px solid #f59e0b; padding: 16px; border-radius: 4px; margin-top: 20px;">
+  <div class="u_a9bca57f6d">
     <strong>💡 ملاحظات:</strong>
-    <ul style="margin: 8px 0 0 20px; color: #333;">
+    <ul class="u_e4f379c8dd">
       <li><strong>نسبة الدفع العالية (>80%):</strong> الموزع موثوق وجديّ في السداد.</li>
       <li><strong>الديون المتأخرة:</strong> انتبه للموزعين الذين لديهم فواتير معلقة.</li>
       <li><strong>الحجم الإجمالي:</strong> يعكس قوة العلاقة التجارية مع الموزع.</li>
@@ -191,4 +211,10 @@
     </ul>
   </div>
 </div>
+<script>
+document.querySelectorAll('.progress-fill[data-width]').forEach(function (el) {
+  var w = Number(el.getAttribute('data-width') || 0);
+  el.style.width = Math.max(0, Math.min(100, w)) + '%';
+});
+</script>
 {% endblock %}

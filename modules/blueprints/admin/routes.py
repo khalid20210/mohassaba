@@ -11,6 +11,7 @@ from datetime import datetime
 
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
 
+from modules.core_utils import table_exists as db_table_exists
 from modules.constitutional_framework import AdminGodMode, get_constitutional_requirements
 from modules.enhanced_audit import EnhancedAuditLogger
 from modules.extensions import csrf_protect, get_db
@@ -23,11 +24,7 @@ bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 
 def _table_exists(db, table_name: str) -> bool:
-    row = db.execute(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
-        (table_name,),
-    ).fetchone()
-    return row is not None
+    return db_table_exists(db, table_name)
 
 
 def _column_exists(db, table_name: str, column_name: str) -> bool:
@@ -299,6 +296,18 @@ def admin_dashboard():
         db, "SELECT version, title, is_mandatory, created_at FROM platform_releases ORDER BY created_at DESC LIMIT 5"
     )
 
+    businesses_list = _rows_to_dicts(_safe_fetchall(
+        db,
+        """
+        SELECT id, name, industry_type,
+               COALESCE(account_status, '') AS account_status,
+               COALESCE(is_active, 1) AS is_active
+        FROM businesses
+        ORDER BY id DESC
+        LIMIT 300
+        """,
+    ))
+
     return render_template(
         "admin/dashboard.html",
         businesses_count=businesses_count,
@@ -315,6 +324,7 @@ def admin_dashboard():
         recent_audits=_rows_to_dicts(recent_audits),
         security_alerts=_rows_to_dicts(security_alerts),
         latest_releases=_rows_to_dicts(latest_releases),
+        businesses_list=businesses_list,
         constitutional_requirements=get_constitutional_requirements(),
     )
 

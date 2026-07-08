@@ -57,13 +57,16 @@ def list_projects():
     return render_template("construction/projects_list.html", projects=projects)
 
 
-@bp.route("/new", methods=["POST"])
+@bp.route("/new", methods=["GET", "POST"])
 @require_perm("sales")
 def create_project():
     """إنشاء مشروع جديد"""
     from modules.extensions import get_db
     db = get_db()
     business_id = g.business["id"]
+
+    if request.method == "GET":
+        return render_template("construction/project_form.html")
     
     data = request.form
     

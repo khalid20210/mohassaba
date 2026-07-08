@@ -35,6 +35,9 @@ def _generate_sku(prefix: str, seq: int) -> str:
 
 def _detect_activity_family(industry_type: str) -> str:
     """تصنيف النشاط لتطبيق قواعد وحدات وخدمات متسقة."""
+    if industry_type.startswith("ecommerce_"):
+        return "ecommerce"
+
     if industry_type.startswith("wholesale_") or industry_type == "wholesale":
         if industry_type.startswith("wholesale_fashion_"):
             return "wholesale_fashion"
@@ -54,6 +57,17 @@ def _detect_activity_family(industry_type: str) -> str:
 def _activity_profile_settings(industry_type: str) -> dict:
     """إعدادات تشغيل دقيقة لكل عائلة نشاط لتقليل التعقيد ومنع الخلط."""
     family = _detect_activity_family(industry_type)
+
+    if family == "ecommerce":
+        return {
+            "activity_profile": "ecommerce",
+            "quantity_step": "1",
+            "quantity_min": "1",
+            "quantity_decimals": "0",
+            "allow_fractional_qty": "0",
+            "unit_examples": "قطعة,علبة,طقم,وحدة",
+            "size_matrix_enabled": "0",
+        }
 
     if family in {"wholesale_general", "wholesale_food", "wholesale_fashion"}:
         return {
@@ -104,35 +118,35 @@ def _shared_service_templates() -> list[dict]:
     """خدمات مشتركة لكل الأنشطة بدون استثناء — محاسبية + تشغيلية (مجانية بالكامل)."""
     return [
         # ── خدمات تشغيلية عامة ──
-        {"name": "خدمة توصيل", "category": "خدمات مشتركة", "price": 0.0, "unit": "طلب", "product_type": "service"},
-        {"name": "خدمة دعم فني", "category": "خدمات مشتركة", "price": 0.0, "unit": "جلسة", "product_type": "service"},
+        {"name": "خدمة توصيل", "category": "خدمات مشتركة", "price": 10.0, "unit": "طلب", "product_type": "service"},
+        {"name": "خدمة دعم فني", "category": "خدمات مشتركة", "price": 15.0, "unit": "جلسة", "product_type": "service"},
 
         # ── 1. مسك الدفاتر وإدخال البيانات ──
-        {"name": "مسك الدفاتر وإدخال البيانات", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "شهر", "product_type": "service"},
+        {"name": "مسك الدفاتر وإدخال البيانات", "category": "خدمات محاسبية مشتركة", "price": 50.0, "unit": "شهر", "product_type": "service"},
 
         # ── 2. القوائم والتقارير المالية ──
-        {"name": "قائمة الدخل (الأرباح والخسائر)", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "تقرير", "product_type": "service"},
-        {"name": "الميزانية العمومية (المركز المالي)", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "تقرير", "product_type": "service"},
-        {"name": "قائمة التدفقات النقدية", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "تقرير", "product_type": "service"},
+        {"name": "قائمة الدخل (الأرباح والخسائر)", "category": "خدمات محاسبية مشتركة", "price": 40.0, "unit": "تقرير", "product_type": "service"},
+        {"name": "الميزانية العمومية (المركز المالي)", "category": "خدمات محاسبية مشتركة", "price": 40.0, "unit": "تقرير", "product_type": "service"},
+        {"name": "قائمة التدفقات النقدية", "category": "خدمات محاسبية مشتركة", "price": 40.0, "unit": "تقرير", "product_type": "service"},
 
         # ── 3. الخدمات الضريبية والزكوية ──
-        {"name": "إقرار ضريبة القيمة المضافة VAT", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "ربع سنوي", "product_type": "service"},
-        {"name": "إقرار الزكاة وضريبة الدخل", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "سنوي", "product_type": "service"},
+        {"name": "إقرار ضريبة القيمة المضافة VAT", "category": "خدمات محاسبية مشتركة", "price": 60.0, "unit": "ربع سنوي", "product_type": "service"},
+        {"name": "إقرار الزكاة وضريبة الدخل", "category": "خدمات محاسبية مشتركة", "price": 80.0, "unit": "سنوي", "product_type": "service"},
 
         # ── 4. التسويات والمطابقات البنكية ──
-        {"name": "المطابقة البنكية الشهرية", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "شهر", "product_type": "service"},
+        {"name": "المطابقة البنكية الشهرية", "category": "خدمات محاسبية مشتركة", "price": 35.0, "unit": "شهر", "product_type": "service"},
 
         # ── 5. إدارة الذمم المدينة والدائنة ──
-        {"name": "إدارة الذمم المدينة والدائنة", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "شهر", "product_type": "service"},
+        {"name": "إدارة الذمم المدينة والدائنة", "category": "خدمات محاسبية مشتركة", "price": 45.0, "unit": "شهر", "product_type": "service"},
 
         # ── 6. إدارة الرواتب والأجور ──
-        {"name": "كشف الرواتب والأجور (Payroll)", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "شهر", "product_type": "service"},
+        {"name": "كشف الرواتب والأجور (Payroll)", "category": "خدمات محاسبية مشتركة", "price": 50.0, "unit": "شهر", "product_type": "service"},
 
         # ── 7. إدارة الأصول الثابتة وإهلاكاتها ──
-        {"name": "إدارة الأصول الثابتة وإهلاكاتها", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "سنوي", "product_type": "service"},
+        {"name": "إدارة الأصول الثابتة وإهلاكاتها", "category": "خدمات محاسبية مشتركة", "price": 70.0, "unit": "سنوي", "product_type": "service"},
 
         # ── 8. الموازنات التقديرية ──
-        {"name": "إعداد الموازنة التقديرية السنوية", "category": "خدمات محاسبية مشتركة", "price": 0.0, "unit": "سنوي", "product_type": "service"},
+        {"name": "إعداد الموازنة التقديرية السنوية", "category": "خدمات محاسبية مشتركة", "price": 70.0, "unit": "سنوي", "product_type": "service"},
     ]
 
 
@@ -158,6 +172,7 @@ def _activity_service_templates(industry_type: str) -> list[dict]:
     if family in {"wholesale_general", "wholesale_food", "wholesale_fashion"}:
         services.extend([
             {"name": "خدمة شحن طلبيات", "category": "خدمات الجملة", "price": 150.0, "unit": "شحنة", "product_type": "service"},
+            {"name": "تحميل وتنزيل", "category": "خدمات الجملة", "price": 75.0, "unit": "شحنة", "product_type": "service"},
         ])
         return services
 
@@ -1715,14 +1730,42 @@ def _seed_categories_and_products(
         product_type = p.get("product_type", "product")
         is_pos       = int(p.get("is_pos", 1))
         cat_id       = cat_id_map.get(category)
+        description  = (p.get("description") or "").strip()
+
+        # لا يوجد عمود مخصص للوزن/الشركة المنتجة في schema الحالي، لذا تُحفظ في notes
+        # ويُستخدم ذلك ضمن مفتاح التكرار لتمييز المنتج عند اختلاف الشركة المنتجة.
+        producer_company = (
+            p.get("producer_company")
+            or p.get("manufacturer")
+            or p.get("company_name")
+            or ""
+        ).strip()
+        weight_label = (p.get("weight") or "").strip()
+        note_parts = []
+        if producer_company:
+            note_parts.append(f"الشركة المنتجة: {producer_company}")
+        if weight_label:
+            note_parts.append(f"الوزن: {weight_label}")
+        custom_notes = (p.get("notes") or "").strip()
+        if custom_notes:
+            note_parts.append(custom_notes)
+        notes = " | ".join(note_parts)
 
         if not name:
             continue
 
-        # لا تُضف منتجاً موجوداً بنفس الاسم
+        # لا تُضف منتجاً مكرراً بنفس (الاسم + الوصف + الوزن/الشركة المنتجة داخل notes).
         exists = db.execute(
-            "SELECT id FROM products WHERE business_id=? AND name=?",
-            (biz_id, name)
+            """
+            SELECT id
+            FROM products
+            WHERE business_id=?
+              AND LOWER(TRIM(name)) = LOWER(TRIM(?))
+              AND COALESCE(description, '') = ?
+              AND COALESCE(notes, '') = ?
+            LIMIT 1
+            """,
+            (biz_id, name, description, notes)
         ).fetchone()
         if exists:
             continue
@@ -1734,11 +1777,13 @@ def _seed_categories_and_products(
         db.execute(
             """INSERT INTO products
                (business_id, name, product_type, category_id, category_name,
+                description, notes,
                 sale_price, purchase_price, track_stock, is_pos, is_active, barcode)
-               VALUES (?,?,?,?,?,?,?,?,?,1,?)""",
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,1,?)""",
             (
                 biz_id, name, product_type,
                 cat_id, category,
+                description, notes,
                 price, purchase_price,
                 1 if product_type == "product" else 0,
                 is_pos,
@@ -1747,11 +1792,8 @@ def _seed_categories_and_products(
         )
         products_inserted += 1
 
-        # جلب id المنتج المُضاف
-        prod_row = db.execute(
-            "SELECT id FROM products WHERE business_id=? AND name=? LIMIT 1",
-            (biz_id, name)
-        ).fetchone()
+        # جلب id المنتج المُضاف بدقة عند السماح بتكرار الاسم.
+        prod_row = db.execute("SELECT last_insert_rowid() AS id").fetchone()
         if not prod_row:
             continue
         prod_id = prod_row["id"]

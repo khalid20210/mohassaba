@@ -1,62 +1,153 @@
 {% extends "base.html" %}
-{% block title %}مصروف جديد{% endblock %}
+{% block title %}تسجيل مصروف جديد{% endblock %}
 {% block page_title %}تسجيل مصروف جديد{% endblock %}
 
 {% block content %}
 <style>
-  .card { background:white; border-radius:8px; padding:24px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
-  label { display:block; font-size:13px; color:#555; margin-bottom:4px; font-weight:500; }
-  input, select, textarea { width:100%; padding:9px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; box-sizing:border-box; }
-  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+.ef-page{max-width:1100px;margin:0 auto;padding:8px 4px 30px;}
+.ef-back{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:#60a5fa;font-size:.88rem;font-weight:600;margin-bottom:14px;}
+.ef-back:hover{color:#93c5fd;}
+.ef-hero{display:flex;gap:16px;align-items:center;padding:22px 24px;border-radius:18px;
+  border:1px solid rgba(239,68,68,.22);background:linear-gradient(130deg,rgba(239,68,68,.12),rgba(220,38,38,.08),rgba(251,191,36,.08));margin-bottom:18px;}
+.ef-hero-icon{width:58px;height:58px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;
+  background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 10px 24px rgba(239,68,68,.24);}
+.ef-hero h1{margin:0 0 4px;color:#f1f5f9;font-size:1.35rem;font-weight:800;}
+.ef-hero p{margin:0;color:#94a3b8;font-size:.9rem;}
+.ef-form{background:rgba(15,23,42,.66);border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;}
+.ef-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:22px;}
+.ef-sec{grid-column:1/-1;background:linear-gradient(145deg,rgba(30,41,59,.86),rgba(15,23,42,.62));border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:18px;}
+.ef-sec.half{grid-column:span 1;}
+.ef-sec-title{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.07);
+  color:#94a3b8;font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+.ef-rows{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.ef-field{display:flex;flex-direction:column;gap:6px;}
+.ef-field.full{grid-column:1/-1;}
+.ef-label{font-size:.8rem;font-weight:600;color:#64748b;}
+.ef-label .req{color:#ef4444;}
+.ef-input{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;font-size:.93rem;color:#f1f5f9;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);transition:all .2s;}
+.ef-input:focus{outline:none;border-color:#f87171;background:rgba(239,68,68,.06);box-shadow:0 0 0 3px rgba(239,68,68,.12);}
+.ef-input::placeholder{color:#475569;}
+.ef-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%2364748b' viewBox='0 0 20 20'%3E%3Cpath d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:left 12px center;background-size:16px;padding-left:34px;}
+.amount-display{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.18);border-radius:10px;padding:12px 16px;margin-top:8px;display:flex;align-items:center;gap:10px;}
+.amount-num{font-size:1.5rem;font-weight:800;color:#f87171;}
+.amount-lbl{font-size:.8rem;color:#94a3b8;}
+.ef-actions{display:flex;gap:10px;justify-content:flex-end;padding:16px 22px;border-top:1px solid rgba(255,255,255,.08);
+  background:rgba(15,23,42,.86);position:sticky;bottom:0;}
+.ef-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:10px;
+  font-size:.9rem;font-weight:700;text-decoration:none;cursor:pointer;transition:all .2s;border:1px solid transparent;}
+.ef-btn.save{background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;box-shadow:0 8px 18px rgba(239,68,68,.26);}
+.ef-btn.save:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(239,68,68,.33);}
+.ef-btn.edit{background:rgba(14,165,233,.12);border-color:rgba(14,165,233,.24);color:#7dd3fc;}
+.ef-btn.edit:hover{background:rgba(14,165,233,.2);}
+.ef-btn.back{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12);color:#cbd5e1;}
+.ef-btn.back:hover{background:rgba(255,255,255,.1);}
+.ef-btn.cancel{background:rgba(100,116,139,.1);border-color:rgba(100,116,139,.22);color:#94a3b8;}
+.ef-btn.cancel:hover{background:rgba(100,116,139,.18);}
+@media(max-width:900px){.ef-grid{grid-template-columns:1fr;}.ef-sec.half{grid-column:1/-1;}}
+@media(max-width:640px){.ef-rows{grid-template-columns:1fr;}.ef-actions{position:relative;flex-wrap:wrap;}.ef-btn{flex:1;}}
+.u_debe567fe8{font-size:1.15rem;font-weight:700;color:#f87171;}
+.u_97294b207c{grid-column:1/-1;}
+.u_362aad8a6f{font-size:1.4rem;}
+.u_77d01b7aa1{font-size:1rem;font-weight:500;color:#94a3b8;}
 </style>
 
-<form method="post" action="/expenses/new">
-<div class="card">
-  <h3 style="margin:0 0 20px;font-size:16px">تفاصيل المصروف</h3>
-  <div class="grid2">
+<div class="ef-page">
+  <a href="/expenses" class="ef-back">← رجوع لقائمة المصروفات</a>
+
+  <div class="ef-hero">
+    <div class="ef-hero-icon">💸</div>
     <div>
-      <label>الفئة *</label>
-      <select name="category" required>
-        <option value="">— اختر الفئة —</option>
-        {% for cat in categories %}
-        <option value="{{ cat }}">{{ cat }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div>
-      <label>تاريخ المصروف *</label>
-      <input type="date" name="expense_date" required>
-    </div>
-    <div>
-      <label>المبلغ (ريال) *</label>
-      <input type="number" name="amount" min="0.01" step="0.01" required placeholder="0.00">
-    </div>
-    <div>
-      <label>طريقة الدفع</label>
-      <select name="payment_method">
-        <option value="cash">💵 كاش</option>
-        <option value="transfer">📱 حوالة بنكية</option>
-        <option value="cheque">🏦 شيك</option>
-      </select>
-    </div>
-    <div>
-      <label>اسم المورد / الجهة</label>
-      <input type="text" name="vendor_name" placeholder="مثال: شركة الكهرباء...">
-    </div>
-    <div>
-      <label>رقم المرجع / الفاتورة</label>
-      <input type="text" name="reference" placeholder="رقم الفاتورة أو الوصل...">
+      <h1>تسجيل مصروف جديد</h1>
+      <p>أدخل تفاصيل المصروف — الفئة والمبلغ وطريقة الدفع والمرجع</p>
     </div>
   </div>
-  <div>
-    <label>الوصف</label>
-    <textarea name="description" rows="2" placeholder="تفاصيل إضافية..."></textarea>
-  </div>
+
+  <form class="ef-form" method="post" action="/expenses/new">
+    <div class="ef-grid">
+
+      <div class="ef-sec">
+        <div class="ef-sec-title">تفاصيل المصروف</div>
+        <div class="ef-rows">
+          <div class="ef-field">
+            <label class="ef-label">الفئة <span class="req">*</span></label>
+            <select name="category" class="ef-input ef-select" required>
+              <option value="">— اختر الفئة —</option>
+              {% for cat in categories %}
+              <option value="{{ cat }}">{{ cat }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="ef-field">
+            <label class="ef-label">تاريخ المصروف <span class="req">*</span></label>
+            <input type="date" name="expense_date" class="ef-input" required>
+          </div>
+          <div class="ef-field">
+            <label class="ef-label">المبلغ (ر.س) <span class="req">*</span></label>
+            <input type="number" name="amount" class="ef-input u_debe567fe8" min="0.01" step="0.01" required
+                   placeholder="0.00" oninput="updatePreview(this.value)"
+                  >
+          </div>
+          <div class="ef-field">
+            <label class="ef-label">طريقة الدفع</label>
+            <select name="payment_method" class="ef-input ef-select">
+              <option value="cash">💵 كاش</option>
+              <option value="transfer">📱 حوالة بنكية</option>
+              <option value="cheque">🏦 شيك</option>
+            </select>
+          </div>
+          <div class="amount-display u_97294b207c">
+            <span class="u_362aad8a6f">💸</span>
+            <div>
+              <div class="amount-num" id="amtPreview">0.00 <span class="u_77d01b7aa1">ر.س</span></div>
+              <div class="amount-lbl">المبلغ المُدخل</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ef-sec half">
+        <div class="ef-sec-title">المورد والمرجع</div>
+        <div class="ef-rows">
+          <div class="ef-field full">
+            <label class="ef-label">اسم المورد / الجهة</label>
+            <input type="text" name="vendor_name" class="ef-input" placeholder="مثال: شركة الكهرباء، محطة الوقود...">
+          </div>
+          <div class="ef-field full">
+            <label class="ef-label">رقم المرجع / الفاتورة</label>
+            <input type="text" name="reference" class="ef-input" placeholder="رقم الفاتورة أو الوصل..." dir="ltr">
+          </div>
+        </div>
+      </div>
+
+      <div class="ef-sec half">
+        <div class="ef-sec-title">ملاحظات</div>
+        <div class="ef-rows">
+          <div class="ef-field full">
+            <label class="ef-label">الوصف التفصيلي</label>
+            <textarea name="description" class="ef-input" rows="5" placeholder="تفاصيل إضافية عن هذا المصروف..."></textarea>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="ef-actions">
+      <a href="/expenses" class="ef-btn back">رجوع</a>
+      <button type="button" class="ef-btn edit" onclick="document.querySelector('[name=amount]').focus()">تعديل</button>
+      <a href="/expenses" class="ef-btn cancel">إلغاء</a>
+      <button type="submit" class="ef-btn save">حفظ المصروف</button>
+    </div>
+  </form>
 </div>
 
-<div style="display:flex;gap:10px">
-  <button type="submit" style="background:#10b981;color:white;border:none;padding:12px 28px;border-radius:6px;cursor:pointer;font-size:15px;font-weight:bold">💾 حفظ المصروف</button>
-  <a href="/expenses" style="background:#6b7280;color:white;padding:12px 20px;border-radius:6px;text-decoration:none;font-size:15px">إلغاء</a>
-</div>
-</form>
+<script>
+function updatePreview(val){
+  const n = parseFloat(val) || 0;
+  document.getElementById('amtPreview').innerHTML =
+    n.toLocaleString('ar-SA',{minimumFractionDigits:2,maximumFractionDigits:2}) +
+    ' <span class="u_77d01b7aa1">ر.س</span>';
+}
+</script>
 {% endblock %}

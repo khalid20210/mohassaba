@@ -121,6 +121,7 @@ body { font-family: 'Plus Jakarta Sans', 'Cairo', 'Segoe UI', sans-serif; backgr
   padding: 12px 16px;
   background: rgba(255,255,255,.042);
   border: 1px solid rgba(80,130,220,.16); border-radius: 14px;
+  -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px); transition: background .2s, transform .2s, box-shadow .2s;
   /* التدرج نحو اليمين بالخاصية nth-child */
 }
@@ -219,7 +220,7 @@ body { font-family: 'Plus Jakarta Sans', 'Cairo', 'Segoe UI', sans-serif; backgr
   html, body { overflow: auto !important; height: auto !important; }
   .reg-root { position: relative; inset: auto; min-height: 100dvh; grid-template-columns: 1fr; overflow: visible; }
   .reg-right { order: 1; padding: 28px 18px 18px; }
-  .reg-left  { order: 2; padding: 22px 16px 26px; justify-content: flex-start; overflow: visible; min-height: auto; }
+  .reg-left  { order: 2; padding: 22px 16px 26px; justify-content: flex-start; overflow: visible; min-height: 0; }
   .reg-grid { grid-template-columns: 1fr; gap: 10px; }
   .sv-stage { max-width: 100%; }
 }
@@ -357,6 +358,7 @@ body { font-family: 'Plus Jakarta Sans', 'Cairo', 'Segoe UI', sans-serif; backgr
   background: rgba(0,229,255,.07);
   border: 1px solid rgba(0,229,255,.28);
   border-radius: 18px;
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   box-shadow: 0 0 26px rgba(0,229,255,.14);
 }
@@ -445,6 +447,11 @@ body { font-family: 'Plus Jakarta Sans', 'Cairo', 'Segoe UI', sans-serif; backgr
     padding: 1px 7px;
   }
 }
+.u_c535dc2401{
+      display:flex;flex-wrap:wrap;gap:8px;
+      justify-content:center;margin-top:18px;
+      animation:fadeUp .6s ease both;
+    }
 </style>
 {% endblock %}
 
@@ -478,7 +485,7 @@ body { font-family: 'Plus Jakarta Sans', 'Cairo', 'Segoe UI', sans-serif; backgr
         </div>
         <div class="reg-field span2">
           <label class="reg-label">{{ t('country') }} <span class="req">*</span></label>
-          <select name="country_code" id="countrySelect" class="reg-input" onchange="updateCountryHint(this)">
+          <select name="country_code" id="countrySelect" class="reg-input" title="اختيار الدولة" onchange="updateCountryHint(this)">
             {% for c in countries %}
             <option value="{{ c.country_code }}"
               data-tax="{{ c.default_tax_rate }}"
@@ -558,23 +565,13 @@ body { font-family: 'Plus Jakarta Sans', 'Cairo', 'Segoe UI', sans-serif; backgr
 
     <!-- ─── الشارات التسويقية الديناميكية ─── -->
     {% if marketing_badges %}
-    <div style="
-      display:flex;flex-wrap:wrap;gap:8px;
-      justify-content:center;margin-top:18px;
-      animation:fadeUp .6s ease both;
-    " id="regBadgesRow">
+    <div id="regBadgesRow" class="u_c535dc2401">
       {% for b in marketing_badges %}
-      <span style="
-        display:inline-flex;align-items:center;gap:5px;
-        background:{{ b.badge_bg }};color:{{ b.badge_color }};
-        padding:6px 15px;border-radius:100px;
-        font-size:.82rem;font-weight:700;
-        box-shadow:0 4px 14px rgba(0,0,0,.3);
-        animation:badgePop .4s ease {{ loop.index0 * 0.12 }}s both;
-      ">{{ b.badge_icon or '🔥' }} {{ b.badge_text }}</span>
+      <span class="reg-marketing-badge" data-badge-bg="{{ b.badge_bg }}" data-badge-color="{{ b.badge_color }}" data-badge-index="{{ loop.index0 }}">{{ b.badge_icon or '🔥' }} {{ b.badge_text }}</span>
       {% endfor %}
     </div>
     <style>
+    .reg-marketing-badge{display:inline-flex;align-items:center;gap:5px;padding:6px 15px;border-radius:100px;font-size:.82rem;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.3);animation:badgePop .4s ease both;}
     @keyframes badgePop{from{opacity:0;transform:scale(.7) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
     @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
     </style>
@@ -587,6 +584,15 @@ body { font-family: 'Plus Jakarta Sans', 'Cairo', 'Segoe UI', sans-serif; backgr
 
 {% block scripts %}
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.reg-marketing-badge').forEach(function (badge) {
+    badge.style.background = badge.dataset.badgeBg || '';
+    badge.style.color = badge.dataset.badgeColor || '';
+    const index = Number(badge.dataset.badgeIndex || 0);
+    badge.style.animationDelay = (index * 0.12) + 's';
+  });
+});
+
 /* ── hint الدولة ──────────────────────────────────── */
 function updateCountryHint(sel) {
   var opt = sel.options[sel.selectedIndex];

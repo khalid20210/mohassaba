@@ -20,12 +20,15 @@
 .hr-in-num{background:#0b1220;color:#e2e8f0;border:1px solid rgba(148,163,184,.25);border-radius:8px;padding:5px 9px;font-size:.8rem;width:110px;font-family:inherit}
 .hr-save-btn{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:8px;padding:5px 11px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:inherit}
 .hr-save-btn:hover{opacity:.9}
+.u_4e2936c400{color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px}
+.u_d2f844b1ed{color:#64748b;font-size:.82rem;text-align:center;margin:20px 0}
+.u_b09403274a{color:#4ade80;font-size:.72rem}
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="hr-wrap">
-  <a href="{{ url_for('owner.owner_dashboard') }}" style="color:#60a5fa;font-size:.83rem;text-decoration:none;display:block;margin-bottom:16px">← العودة لقمرة القيادة</a>
+  <a href="{{ url_for('owner.owner_dashboard') }}" class="u_4e2936c400">← العودة لقمرة القيادة</a>
 
   <div class="hr-grid">
 
@@ -50,7 +53,7 @@
         </div>
         {% endfor %}
       {% else %}
-        <p style="color:#64748b;font-size:.82rem;text-align:center;margin:20px 0">لا يوجد موظفون نشطون</p>
+        <p class="u_d2f844b1ed">لا يوجد موظفون نشطون</p>
       {% endif %}
     </div>
 
@@ -64,7 +67,7 @@
             <div class="hr-name">{{ a.full_name }}</div>
             <div class="hr-meta">{{ a.agent_code or '—' }} | نسبة: {{ a.commission_rate or 0 }}%</div>
             {% if a.pending_commission > 0 %}
-              <div style="color:#4ade80;font-size:.72rem">عمولة قيد الصرف: {{ "{:,.2f}".format(a.pending_commission) }}</div>
+              <div class="u_b09403274a">عمولة قيد الصرف: {{ "{:,.2f}".format(a.pending_commission) }}</div>
             {% endif %}
           </div>
           <div class="hr-edit-inline">
@@ -75,7 +78,7 @@
         </div>
         {% endfor %}
       {% else %}
-        <p style="color:#64748b;font-size:.82rem;text-align:center;margin:20px 0">لا يوجد مناديب نشطون</p>
+        <p class="u_d2f844b1ed">لا يوجد مناديب نشطون</p>
       {% endif %}
     </div>
 

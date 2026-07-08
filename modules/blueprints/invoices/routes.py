@@ -11,8 +11,14 @@ from flask import (
 )
 
 from modules.extensions import get_db, next_invoice_number, csrf_protect
+from modules.country_engine import get_business_country
 from modules.middleware import onboarding_required, require_perm, user_has_perm, write_audit_log
-from modules.security_hardening import register_security_incident
+from modules.security_hardening import ensure_security_tables, register_security_incident
+from modules.sovereign_controls import ensure_sovereign_tables, enforce_cashier_cancel_lock, log_owner_impact
+from modules.tax_compliance import get_compliance_profile, validate_invoice_compliance
+from modules.policy_engine import ensure_default_policies
+from modules.engines.audit_approval_engine import ensure_operation_or_create_request
+from modules.robot_runtime import process_invoice_robots
 
 bp = Blueprint("invoices", __name__, url_prefix="/invoices")
 
@@ -43,6 +49,28 @@ def _setting_int(db, business_id: int, key: str, default: int) -> int:
         return int(float(str(row["value"]).strip()))
     except Exception:
         return default
+
+
+def _invoice_column_exists(db, column_name: str) -> bool:
+    try:
+        rows = db.execute("PRAGMA table_info(invoices)").fetchall()
+    except Exception:
+        return False
+    return any((row[1] if not isinstance(row, dict) else row.get("name")) == column_name for row in rows or [])
+
+
+def _ensure_invoice_schema_compat(db) -> None:
+    compat_columns = {
+        "payment_method": "ALTER TABLE invoices ADD COLUMN payment_method TEXT DEFAULT 'cash'",
+        "party_vat": "ALTER TABLE invoices ADD COLUMN party_vat TEXT DEFAULT ''",
+        "pos_shift_id": "ALTER TABLE invoices ADD COLUMN pos_shift_id INTEGER",
+    }
+    for column_name, stmt in compat_columns.items():
+        if not _invoice_column_exists(db, column_name):
+            try:
+                db.execute(stmt)
+            except Exception:
+                pass
 
 
 def _ensure_invoice_cancel_requests_table(db):
@@ -212,6 +240,11 @@ def new_invoice():
         if guard:
             return guard
 
+        country_profile = g.country_profile or get_business_country(db, int(biz_id))
+        compliance_profile = get_compliance_profile(db, int(biz_id), country_profile=country_profile)
+        tax_rate_percent = float(compliance_profile.get("default_tax_rate", 0) or 0)
+        tax_system = str(compliance_profile.get("tax_system", "none") or "none").lower()
+
         # ── استخراج بيانات الفاتورة ──────────────────────────────────────────
         party_name     = request.form.get("party_name", "").strip()[:200]
         client_vat     = request.form.get("client_vat", "").strip()[:20]
@@ -220,6 +253,7 @@ def new_invoice():
         notes          = request.form.get("notes", "").strip()[:1000]
         inv_status     = request.form.get("status", "pending")
         apply_vat      = request.form.get("apply_vat") == "1"
+        apply_vat      = bool(apply_vat and tax_rate_percent > 0 and tax_system != "none")
 
         # التحقق من الحقول المطلوبة
         if not party_name:
@@ -254,7 +288,7 @@ def new_invoice():
             line_base     = qty * price
             disc_amount   = round(line_base * disc / 100, 4)
             line_after_disc = line_base - disc_amount
-            line_tax_amount = round(line_after_disc * 0.15, 4) if apply_vat else 0.0
+            line_tax_amount = round(line_after_disc * (tax_rate_percent / 100.0), 4) if apply_vat else 0.0
             line_total    = round(line_after_disc, 4)
             subtotal     += line_total
             lines.append({"desc": desc, "qty": qty, "price": price,
@@ -265,9 +299,29 @@ def new_invoice():
             flash("يجب إضافة سطر واحد على الأقل في الفاتورة", "error")
             return redirect(url_for("invoices.new_invoice"))
 
-        tax_amount = round(subtotal * 0.15, 2) if apply_vat else 0.0
+        tax_amount = round(subtotal * (tax_rate_percent / 100.0), 2) if apply_vat else 0.0
         total      = round(subtotal + tax_amount, 2)
         subtotal   = round(subtotal, 2)
+
+        # منع إصدار فاتورة تشغيلية غير ممتثلة حسب الدولة.
+        compliance = validate_invoice_compliance(
+            db,
+            int(biz_id),
+            invoice_data={
+                "party_name": party_name,
+                "party_vat": client_vat,
+                "tax_amount": tax_amount,
+                "total": total,
+            },
+            stage="issue",
+            country_profile=country_profile,
+        )
+        if inv_status in {"pending", "paid"} and not compliance["ok"]:
+            for msg in compliance["errors"][:4]:
+                flash(msg, "error")
+            return redirect(url_for("invoices.new_invoice"))
+        if inv_status == "draft" and not compliance["ok"]:
+            flash("تم حفظ الفاتورة كمسودة، لكنها غير مستوفية اشتراطات الامتثال حتى الآن.", "warning")
 
         # ── رقم الفاتورة التلقائي ────────────────────────────────────────────
         inv_number = next_invoice_number(db, biz_id)
@@ -292,7 +346,7 @@ def new_invoice():
         ).lastrowid
 
         # ── حفظ أسطر الفاتورة ────────────────────────────────────────────────
-        tax_rate_val = 15.0 if apply_vat else 0.0
+        tax_rate_val = tax_rate_percent if apply_vat else 0.0
         for idx, line in enumerate(lines, start=1):
             db.execute(
                 """INSERT INTO invoice_lines
@@ -307,19 +361,36 @@ def new_invoice():
 
         db.commit()
 
+        robot_runtime = {"processed": 0, "triggered": 0, "notified": 0}
+        try:
+            robot_runtime = process_invoice_robots(
+                db,
+                business_id=int(biz_id),
+                invoice_id=int(inv_id),
+                invoice_total=float(total or 0),
+                actor_user_id=int(session.get("user_id") or 0) or None,
+                source_channel="invoices",
+            )
+        except Exception:
+            robot_runtime = {"processed": 0, "triggered": 0, "notified": 0}
+
         write_audit_log(
             db, biz_id,
             action="invoice_created",
             entity_type="invoice",
             entity_id=inv_id,
             new_value=json.dumps({"invoice_number": inv_number, "total": total,
-                                  "status": inv_status}, ensure_ascii=False),
+                                  "status": inv_status,
+                                  "robot_runtime": robot_runtime}, ensure_ascii=False),
         )
 
         flash(f"✅ تم إصدار الفاتورة {inv_number} بنجاح", "success")
         return redirect(url_for("invoices.view_invoice", inv_id=inv_id))
 
     # ── GET: عرض نموذج الإنشاء ───────────────────────────────────────────────
+    country_profile = g.country_profile or get_business_country(db, int(biz_id))
+    compliance_profile = get_compliance_profile(db, int(biz_id), country_profile=country_profile)
+
     customers = db.execute(
         "SELECT name FROM contacts WHERE business_id=? AND contact_type IN ('customer','both') ORDER BY name",
         (biz_id,)
@@ -346,6 +417,7 @@ def new_invoice():
         customers=customers,
         products=products,
         biz_vat=biz_vat,
+        compliance_profile=compliance_profile,
     )
 
 
@@ -402,6 +474,7 @@ def view_invoice(inv_id: int):
         audit=[dict(r) for r in audit],
         cancel_requests=[dict(r) for r in cancel_requests],
         can_approve_cancel=bool(user_has_perm("all")),
+        compliance_profile=get_compliance_profile(db, int(biz_id), country_profile=(g.country_profile or None)),
     )
 
 
@@ -413,7 +486,7 @@ def mark_paid(inv_id: int):
     biz_id = session["business_id"]
 
     inv = db.execute(
-        "SELECT id, status, invoice_number FROM invoices WHERE id=? AND business_id=?",
+        "SELECT id, status, invoice_number, party_name, party_vat, tax_amount, total FROM invoices WHERE id=? AND business_id=?",
         (inv_id, biz_id)
     ).fetchone()
     if not inv:
@@ -421,6 +494,25 @@ def mark_paid(inv_id: int):
 
     if inv["status"] == "cancelled":
         return jsonify({"success": False, "error": "لا يمكن تحديث فاتورة ملغية"}), 400
+
+    compliance = validate_invoice_compliance(
+        db,
+        int(biz_id),
+        invoice_data={
+            "party_name": inv["party_name"],
+            "party_vat": inv["party_vat"],
+            "tax_amount": float(inv["tax_amount"] or 0),
+            "total": float(inv["total"] or 0),
+        },
+        stage="pay",
+        country_profile=(g.country_profile or None),
+    )
+    if not compliance["ok"]:
+        return jsonify({
+            "success": False,
+            "error": "فشلت متطلبات الامتثال الضريبي قبل التحصيل",
+            "details": compliance["errors"],
+        }), 400
 
     old_status = inv["status"]
     db.execute(
@@ -447,6 +539,9 @@ def cancel_invoice(inv_id: int):
     db     = get_db()
     biz_id = session["business_id"]
     actor_user_id = session.get("user_id")
+    _ensure_invoice_schema_compat(db)
+    ensure_security_tables(db)
+    ensure_sovereign_tables(db)
 
     reason = request.form.get("reason", "").strip()[:500]
     if not reason:
@@ -470,6 +565,31 @@ def cancel_invoice(inv_id: int):
         return redirect(url_for("invoices.view_invoice", inv_id=inv_id))
 
     is_paid_invoice = (inv["status"] in {"paid", "partial"}) or float(inv["paid_amount"] or 0) > 0
+    ensure_default_policies(db, int(biz_id))
+
+    if is_paid_invoice:
+        gate = ensure_operation_or_create_request(
+            db,
+            business_id=int(biz_id),
+            user=(g.user or {}),
+            operation_key="invoice.cancel.paid",
+            default_permission_key="invoice_cancel",
+            entity_type="invoice",
+            entity_id=int(inv_id),
+            reason=reason,
+            payload={
+                "invoice_number": inv["invoice_number"],
+                "total": float(inv["total"] or 0),
+                "evidence_ref": (request.form.get("evidence_ref") or "").strip()[:120],
+            },
+        )
+        if gate.get("approval_required"):
+            flash(f"تم إنشاء طلب موافقة رقم #{gate.get('request_id')} لإلغاء الفاتورة المدفوعة", "warning")
+            return redirect(url_for("invoices.view_invoice", inv_id=inv_id))
+        if not gate.get("allowed"):
+            flash("لا تملك صلاحية تنفيذ إلغاء الفاتورة المدفوعة", "error")
+            return redirect(url_for("invoices.view_invoice", inv_id=inv_id))
+
     require_evidence_for_paid_cancel = _setting_bool(
         db, biz_id, "invoice_cancel_paid_requires_evidence", default=True
     )
@@ -534,8 +654,20 @@ def cancel_invoice(inv_id: int):
             severity=("medium" if within_grace else "high"),
             agent_id=actor_user_id,
         )
+        lock_state = enforce_cashier_cancel_lock(
+            db,
+            business_id=int(biz_id),
+            user_id=int(actor_user_id or 0) or None,
+            invoice_id=int(inv_id),
+            invoice_number=str(inv["invoice_number"] or "#"),
+            invoice_total=float(inv["total"] or 0),
+            reason=reason,
+        )
         db.commit()
-        flash("تم رفع طلب إلغاء الفاتورة المدفوعة إلى المدير للمراجعة", "success")
+        if lock_state.get("locked"):
+            flash("تم رفع طلب الإلغاء، وتم تجميد الكاشير بعد تجاوز حد الإلغاء اليومي بانتظار قرار المالك", "warning")
+        else:
+            flash("تم رفع طلب إلغاء الفاتورة المدفوعة إلى المدير للمراجعة", "success")
         return redirect(url_for("invoices.view_invoice", inv_id=inv_id))
 
     if is_paid_invoice and require_evidence_for_paid_cancel and len(evidence_ref) < 6:
@@ -558,9 +690,35 @@ def cancel_invoice(inv_id: int):
             severity="high",
             agent_id=actor_user_id,
         )
+        log_owner_impact(
+            db,
+            business_id=int(biz_id),
+            category="anti_fraud",
+            action_key="invoice.paid_cancelled",
+            summary=f"أُلغيَت فاتورة مدفوعة رقم {inv['invoice_number']}",
+            reason=reason,
+            entity_type="invoice",
+            entity_id=int(inv_id),
+            actor_user_id=int(actor_user_id or 0) or None,
+            protected_amount=float(inv["total"] or 0),
+            payload={"evidence_ref": evidence_ref},
+        )
+
+    lock_state = enforce_cashier_cancel_lock(
+        db,
+        business_id=int(biz_id),
+        user_id=int(actor_user_id or 0) or None,
+        invoice_id=int(inv_id),
+        invoice_number=str(inv["invoice_number"] or "#"),
+        invoice_total=float(inv["total"] or 0),
+        reason=reason,
+    )
 
     db.commit()
-    flash(f"تم إلغاء الفاتورة {inv['invoice_number']} بنجاح", "success")
+    if lock_state.get("locked"):
+        flash(f"تم إلغاء الفاتورة {inv['invoice_number']}، وتم تجميد الكاشير بعد تجاوز الحد اليومي", "warning")
+    else:
+        flash(f"تم إلغاء الفاتورة {inv['invoice_number']} بنجاح", "success")
     return redirect(url_for("invoices.view_invoice", inv_id=inv_id))
 
 

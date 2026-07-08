@@ -1,3 +1,13 @@
+<style>
+.u_27e46985ca{font-size:1.3rem}
+.u_6b99de8b69{display:none}
+.u_aef3df2ae9{max-width:300px}
+.u_3872989743{width:36px}
+.u_44a1b7eefb{text-align:left;color:var(--text-muted);font-size:.82rem}
+.u_38183486e1{font-weight:800;color:var(--primary)}
+.u_2fe172631a{font-size:3rem}
+.u_9e97c6b98a{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+</style>
 {% extends "base.html" %}
 {% block title %}استيراد فاتورة شراء{% endblock %}
 
@@ -12,7 +22,7 @@
 
 <!-- ─── الشرح ───────────────────────────────────────────────── -->
 <div class="pi-info-banner">
-  <span style="font-size:1.3rem">💡</span>
+  <span class="u_27e46985ca">💡</span>
   <div>
     <strong>كيف يعمل؟</strong>
     ارفع صورة أو ملف PDF لفاتورة الشراء — سيحاول النظام قراءتها تلقائياً ومطابقة المنتجات.
@@ -26,25 +36,25 @@
   <p class="pi-upload-title">اسحب ملف PDF أو صورة هنا</p>
   <p class="pi-upload-hint">أو انقر للاختيار — PDF, PNG, JPG, JPEG, WEBP</p>
   <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg,.webp"
-         style="display:none" onchange="handleFileSelect(this.files[0])">
+         onchange="handleFileSelect(this.files[0])" class="u_6b99de8b69">
   <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
     🗂️ اختر ملفاً
   </button>
 </div>
 
 <!-- ─── شريط التقدم ───────────────────────────────────────────── -->
-<div id="progressWrap" style="display:none" class="pi-progress-wrap">
+<div id="progressWrap" class="pi-progress-wrap u_6b99de8b69">
   <div class="pi-progress-bar" id="progressBar"></div>
   <span id="progressLabel">جارٍ المعالجة...</span>
 </div>
 
 <!-- ─── نتائج المطابقة ─────────────────────────────────────────── -->
-<div id="resultsSection" style="display:none">
+<div id="resultsSection" class="u_6b99de8b69">
 
   <!-- معلومات المورد -->
   <div class="pi-supplier-row">
     <label class="form-label">اسم المورد</label>
-    <input type="text" id="supplierName" class="form-control" placeholder="مورد غير محدد" style="max-width:300px">
+    <input type="text" id="supplierName" class="form-control u_aef3df2ae9" placeholder="مورد غير محدد">
   </div>
 
   <!-- رسالة المطابقة -->
@@ -59,15 +69,15 @@
           <th class="num-col">الكمية</th>
           <th class="num-col">سعر الشراء</th>
           <th class="num-col">الإجمالي</th>
-          <th style="width:36px"></th>
+          <th class="u_3872989743"></th>
         </tr>
       </thead>
       <tbody id="linesBody"></tbody>
       <tfoot>
         <tr>
-          <td colspan="2" style="text-align:left;color:var(--text-muted);font-size:.82rem">يمكنك تعديل الكميات والأسعار قبل التأكيد</td>
+          <td colspan="2" class="u_44a1b7eefb">يمكنك تعديل الكميات والأسعار قبل التأكيد</td>
           <td class="num-col"><strong>الإجمالي</strong></td>
-          <td class="num-col" id="grandTotal" style="font-weight:800;color:var(--primary)">0.00</td>
+          <td class="num-col u_38183486e1" id="grandTotal">0.00</td>
           <td></td>
         </tr>
       </tfoot>
@@ -91,11 +101,11 @@
 </div>
 
 <!-- ─── نجاح الاستيراد ─────────────────────────────────────────── -->
-<div id="successSection" style="display:none" class="pi-success">
-  <div style="font-size:3rem">✅</div>
+<div id="successSection" class="pi-success u_6b99de8b69">
+  <div class="u_2fe172631a">✅</div>
   <h3 id="successTitle">تم تحديث المخزون</h3>
   <p id="successMsg" class="muted-cell"></p>
-  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+  <div class="u_9e97c6b98a">
     <button class="btn btn-primary" onclick="resetForm()">📥 استيراد فاتورة أخرى</button>
     <a href="/purchases" class="btn btn-secondary">📋 عرض المشتريات</a>
   </div>

@@ -1,11 +1,17 @@
+<style>
+.u_cd4426f836{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+.u_b9bbe540d3{display:flex;gap:8px;}
+.u_cdff0cbee5{font-size:.78rem;color:#60a5fa;}
+.u_dac4fe6c9b{text-align:center;}
+</style>
 ﻿{% extends "base.html" %}
 {% block title %}طلبات الجملة{% endblock %}
 {% block page_title %}طلبات الجملة{% endblock %}
 
 {% block content %}
-<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+<div class="page-header u_cd4426f836">
   <div><p class="page-subtitle">{{ orders|length }} طلب</p></div>
-  <div style="display:flex;gap:8px;">
+  <div class="u_b9bbe540d3">
     <a href="/wholesale/pricing" class="btn btn-secondary">قوائم الأسعار</a>
     <a href="/wholesale/reports/aging" class="btn btn-secondary">تقرير أعمار الديون</a>
   </div>
@@ -30,7 +36,7 @@
         <td>
           {% if o.customer_id %}
             <div>{{ o.customer_name or ('#' ~ o.customer_id) }}</div>
-            <a href="/wholesale/customers/{{ o.customer_id }}/statement" style="font-size:.78rem;color:#60a5fa;">كشف الحساب</a>
+            <a href="/wholesale/customers/{{ o.customer_id }}/statement" class="u_cdff0cbee5">كشف الحساب</a>
           {% else %}
             —
           {% endif %}
@@ -41,7 +47,7 @@
         <td><a href="/wholesale/orders/{{ o.id }}" class="btn btn-secondary">تفاصيل</a></td>
       </tr>
       {% else %}
-      <tr><td colspan="6" style="text-align:center;">لا توجد طلبات</td></tr>
+      <tr><td colspan="6" class="u_dac4fe6c9b">لا توجد طلبات</td></tr>
       {% endfor %}
     </tbody>
   </table>

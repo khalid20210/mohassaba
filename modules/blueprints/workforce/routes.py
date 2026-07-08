@@ -36,6 +36,7 @@ from modules.validators import (
     V,
     validate,
 )
+from modules.robot_runtime import process_invoice_robots
 
 bp = Blueprint("workforce", __name__)
 
@@ -1370,6 +1371,18 @@ def api_v1_agent_create_invoice(agent_id: int):
 
         db.commit()
 
+        try:
+            process_invoice_robots(
+                db,
+                business_id=int(biz_id),
+                invoice_id=int(inv_id),
+                invoice_total=float(grand_total or 0),
+                actor_user_id=int(agent_id or 0) or None,
+                source_channel="workforce_agent_invoice",
+            )
+        except Exception:
+            pass
+
     except Exception as e:
         db.rollback()
         return jsonify({"success": False, "error": f"فشل إنشاء الفاتورة: {e}"}), 500
@@ -1615,6 +1628,20 @@ def api_v1_agent_sync(agent_id: int):
                         f"invoice_id={inv_id}, sync_local_id={local_id}",
                     ),
                 )
+
+                try:
+                    process_invoice_robots(
+                        db,
+                        business_id=int(biz_id),
+                        invoice_id=int(inv_id),
+                        invoice_total=float(grand or 0),
+                        actor_user_id=int(agent_id or 0) or None,
+                        source_channel="workforce_agent_sync",
+                        auto_commit=False,
+                    )
+                except Exception:
+                    pass
+
                 results.append({"local_id": local_id, "status": "done",
                                  "invoice_id": inv_id, "invoice_number": inv_num})
 

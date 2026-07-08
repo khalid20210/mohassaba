@@ -7,6 +7,14 @@
   #scan-area { background:rgba(0,0,0,.3); border:2px dashed rgba(56,189,248,.4); border-radius:12px; padding:40px; text-align:center; margin:20px 0; }
   #scan-result { display:none; }
   .scan-input-area { max-width:400px; margin:0 auto; }
+.u_ed86f0e6c8{font-size:3rem;margin-bottom:16px;}
+.u_43cb641330{color:#94a3b8;margin-bottom:20px;}
+.u_9f823c1817{display:flex;gap:12px;justify-content:center;}
+.u_71b5af5d30{max-width:260px;}
+.u_23a789c70b{margin-top:16px;border:1px solid rgba(34,197,94,.3);}
+.u_3343fd6464{margin-top:24px;}
+.u_32feb61673{color:#94a3b8;font-size:.9rem;margin-bottom:12px;}
+.u_4034b1006f{font-size:.83rem;color:#64748b;}
 </style>
 {% endblock %}
 
@@ -19,24 +27,24 @@
 <div class="card scan-input-area">
   <!-- إدخال يدوي للباركود -->
   <div id="scan-area">
-    <div style="font-size:3rem;margin-bottom:16px;">📷</div>
-    <p style="color:#94a3b8;margin-bottom:20px;">امسح الباركود أو أدخله يدوياً</p>
-    <form id="scan-form" style="display:flex;gap:12px;justify-content:center;">
-      <input type="text" id="barcode-input" class="form-input" placeholder="أدخل/امسح الباركود هنا..." autofocus
-             style="max-width:260px;" autocomplete="off">
+    <div class="u_ed86f0e6c8">📷</div>
+    <p class="u_43cb641330">امسح الباركود أو أدخله يدوياً</p>
+    <form id="scan-form" class="u_9f823c1817">
+      <input type="text" id="barcode-input" class="form-input u_71b5af5d30" placeholder="أدخل/امسح الباركود هنا..." autofocus
+             autocomplete="off">
       <button type="submit" class="btn btn-primary">بحث</button>
     </form>
   </div>
 
   <!-- نتيجة المسح -->
-  <div id="scan-result" class="card" style="margin-top:16px;border:1px solid rgba(34,197,94,.3);">
+  <div id="scan-result" class="card u_23a789c70b">
     <div id="result-content"></div>
   </div>
 
   <!-- سجل المسح الأخير -->
-  <div style="margin-top:24px;">
-    <h3 style="color:#94a3b8;font-size:.9rem;margin-bottom:12px;">آخر عمليات المسح</h3>
-    <div id="scan-log" style="font-size:.83rem;color:#64748b;">
+  <div class="u_3343fd6464">
+    <h3 class="u_32feb61673">آخر عمليات المسح</h3>
+    <div id="scan-log" class="u_4034b1006f">
       <p>لا توجد عمليات مسح بعد...</p>
     </div>
   </div>

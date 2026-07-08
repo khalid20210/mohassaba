@@ -1,25 +1,71 @@
+<style>
+.u_250799a666{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.u_69dbe886bc{margin:0;font-size:1.25rem;}
+.u_0889360d63{display:flex;gap:8px;flex-wrap:wrap;}
+.u_3bdd373df5{text-decoration:none;padding:.5rem .9rem;border:1px solid #c7d2fe;border-radius:.5rem;color:#3730a3;background:#eef2ff;}
+.u_b6d7e4d6f7{text-decoration:none;padding:.5rem .9rem;border:1px solid #d1d5db;border-radius:.5rem;color:#111827;background:#fff;}
+.u_98ef83d9a9{background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;padding:.9rem;margin-bottom:12px;}
+.u_7f12e4cae1{display:flex;gap:8px;flex-wrap:wrap;align-items:end;}
+.u_5206fc018a{display:block;font-size:.78rem;color:#6b7280;margin-bottom:4px;}
+.u_16a400eced{padding:.45rem .55rem;border:1px solid #d1d5db;border-radius:.45rem;min-width:220px;}
+.u_373b0e2017{padding:.45rem .55rem;border:1px solid #d1d5db;border-radius:.45rem;min-width:120px;}
+.u_3b3c9ca25e{padding:.45rem .55rem;border:1px solid #d1d5db;border-radius:.45rem;min-width:130px;}
+.u_9d9b38a66d{padding:.45rem .55rem;border:1px solid #d1d5db;border-radius:.45rem;min-width:150px;}
+.u_f3c0895614{padding:.45rem .55rem;border:1px solid #d1d5db;border-radius:.45rem;width:120px;}
+.u_5fde0b4c52{padding:.5rem .85rem;border:0;border-radius:.5rem;background:#2563eb;color:#fff;cursor:pointer;}
+.u_0126473b51{padding:.48rem .85rem;border:1px solid #d1d5db;border-radius:.5rem;color:#374151;background:#fff;text-decoration:none;}
+.u_60fcacd713{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.u_55eee73451{padding:.25rem .55rem;border-radius:999px;background:#fef2f2;color:#991b1b;font-size:.78rem;}
+.u_3de5cb065a{padding:.25rem .55rem;border-radius:999px;background:#fff7ed;color:#9a3412;font-size:.78rem;}
+.u_8ff17ffad2{padding:.25rem .55rem;border-radius:999px;background:#f8fafc;color:#334155;font-size:.78rem;}
+.u_bf96447b2a{padding:.25rem .55rem;border-radius:999px;background:#fee2e2;color:#991b1b;font-size:.78rem;}
+.u_69f32ad5db{padding:.25rem .55rem;border-radius:999px;background:#ffedd5;color:#9a3412;font-size:.78rem;}
+.u_b4be24967e{padding:.25rem .55rem;border-radius:999px;background:#dcfce7;color:#166534;font-size:.78rem;}
+.u_9fe2a8b2c2{margin-top:8px;font-size:.75rem;color:#64748b;}
+.u_f15ad8c3ff{background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;padding:.8rem;margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:end;}
+.u_0bb7c608f7{padding:.45rem .55rem;border:1px solid #d1d5db;border-radius:.45rem;min-width:280px;}
+.u_fcfe12ff48{padding:.5rem .8rem;border:0;border-radius:.5rem;background:#16a34a;color:#fff;cursor:pointer;}
+.u_34f166c12e{padding:.5rem .8rem;border:0;border-radius:.5rem;background:#dc2626;color:#fff;cursor:pointer;}
+.u_5dde49ab34{font-size:.8rem;color:#475569;}
+.u_16f5a515d3{background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;overflow:auto;}
+.u_3aef2d33a8{width:100%;border-collapse:collapse;font-size:.88rem;min-width:1040px;}
+.u_bc7222b933{padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;}
+.u_16a162db1b{width:16px;height:16px;cursor:pointer;}
+.u_ba2c8444d7{padding:.65rem;border-bottom:1px solid #f1f5f9;}
+.u_307e67ef58{padding:.2rem .5rem;border-radius:999px;background:#fee2e2;color:#991b1b;font-size:.78rem;font-weight:700;}
+.u_ea3ba0dc94{padding:.2rem .5rem;border-radius:999px;background:#ffedd5;color:#9a3412;font-size:.78rem;font-weight:700;}
+.u_a6956b3562{padding:.2rem .5rem;border-radius:999px;background:#f1f5f9;color:#334155;font-size:.78rem;font-weight:700;}
+.u_c3f888cdd6{padding:.2rem .5rem;border-radius:999px;background:#dcfce7;color:#166534;font-size:.78rem;font-weight:700;}
+.u_abb88f4fe3{color:#1d4ed8;text-decoration:none;font-weight:700;}
+.u_5715f24725{color:#6b7280;font-size:.78rem;}
+.u_bd2395e388{padding:.65rem;border-bottom:1px solid #f1f5f9;max-width:260px;}
+.u_babd7118dd{display:flex;gap:6px;align-items:center;}
+.u_10da31356d{padding:.35rem .45rem;border:1px solid #d1d5db;border-radius:.4rem;width:110px;}
+.u_3dabd01365{padding:.35rem .55rem;border:0;border-radius:.4rem;background:#16a34a;color:#fff;cursor:pointer;}
+.u_a361fbf0b4{padding:.35rem .55rem;border:0;border-radius:.4rem;background:#dc2626;color:#fff;cursor:pointer;}
+.u_4c9ae35b73{background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;padding:1rem;color:#374151;}
+</style>
 {% extends "base.html" %}
 {% block title %}طلبات إلغاء الفواتير{% endblock %}
 
 {% block content %}
-<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
-  <h1 style="margin:0;font-size:1.25rem;">طلبات إلغاء الفواتير المدفوعة (قيد المراجعة)</h1>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;">
-    <a href="{{ url_for('invoices.cancel_requests_daily_report_page') }}" style="text-decoration:none;padding:.5rem .9rem;border:1px solid #c7d2fe;border-radius:.5rem;color:#3730a3;background:#eef2ff;">📈 التقرير اليومي</a>
-    <a href="{{ url_for('core.dashboard') }}" style="text-decoration:none;padding:.5rem .9rem;border:1px solid #d1d5db;border-radius:.5rem;color:#111827;background:#fff;">العودة للوحة التحكم</a>
+<div class="u_250799a666">
+  <h1 class="u_69dbe886bc">طلبات إلغاء الفواتير المدفوعة (قيد المراجعة)</h1>
+  <div class="u_0889360d63">
+    <a href="{{ url_for('invoices.cancel_requests_daily_report_page') }}" class="u_3bdd373df5">📈 التقرير اليومي</a>
+    <a href="{{ url_for('core.dashboard') }}" class="u_b6d7e4d6f7">العودة للوحة التحكم</a>
   </div>
 </div>
 
-<div style="background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;padding:.9rem;margin-bottom:12px;">
-  <form method="GET" style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;">
+<div class="u_98ef83d9a9">
+  <form method="GET" class="u_7f12e4cae1">
     <div>
-      <label style="display:block;font-size:.78rem;color:#6b7280;margin-bottom:4px;">بحث</label>
-      <input name="q" value="{{ filter_q or '' }}" placeholder="رقم فاتورة / سبب / مرجع"
-             style="padding:.45rem .55rem;border:1px solid #d1d5db;border-radius:.45rem;min-width:220px;">
+      <label class="u_5206fc018a">بحث</label>
+      <input name="q" value="{{ filter_q or '' }}" placeholder="رقم فاتورة / سبب / مرجع" class="u_16a400eced">
     </div>
     <div>
-      <label style="display:block;font-size:.78rem;color:#6b7280;margin-bottom:4px;">الأولوية</label>
-      <select name="priority" style="padding:.45rem .55rem;border:1px solid #d1d5db;border-radius:.45rem;min-width:120px;">
+      <label class="u_5206fc018a">الأولوية</label>
+      <select name="priority" class="u_373b0e2017">
         <option value="" {% if not filter_priority %}selected{% endif %}>الكل</option>
         <option value="critical" {% if filter_priority=='critical' %}selected{% endif %}>حرج</option>
         <option value="high" {% if filter_priority=='high' %}selected{% endif %}>مرتفع</option>
@@ -27,8 +73,8 @@
       </select>
     </div>
     <div>
-      <label style="display:block;font-size:.78rem;color:#6b7280;margin-bottom:4px;">حالة SLA</label>
-      <select name="sla_status" style="padding:.45rem .55rem;border:1px solid #d1d5db;border-radius:.45rem;min-width:130px;">
+      <label class="u_5206fc018a">حالة SLA</label>
+      <select name="sla_status" class="u_3b3c9ca25e">
         <option value="" {% if not filter_sla_status %}selected{% endif %}>الكل</option>
         <option value="breached" {% if filter_sla_status=='breached' %}selected{% endif %}>متجاوز</option>
         <option value="warning" {% if filter_sla_status=='warning' %}selected{% endif %}>تحذير</option>
@@ -36,8 +82,8 @@
       </select>
     </div>
     <div>
-      <label style="display:block;font-size:.78rem;color:#6b7280;margin-bottom:4px;">الطالب</label>
-      <select name="requester" style="padding:.45rem .55rem;border:1px solid #d1d5db;border-radius:.45rem;min-width:150px;">
+      <label class="u_5206fc018a">الطالب</label>
+      <select name="requester" class="u_9d9b38a66d">
         <option value="" {% if not filter_requester %}selected{% endif %}>الكل</option>
         <option value="me" {% if filter_requester=='me' %}selected{% endif %}>طلباتي</option>
         {% for u in requesters %}
@@ -46,104 +92,103 @@
       </select>
     </div>
     <div>
-      <label style="display:block;font-size:.78rem;color:#6b7280;margin-bottom:4px;">حد أدنى للقيمة</label>
-      <input name="min_total" value="{{ filter_min_total or '' }}" placeholder="0"
-             style="padding:.45rem .55rem;border:1px solid #d1d5db;border-radius:.45rem;width:120px;">
+      <label class="u_5206fc018a">حد أدنى للقيمة</label>
+      <input name="min_total" value="{{ filter_min_total or '' }}" placeholder="0" class="u_f3c0895614">
     </div>
-    <button type="submit" style="padding:.5rem .85rem;border:0;border-radius:.5rem;background:#2563eb;color:#fff;cursor:pointer;">تطبيق</button>
-    <a href="{{ url_for('invoices.pending_cancel_requests_page') }}" style="padding:.48rem .85rem;border:1px solid #d1d5db;border-radius:.5rem;color:#374151;background:#fff;text-decoration:none;">إعادة ضبط</a>
+    <button type="submit" class="u_5fde0b4c52">تطبيق</button>
+    <a href="{{ url_for('invoices.pending_cancel_requests_page') }}" class="u_0126473b51">إعادة ضبط</a>
   </form>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
-    <span style="padding:.25rem .55rem;border-radius:999px;background:#fef2f2;color:#991b1b;font-size:.78rem;">حرج: {{ summary.critical or 0 }}</span>
-    <span style="padding:.25rem .55rem;border-radius:999px;background:#fff7ed;color:#9a3412;font-size:.78rem;">مرتفع: {{ summary.high or 0 }}</span>
-    <span style="padding:.25rem .55rem;border-radius:999px;background:#f8fafc;color:#334155;font-size:.78rem;">عادي: {{ summary.normal or 0 }}</span>
-    <span style="padding:.25rem .55rem;border-radius:999px;background:#fee2e2;color:#991b1b;font-size:.78rem;">SLA متجاوز: {{ summary.breached or 0 }}</span>
-    <span style="padding:.25rem .55rem;border-radius:999px;background:#ffedd5;color:#9a3412;font-size:.78rem;">SLA تحذير: {{ summary.warning or 0 }}</span>
-    <span style="padding:.25rem .55rem;border-radius:999px;background:#dcfce7;color:#166534;font-size:.78rem;">SLA ضمن الهدف: {{ summary.on_track or 0 }}</span>
+  <div class="u_60fcacd713">
+    <span class="u_55eee73451">حرج: {{ summary.critical or 0 }}</span>
+    <span class="u_3de5cb065a">مرتفع: {{ summary.high or 0 }}</span>
+    <span class="u_8ff17ffad2">عادي: {{ summary.normal or 0 }}</span>
+    <span class="u_bf96447b2a">SLA متجاوز: {{ summary.breached or 0 }}</span>
+    <span class="u_69f32ad5db">SLA تحذير: {{ summary.warning or 0 }}</span>
+    <span class="u_b4be24967e">SLA ضمن الهدف: {{ summary.on_track or 0 }}</span>
   </div>
-  <div style="margin-top:8px;font-size:.75rem;color:#64748b;">
+  <div class="u_9fe2a8b2c2">
     حدود SLA بالساعات: حرج {{ sla_thresholds.critical }} • مرتفع {{ sla_thresholds.high }} • عادي {{ sla_thresholds.normal }}
   </div>
 </div>
 
 {% if requests and requests|length > 0 %}
-<form id="bulkReviewForm" method="POST" action="{{ url_for('invoices.bulk_review_cancel_requests') }}" style="background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;padding:.8rem;margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:end;">
+<form id="bulkReviewForm" method="POST" action="{{ url_for('invoices.bulk_review_cancel_requests') }}" class="u_f15ad8c3ff">
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   <div>
-    <label style="display:block;font-size:.78rem;color:#6b7280;margin-bottom:4px;">ملاحظة المراجعة (اختياري)</label>
-    <input name="review_note" maxlength="300" placeholder="تظهر في سجل التدقيق لكل طلب" style="padding:.45rem .55rem;border:1px solid #d1d5db;border-radius:.45rem;min-width:280px;">
+    <label class="u_5206fc018a">ملاحظة المراجعة (اختياري)</label>
+    <input name="review_note" maxlength="300" placeholder="تظهر في سجل التدقيق لكل طلب" class="u_0bb7c608f7">
   </div>
-  <button type="submit" name="action" value="approve" style="padding:.5rem .8rem;border:0;border-radius:.5rem;background:#16a34a;color:#fff;cursor:pointer;">اعتماد المحدد</button>
-  <button type="submit" name="action" value="reject" style="padding:.5rem .8rem;border:0;border-radius:.5rem;background:#dc2626;color:#fff;cursor:pointer;">رفض المحدد</button>
-  <span id="selectedCounter" style="font-size:.8rem;color:#475569;">المحدد: 0</span>
+  <button type="submit" name="action" value="approve" class="u_fcfe12ff48">اعتماد المحدد</button>
+  <button type="submit" name="action" value="reject" class="u_34f166c12e">رفض المحدد</button>
+  <span id="selectedCounter" class="u_5dde49ab34">المحدد: 0</span>
 </form>
 
-<div style="background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;overflow:auto;">
-  <table style="width:100%;border-collapse:collapse;font-size:.88rem;min-width:1040px;">
+<div class="u_16f5a515d3">
+  <table class="u_3aef2d33a8">
     <thead>
       <tr>
-        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">
-          <input id="selectAllRequests" type="checkbox" style="width:16px;height:16px;cursor:pointer;">
+        <th class="u_bc7222b933">
+          <input id="selectAllRequests" type="checkbox" class="u_16a162db1b">
         </th>
-        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">الأولوية</th>
-        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">SLA</th>
-        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">عمر الطلب</th>
-        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">الفاتورة</th>
-        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">الإجمالي</th>
-        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">السبب</th>
-        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">مرجع الإثبات</th>
-        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">الطالب</th>
-        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">تاريخ الطلب</th>
-        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">اعتماد</th>
-        <th style="padding:.7rem;border-bottom:1px solid #e5e7eb;text-align:right;">رفض</th>
+        <th class="u_bc7222b933">الأولوية</th>
+        <th class="u_bc7222b933">SLA</th>
+        <th class="u_bc7222b933">عمر الطلب</th>
+        <th class="u_bc7222b933">الفاتورة</th>
+        <th class="u_bc7222b933">الإجمالي</th>
+        <th class="u_bc7222b933">السبب</th>
+        <th class="u_bc7222b933">مرجع الإثبات</th>
+        <th class="u_bc7222b933">الطالب</th>
+        <th class="u_bc7222b933">تاريخ الطلب</th>
+        <th class="u_bc7222b933">اعتماد</th>
+        <th class="u_bc7222b933">رفض</th>
       </tr>
     </thead>
     <tbody>
       {% for r in requests %}
       <tr>
-        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">
-          <input class="request-checkbox" type="checkbox" name="request_ids" value="{{ r.id }}" form="bulkReviewForm" style="width:16px;height:16px;cursor:pointer;">
+        <td class="u_ba2c8444d7">
+          <input class="request-checkbox u_16a162db1b" type="checkbox" name="request_ids" value="{{ r.id }}" form="bulkReviewForm">
         </td>
-        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">
+        <td class="u_ba2c8444d7">
           {% if r.priority == 'critical' %}
-            <span style="padding:.2rem .5rem;border-radius:999px;background:#fee2e2;color:#991b1b;font-size:.78rem;font-weight:700;">حرج</span>
+            <span class="u_307e67ef58">حرج</span>
           {% elif r.priority == 'high' %}
-            <span style="padding:.2rem .5rem;border-radius:999px;background:#ffedd5;color:#9a3412;font-size:.78rem;font-weight:700;">مرتفع</span>
+            <span class="u_ea3ba0dc94">مرتفع</span>
           {% else %}
-            <span style="padding:.2rem .5rem;border-radius:999px;background:#f1f5f9;color:#334155;font-size:.78rem;font-weight:700;">عادي</span>
+            <span class="u_a6956b3562">عادي</span>
           {% endif %}
         </td>
-        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">
+        <td class="u_ba2c8444d7">
           {% if r.sla_status == 'breached' %}
-            <span style="padding:.2rem .5rem;border-radius:999px;background:#fee2e2;color:#991b1b;font-size:.78rem;font-weight:700;">متجاوز</span>
+            <span class="u_307e67ef58">متجاوز</span>
           {% elif r.sla_status == 'warning' %}
-            <span style="padding:.2rem .5rem;border-radius:999px;background:#ffedd5;color:#9a3412;font-size:.78rem;font-weight:700;">تحذير</span>
+            <span class="u_ea3ba0dc94">تحذير</span>
           {% else %}
-            <span style="padding:.2rem .5rem;border-radius:999px;background:#dcfce7;color:#166534;font-size:.78rem;font-weight:700;">ضمن الهدف</span>
+            <span class="u_c3f888cdd6">ضمن الهدف</span>
           {% endif %}
         </td>
-        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">{{ r.age_hours }} ساعة</td>
-        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">
-          <a href="{{ url_for('invoices.view_invoice', inv_id=r.invoice_id) }}" style="color:#1d4ed8;text-decoration:none;font-weight:700;">{{ r.invoice_number }}</a>
-          <div style="color:#6b7280;font-size:.78rem;">{{ r.invoice_date or '—' }} • حالة الفاتورة: {{ r.invoice_status }}</div>
+        <td class="u_ba2c8444d7">{{ r.age_hours }} ساعة</td>
+        <td class="u_ba2c8444d7">
+          <a href="{{ url_for('invoices.view_invoice', inv_id=r.invoice_id) }}" class="u_abb88f4fe3">{{ r.invoice_number }}</a>
+          <div class="u_5715f24725">{{ r.invoice_date or '—' }} • حالة الفاتورة: {{ r.invoice_status }}</div>
         </td>
-        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">{{ "%.2f"|format(r.total|float) }}</td>
-        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;max-width:260px;">{{ r.reason }}</td>
-        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">{{ r.evidence_ref or '—' }}</td>
-        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">{{ r.requested_by_name or '—' }}</td>
-        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">{{ r.created_at[:19] if r.created_at else '—' }}</td>
-        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">
-          <form method="POST" action="{{ url_for('invoices.approve_cancel_request', inv_id=r.invoice_id, req_id=r.id) }}" style="display:flex;gap:6px;align-items:center;">
+        <td class="u_ba2c8444d7">{{ "%.2f"|format(r.total|float) }}</td>
+        <td class="u_bd2395e388">{{ r.reason }}</td>
+        <td class="u_ba2c8444d7">{{ r.evidence_ref or '—' }}</td>
+        <td class="u_ba2c8444d7">{{ r.requested_by_name or '—' }}</td>
+        <td class="u_ba2c8444d7">{{ r.created_at[:19] if r.created_at else '—' }}</td>
+        <td class="u_ba2c8444d7">
+          <form method="POST" action="{{ url_for('invoices.approve_cancel_request', inv_id=r.invoice_id, req_id=r.id) }}" class="u_babd7118dd">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <input name="review_note" maxlength="180" placeholder="ملاحظة" style="padding:.35rem .45rem;border:1px solid #d1d5db;border-radius:.4rem;width:110px;">
-            <button type="submit" style="padding:.35rem .55rem;border:0;border-radius:.4rem;background:#16a34a;color:#fff;cursor:pointer;">اعتماد</button>
+            <input name="review_note" maxlength="180" placeholder="ملاحظة" class="u_10da31356d">
+            <button type="submit" class="u_3dabd01365">اعتماد</button>
           </form>
         </td>
-        <td style="padding:.65rem;border-bottom:1px solid #f1f5f9;">
-          <form method="POST" action="{{ url_for('invoices.reject_cancel_request', inv_id=r.invoice_id, req_id=r.id) }}" style="display:flex;gap:6px;align-items:center;">
+        <td class="u_ba2c8444d7">
+          <form method="POST" action="{{ url_for('invoices.reject_cancel_request', inv_id=r.invoice_id, req_id=r.id) }}" class="u_babd7118dd">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <input name="review_note" maxlength="180" placeholder="سبب الرفض" style="padding:.35rem .45rem;border:1px solid #d1d5db;border-radius:.4rem;width:110px;">
-            <button type="submit" style="padding:.35rem .55rem;border:0;border-radius:.4rem;background:#dc2626;color:#fff;cursor:pointer;">رفض</button>
+            <input name="review_note" maxlength="180" placeholder="سبب الرفض" class="u_10da31356d">
+            <button type="submit" class="u_a361fbf0b4">رفض</button>
           </form>
         </td>
       </tr>
@@ -152,7 +197,7 @@
   </table>
 </div>
 {% else %}
-<div style="background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;padding:1rem;color:#374151;">
+<div class="u_4c9ae35b73">
   لا توجد طلبات إلغاء معلقة حالياً.
 </div>
 {% endif %}

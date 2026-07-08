@@ -2,6 +2,9 @@
 {% block title %}تقارير الموارد البشرية{% endblock %}
 
 {% block content %}
+<style>
+.dept-progress-bar{background:#6366f1;height:8px;border-radius:9999px;}
+</style>
 <div class="min-h-screen bg-gray-50" dir="rtl">
   <div class="bg-white border-b shadow-sm px-6 py-4">
     <div class="max-w-5xl mx-auto flex items-center gap-2 text-sm">
@@ -56,8 +59,7 @@
               <td class="px-4 py-2">
                 <div class="flex items-center gap-2">
                   <div class="flex-1 bg-gray-200 rounded-full h-2">
-                    <div class="bg-indigo-500 h-2 rounded-full"
-                      style="width:{{ ((dept.cnt / total) * 100)|round(1) }}%"></div>
+                    <div class="dept-progress-bar" data-width="{{ ((dept.cnt / total) * 100)|round(1) }}"></div>
                   </div>
                   <span class="text-gray-500 text-xs">{{ ((dept.cnt / total) * 100)|round(1) }}%</span>
                 </div>
@@ -112,4 +114,12 @@
 
   </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.dept-progress-bar').forEach((el) => {
+    const width = Number(el.dataset.width || 0);
+    el.style.width = `${Math.max(0, Math.min(100, width))}%`;
+  });
+});
+</script>
 {% endblock %}

@@ -1,3 +1,22 @@
+<style>
+.u_87c136dfd0{margin-bottom:16px}
+.u_f16f19326a{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;padding:14px}
+.u_28e216c786{display:flex;flex-direction:column;gap:4px}
+.u_784c0c67f4{font-size:.8rem;color:#94a3b8;font-weight:600}
+.u_eafdb49ea7{border:1px solid #d1d5db;padding:6px 8px;border-radius:6px;font-size:.9rem}
+.u_a26bda7d11{margin-top:20px}
+.u_6d032be357{background:#f1f5f9;margin-top:20px;border:1px solid #d1d5db;color:#374151}
+.u_a344fcd590{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.u_63fddf1b87{color:#94a3b8;font-size:.82rem;margin-bottom:6px}
+.u_d7cb2f07d7{font-weight:700;font-size:1.3rem;color:#ef4444}
+.u_6d4bb4c9b0{font-weight:700;font-size:1.3rem;color:#f59e0b}
+.u_7ed4c86e05{color:#ef4444;font-weight:600}
+.u_71b98aa505{color:#f59e0b;font-weight:600}
+.u_ddb683055d{color:#64748b;text-align:center;padding:32px}
+.u_064028e7a7{color:#64748b}
+.u_eed0f8fb89{font-weight:600}
+.u_edbf0d19bd{margin-top:16px;text-align:center;color:#94a3b8;font-size:.8rem}
+</style>
 {% extends "base.html" %}
 {% block title %}تقرير الهالك والمكسور{% endblock %}
 {% block page_title %}📊 تقرير الهالك والمكسور — خسائر المخزون{% endblock %}
@@ -12,37 +31,37 @@
 </div>
 
 <!-- فلاتر التاريخ -->
-<div class="card" style="margin-bottom:16px">
-  <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;padding:14px">
-    <div style="display:flex;flex-direction:column;gap:4px">
-      <label style="font-size:.8rem;color:#94a3b8;font-weight:600">من تاريخ</label>
-      <input type="date" name="from" value="{{ date_from }}" style="border:1px solid #d1d5db;padding:6px 8px;border-radius:6px;font-size:.9rem">
+<div class="card u_87c136dfd0">
+  <form method="get" class="u_f16f19326a">
+    <div class="u_28e216c786">
+      <label class="u_784c0c67f4">من تاريخ</label>
+      <input type="date" name="from" value="{{ date_from }}" class="u_eafdb49ea7">
     </div>
-    <div style="display:flex;flex-direction:column;gap:4px">
-      <label style="font-size:.8rem;color:#94a3b8;font-weight:600">إلى تاريخ</label>
-      <input type="date" name="to" value="{{ date_to }}" style="border:1px solid #d1d5db;padding:6px 8px;border-radius:6px;font-size:.9rem">
+    <div class="u_28e216c786">
+      <label class="u_784c0c67f4">إلى تاريخ</label>
+      <input type="date" name="to" value="{{ date_to }}" class="u_eafdb49ea7">
     </div>
-    <button type="submit" class="btn btn-primary" style="margin-top:20px">🔍 تطبيق</button>
+    <button type="submit" class="btn btn-primary u_a26bda7d11">🔍 تطبيق</button>
     {% if date_from or date_to %}
-    <a href="/inventory/reports/damage-waste" class="btn" style="background:#f1f5f9;margin-top:20px;border:1px solid #d1d5db;color:#374151">إعادة تعيين</a>
+    <a href="/inventory/reports/damage-waste" class="btn u_6d032be357">إعادة تعيين</a>
     {% endif %}
   </form>
 </div>
 
 <!-- ملخص الإحصائيات -->
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px">
+<div class="u_a344fcd590">
   <div class="card">
-    <div style="color:#94a3b8;font-size:.82rem;margin-bottom:6px">إجمالي الحركات</div>
-    <div style="font-weight:700;font-size:1.3rem;color:#ef4444">{{ summary.count or 0 }}</div>
+    <div class="u_63fddf1b87">إجمالي الحركات</div>
+    <div class="u_d7cb2f07d7">{{ summary.count or 0 }}</div>
   </div>
   <div class="card">
-    <div style="color:#94a3b8;font-size:.82rem;margin-bottom:6px">الكمية الإجمالية</div>
-    <div style="font-weight:700;font-size:1.3rem;color:#f59e0b">{{ (summary.total_qty or 0)|round(2) }}</div>
+    <div class="u_63fddf1b87">الكمية الإجمالية</div>
+    <div class="u_6d4bb4c9b0">{{ (summary.total_qty or 0)|round(2) }}</div>
   </div>
 </div>
 
 <!-- جدول الأصناف الأكثر هالكاً -->
-<div class="card" style="margin-bottom:16px">
+<div class="card u_87c136dfd0">
   <div class="card-header">
     <h3 class="card-title">📦 أكثر الأصناف هالكاً</h3>
   </div>
@@ -61,14 +80,14 @@
       <tr>
         <td><strong>{{ item.sku or '#' + item.id|string }}</strong></td>
         <td>{{ item.cnt }}</td>
-        <td style="color:#ef4444;font-weight:600">{{ item.total_qty|round(2) }}</td>
-        <td style="color:#f59e0b;font-weight:600">{{ item.estimated_cost|round(2) }} ر.س</td>
+        <td class="u_7ed4c86e05">{{ item.total_qty|round(2) }}</td>
+        <td class="u_71b98aa505">{{ item.estimated_cost|round(2) }} ر.س</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
   {% else %}
-  <p style="color:#64748b;text-align:center;padding:32px">لا توجد بيانات</p>
+  <p class="u_ddb683055d">لا توجد بيانات</p>
   {% endif %}
 </div>
 
@@ -89,19 +108,19 @@
     <tbody>
       {% for item in by_reason %}
       <tr>
-        <td style="color:#64748b">{{ item.reason or '—' }}</td>
+        <td class="u_064028e7a7">{{ item.reason or '—' }}</td>
         <td>{{ item.cnt }}</td>
-        <td style="font-weight:600">{{ item.total_qty|round(2) }}</td>
+        <td class="u_eed0f8fb89">{{ item.total_qty|round(2) }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
   {% else %}
-  <p style="color:#64748b;text-align:center;padding:32px">لا توجد بيانات</p>
+  <p class="u_ddb683055d">لا توجد بيانات</p>
   {% endif %}
 </div>
 
-<div style="margin-top:16px;text-align:center;color:#94a3b8;font-size:.8rem">
+<div class="u_edbf0d19bd">
   آخر تحديث: {{ now }}
 </div>
 {% endblock %}

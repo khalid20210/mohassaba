@@ -1,0 +1,144 @@
+{
+  "precheck": {
+    "/healthz": {
+      "ok": true,
+      "status": 200,
+      "latency_ms": 23.320899999816902,
+      "path": "/healthz"
+    },
+    "/readyz": {
+      "ok": true,
+      "status": 200,
+      "latency_ms": 18.929699988802895,
+      "path": "/readyz"
+    }
+  },
+  "simulation": {
+    "base_url": "http://127.0.0.1:5003",
+    "users": 30,
+    "requests_per_user": 12,
+    "total_requests": 360,
+    "total_failed": 0,
+    "success_rate": 100.0,
+    "duration_sec": 3.1,
+    "rps": 115.96,
+    "statuses": {
+      "200": 360
+    },
+    "by_path": {
+      "/": {
+        "requests": 61,
+        "failed": 0,
+        "latency_ms": {
+          "min": 47.92,
+          "avg": 298.52,
+          "p95": 414.75,
+          "max": 579.51
+        },
+        "statuses": {
+          "200": 61
+        }
+      },
+      "/auth/login": {
+        "requests": 63,
+        "failed": 0,
+        "latency_ms": {
+          "min": 86.48,
+          "avg": 225.71,
+          "p95": 313.9,
+          "max": 359.58
+        },
+        "statuses": {
+          "200": 63
+        }
+      },
+      "/auth/landing-metrics": {
+        "requests": 64,
+        "failed": 0,
+        "latency_ms": {
+          "min": 111.4,
+          "avg": 222.78,
+          "p95": 296.63,
+          "max": 361.73
+        },
+        "statuses": {
+          "200": 64
+        }
+      },
+      "/privacy-policy": {
+        "requests": 39,
+        "failed": 0,
+        "latency_ms": {
+          "min": 29.89,
+          "avg": 185.23,
+          "p95": 281.83,
+          "max": 293.07
+        },
+        "statuses": {
+          "200": 39
+        }
+      },
+      "/terms-of-use": {
+        "requests": 36,
+        "failed": 0,
+        "latency_ms": {
+          "min": 23.96,
+          "avg": 159.71,
+          "p95": 234.68,
+          "max": 336.73
+        },
+        "statuses": {
+          "200": 36
+        }
+      },
+      "/healthz": {
+        "requests": 33,
+        "failed": 0,
+        "latency_ms": {
+          "min": 30.86,
+          "avg": 149.55,
+          "p95": 214.48,
+          "max": 220.44
+        },
+        "statuses": {
+          "200": 33
+        }
+      },
+      "/readyz": {
+        "requests": 29,
+        "failed": 0,
+        "latency_ms": {
+          "min": 117.01,
+          "avg": 189.19,
+          "p95": 255.8,
+          "max": 313.27
+        },
+        "statuses": {
+          "200": 29
+        }
+      },
+      "/auth/register": {
+        "requests": 35,
+        "failed": 0,
+        "latency_ms": {
+          "min": 25.14,
+          "avg": 207.58,
+          "p95": 305.03,
+          "max": 348.96
+        },
+        "statuses": {
+          "200": 35
+        }
+      }
+    }
+  },
+  "verdict": {
+    "pass": true,
+    "reasons": [],
+    "thresholds": {
+      "min_success_rate": 99.0,
+      "max_failed_requests": 2,
+      "max_timeout_errors": 1
+    }
+  }
+}

@@ -8,38 +8,56 @@
   table { width:100%; border-collapse:collapse; font-size:14px; }
   th { background:#f5f5f5; padding:10px; text-align:right; font-weight:bold; border-bottom:2px solid #ddd; }
   td { padding:10px; border-bottom:1px solid #eee; }
+.u_83c53fe571{display:flex;gap:10px;margin-bottom:20px}
+.u_ebc7d8e820{background:#10b981;color:white;border:none;padding:10px 22px;border-radius:6px;cursor:pointer;font-weight:bold}
+.u_b8df2774fb{background:#ef4444;color:white;border:none;padding:10px 18px;border-radius:6px;cursor:pointer}
+.u_4d8f530a92{background:#6b7280;color:white;padding:10px 18px;border-radius:6px;text-decoration:none}
+.u_c222540251{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}
+.u_4dada0e7f8{font-size:12px;color:#888}
+.u_305b5831f2{font-size:18px;font-weight:bold}
+.u_2fcab9fca4{background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:12px;font-size:12px}
+.u_75a20a96d1{background:#fee2e2;color:#991b1b;padding:3px 10px;border-radius:12px;font-size:12px}
+.u_e235f8f5c9{background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:12px;font-size:12px}
+.u_19a7599870{margin:0 0 16px;font-size:16px}
+.u_bff3d12c90{font-weight:bold}
+.u_4a62317a25{text-align:left;font-weight:bold}
+.u_725d2d4d17{background:#f0fdf4}
+.u_89131c07a8{text-align:left;font-weight:900;font-size:16px}
+.u_c17b1593cf{font-weight:900;color:#059669;font-size:16px}
+.u_1555b31e6b{margin:0 0 8px;font-size:14px;color:#666}
+.u_1169661891{margin:0}
 </style>
 
-<div style="display:flex;gap:10px;margin-bottom:20px">
+<div class="u_83c53fe571">
   {% if quote.status == 'draft' %}
   <form method="post" action="/wholesale/quotes/{{ quote.id }}/to-order">
-    <button style="background:#10b981;color:white;border:none;padding:10px 22px;border-radius:6px;cursor:pointer;font-weight:bold">تحويل إلى طلب جملة</button>
+    <button class="u_ebc7d8e820">تحويل إلى طلب جملة</button>
   </form>
   <form method="post" action="/wholesale/quotes/{{ quote.id }}/cancel">
-    <button style="background:#ef4444;color:white;border:none;padding:10px 18px;border-radius:6px;cursor:pointer">إلغاء العرض</button>
+    <button class="u_b8df2774fb">إلغاء العرض</button>
   </form>
   {% endif %}
-  <a href="/wholesale/quotes" style="background:#6b7280;color:white;padding:10px 18px;border-radius:6px;text-decoration:none">← رجوع</a>
+  <a href="/wholesale/quotes" class="u_4d8f530a92">← رجوع</a>
 </div>
 
 <div class="card">
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
-    <div><label style="font-size:12px;color:#888">رقم العرض</label><div style="font-size:18px;font-weight:bold">{{ quote.quote_number }}</div></div>
-    <div><label style="font-size:12px;color:#888">العميل</label><div>{{ quote.customer_name or '—' }}</div></div>
-    <div><label style="font-size:12px;color:#888">تاريخ الإنشاء</label><div>{{ quote.quote_date }}</div></div>
-    <div><label style="font-size:12px;color:#888">صالح حتى</label><div>{{ quote.expiry_date or 'غير محدد' }}</div></div>
-    <div><label style="font-size:12px;color:#888">الحالة</label>
+  <div class="u_c222540251">
+    <div><label class="u_4dada0e7f8">رقم العرض</label><div class="u_305b5831f2">{{ quote.quote_number }}</div></div>
+    <div><label class="u_4dada0e7f8">العميل</label><div>{{ quote.customer_name or '—' }}</div></div>
+    <div><label class="u_4dada0e7f8">تاريخ الإنشاء</label><div>{{ quote.quote_date }}</div></div>
+    <div><label class="u_4dada0e7f8">صالح حتى</label><div>{{ quote.expiry_date or 'غير محدد' }}</div></div>
+    <div><label class="u_4dada0e7f8">الحالة</label>
       <div>
-        {% if quote.status == 'converted' %}<span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:12px;font-size:12px">محوّل لطلب</span>
-        {% elif quote.status == 'cancelled' %}<span style="background:#fee2e2;color:#991b1b;padding:3px 10px;border-radius:12px;font-size:12px">ملغى</span>
-        {% else %}<span style="background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:12px;font-size:12px">مسودة</span>{% endif %}
+        {% if quote.status == 'converted' %}<span class="u_2fcab9fca4">محوّل لطلب</span>
+        {% elif quote.status == 'cancelled' %}<span class="u_75a20a96d1">ملغى</span>
+        {% else %}<span class="u_e235f8f5c9">مسودة</span>{% endif %}
       </div>
     </div>
   </div>
 </div>
 
 <div class="card">
-  <h3 style="margin:0 0 16px;font-size:16px">الأصناف</h3>
+  <h3 class="u_19a7599870">الأصناف</h3>
   <table>
     <thead>
       <tr><th>#</th><th>الصنف</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr>
@@ -51,22 +69,22 @@
         <td>{{ item.name }}</td>
         <td>{{ "{:,.3f}".format(item.qty|float) }}</td>
         <td>{{ "{:,.2f}".format(item.price|float) }} ر.س</td>
-        <td style="font-weight:bold">{{ "{:,.2f}".format(item.qty|float * item.price|float) }} ر.س</td>
+        <td class="u_bff3d12c90">{{ "{:,.2f}".format(item.qty|float * item.price|float) }} ر.س</td>
       </tr>
       {% endfor %}
     </tbody>
     <tfoot>
-      <tr><td colspan="4" style="text-align:left;font-weight:bold">الإجمالي قبل الضريبة</td><td style="font-weight:bold">{{ "{:,.2f}".format(quote.subtotal) }} ر.س</td></tr>
-      <tr><td colspan="4" style="text-align:left;font-weight:bold">ضريبة القيمة المضافة</td><td>{{ "{:,.2f}".format(quote.tax_amount) }} ر.س</td></tr>
-      <tr style="background:#f0fdf4"><td colspan="4" style="text-align:left;font-weight:900;font-size:16px">الإجمالي الكلي</td><td style="font-weight:900;color:#059669;font-size:16px">{{ "{:,.2f}".format(quote.total_amount) }} ر.س</td></tr>
+      <tr><td colspan="4" class="u_4a62317a25">الإجمالي قبل الضريبة</td><td class="u_bff3d12c90">{{ "{:,.2f}".format(quote.subtotal) }} ر.س</td></tr>
+      <tr><td colspan="4" class="u_4a62317a25">ضريبة القيمة المضافة</td><td>{{ "{:,.2f}".format(quote.tax_amount) }} ر.س</td></tr>
+      <tr class="u_725d2d4d17"><td colspan="4" class="u_89131c07a8">الإجمالي الكلي</td><td class="u_c17b1593cf">{{ "{:,.2f}".format(quote.total_amount) }} ر.س</td></tr>
     </tfoot>
   </table>
 </div>
 
 {% if quote.notes %}
 <div class="card">
-  <h3 style="margin:0 0 8px;font-size:14px;color:#666">ملاحظات</h3>
-  <p style="margin:0">{{ quote.notes }}</p>
+  <h3 class="u_1555b31e6b">ملاحظات</h3>
+  <p class="u_1169661891">{{ quote.notes }}</p>
 </div>
 {% endif %}
 {% endblock %}

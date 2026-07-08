@@ -1,3 +1,11 @@
+<style>
+.u_3374b9546e{margin:0;min-width:200px}
+.u_9e04028dc5{margin:0;flex:1;min-width:200px}
+.u_d6f2af6e0a{margin-top:14px}
+.u_94253f99ba{min-width:160px}
+.u_8573bae381{width:80px}
+.u_6b99de8b69{display:none}
+</style>
 {% extends "base.html" %}
 {% block title %}قائمة أسعار الجملة{% endblock %}
 
@@ -13,7 +21,7 @@
 <!-- ─── شريط الفلترة ──────────────────────────────────────────── -->
 <div class="card pricing-filter-bar">
   <form class="pricing-filter-form" method="GET" action="/pricing">
-    <div class="form-group" style="margin:0;min-width:200px">
+    <div class="form-group u_3374b9546e">
       <select name="cat" class="form-control form-control-sm" onchange="this.form.submit()">
         <option value="">— جميع التصنيفات —</option>
         {% for cat in categories %}
@@ -23,7 +31,7 @@
         {% endfor %}
       </select>
     </div>
-    <div class="form-group" style="margin:0;flex:1;min-width:200px">
+    <div class="form-group u_9e04028dc5">
       <input class="form-control form-control-sm" name="q" value="{{ q }}"
              placeholder="ابحث باسم المنتج أو الباركود...">
     </div>
@@ -40,7 +48,7 @@
 </div>
 
 <!-- ─── جدول الأسعار ─────────────────────────────────────────── -->
-<div class="card" style="margin-top:14px">
+<div class="card u_d6f2af6e0a">
   {% if products %}
   <div class="table-responsive">
     <table class="data-table pricing-table">
@@ -51,9 +59,9 @@
           <th>التصنيف</th>
           <th class="num-col">المخزون</th>
           <th class="num-col">سعر الشراء</th>
-          <th class="num-col" style="min-width:160px">سعر البيع (قابل للتعديل)</th>
+          <th class="num-col u_94253f99ba">سعر البيع (قابل للتعديل)</th>
           <th class="num-col">هامش الربح %</th>
-          <th style="width:80px"></th>
+          <th class="u_8573bae381"></th>
         </tr>
       </thead>
       <tbody>
@@ -85,10 +93,10 @@
             </span>
           </td>
           <td class="num-col">
-            <button class="btn btn-primary btn-sm save-row-btn"
+            <button class="btn btn-primary btn-sm save-row-btn u_6b99de8b69"
                     id="savebtn-{{ p.id }}"
                     onclick="saveRow({{ p.id }})"
-                    style="display:none">
+                   >
               ✓ حفظ
             </button>
           </td>
@@ -120,7 +128,7 @@
 </div>
 
 <!-- ─── Toast تأكيد الحفظ ────────────────────────────────────── -->
-<div id="priceToast" class="price-toast" style="display:none"></div>
+<div id="priceToast" class="price-toast u_6b99de8b69"></div>
 {% endblock %}
 
 {% block scripts %}

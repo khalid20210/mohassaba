@@ -1,3 +1,24 @@
+<style>
+.u_500e50569b{color:#94a3b8;font-size:.85rem;}
+.u_a3a5568692{margin-top:4px;}
+.u_5ae19e99de{display:flex;flex-direction:column;gap:16px;}
+.u_34680724d3{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+.u_556c3b38cf{margin:0;color:#38bdf8;}
+.u_3498000b8f{color:#94a3b8;font-size:.82rem;}
+.u_b75bf99c03{background:#14532d;color:#86efac;padding:2px 10px;border-radius:20px;font-size:.8rem;}
+.u_ec322af38b{background:rgba(255,255,255,.06);color:#94a3b8;padding:2px 10px;border-radius:20px;font-size:.8rem;}
+.u_ed5d4cc536{background:#78350f;color:#fcd34d;padding:2px 10px;border-radius:20px;font-size:.8rem;}
+.u_96b2693d25{color:#93c5fd;font-size:.85rem;margin-bottom:8px;}
+.u_15d0d7bf8d{color:#cbd5e1;font-size:.9rem;line-height:1.7;padding:8px;background:rgba(255,255,255,.04);border-radius:6px;}
+.u_0d54e2b9c7{margin-top:8px;color:#94a3b8;font-size:.85rem;}
+.u_badef93ce7{text-align:center;padding:60px;}
+.u_ed86f0e6c8{font-size:3rem;margin-bottom:16px;}
+.u_8a359a76eb{margin-top:16px;}
+.u_6add97efa7{max-width:480px;}
+.u_adf555b36b{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.u_97294b207c{grid-column:1/-1;}
+.u_5a7bda665c{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;}
+</style>
 {% extends "base.html" %}
 {% block title %}الوصفات الطبية{% endblock %}
 {% block page_title %}💊 الوصفات الطبية{% endblock %}
@@ -6,11 +27,11 @@
 <div class="page-header">
   <div>
     {% if patient %}
-    <a href="/medical/patients/{{ patient.id }}" style="color:#94a3b8;font-size:.85rem;">← ملف المريض</a>
-    <p class="page-subtitle" style="margin-top:4px;">{{ patient.full_name }}</p>
+    <a href="/medical/patients/{{ patient.id }}" class="u_500e50569b">← ملف المريض</a>
+    <p class="page-subtitle u_a3a5568692">{{ patient.full_name }}</p>
     {% else %}
-    <a href="/medical/patients" style="color:#94a3b8;font-size:.85rem;">← المرضى</a>
-    <p class="page-subtitle" style="margin-top:4px;">{{ prescriptions|length }} وصفة</p>
+    <a href="/medical/patients" class="u_500e50569b">← المرضى</a>
+    <p class="page-subtitle u_a3a5568692">{{ prescriptions|length }} وصفة</p>
     {% endif %}
   </div>
   {% if patient %}
@@ -19,41 +40,41 @@
 </div>
 
 {% if prescriptions %}
-<div style="display:flex;flex-direction:column;gap:16px;">
+<div class="u_5ae19e99de">
   {% for rx in prescriptions %}
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+    <div class="u_34680724d3">
       <div>
-        <h4 style="margin:0;color:#38bdf8;">د. {{ rx.doctor_id or 'الطبيب' }}</h4>
-        <span style="color:#94a3b8;font-size:.82rem;">{{ rx.prescription_date or (rx.created_at[:10] if rx.created_at else '—') }}</span>
+        <h4 class="u_556c3b38cf">د. {{ rx.doctor_id or 'الطبيب' }}</h4>
+        <span class="u_3498000b8f">{{ rx.prescription_date or (rx.created_at[:10] if rx.created_at else '—') }}</span>
       </div>
       {% if rx.status=='active' %}
-        <span style="background:#14532d;color:#86efac;padding:2px 10px;border-radius:20px;font-size:.8rem;">● نشطة</span>
+        <span class="u_b75bf99c03">● نشطة</span>
       {% elif rx.status=='completed' %}
-        <span style="background:rgba(255,255,255,.06);color:#94a3b8;padding:2px 10px;border-radius:20px;font-size:.8rem;">✓ منتهية</span>
+        <span class="u_ec322af38b">✓ منتهية</span>
       {% else %}
-        <span style="background:#78350f;color:#fcd34d;padding:2px 10px;border-radius:20px;font-size:.8rem;">⏳ معلقة</span>
+        <span class="u_ed5d4cc536">⏳ معلقة</span>
       {% endif %}
     </div>
     {% if rx.diagnosis %}
-    <p style="color:#93c5fd;font-size:.85rem;margin-bottom:8px;"><strong>التشخيص:</strong> {{ rx.diagnosis }}</p>
+    <p class="u_96b2693d25"><strong>التشخيص:</strong> {{ rx.diagnosis }}</p>
     {% endif %}
-    <p style="color:#cbd5e1;font-size:.9rem;line-height:1.7;padding:8px;background:rgba(255,255,255,.04);border-radius:6px;">
+    <p class="u_15d0d7bf8d">
       💊 {{ rx.medications or '—' }}
     </p>
     {% if rx.notes %}
-    <p style="margin-top:8px;color:#94a3b8;font-size:.85rem;">📝 {{ rx.notes }}</p>
+    <p class="u_0d54e2b9c7">📝 {{ rx.notes }}</p>
     {% endif %}
   </div>
   {% endfor %}
 </div>
 {% else %}
 <div class="card">
-  <div style="text-align:center;padding:60px;">
-    <div style="font-size:3rem;margin-bottom:16px;">💊</div>
+  <div class="u_badef93ce7">
+    <div class="u_ed86f0e6c8">💊</div>
     <h3>لا توجد وصفات طبية</h3>
     {% if patient %}
-    <button class="btn btn-primary" style="margin-top:16px;" onclick="document.getElementById('newRxModal').classList.add('show')">إضافة وصفة</button>
+    <button class="btn btn-primary u_8a359a76eb" onclick="document.getElementById('newRxModal').classList.add('show')">إضافة وصفة</button>
     {% endif %}
   </div>
 </div>
@@ -62,13 +83,13 @@
 {% if patient %}
 <!-- Modal: وصفة جديدة -->
 <div class="modal-overlay" id="newRxModal">
-  <div class="modal-box" style="max-width:480px;">
+  <div class="modal-box u_6add97efa7">
     <div class="modal-header">
       <h3 class="modal-title">💊 وصفة طبية جديدة</h3>
       <button class="modal-close" onclick="document.getElementById('newRxModal').classList.remove('show')">✕</button>
     </div>
     <form method="post" action="/medical/prescriptions/{{ patient.id }}/new">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="u_adf555b36b">
         <div class="form-group">
           <label class="form-label">معرف الطبيب</label>
           <input name="doctor_id" class="form-input" type="number" placeholder="رقم الطبيب">
@@ -77,7 +98,7 @@
           <label class="form-label">تاريخ الوصفة</label>
           <input name="date" type="date" class="form-input">
         </div>
-        <div class="form-group" style="grid-column:1/-1;">
+        <div class="form-group u_97294b207c">
           <label class="form-label">التشخيص</label>
           <input name="diagnosis" class="form-input" placeholder="الحالة التشخيصية...">
         </div>
@@ -90,7 +111,7 @@
         <label class="form-label">تعليمات وملاحظات</label>
         <textarea name="notes" class="form-input" rows="2" placeholder="تعليمات للمريض..."></textarea>
       </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <div class="u_5a7bda665c">
         <button type="button" class="btn btn-secondary" onclick="document.getElementById('newRxModal').classList.remove('show')">إلغاء</button>
         <button type="submit" class="btn btn-primary">✅ إصدار الوصفة</button>
       </div>

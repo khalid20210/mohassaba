@@ -8,6 +8,19 @@
   .kpi-card { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09); border-radius:14px; padding:20px; text-align:center; }
   .kpi-val { font-size:1.8rem; font-weight:700; color:#38bdf8; }
   .kpi-lbl { font-size:.8rem; color:#94a3b8; margin-top:4px; }
+.u_6b00e75351{display:flex;gap:10px;}
+.u_cfc294ffc2{color:#f59e0b;}
+.u_9dd1207e58{color:#ef4444;}
+.u_0a1d28e275{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.u_8129723856{display:flex;justify-content:space-between;align-items:center;}
+.u_29eb0c1df3{font-size:.82rem;color:#38bdf8;}
+.u_f1fa12bbea{color:#38bdf8;}
+.u_63820c8b0f{color:#ef4444;font-weight:600;}
+.balance-positive{color:#ef4444;}
+.balance-negative{color:#22c55e;}
+.balance-zero{color:#94a3b8;}
+.u_aa3ee35a72{color:#94a3b8;}
+.u_ed6c8eb819{color:#64748b;text-align:center;padding:24px;}
 </style>
 
 <div class="page-header">
@@ -15,7 +28,7 @@
     <h1 class="page-title">👥 لوحة العملاء والموردين</h1>
     <p class="page-subtitle">إدارة الأرصدة والمعاملات</p>
   </div>
-  <div style="display:flex;gap:10px;">
+  <div class="u_6b00e75351">
     <a href="/contacts/customers/new" class="btn btn-primary">+ عميل جديد</a>
     <a href="/contacts/suppliers/new" class="btn btn-secondary">+ مورد جديد</a>
   </div>
@@ -27,11 +40,11 @@
     <div class="kpi-lbl">إجمالي العملاء</div>
   </div>
   <div class="kpi-card">
-    <div class="kpi-val" style="color:#f59e0b;">{{ "{:,.0f}".format(stats.total_receivables or 0) }}</div>
+    <div class="kpi-val u_cfc294ffc2">{{ "{:,.0f}".format(stats.total_receivables or 0) }}</div>
     <div class="kpi-lbl">إجمالي الذمم المدينة (ر.س)</div>
   </div>
   <div class="kpi-card">
-    <div class="kpi-val" style="color:#ef4444;">{{ "{:,.0f}".format(stats.total_payables or 0) }}</div>
+    <div class="kpi-val u_9dd1207e58">{{ "{:,.0f}".format(stats.total_payables or 0) }}</div>
     <div class="kpi-lbl">إجمالي الذمم الدائنة (ر.س)</div>
   </div>
   <div class="kpi-card">
@@ -40,12 +53,12 @@
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+<div class="u_0a1d28e275">
   <!-- أكبر المدينون -->
   <div class="card">
-    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div class="card-header u_8129723856">
       <h3 class="card-title">🔴 أكبر الديون المستحقة</h3>
-      <a href="/contacts/customers" style="font-size:.82rem;color:#38bdf8;">الكل</a>
+      <a href="/contacts/customers" class="u_29eb0c1df3">الكل</a>
     </div>
     {% if top_debtors %}
     <table class="table">
@@ -53,23 +66,23 @@
       <tbody>
         {% for c in top_debtors %}
         <tr>
-          <td><a href="/contacts/customers/{{ c.id }}" style="color:#38bdf8;">{{ c.name }}</a></td>
-          <td style="color:#ef4444;font-weight:600;">{{ "{:,.2f}".format(c.balance or 0) }}</td>
-          <td style="color:#94a3b8;">{{ "{:,.0f}".format(c.credit_limit or 0) }}</td>
+          <td><a href="/contacts/customers/{{ c.id }}" class="u_f1fa12bbea">{{ c.name }}</a></td>
+          <td class="u_63820c8b0f">{{ "{:,.2f}".format(c.balance or 0) }}</td>
+          <td class="u_aa3ee35a72">{{ "{:,.0f}".format(c.credit_limit or 0) }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
     {% else %}
-    <p style="color:#64748b;text-align:center;padding:24px;">✅ لا توجد ديون مستحقة</p>
+    <p class="u_ed6c8eb819">✅ لا توجد ديون مستحقة</p>
     {% endif %}
   </div>
 
   <!-- VIP عملاء -->
   <div class="card">
-    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div class="card-header u_8129723856">
       <h3 class="card-title">⭐ عملاء VIP</h3>
-      <a href="/contacts/customers?type=vip" style="font-size:.82rem;color:#38bdf8;">الكل</a>
+      <a href="/contacts/customers?type=vip" class="u_29eb0c1df3">الكل</a>
     </div>
     {% if vip_customers %}
     <table class="table">
@@ -77,9 +90,9 @@
       <tbody>
         {% for c in vip_customers %}
         <tr>
-          <td><a href="/contacts/customers/{{ c.id }}" style="color:#f59e0b;">⭐ {{ c.name }}</a></td>
-          <td style="color:#94a3b8;">{{ c.phone or '—' }}</td>
-          <td style="color:{% if (c.balance or 0) > 0 %}#ef4444{% elif (c.balance or 0) < 0 %}#22c55e{% else %}#94a3b8{% endif %};">
+          <td><a href="/contacts/customers/{{ c.id }}" class="u_cfc294ffc2">⭐ {{ c.name }}</a></td>
+          <td class="u_aa3ee35a72">{{ c.phone or '—' }}</td>
+          <td class="{% if (c.balance or 0) > 0 %}balance-positive{% elif (c.balance or 0) < 0 %}balance-negative{% else %}balance-zero{% endif %}">
             {{ "{:,.2f}".format(c.balance or 0) }}
           </td>
         </tr>
@@ -87,7 +100,7 @@
       </tbody>
     </table>
     {% else %}
-    <p style="color:#64748b;text-align:center;padding:24px;">لا يوجد عملاء VIP حتى الآن</p>
+    <p class="u_ed6c8eb819">لا يوجد عملاء VIP حتى الآن</p>
     {% endif %}
   </div>
 </div>

@@ -40,14 +40,32 @@
   .pagination a, .pagination span {
     padding:.4rem .75rem; border:1px solid #e5e7eb; border-radius:.5rem; font-size:.85rem; text-decoration:none; color:#374151; }
   .pagination .active { background:#3b82f6; color:#fff; border-color:#3b82f6; }
+.u_8b5490c347{display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;}
+.u_0e1ea1df91{margin:0; font-size:1.5rem; font-weight:700; color:#1e293b;}
+.u_5c1640394b{margin:.25rem 0 0; color:#64748b; font-size:.88rem;}
+.u_319661dae8{padding:.45rem 1rem;}
+.u_f541d975fe{background:#f1f5f9;}
+.u_3395e2db3b{display:flex; justify-content:space-between; align-items:flex-start;}
+.u_f4103113a7{background:#f1f5f9;color:#94a3b8;}
+.u_6ca9787093{background:#dbeafe;color:#1e40af;}
+.u_bcd53f8c75{background:#f1f5f9;color:#475569;}
+.u_81324165a7{font-size:.75rem; color:#64748b;}
+.u_c28bd948da{text-align:left;}
+.u_dac4fe6c9b{text-align:center;}
+.u_0b87e9e0af{font-weight:600;}
+.u_8924943807{text-align:center; padding:4rem 2rem; color:#94a3b8; background:#fff;
+     border:1px dashed #e2e8f0; border-radius:.85rem;}
+.u_87700f4004{font-size:3rem; margin-bottom:.75rem;}
+.u_f2ea5fc13d{font-size:1rem;}
+.u_03e223056b{margin-top:.75rem;}
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+<div class="u_8b5490c347">
   <div>
-    <h1 style="margin:0; font-size:1.5rem; font-weight:700; color:#1e293b;">الوصفات</h1>
-    <p style="margin:.25rem 0 0; color:#64748b; font-size:.88rem;">إدارة وصفات المطبخ مع حساب التكلفة</p>
+    <h1 class="u_0e1ea1df91">الوصفات</h1>
+    <p class="u_5c1640394b">إدارة وصفات المطبخ مع حساب التكلفة</p>
   </div>
   <a href="{{ url_for('recipes.add_recipe') }}" class="btn btn-primary">+ إضافة وصفة</a>
 </div>
@@ -68,9 +86,9 @@
       <label>بحث</label>
       <input type="text" name="q" value="{{ filter_q }}" placeholder="اسم الوصفة..." maxlength="80">
     </div>
-    <button type="submit" class="btn btn-primary" style="padding:.45rem 1rem;">🔍 بحث</button>
+    <button type="submit" class="btn btn-primary u_319661dae8">🔍 بحث</button>
     {% if filter_category or filter_q %}
-    <a href="{{ url_for('recipes.list_recipes') }}" class="btn" style="background:#f1f5f9;">مسح</a>
+    <a href="{{ url_for('recipes.list_recipes') }}" class="btn u_f541d975fe">مسح</a>
     {% endif %}
   </form>
 </div>
@@ -79,16 +97,16 @@
 <div class="rec-grid">
   {% for r in recipes %}
   <div class="rec-card" id="card-{{ r.id }}">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+    <div class="u_3395e2db3b">
       <div class="name">{{ r.recipe_name }}</div>
       {% if not r.is_active %}
-      <span class="rec-badge" style="background:#f1f5f9;color:#94a3b8;">متوقفة</span>
+      <span class="rec-badge u_f4103113a7">متوقفة</span>
       {% endif %}
     </div>
 
     <div class="rec-meta">
       {% set cat_map = {'appetizer':'مقبلات','main':'رئيسي','dessert':'حلويات','beverage':'مشروبات','sauce':'صلصات','bread':'خبز','salad':'سلطات','soup':'شوربات','other':'أخرى'} %}
-      <span class="rec-badge" style="background:#dbeafe;color:#1e40af;">
+      <span class="rec-badge u_6ca9787093">
         {{ cat_map.get(r.category, r.category) }}
       </span>
       {% set diff_map = {'easy':'سهلة','medium':'متوسطة','hard':'صعبة'} %}
@@ -96,7 +114,7 @@
         {{ diff_map.get(r.difficulty_level, r.difficulty_level) }}
       </span>
       {% if r.preparation_time or r.cooking_time %}
-      <span class="rec-badge" style="background:#f1f5f9;color:#475569;">
+      <span class="rec-badge u_bcd53f8c75">
         ⏱ {{ (r.preparation_time|int) + (r.cooking_time|int) }} د
       </span>
       {% endif %}
@@ -104,16 +122,16 @@
 
     <div class="rec-cost">
       <div>
-        <div style="font-size:.75rem; color:#64748b;">تكلفة الوصفة</div>
+        <div class="u_81324165a7">تكلفة الوصفة</div>
         <div class="cost">{{ "%.3f"|format(r.cost_per_unit|float) }}</div>
       </div>
-      <div style="text-align:left;">
-        <div style="font-size:.75rem; color:#64748b;">سعر البيع</div>
+      <div class="u_c28bd948da">
+        <div class="u_81324165a7">سعر البيع</div>
         <div class="price">{{ "%.2f"|format(r.selling_price|float) }}</div>
       </div>
-      <div style="text-align:center;">
-        <div style="font-size:.75rem; color:#64748b;">الحصص</div>
-        <div style="font-weight:600;">{{ r.yield_quantity }} {{ r.yield_unit }}</div>
+      <div class="u_dac4fe6c9b">
+        <div class="u_81324165a7">الحصص</div>
+        <div class="u_0b87e9e0af">{{ r.yield_quantity }} {{ r.yield_unit }}</div>
       </div>
     </div>
 
@@ -129,11 +147,10 @@
   {% endfor %}
 </div>
 {% else %}
-<div style="text-align:center; padding:4rem 2rem; color:#94a3b8; background:#fff;
-     border:1px dashed #e2e8f0; border-radius:.85rem;">
-  <div style="font-size:3rem; margin-bottom:.75rem;">🍽️</div>
-  <p style="font-size:1rem;">لا توجد وصفات بعد</p>
-  <a href="{{ url_for('recipes.add_recipe') }}" class="btn btn-primary" style="margin-top:.75rem;">
+<div class="u_8924943807">
+  <div class="u_87700f4004">🍽️</div>
+  <p class="u_f2ea5fc13d">لا توجد وصفات بعد</p>
+  <a href="{{ url_for('recipes.add_recipe') }}" class="btn btn-primary u_03e223056b">
     + أضف أول وصفة
   </a>
 </div>

@@ -1,0 +1,69 @@
+{
+  "timestamp": "2026-06-18 06:16:21",
+  "base_url": "http://127.0.0.1:5001",
+  "instant_checks": {
+    "healthz": {
+      "ok": true,
+      "status": 200,
+      "latency_ms": 6.09
+    },
+    "readyz": {
+      "ok": true,
+      "status": 200,
+      "latency_ms": 34.22
+    }
+  },
+  "load_probe": {
+    "/healthz": {
+      "requests": 120,
+      "workers": 20,
+      "ok": 120,
+      "failed": 0,
+      "rps": 704.63,
+      "latency_ms": {
+        "min": 2.63,
+        "avg": 25.02,
+        "p95": 31.7,
+        "max": 33.88
+      },
+      "statuses": {
+        "200": 120
+      }
+    },
+    "/readyz": {
+      "requests": 80,
+      "workers": 10,
+      "ok": 80,
+      "failed": 0,
+      "rps": 68.37,
+      "latency_ms": {
+        "min": 87.94,
+        "avg": 143.45,
+        "p95": 211.33,
+        "max": 225.7
+      },
+      "statuses": {
+        "200": 80
+      }
+    }
+  },
+  "stuck_state": {
+    "pending_approvals": 0,
+    "stale_pending_approvals_24h": 0,
+    "queue_pending": 0,
+    "queue_failed": 0,
+    "unread_notifications": 0
+  },
+  "verdict": {
+    "pass": false,
+    "reasons": [
+      "readyz p95 exceeded threshold: 211.33ms > 170.0ms"
+    ],
+    "thresholds": {
+      "max_health_p95_ms": 50.0,
+      "max_ready_p95_ms": 170.0,
+      "max_failures": 0,
+      "require_zero_stuck": true
+    }
+  }
+}

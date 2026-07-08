@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}إضافة مشروع جديد{% endblock %}
+{% block page_title %}إضافة مشروع جديد{% endblock %}
+
+{% block content %}
+<style>
+.cp-page{max-width:1160px;margin:0 auto;padding:8px 4px 30px;}
+.cp-back{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:#60a5fa;font-size:.88rem;font-weight:600;margin-bottom:14px;}
+.cp-back:hover{color:#93c5fd;}
+.cp-hero{display:flex;gap:16px;align-items:center;padding:22px 24px;border-radius:18px;
+  border:1px solid rgba(34,197,94,.2);background:linear-gradient(130deg,rgba(16,185,129,.14),rgba(34,197,94,.08),rgba(14,165,233,.08));margin-bottom:18px;}
+.cp-hero-icon{width:58px;height:58px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.7rem;
+  background:linear-gradient(135deg,#10b981,#22c55e);box-shadow:0 10px 24px rgba(16,185,129,.25);}
+.cp-hero h1{margin:0 0 4px;color:#f1f5f9;font-size:1.35rem;font-weight:800;}
+.cp-hero p{margin:0;color:#94a3b8;font-size:.9rem;}
+.cp-form{background:rgba(15,23,42,.66);border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;}
+.cp-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:22px;}
+.cp-sec{grid-column:1/-1;background:linear-gradient(145deg,rgba(30,41,59,.86),rgba(15,23,42,.62));border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:18px;}
+.cp-sec.half{grid-column:span 1;}
+.cp-sec-title{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.07);
+  color:#94a3b8;font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+.cp-rows{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.cp-field{display:flex;flex-direction:column;gap:6px;}
+.cp-field.full{grid-column:1/-1;}
+.cp-label{font-size:.8rem;font-weight:600;color:#64748b;}
+.cp-label .req{color:#ef4444;}
+.cp-input{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;font-size:.93rem;color:#f1f5f9;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);transition:all .2s;}
+.cp-input:focus{outline:none;border-color:#22c55e;background:rgba(34,197,94,.06);box-shadow:0 0 0 3px rgba(34,197,94,.12);}
+.cp-input::placeholder{color:#475569;}
+.cp-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%2364748b' viewBox='0 0 20 20'%3E%3Cpath d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:left 12px center;background-size:16px;padding-left:34px;}
+.cp-actions{display:flex;gap:10px;justify-content:flex-end;padding:16px 22px;border-top:1px solid rgba(255,255,255,.08);
+  background:rgba(15,23,42,.86);position:sticky;bottom:0;}
+.cp-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:10px;font-size:.9rem;font-weight:700;
+  text-decoration:none;cursor:pointer;transition:all .2s;border:1px solid transparent;}
+.cp-btn.save{background:linear-gradient(135deg,#10b981,#16a34a);color:#fff;box-shadow:0 8px 18px rgba(16,185,129,.26);}
+.cp-btn.save:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(16,185,129,.32);}
+.cp-btn.edit{background:rgba(14,165,233,.12);border-color:rgba(14,165,233,.24);color:#7dd3fc;}
+.cp-btn.edit:hover{background:rgba(14,165,233,.2);}
+.cp-btn.back{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12);color:#cbd5e1;}
+.cp-btn.back:hover{background:rgba(255,255,255,.1);}
+.cp-btn.cancel{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.22);color:#fca5a5;}
+.cp-btn.cancel:hover{background:rgba(239,68,68,.18);color:#fecaca;}
+@media (max-width:900px){
+  .cp-grid{grid-template-columns:1fr;}
+  .cp-sec.half{grid-column:1/-1;}
+}
+@media (max-width:640px){
+  .cp-rows{grid-template-columns:1fr;}
+  .cp-actions{position:relative;flex-wrap:wrap;}
+  .cp-btn{flex:1;}
+}
+</style>
+
+<div class="cp-page">
+  <a href="/projects" class="cp-back">← رجوع لقائمة المشاريع</a>
+
+  <div class="cp-hero">
+    <div class="cp-hero-icon">🏗️</div>
+    <div>
+      <h1>إنشاء مشروع جديد</h1>
+      <p>نموذج صفحة كاملة بمدخلات كبيرة وواضحة لتسجيل بيانات المشروع بشكل احترافي.</p>
+    </div>
+  </div>
+
+  <form class="cp-form" method="post" action="/projects/new">
+    <div class="cp-grid">
+      <div class="cp-sec">
+        <div class="cp-sec-title">البيانات الأساسية</div>
+        <div class="cp-rows">
+          <div class="cp-field full">
+            <label class="cp-label">اسم المشروع <span class="req">*</span></label>
+            <input name="name" class="cp-input" required placeholder="مثال: مشروع إنشاء مجمع تجاري">
+          </div>
+          <div class="cp-field">
+            <label class="cp-label">رمز المشروع</label>
+            <input name="code" class="cp-input" placeholder="PRJ-2026-001" dir="ltr">
+          </div>
+          <div class="cp-field">
+            <label class="cp-label">الموقع</label>
+            <input name="location" class="cp-input" placeholder="المدينة - الحي - الشارع">
+          </div>
+          <div class="cp-field">
+            <label class="cp-label">رقم العميل</label>
+            <input name="client_id" class="cp-input" placeholder="اختياري" dir="ltr">
+          </div>
+          <div class="cp-field">
+            <label class="cp-label">المدير المسؤول</label>
+            <input class="cp-input" value="المستخدم الحالي" readonly>
+          </div>
+          <div class="cp-field full">
+            <label class="cp-label">ملاحظات مختصرة</label>
+            <textarea name="notes" class="cp-input" rows="3" placeholder="تفاصيل عامة عن المشروع..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="cp-sec half">
+        <div class="cp-sec-title">الجدول الزمني</div>
+        <div class="cp-rows">
+          <div class="cp-field">
+            <label class="cp-label">تاريخ البدء</label>
+            <input name="start_date" type="date" class="cp-input">
+          </div>
+          <div class="cp-field">
+            <label class="cp-label">تاريخ الانتهاء المتوقع</label>
+            <input name="end_date" type="date" class="cp-input">
+          </div>
+          <div class="cp-field">
+            <label class="cp-label">حالة المشروع</label>
+            <select name="status" class="cp-input cp-select" disabled>
+              <option selected>تخطيط (افتراضي)</option>
+            </select>
+          </div>
+          <div class="cp-field">
+            <label class="cp-label">مرحلة المشروع</label>
+            <select class="cp-input cp-select">
+              <option>دراسة</option>
+              <option>تصميم</option>
+              <option>تنفيذ</option>
+              <option>تسليم</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="cp-sec half">
+        <div class="cp-sec-title">الميزانية والتكلفة</div>
+        <div class="cp-rows">
+          <div class="cp-field">
+            <label class="cp-label">الميزانية الإجمالية (ر.س)</label>
+            <input name="budget" type="number" step="0.01" min="0" class="cp-input" placeholder="0.00">
+          </div>
+          <div class="cp-field">
+            <label class="cp-label">نسبة احتياطية (%)</label>
+            <input type="number" step="0.1" min="0" class="cp-input" placeholder="5">
+          </div>
+          <div class="cp-field full">
+            <label class="cp-label">تصنيف المشروع</label>
+            <select class="cp-input cp-select">
+              <option>إنشائي</option>
+              <option>تشطيب</option>
+              <option>صيانة</option>
+              <option>بنية تحتية</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cp-actions">
+      <a href="/projects" class="cp-btn back">رجوع</a>
+      <button type="button" class="cp-btn edit" onclick="document.querySelector('[name=name]').focus();">تعديل</button>
+      <a href="/projects" class="cp-btn cancel">إلغاء</a>
+      <button type="submit" class="cp-btn save">حفظ المشروع</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

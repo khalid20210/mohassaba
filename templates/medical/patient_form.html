@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block title %}إضافة مريض جديد{% endblock %}
+{% block page_title %}إضافة مريض جديد{% endblock %}
+
+{% block content %}
+<style>
+.mp-page{max-width:1180px;margin:0 auto;padding:8px 4px 30px;}
+.mp-back{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:#60a5fa;font-size:.88rem;font-weight:600;margin-bottom:14px;}
+.mp-back:hover{color:#93c5fd;}
+.mp-hero{display:flex;gap:16px;align-items:center;padding:22px 24px;border-radius:18px;
+  border:1px solid rgba(56,189,248,.2);background:linear-gradient(130deg,rgba(14,165,233,.15),rgba(59,130,246,.08),rgba(16,185,129,.08));margin-bottom:18px;}
+.mp-hero-icon{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;
+  background:linear-gradient(135deg,#0ea5e9,#3b82f6);box-shadow:0 10px 24px rgba(14,165,233,.28);}
+.mp-hero h1{margin:0 0 4px;color:#f1f5f9;font-size:1.35rem;font-weight:800;}
+.mp-hero p{margin:0;color:#94a3b8;font-size:.9rem;}
+.mp-form{background:rgba(15,23,42,.66);border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;}
+.mp-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:22px;}
+.mp-sec{grid-column:1/-1;background:linear-gradient(145deg,rgba(30,41,59,.86),rgba(15,23,42,.62));border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:18px;}
+.mp-sec.half{grid-column:span 1;}
+.mp-sec-title{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.07);
+  color:#94a3b8;font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+.mp-rows{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.mp-field{display:flex;flex-direction:column;gap:6px;}
+.mp-field.full{grid-column:1/-1;}
+.mp-label{font-size:.8rem;font-weight:600;color:#64748b;}
+.mp-label .req{color:#ef4444;}
+.mp-input{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;font-size:.93rem;color:#f1f5f9;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);transition:all .2s;}
+.mp-input:focus{outline:none;border-color:#38bdf8;background:rgba(56,189,248,.06);box-shadow:0 0 0 3px rgba(56,189,248,.12);}
+.mp-input::placeholder{color:#475569;}
+.mp-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%2364748b' viewBox='0 0 20 20'%3E%3Cpath d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:left 12px center;background-size:16px;padding-left:34px;}
+.mp-actions{display:flex;gap:10px;justify-content:flex-end;padding:16px 22px;border-top:1px solid rgba(255,255,255,.08);
+  background:rgba(15,23,42,.86);position:sticky;bottom:0;}
+.mp-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:10px;font-size:.9rem;font-weight:700;
+  text-decoration:none;cursor:pointer;transition:all .2s;border:1px solid transparent;}
+.mp-btn.save{background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;box-shadow:0 8px 18px rgba(14,165,233,.26);}
+.mp-btn.save:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(14,165,233,.33);}
+.mp-btn.back{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12);color:#cbd5e1;}
+.mp-btn.back:hover{background:rgba(255,255,255,.1);}
+.mp-btn.cancel{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.22);color:#fca5a5;}
+.mp-btn.cancel:hover{background:rgba(239,68,68,.18);color:#fecaca;}
+@media (max-width:900px){
+  .mp-grid{grid-template-columns:1fr;}
+  .mp-sec.half{grid-column:1/-1;}
+}
+@media (max-width:640px){
+  .mp-rows{grid-template-columns:1fr;}
+  .mp-actions{position:relative;flex-wrap:wrap;}
+  .mp-btn{flex:1;}
+}
+</style>
+
+<div class="mp-page">
+  <a href="/medical/patients" class="mp-back">← رجوع لقائمة المرضى</a>
+
+  <div class="mp-hero">
+    <div class="mp-hero-icon">🏥</div>
+    <div>
+      <h1>تسجيل مريض جديد</h1>
+      <p>صفحة كاملة لإدخال بيانات المريض بسهولة ووضوح وبحقول واسعة.</p>
+    </div>
+  </div>
+
+  <form class="mp-form" method="post" action="/medical/patients/new">
+    <div class="mp-grid">
+      <div class="mp-sec">
+        <div class="mp-sec-title">المعلومات الأساسية</div>
+        <div class="mp-rows">
+          <div class="mp-field full">
+            <label class="mp-label">الاسم الكامل <span class="req">*</span></label>
+            <input name="full_name" class="mp-input" required placeholder="أدخل الاسم الرباعي للمريض">
+          </div>
+          <div class="mp-field">
+            <label class="mp-label">رقم الهاتف</label>
+            <input name="phone" class="mp-input" placeholder="05xxxxxxxx" dir="ltr">
+          </div>
+          <div class="mp-field">
+            <label class="mp-label">الرقم الوطني</label>
+            <input name="national_id" class="mp-input" placeholder="10 أرقام" dir="ltr">
+          </div>
+          <div class="mp-field">
+            <label class="mp-label">تاريخ الميلاد</label>
+            <input name="dob" type="date" class="mp-input">
+          </div>
+          <div class="mp-field">
+            <label class="mp-label">الجنس</label>
+            <select name="gender" class="mp-input mp-select">
+              <option value="male">ذكر</option>
+              <option value="female">أنثى</option>
+            </select>
+          </div>
+          <div class="mp-field">
+            <label class="mp-label">فصيلة الدم</label>
+            <select name="blood_type" class="mp-input mp-select">
+              <option value="">غير معروفة</option>
+              <option>A+</option><option>A-</option>
+              <option>B+</option><option>B-</option>
+              <option>AB+</option><option>AB-</option>
+              <option>O+</option><option>O-</option>
+            </select>
+          </div>
+          <div class="mp-field">
+            <label class="mp-label">البريد الإلكتروني</label>
+            <input name="email" type="email" class="mp-input" placeholder="name@example.com" dir="ltr">
+          </div>
+          <div class="mp-field full">
+            <label class="mp-label">العنوان</label>
+            <input name="address" class="mp-input" placeholder="المدينة - الحي - الشارع">
+          </div>
+        </div>
+      </div>
+
+      <div class="mp-sec half">
+        <div class="mp-sec-title">بيانات صحية</div>
+        <div class="mp-rows">
+          <div class="mp-field">
+            <label class="mp-label">الطول (سم)</label>
+            <input name="height" type="number" class="mp-input" placeholder="170" min="0">
+          </div>
+          <div class="mp-field">
+            <label class="mp-label">الوزن (كغ)</label>
+            <input name="weight" type="number" class="mp-input" placeholder="70" min="0" step="0.1">
+          </div>
+          <div class="mp-field full">
+            <label class="mp-label">الأمراض المزمنة</label>
+            <input name="chronic_diseases" class="mp-input" placeholder="سكري، ضغط، ربو...">
+          </div>
+          <div class="mp-field full">
+            <label class="mp-label">الحساسية</label>
+            <input name="allergies" class="mp-input" placeholder="أدوية أو أطعمة تسبب حساسية">
+          </div>
+          <div class="mp-field full">
+            <label class="mp-label">التاريخ الطبي</label>
+            <textarea name="medical_history" class="mp-input" rows="3" placeholder="ملاحظات طبية مهمة..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="mp-sec half">
+        <div class="mp-sec-title">الطوارئ والتأمين</div>
+        <div class="mp-rows">
+          <div class="mp-field">
+            <label class="mp-label">شركة التأمين</label>
+            <select name="insurance_company_id" class="mp-input mp-select">
+              <option value="">بدون تأمين</option>
+              {% for ic in insurance_cos %}
+              <option value="{{ ic.id }}">{{ ic.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mp-field">
+            <label class="mp-label">رقم بوليصة التأمين</label>
+            <input name="insurance_policy_number" class="mp-input" placeholder="Policy Number" dir="ltr">
+          </div>
+          <div class="mp-field">
+            <label class="mp-label">جهة اتصال الطوارئ</label>
+            <input name="emergency_contact" class="mp-input" placeholder="اسم القريب">
+          </div>
+          <div class="mp-field">
+            <label class="mp-label">هاتف الطوارئ</label>
+            <input name="emergency_phone" class="mp-input" placeholder="05xxxxxxxx" dir="ltr">
+          </div>
+          <div class="mp-field full">
+            <label class="mp-label">ملاحظات إضافية</label>
+            <textarea name="notes" class="mp-input" rows="3" placeholder="أي ملاحظات مهمة..."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mp-actions">
+      <a href="/medical/patients" class="mp-btn back">رجوع</a>
+      <a href="/medical/patients" class="mp-btn cancel">إلغاء</a>
+      <button type="submit" class="mp-btn save">حفظ المريض</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

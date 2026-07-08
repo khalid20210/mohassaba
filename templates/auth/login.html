@@ -141,8 +141,8 @@ body {
   min-height: 0;
   display: flex;
   box-shadow: 0 8px 32px rgba(0,0,0,.25);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
 }
 
 .jb-stage::before {
@@ -187,8 +187,8 @@ body {
   border-radius: 18px;
   padding: 14px;
   background: rgba(255,255,255,.06);
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   box-shadow: 0 4px 24px rgba(0,0,0,.20);
   transition: background .4s ease, border-color .4s ease;
 }
@@ -257,8 +257,8 @@ body {
   display: flex;
   align-items: center;
   gap: 9px;
-  backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   transition: background .2s;
 }
 
@@ -291,8 +291,8 @@ body {
   background: rgba(255,255,255,.06);
   padding: 12px;
   box-shadow: 0 4px 16px rgba(0,0,0,.20);
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   position: relative;
   overflow: hidden;
 }
@@ -609,8 +609,8 @@ body {
   color: #e4f0ff;
   outline: none;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
-  backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
 }
 
 .jb-input::placeholder { color: rgba(160, 195, 240, .40); }
@@ -739,12 +739,35 @@ body {
   }
   .jb-form-wrap { max-width: 360px; }
 }
+.u_00206f8440{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.u_cb2f4e6c76{text-align:center;margin-top:6px;font-size:.64rem;font-family:'Manrope',sans-serif;color:rgba(100,160,255,.35);letter-spacing:.5px;}
+.u_05e5f6ecee{padding-left:42px}
+.marketing-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:5px 13px;
+  border-radius:100px;
+  font-size:.78rem;
+  font-weight:700;
+  box-shadow:0 2px 8px rgba(0,0,0,.25);
+  animation:badgePop .4s ease both;
+}
 </style>
 {% if ux_custom_css %}<style>{{ ux_custom_css }}</style>{% endif %}
+{% if ux_login_bg_url %}
+<style>
+.jb-auth-root.has-login-bg{
+  background-image:url('{{ ux_login_bg_url }}');
+  background-size:cover;
+  background-position:center;
+}
+</style>
+{% endif %}
 {% endblock %}
 
 {% block auth_content %}
-<div class="jb-auth-root" {% if ux_login_bg_url %}style="background-image:url('{{ ux_login_bg_url }}');background-size:cover;background-position:center"{% endif %}>
+<div class="jb-auth-root {% if ux_login_bg_url %}has-login-bg{% endif %}">
   <div class="jb-theater">
 
     <div class="jb-theater-top">
@@ -784,20 +807,16 @@ body {
 
             <!-- ─── الشارات التسويقية الديناميكية ─── -->
             {% if marketing_badges %}
-            <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:10px" id="marketingBadgesRow">
+            <div id="marketingBadgesRow" class="u_00206f8440">
               {% for b in marketing_badges %}
-              <span style="
-                display:inline-flex;align-items:center;gap:5px;
-                background:{{ b.badge_bg }};color:{{ b.badge_color }};
-                padding:5px 13px;border-radius:100px;
-                font-size:.78rem;font-weight:700;
-                box-shadow:0 2px 8px rgba(0,0,0,.25);
-                animation:badgePop .4s ease {{ loop.index0 * 0.1 }}s both;
-              ">{{ b.badge_icon or '🔥' }} {{ b.badge_text }}</span>
+              <span class="marketing-badge badge-{{ loop.index0 }}">{{ b.badge_icon or '🔥' }} {{ b.badge_text }}</span>
               {% endfor %}
             </div>
             <style>
             @keyframes badgePop{from{opacity:0;transform:scale(.8) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}
+            {% for b in marketing_badges %}
+            #marketingBadgesRow .badge-{{ loop.index0 }}{background:{{ b.badge_bg }};color:{{ b.badge_color }};animation-delay:{{ loop.index0 * 0.1 }}s;}
+            {% endfor %}
             </style>
             {% endif %}
           </div>
@@ -909,7 +928,7 @@ body {
           </div>
         </div>
 
-        <div style="text-align:center;margin-top:6px;font-size:.64rem;font-family:'Manrope',sans-serif;color:rgba(100,160,255,.35);letter-spacing:.5px;">
+        <div class="u_cb2f4e6c76">
           JINAN BIZ &mdash; Enterprise ERP &bull; 2026
         </div>
       </div>
@@ -947,7 +966,7 @@ body {
         <div class="jb-field">
           <label class="jb-label">{{ t('password') }}</label>
           <div class="jb-pass-wrap">
-            <input type="password" id="jb-pass" name="password" class="jb-input" placeholder="{{ t('password_placeholder') }}" required style="padding-left:42px">
+            <input type="password" id="jb-pass" name="password" class="jb-input u_05e5f6ecee" placeholder="{{ t('password_placeholder') }}" required>
             <button type="button" class="jb-pass-toggle" onclick="togglePass()" title="{{ t('show_hide') }}">&#128065;</button>
           </div>
         </div>

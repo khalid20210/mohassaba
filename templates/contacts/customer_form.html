@@ -1,58 +1,130 @@
 {% extends "base.html" %}
-{% block title %}عميل جديد{% endblock %}
-{% block page_title %}👤 إضافة عميل{% endblock %}
+{% block title %}إضافة عميل جديد{% endblock %}
+{% block page_title %}إضافة عميل جديد{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <div>
-    <a href="/contacts/customers" style="color:#94a3b8;font-size:.85rem;">← قائمة العملاء</a>
-    <h1 class="page-title" style="margin-top:4px;">إضافة عميل جديد</h1>
-  </div>
-</div>
+<style>
+.cf-page{max-width:1120px;margin:0 auto;padding:8px 4px 30px;}
+.cf-back{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:#60a5fa;font-size:.88rem;font-weight:600;margin-bottom:14px;}
+.cf-back:hover{color:#93c5fd;}
+.cf-hero{display:flex;gap:16px;align-items:center;padding:22px 24px;border-radius:18px;
+  border:1px solid rgba(99,102,241,.22);background:linear-gradient(130deg,rgba(99,102,241,.14),rgba(139,92,246,.08),rgba(14,165,233,.08));margin-bottom:18px;}
+.cf-hero-icon{width:58px;height:58px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 10px 24px rgba(99,102,241,.25);}
+.cf-hero h1{margin:0 0 4px;color:#f1f5f9;font-size:1.35rem;font-weight:800;}
+.cf-hero p{margin:0;color:#94a3b8;font-size:.9rem;}
+.cf-form{background:rgba(15,23,42,.66);border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;}
+.cf-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:22px;}
+.cf-sec{grid-column:1/-1;background:linear-gradient(145deg,rgba(30,41,59,.86),rgba(15,23,42,.62));border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:18px;}
+.cf-sec.half{grid-column:span 1;}
+.cf-sec-title{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.07);
+  color:#94a3b8;font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+.cf-rows{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.cf-field{display:flex;flex-direction:column;gap:6px;}
+.cf-field.full{grid-column:1/-1;}
+.cf-label{font-size:.8rem;font-weight:600;color:#64748b;}
+.cf-label .req{color:#ef4444;}
+.cf-input{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;font-size:.93rem;color:#f1f5f9;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);transition:all .2s;}
+.cf-input:focus{outline:none;border-color:#8b5cf6;background:rgba(139,92,246,.06);box-shadow:0 0 0 3px rgba(139,92,246,.12);}
+.cf-input::placeholder{color:#475569;}
+.cf-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%2364748b' viewBox='0 0 20 20'%3E%3Cpath d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:left 12px center;background-size:16px;padding-left:34px;}
+.cf-actions{display:flex;gap:10px;justify-content:flex-end;padding:16px 22px;border-top:1px solid rgba(255,255,255,.08);
+  background:rgba(15,23,42,.86);position:sticky;bottom:0;}
+.cf-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:10px;
+  font-size:.9rem;font-weight:700;text-decoration:none;cursor:pointer;transition:all .2s;border:1px solid transparent;}
+.cf-btn.save{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 8px 18px rgba(99,102,241,.26);}
+.cf-btn.save:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(99,102,241,.33);}
+.cf-btn.edit{background:rgba(14,165,233,.12);border-color:rgba(14,165,233,.24);color:#7dd3fc;}
+.cf-btn.edit:hover{background:rgba(14,165,233,.2);}
+.cf-btn.back{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12);color:#cbd5e1;}
+.cf-btn.back:hover{background:rgba(255,255,255,.1);}
+.cf-btn.cancel{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.22);color:#fca5a5;}
+.cf-btn.cancel:hover{background:rgba(239,68,68,.18);color:#fecaca;}
+@media(max-width:900px){.cf-grid{grid-template-columns:1fr;}.cf-sec.half{grid-column:1/-1;}}
+@media(max-width:640px){.cf-rows{grid-template-columns:1fr;}.cf-actions{position:relative;flex-wrap:wrap;}.cf-btn{flex:1;}}
+</style>
 
-<div class="card" style="max-width:600px;margin:0 auto;">
-  <form action="/contacts/customers/new" method="post">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      <div style="grid-column:1/-1;">
-        <label class="form-label">الاسم الكامل *</label>
-        <input type="text" name="name" class="form-input" required placeholder="اسم العميل">
-      </div>
-      <div>
-        <label class="form-label">الهاتف</label>
-        <input type="text" name="phone" class="form-input" placeholder="05xxxxxxxx">
-      </div>
-      <div>
-        <label class="form-label">البريد الإلكتروني</label>
-        <input type="email" name="email" class="form-input" placeholder="email@example.com">
-      </div>
-      <div style="grid-column:1/-1;">
-        <label class="form-label">العنوان</label>
-        <input type="text" name="address" class="form-input" placeholder="المدينة، الحي، الشارع">
-      </div>
-      <div>
-        <label class="form-label">نوع العميل</label>
-        <select name="contact_type" class="form-input">
-          <option value="retail">تجزئة</option>
-          <option value="wholesale">جملة</option>
-          <option value="vip">VIP</option>
-        </select>
-      </div>
-      <div>
-        <label class="form-label">حد الائتمان (ر.س)</label>
-        <input type="number" name="credit_limit" class="form-input" value="0" min="0" step="0.01">
-      </div>
-      <div>
-        <label class="form-label">الرقم الضريبي</label>
-        <input type="text" name="tax_number" class="form-input" placeholder="اختياري">
-      </div>
-      <div>
-        <label class="form-label">رقم السجل التجاري</label>
-        <input type="text" name="commercial_reg" class="form-input" placeholder="اختياري">
-      </div>
+<div class="cf-page">
+  <a href="/contacts/customers" class="cf-back">← رجوع لقائمة العملاء</a>
+
+  <div class="cf-hero">
+    <div class="cf-hero-icon">👤</div>
+    <div>
+      <h1>إضافة عميل جديد</h1>
+      <p>سجّل بيانات العميل الكاملة — الاسم والتواصل والبيانات التجارية</p>
     </div>
-    <div style="margin-top:24px;display:flex;gap:12px;">
-      <button type="submit" class="btn btn-primary">💾 حفظ</button>
-      <a href="/contacts/customers" class="btn btn-secondary">إلغاء</a>
+  </div>
+
+  <form class="cf-form" action="/contacts/customers/new" method="post">
+    <div class="cf-grid">
+
+      <div class="cf-sec">
+        <div class="cf-sec-title">البيانات الأساسية</div>
+        <div class="cf-rows">
+          <div class="cf-field full">
+            <label class="cf-label">الاسم الكامل <span class="req">*</span></label>
+            <input type="text" name="name" class="cf-input" required placeholder="اسم العميل أو اسم الشركة">
+          </div>
+          <div class="cf-field">
+            <label class="cf-label">الهاتف</label>
+            <input type="text" name="phone" class="cf-input" placeholder="05xxxxxxxx" dir="ltr">
+          </div>
+          <div class="cf-field">
+            <label class="cf-label">البريد الإلكتروني</label>
+            <input type="email" name="email" class="cf-input" placeholder="email@example.com" dir="ltr">
+          </div>
+          <div class="cf-field full">
+            <label class="cf-label">العنوان</label>
+            <input type="text" name="address" class="cf-input" placeholder="المدينة، الحي، الشارع">
+          </div>
+        </div>
+      </div>
+
+      <div class="cf-sec half">
+        <div class="cf-sec-title">التصنيف والائتمان</div>
+        <div class="cf-rows">
+          <div class="cf-field">
+            <label class="cf-label">نوع العميل</label>
+            <select name="contact_type" class="cf-input cf-select">
+              <option value="retail">تجزئة</option>
+              <option value="wholesale">جملة</option>
+              <option value="vip">VIP</option>
+            </select>
+          </div>
+          <div class="cf-field">
+            <label class="cf-label">حد الائتمان (ر.س)</label>
+            <input type="number" name="credit_limit" class="cf-input" value="0" min="0" step="0.01">
+          </div>
+          <div class="cf-field full">
+            <label class="cf-label">ملاحظات</label>
+            <textarea name="notes" class="cf-input" rows="3" placeholder="أي ملاحظات على العميل..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="cf-sec half">
+        <div class="cf-sec-title">البيانات التجارية والضريبية</div>
+        <div class="cf-rows">
+          <div class="cf-field">
+            <label class="cf-label">الرقم الضريبي (VAT)</label>
+            <input type="text" name="tax_number" class="cf-input" placeholder="15 رقماً" dir="ltr">
+          </div>
+          <div class="cf-field">
+            <label class="cf-label">رقم السجل التجاري</label>
+            <input type="text" name="commercial_reg" class="cf-input" placeholder="10 أرقام" dir="ltr">
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="cf-actions">
+      <a href="/contacts/customers" class="cf-btn back">رجوع</a>
+      <button type="button" class="cf-btn edit" onclick="document.querySelector('[name=name]').focus()">تعديل</button>
+      <a href="/contacts/customers" class="cf-btn cancel">إلغاء</a>
+      <button type="submit" class="cf-btn save">حفظ العميل</button>
     </div>
   </form>
 </div>

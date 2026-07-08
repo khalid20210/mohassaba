@@ -113,6 +113,18 @@
 }
 
 .hidden { display: none !important; }
+.u_7aab68d540{padding:6px 10px}
+.u_03c4bb6fce{justify-content:center}
+.u_56f4356299{margin-top:12px}
+.u_d2c171b18b{margin-top:10px}
+.u_7238926958{color:#16a34a}
+.u_2056554381{color:#dc2626}
+.u_d6f2af6e0a{margin-top:14px}
+.u_a41e60647e{font-size:.85rem;color:#475569;margin-bottom:6px}
+.u_1b0f4999d2{margin-top:16px}
+.u_5ec96cd119{text-align:center;color:#64748b}
+.u_58d891e89f{font-size:.8rem;color:#475569}
+.u_881d02da72{color:#b91c1c}
 </style>
 {% endblock %}
 
@@ -127,23 +139,23 @@
     <div class="excel-section">
       <div class="head">
         <strong>الخطوة 1: رفع الملف</strong>
-        <a href="/purchases" class="btn btn-outline" style="padding:6px 10px">العودة للمشتريات</a>
+        <a href="/purchases" class="btn btn-outline u_7aab68d540">العودة للمشتريات</a>
       </div>
       <div class="body">
         <div id="dropZone" class="drop-zone">
           <div class="big">🧾</div>
           <h3>اسحب الملف هنا</h3>
           <p>الأنواع المدعومة: xlsx, xls, csv — حتى 5000 صف</p>
-          <div class="excel-actions" style="justify-content:center">
+          <div class="excel-actions u_03c4bb6fce">
             <button class="btn btn-primary" type="button" onclick="pickFile()">اختيار ملف</button>
             <button class="btn btn-outline" type="button" onclick="previewFile()" id="previewBtn" disabled>معاينة البيانات</button>
           </div>
           <input id="excelFile" type="file" accept=".xlsx,.xls,.csv" class="hidden">
         </div>
 
-        <div style="margin-top:12px" class="status-box" id="fileState">لم يتم اختيار ملف بعد.</div>
+        <div class="status-box u_56f4356299" id="fileState">لم يتم اختيار ملف بعد.</div>
 
-        <div style="margin-top:10px" class="excel-progress">
+        <div class="excel-progress u_d2c171b18b">
           <div id="progressBar"></div>
         </div>
       </div>
@@ -162,22 +174,22 @@
           </div>
           <div class="excel-kpi">
             <div class="label">صفوف صالحة</div>
-            <div class="val" id="kpiValid" style="color:#16a34a">0</div>
+            <div class="val u_7238926958" id="kpiValid">0</div>
           </div>
           <div class="excel-kpi">
             <div class="label">صفوف فيها أخطاء</div>
-            <div class="val" id="kpiInvalid" style="color:#dc2626">0</div>
+            <div class="val u_2056554381" id="kpiInvalid">0</div>
           </div>
         </div>
 
-        <div style="margin-top:14px">
-          <div style="font-size:.85rem;color:#475569;margin-bottom:6px">الأعمدة التي تعرف عليها النظام</div>
+        <div class="u_d6f2af6e0a">
+          <div class="u_a41e60647e">الأعمدة التي تعرف عليها النظام</div>
           <div class="excel-tags" id="detectedCols">
             <span class="excel-tag">بانتظار المعاينة...</span>
           </div>
         </div>
 
-        <div class="excel-actions" style="margin-top:16px">
+        <div class="excel-actions u_1b0f4999d2">
           <button id="confirmBtn" class="btn btn-primary" disabled onclick="confirmImport()">اعتماد الاستيراد</button>
           <button class="btn btn-outline" type="button" onclick="clearPreview()">مسح النتائج</button>
         </div>
@@ -206,7 +218,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr><td colspan="7" style="text-align:center;color:#64748b">لا توجد بيانات بعد</td></tr>
+              <tr><td colspan="7" class="u_5ec96cd119">لا توجد بيانات بعد</td></tr>
             </tbody>
           </table>
         </div>
@@ -229,7 +241,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr><td colspan="3" style="text-align:center;color:#64748b">لم يتم فحص الملف بعد</td></tr>
+              <tr><td colspan="3" class="u_5ec96cd119">لم يتم فحص الملف بعد</td></tr>
             </tbody>
           </table>
         </div>
@@ -300,7 +312,7 @@ function renderCols(cols) {
 function renderValid(rows) {
   const tbody = document.querySelector('#validTable tbody');
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#64748b">لا توجد صفوف صالحة</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="u_5ec96cd119">لا توجد صفوف صالحة</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map(r => '<tr>' +
@@ -317,7 +329,7 @@ function renderValid(rows) {
 function renderInvalid(rows) {
   const tbody = document.querySelector('#invalidTable tbody');
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#64748b">لا توجد أخطاء</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" class="u_5ec96cd119">لا توجد أخطاء</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map(r => {
@@ -326,8 +338,8 @@ function renderInvalid(rows) {
     const errs = Array.isArray(r.errors) ? r.errors.join('، ') : esc(String(r.errors || ''));
     return '<tr>' +
       '<td>' + esc(String(r.row || '')) + '</td>' +
-      '<td style="font-size:.8rem;color:#475569">' + mini + '</td>' +
-      '<td style="color:#b91c1c">' + esc(errs) + '</td>' +
+      '<td class="u_58d891e89f">' + mini + '</td>' +
+      '<td class="u_881d02da72">' + esc(errs) + '</td>' +
     '</tr>';
   }).join('');
 }

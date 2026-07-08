@@ -1,5 +1,5 @@
 ﻿{% extends "base.html" %}
-{% block title %}تقرير الإقرار الضريبي — VAT{% endblock %}
+{% block title %}تقرير الإقرار الضريبي — {{ tax_label_en or 'Tax' }}{% endblock %}
 
 {% block head %}
 <style>
@@ -133,10 +133,48 @@
   .vat-filter-row{flex-direction:column}
   .vat-filter-field{min-width:unset;width:100%}
 }
+.u_00d4b9da38{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.u_338221f3a6{font-size:.8rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:18px}
+.u_14b4b58a73{display:flex;flex-direction:column;gap:6px}
+.u_3de8f987ba{display:flex;gap:8px;flex-wrap:wrap}
+.u_0237f138b5{display:flex;align-items:flex-end}
+.u_0da13144de{font-size:.75rem}
+.u_000f60d78d{font-size:.8rem;color:#64748b}
+.u_95fd837ece{display:flex;align-items:center;gap:12px}
+.u_6b12b0a3d0{width:34px;height:34px;border-radius:9px;background:rgba(16,185,129,.15);
+                         display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.u_eed0f8fb89{font-weight:600}
+.u_cd06ec2145{font-size:.75rem;color:#64748b}
+.u_888ed95c3c{color:#10b981;font-weight:700;font-size:1.05rem}
+.u_92bde962e8{width:34px;height:34px;border-radius:9px;background:rgba(99,102,241,.15);
+                         display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.u_fd67d298d8{color:#6366f1;font-weight:700;font-size:1.05rem}
+.u_85be2544dd{font-size:.75rem;color:#64748b;font-weight:400}
+.u_b87ca3241d{display:flex;align-items:center;gap:10px}
+.u_27e46985ca{font-size:1.3rem}
+.u_0ddf068bfb{overflow-x:auto}
+.u_4b1fc20214{color:#10b981;font-weight:600}
+.u_acd97a46d0{color:#10b981}
+.u_c19223dd36{background:rgba(99,102,241,.15);border-color:rgba(99,102,241,.3);color:#a5b4fc}
+.u_2a72108f46{color:#818cf8}
+.u_4a6119ba56{font-family:monospace;font-size:.82rem;color:#64748b}
+.u_34a472721e{color:#6366f1;font-weight:600}
+.u_dab557b96a{color:#6366f1}
+.vat-status-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.vat-status-icon.is-due{background:rgba(239,68,68,.15)}
+.vat-status-icon.is-credit{background:rgba(16,185,129,.15)}
+.vat-net-value{font-size:1.35rem}
+.vat-net-value.is-due{color:#ef4444}
+.vat-net-value.is-credit{color:#10b981}
+.vat-vat-code{font-family:monospace;font-size:.82rem}
+.vat-vat-code.is-present{color:#a5b4fc}
+.vat-vat-code.is-empty{color:#475569}
 </style>
 {% endblock %}
 
 {% block content %}
+{% set tax_rate_text = ('%.2f'|format(default_tax_rate)) if (default_tax_rate is defined) else '0.00' %}
+{% set authority_name = 'هيئة الزكاة والضريبة والجمارك' if requires_zatca else 'الهيئة الضريبية' %}
 
 <!-- Hero -->
 <div class="vat-hero">
@@ -144,10 +182,10 @@
     <div class="vat-hero-icon">🧾</div>
     <div>
       <h1>تقرير الإقرار الضريبي</h1>
-      <p class="vat-hero-sub">ضريبة القيمة المضافة (VAT 15%) — المخرجات والمدخلات وصافي المستحق للفترة المحددة</p>
+      <p class="vat-hero-sub">{{ tax_label_ar }} ({{ tax_label_en }} {{ tax_rate_text }}%) — المخرجات والمدخلات وصافي المستحق للفترة المحددة</p>
     </div>
   </div>
-  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+  <div class="u_00d4b9da38">
     <div class="vat-hero-period">📅 {{ date_from }} — {{ date_to }}</div>
     <button class="btn btn-outline vat-hero-btn" onclick="window.print()">🖨️ طباعة</button>
   </div>
@@ -155,27 +193,27 @@
 
 <!-- فلتر الفترة -->
 <div class="vat-filter">
-  <div style="font-size:.8rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:18px">📅 تحديد الفترة الزمنية</div>
+  <div class="u_338221f3a6">📅 تحديد الفترة الزمنية</div>
   <form method="GET">
     <div class="vat-filter-row">
       <div class="vat-filter-field">
         <label class="vat-filter-label">من تاريخ</label>
-        <input type="date" name="from" class="vat-filter-input" value="{{ date_from }}">
+        <input type="date" name="from" class="vat-filter-input" value="{{ date_from }}" title="من تاريخ" aria-label="من تاريخ">
       </div>
       <div class="vat-filter-field">
         <label class="vat-filter-label">إلى تاريخ</label>
-        <input type="date" name="to" class="vat-filter-input" value="{{ date_to }}">
+        <input type="date" name="to" class="vat-filter-input" value="{{ date_to }}" title="إلى تاريخ" aria-label="إلى تاريخ">
       </div>
-      <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="u_14b4b58a73">
         <label class="vat-filter-label">اختصارات سريعة</label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="u_3de8f987ba">
           {% set today = now_date %}
           <a href="?from={{ today[:8] }}01&to={{ today }}" class="vat-quick-btn">هذا الشهر</a>
           <a href="?from={{ today[:4] }}-01-01&to={{ today }}" class="vat-quick-btn">هذه السنة</a>
           <a href="?from=&to=" class="vat-quick-btn">الكل</a>
         </div>
       </div>
-      <div style="display:flex;align-items:flex-end">
+      <div class="u_0237f138b5">
         <button type="submit" class="btn-apply-vat">🔍 تطبيق الفلتر</button>
       </div>
     </div>
@@ -187,24 +225,24 @@
   <div class="vat-stat output">
     <div class="vat-stat-badge">📤 ضريبة المخرجات</div>
     <div class="vat-stat-icon">💸</div>
-    <div class="vat-stat-value">{{ "%.2f"|format(sales_vat.vat) }} <small style="font-size:.75rem">ر.س</small></div>
+    <div class="vat-stat-value">{{ "%.2f"|format(sales_vat.vat) }} <small class="u_0da13144de">{{ currency_symbol }}</small></div>
     <div class="vat-stat-label">ضريبة المبيعات المحصّلة</div>
-    <div class="vat-stat-sub">وعاء خاضع: {{ "%.2f"|format(sales_vat.subtotal) }} ر.س</div>
+    <div class="vat-stat-sub">وعاء خاضع: {{ "%.2f"|format(sales_vat.subtotal) }} {{ currency_symbol }}</div>
     <div class="vat-stat-count">🧾 {{ sales_vat.count or 0 }} فاتورة مبيعات</div>
   </div>
   <div class="vat-stat input">
     <div class="vat-stat-badge">📥 ضريبة المدخلات</div>
     <div class="vat-stat-icon">🛒</div>
-    <div class="vat-stat-value">{{ "%.2f"|format(purch_vat.vat) }} <small style="font-size:.75rem">ر.س</small></div>
+    <div class="vat-stat-value">{{ "%.2f"|format(purch_vat.vat) }} <small class="u_0da13144de">{{ currency_symbol }}</small></div>
     <div class="vat-stat-label">ضريبة المشتريات القابلة للخصم</div>
-    <div class="vat-stat-sub">وعاء خاضع: {{ "%.2f"|format(purch_vat.subtotal) }} ر.س</div>
+    <div class="vat-stat-sub">وعاء خاضع: {{ "%.2f"|format(purch_vat.subtotal) }} {{ currency_symbol }}</div>
     <div class="vat-stat-count">🧾 {{ purch_vat.count or 0 }} فاتورة مشتريات</div>
   </div>
   {% set net = net_vat %}
   <div class="vat-stat {% if net >= 0 %}net-pos{% else %}net-neg{% endif %}">
     <div class="vat-stat-badge">{% if net >= 0 %}💳 صافي مستحق{% else %}💰 رصيد لصالحك{% endif %}</div>
     <div class="vat-stat-icon">{% if net >= 0 %}⚠️{% else %}✅{% endif %}</div>
-    <div class="vat-stat-value">{{ "%.2f"|format(net|abs) }} <small style="font-size:.75rem">ر.س</small></div>
+    <div class="vat-stat-value">{{ "%.2f"|format(net|abs) }} <small class="u_0da13144de">{{ currency_symbol }}</small></div>
     <div class="vat-stat-label">{% if net >= 0 %}مستحق للهيئة{% else %}يُحتسب للفترة القادمة{% endif %}</div>
     <div class="vat-stat-sub">= المخرجات − المدخلات</div>
     <div class="vat-stat-count">{% if net >= 0 %}⚡ يجب السداد قبل نهاية الفترة{% else %}♻️ قابل للترحيل أو الاسترداد{% endif %}</div>
@@ -215,61 +253,57 @@
 <div class="vat-decl-card">
   <div class="vat-decl-header">
     <h3>📋 ملخص الإقرار الضريبي الرسمي</h3>
-    <span style="font-size:.8rem;color:#64748b">الفترة: {{ date_from }} — {{ date_to }}</span>
+    <span class="u_000f60d78d">الفترة: {{ date_from }} — {{ date_to }}</span>
   </div>
   <table class="vat-decl-table">
     <thead>
       <tr>
         <th>البيان</th>
-        <th class="num">الوعاء الخاضع للضريبة (ر.س)</th>
-        <th class="num">ضريبة القيمة المضافة 15% (ر.س)</th>
+        <th class="num">الوعاء الخاضع للضريبة ({{ currency_symbol }})</th>
+        <th class="num">{{ tax_label_ar }} {{ tax_rate_text }}% ({{ currency_symbol }})</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td>
-          <div style="display:flex;align-items:center;gap:12px">
-            <span style="width:34px;height:34px;border-radius:9px;background:rgba(16,185,129,.15);
-                         display:flex;align-items:center;justify-content:center;flex-shrink:0">📤</span>
+          <div class="u_95fd837ece">
+            <span class="u_6b12b0a3d0">📤</span>
             <div>
-              <div style="font-weight:600">المبيعات الخاضعة للضريبة (المخرجات)</div>
-              <div style="font-size:.75rem;color:#64748b">{{ sales_vat.count or 0 }} فاتورة مبيعات</div>
+              <div class="u_eed0f8fb89">المبيعات الخاضعة للضريبة (المخرجات)</div>
+              <div class="u_cd06ec2145">{{ sales_vat.count or 0 }} فاتورة مبيعات</div>
             </div>
           </div>
         </td>
-        <td class="num" style="font-weight:600">{{ "%.2f"|format(sales_vat.subtotal) }}</td>
-        <td class="num" style="color:#10b981;font-weight:700;font-size:1.05rem">{{ "%.2f"|format(sales_vat.vat) }}</td>
+        <td class="num u_eed0f8fb89">{{ "%.2f"|format(sales_vat.subtotal) }}</td>
+        <td class="num u_888ed95c3c">{{ "%.2f"|format(sales_vat.vat) }}</td>
       </tr>
       <tr>
         <td>
-          <div style="display:flex;align-items:center;gap:12px">
-            <span style="width:34px;height:34px;border-radius:9px;background:rgba(99,102,241,.15);
-                         display:flex;align-items:center;justify-content:center;flex-shrink:0">📥</span>
+          <div class="u_95fd837ece">
+            <span class="u_92bde962e8">📥</span>
             <div>
-              <div style="font-weight:600">المشتريات الخاضعة للضريبة (المدخلات)</div>
-              <div style="font-size:.75rem;color:#64748b">{{ purch_vat.count or 0 }} فاتورة مشتريات</div>
+              <div class="u_eed0f8fb89">المشتريات الخاضعة للضريبة (المدخلات)</div>
+              <div class="u_cd06ec2145">{{ purch_vat.count or 0 }} فاتورة مشتريات</div>
             </div>
           </div>
         </td>
-        <td class="num" style="font-weight:600">{{ "%.2f"|format(purch_vat.subtotal) }}</td>
-        <td class="num" style="color:#6366f1;font-weight:700;font-size:1.05rem">{{ "%.2f"|format(purch_vat.vat) }}</td>
+        <td class="num u_eed0f8fb89">{{ "%.2f"|format(purch_vat.subtotal) }}</td>
+        <td class="num u_fd67d298d8">{{ "%.2f"|format(purch_vat.vat) }}</td>
       </tr>
       <tr class="total-row">
         <td>
-          <div style="display:flex;align-items:center;gap:12px">
-            <span style="width:34px;height:34px;border-radius:9px;
-              background:{% if net_vat >= 0 %}rgba(239,68,68,.15){% else %}rgba(16,185,129,.15){% endif %};
-              display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <div class="u_95fd837ece">
+            <span class="vat-status-icon {% if net_vat >= 0 %}is-due{% else %}is-credit{% endif %}">
               {% if net_vat >= 0 %}💳{% else %}💰{% endif %}
             </span>
             <div>
               <div>{% if net_vat >= 0 %}صافي الضريبة المستحقة للهيئة{% else %}رصيد ضريبي لصالحك{% endif %}</div>
-              <div style="font-size:.75rem;color:#64748b;font-weight:400">= المخرجات − المدخلات</div>
+              <div class="u_85be2544dd">= المخرجات − المدخلات</div>
             </div>
           </div>
         </td>
         <td></td>
-        <td class="num" style="font-size:1.35rem;color:{% if net_vat >= 0 %}#ef4444{% else %}#10b981{% endif %}">
+        <td class="num vat-net-value {% if net_vat >= 0 %}is-due{% else %}is-credit{% endif %}">
           {{ "%.2f"|format(net_vat|abs) }}
         </td>
       </tr>
@@ -278,12 +312,12 @@
   {% if net_vat > 0 %}
   <div class="vat-alert due">
     <span class="vat-alert-icon">🔴</span>
-    <span>يجب سداد <strong>{{ "%.2f"|format(net_vat) }} ر.س</strong> لهيئة الزكاة والضريبة والجمارك قبل نهاية الفترة الضريبية. سجّل الدخول لبوابة <strong>فاتورة</strong> لرفع الإقرار إلكترونياً.</span>
+    <span>يجب سداد <strong>{{ "%.2f"|format(net_vat) }} {{ currency_symbol }}</strong> إلى {{ authority_name }} قبل نهاية الفترة الضريبية.</span>
   </div>
   {% elif net_vat < 0 %}
   <div class="vat-alert credit">
     <span class="vat-alert-icon">✅</span>
-    <span>لديك رصيد ضريبي قدره <strong>{{ "%.2f"|format(net_vat|abs) }} ر.س</strong> يمكن ترحيله للفترة القادمة أو طلب استرداده من الهيئة.</span>
+    <span>لديك رصيد ضريبي قدره <strong>{{ "%.2f"|format(net_vat|abs) }} {{ currency_symbol }}</strong> يمكن ترحيله للفترة القادمة أو طلب استرداده.</span>
   </div>
   {% else %}
   <div class="vat-alert zero">
@@ -297,13 +331,13 @@
 {% if sale_invoices %}
 <div class="vat-detail-card">
   <div class="vat-detail-header">
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="font-size:1.3rem">📤</span>
+    <div class="u_b87ca3241d">
+      <span class="u_27e46985ca">📤</span>
       <h4>تفاصيل فواتير المبيعات الخاضعة للضريبة</h4>
     </div>
     <span class="vat-count-badge">{{ sale_invoices|length }} فاتورة</span>
   </div>
-  <div style="overflow-x:auto">
+  <div class="u_0ddf068bfb">
     <table class="vat-detail-table">
       <thead>
         <tr>
@@ -312,21 +346,21 @@
           <th>اسم العميل</th>
           <th>الرقم الضريبي للعميل</th>
           <th class="num">وعاء الضريبة</th>
-          <th class="num">ضريبة 15%</th>
+          <th class="num">{{ tax_label_ar }} {{ tax_rate_text }}%</th>
           <th class="num">الإجمالي</th>
         </tr>
       </thead>
       <tbody>
         {% for inv in sale_invoices %}
         <tr>
-          <td><a href="{{ url_for('invoice_print', inv_id=inv.id) }}" class="inv-link" target="_blank">{{ inv.invoice_number }}</a></td>
+          <td><a href="{{ url_for('accounting.invoice_print', inv_id=inv.id) }}" class="inv-link" target="_blank">{{ inv.invoice_number }}</a></td>
           <td>{{ inv.invoice_date }}</td>
           <td>{{ inv.party_name or '—' }}</td>
-          <td dir="ltr" style="font-family:monospace;font-size:.82rem;color:{% if inv.party_vat %}#a5b4fc{% else %}#475569{% endif %}">
+          <td dir="ltr" class="vat-vat-code {% if inv.party_vat %}is-present{% else %}is-empty{% endif %}">
             {{ inv.party_vat or '—' }}
           </td>
           <td class="num">{{ "%.2f"|format(inv.subtotal) }}</td>
-          <td class="num" style="color:#10b981;font-weight:600">{{ "%.2f"|format(inv.tax_amount) }}</td>
+          <td class="num u_4b1fc20214">{{ "%.2f"|format(inv.tax_amount) }}</td>
           <td class="num"><strong>{{ "%.2f"|format(inv.total) }}</strong></td>
         </tr>
         {% endfor %}
@@ -334,9 +368,9 @@
     </table>
   </div>
   <div class="vat-detail-footer">
-    <div><span class="lbl">إجمالي الوعاء: </span><span class="val">{{ "%.2f"|format(sales_vat.subtotal) }} ر.س</span></div>
-    <div><span class="lbl">إجمالي الضريبة: </span><span class="val" style="color:#10b981">{{ "%.2f"|format(sales_vat.vat) }} ر.س</span></div>
-    <div><span class="lbl">الإجمالي شامل الضريبة: </span><span class="val">{{ "%.2f"|format(sales_vat.subtotal + sales_vat.vat) }} ر.س</span></div>
+    <div><span class="lbl">إجمالي الوعاء: </span><span class="val">{{ "%.2f"|format(sales_vat.subtotal) }} {{ currency_symbol }}</span></div>
+    <div><span class="lbl">إجمالي الضريبة: </span><span class="val u_acd97a46d0">{{ "%.2f"|format(sales_vat.vat) }} {{ currency_symbol }}</span></div>
+    <div><span class="lbl">الإجمالي شامل الضريبة: </span><span class="val">{{ "%.2f"|format(sales_vat.subtotal + sales_vat.vat) }} {{ currency_symbol }}</span></div>
   </div>
 </div>
 {% endif %}
@@ -345,13 +379,13 @@
 {% if purch_invoices %}
 <div class="vat-detail-card">
   <div class="vat-detail-header">
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="font-size:1.3rem">📥</span>
+    <div class="u_b87ca3241d">
+      <span class="u_27e46985ca">📥</span>
       <h4>تفاصيل فواتير المشتريات الخاضعة للضريبة</h4>
     </div>
-    <span class="vat-count-badge" style="background:rgba(99,102,241,.15);border-color:rgba(99,102,241,.3);color:#a5b4fc">{{ purch_invoices|length }} فاتورة</span>
+    <span class="vat-count-badge u_c19223dd36">{{ purch_invoices|length }} فاتورة</span>
   </div>
-  <div style="overflow-x:auto">
+  <div class="u_0ddf068bfb">
     <table class="vat-detail-table">
       <thead>
         <tr>
@@ -360,19 +394,19 @@
           <th>اسم المورد</th>
           <th>الرقم الضريبي للمورد</th>
           <th class="num">وعاء الضريبة</th>
-          <th class="num">ضريبة 15%</th>
+          <th class="num">{{ tax_label_ar }} {{ tax_rate_text }}%</th>
           <th class="num">الإجمالي</th>
         </tr>
       </thead>
       <tbody>
         {% for inv in purch_invoices %}
         <tr>
-          <td><span class="inv-link" style="color:#818cf8">{{ inv.invoice_number }}</span></td>
+          <td><span class="inv-link u_2a72108f46">{{ inv.invoice_number }}</span></td>
           <td>{{ inv.invoice_date }}</td>
           <td>{{ inv.party_name or '—' }}</td>
-          <td dir="ltr" style="font-family:monospace;font-size:.82rem;color:#64748b">{{ inv.party_vat or '—' }}</td>
+          <td dir="ltr" class="u_4a6119ba56">{{ inv.party_vat or '—' }}</td>
           <td class="num">{{ "%.2f"|format(inv.subtotal) }}</td>
-          <td class="num" style="color:#6366f1;font-weight:600">{{ "%.2f"|format(inv.tax_amount) }}</td>
+          <td class="num u_34a472721e">{{ "%.2f"|format(inv.tax_amount) }}</td>
           <td class="num"><strong>{{ "%.2f"|format(inv.total) }}</strong></td>
         </tr>
         {% endfor %}
@@ -380,9 +414,9 @@
     </table>
   </div>
   <div class="vat-detail-footer">
-    <div><span class="lbl">إجمالي الوعاء: </span><span class="val">{{ "%.2f"|format(purch_vat.subtotal) }} ر.س</span></div>
-    <div><span class="lbl">إجمالي الضريبة: </span><span class="val" style="color:#6366f1">{{ "%.2f"|format(purch_vat.vat) }} ر.س</span></div>
-    <div><span class="lbl">الإجمالي شامل الضريبة: </span><span class="val">{{ "%.2f"|format(purch_vat.subtotal + purch_vat.vat) }} ر.س</span></div>
+    <div><span class="lbl">إجمالي الوعاء: </span><span class="val">{{ "%.2f"|format(purch_vat.subtotal) }} {{ currency_symbol }}</span></div>
+    <div><span class="lbl">إجمالي الضريبة: </span><span class="val u_dab557b96a">{{ "%.2f"|format(purch_vat.vat) }} {{ currency_symbol }}</span></div>
+    <div><span class="lbl">الإجمالي شامل الضريبة: </span><span class="val">{{ "%.2f"|format(purch_vat.subtotal + purch_vat.vat) }} {{ currency_symbol }}</span></div>
   </div>
 </div>
 {% endif %}
@@ -392,7 +426,7 @@
   <div class="vat-empty">
     <div class="vat-empty-icon">📊</div>
     <h3>لا توجد فواتير بضريبة في هذه الفترة</h3>
-    <p>جرّب تغيير نطاق التاريخ، أو أصدر فواتير مع تفعيل خيار "تطبيق ضريبة القيمة المضافة".</p>
+    <p>جرّب تغيير نطاق التاريخ، أو أصدر فواتير مع تفعيل خيار "تطبيق {{ tax_label_ar }}".</p>
   </div>
 </div>
 {% endif %}

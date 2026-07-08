@@ -13,12 +13,15 @@ from flask import (
 )
 
 from modules.config import CHECKOUT_LOCK_TIMEOUT_MS, CHECKOUT_LOCK_TTL_MS, CHECKOUT_MAX_RETRIES
+from modules.core_utils import table_exists as db_table_exists
 from modules.extensions import (
     get_db, get_account_id, next_entry_number, next_invoice_number, safe_sql_identifier
 )
 from modules.middleware import onboarding_required, require_perm, user_has_perm, write_audit_log
 from modules.runtime_services import acquire_business_lock, release_business_lock
+from modules.robot_runtime import process_invoice_robots
 from modules.security_hardening import register_security_incident
+from modules.sovereign_controls import ensure_sovereign_tables, get_active_cashier_lock
 from modules.terminology import get_terms
 from modules.unit_localization import get_market_packaging_terms
 from modules.validators import validate, V, SCHEMA_POS_CHECKOUT
@@ -28,11 +31,7 @@ bp = Blueprint("pos", __name__)
 
 
 def _table_exists(db, table_name):
-    row = db.execute(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
-        (table_name,)
-    ).fetchone()
-    return row is not None
+    return db_table_exists(db, table_name)
 
 
 def _column_exists(db, table_name, column_name):
@@ -67,11 +66,18 @@ def _ensure_pos_shift_tables(db):
     db.execute(
         "CREATE INDEX IF NOT EXISTS idx_pos_shifts_biz_opened_at ON pos_shifts(business_id, opened_at DESC)"
     )
-    if _table_exists(db, "invoices") and not _column_exists(db, "invoices", "pos_shift_id"):
-        try:
-            db.execute("ALTER TABLE invoices ADD COLUMN pos_shift_id INTEGER")
-        except Exception:
-            pass
+    if _table_exists(db, "invoices"):
+        compat_columns = {
+            "pos_shift_id": "ALTER TABLE invoices ADD COLUMN pos_shift_id INTEGER",
+            "payment_method": "ALTER TABLE invoices ADD COLUMN payment_method TEXT DEFAULT 'cash'",
+            "party_vat": "ALTER TABLE invoices ADD COLUMN party_vat TEXT DEFAULT ''",
+        }
+        for column_name, stmt in compat_columns.items():
+            if not _column_exists(db, "invoices", column_name):
+                try:
+                    db.execute(stmt)
+                except Exception:
+                    pass
 
 
 def _setting_int(db, business_id: int, key: str, default: int) -> int:
@@ -882,6 +888,16 @@ def api_pos_checkout():
     biz_id  = session["business_id"]
     user_id = session["user_id"]
     db      = get_db()
+    ensure_sovereign_tables(db)
+
+    active_lock = get_active_cashier_lock(db, int(biz_id), int(user_id))
+    if active_lock:
+        return jsonify({
+            "success": False,
+            "error": "تم تجميد هذا الكاشير بسبب تجاوز حد الإلغاء اليومي. التفعيل متاح من لوحة المالك فقط.",
+            "lock_id": int(active_lock.get("id") or 0),
+            "lock_reason": active_lock.get("lock_reason") or "",
+        }), 423
 
     # ── Validate top-level request ─────────────────────────────────────────
     top, errs = validate(data, SCHEMA_POS_CHECKOUT)
@@ -1040,26 +1056,34 @@ def api_pos_checkout():
                     continue
                 return jsonify({"success": False, "error": "قاعدة البيانات مشغولة، أعد المحاولة بعد لحظة"}), 503
 
-        inv_number  = next_invoice_number(db, biz_id)
-        je_sale_num = next_entry_number(db, biz_id)
-
-        db.execute(
-            """INSERT INTO invoices
-               (business_id, invoice_number, invoice_type, invoice_date,
-            subtotal, tax_amount, total, paid_amount, status, warehouse_id, created_by,
-            payment_method, party_id, party_name, pos_shift_id)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-            (biz_id, inv_number, "sale", today,
-             subtotal, tax_total, grand_total,
-             (0 if payment_method == "credit" else grand_total),
-             ("partial" if payment_method == "credit" else "paid"),
-             warehouse_id,
-             user_id,
-             payment_method,
-             (customer["id"] if customer else None),
-             (customer["name"] if customer else None),
-             pos_shift_id)
-        )
+        inv_number = None
+        je_sale_num = None
+        for _inv_try in range(3):
+            inv_number = next_invoice_number(db, biz_id)
+            je_sale_num = next_entry_number(db, biz_id)
+            try:
+                db.execute(
+                    """INSERT INTO invoices
+                       (business_id, invoice_number, invoice_type, invoice_date,
+                    subtotal, tax_amount, total, paid_amount, status, warehouse_id, created_by,
+                    payment_method, party_id, party_name, pos_shift_id)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (biz_id, inv_number, "sale", today,
+                     subtotal, tax_total, grand_total,
+                     (0 if payment_method == "credit" else grand_total),
+                     ("partial" if payment_method == "credit" else "paid"),
+                     warehouse_id,
+                     user_id,
+                     payment_method,
+                     (customer["id"] if customer else None),
+                     (customer["name"] if customer else None),
+                     pos_shift_id)
+                )
+                break
+            except sqlite3.IntegrityError as ie:
+                if "invoices.business_id, invoices.invoice_number, invoices.invoice_type" in str(ie) and _inv_try < 2:
+                    continue
+                raise
         invoice_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
 
         for idx, item in enumerate(validated):
@@ -1101,16 +1125,28 @@ def api_pos_checkout():
                      -item["quantity"], item["purchase_price"], "invoice", invoice_id, user_id)
                 )
 
-        db.execute(
-            """INSERT INTO journal_entries
-               (business_id,entry_number,entry_date,description,
-                reference_type,reference_id,total_debit,total_credit,is_posted,created_by)
-               VALUES (?,?,?,?,?,?,?,?,1,?)""",
-            (biz_id, je_sale_num, today,
-             f"قيد مبيعات نقدية — فاتورة {inv_number}",
-             "invoice", invoice_id, grand_total, grand_total, user_id)
-        )
-        je_sale_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+        je_sale_id = None
+        for _je_try in range(3):
+            if _je_try:
+                je_sale_num = next_entry_number(db, biz_id)
+            try:
+                db.execute(
+                    """INSERT INTO journal_entries
+                       (business_id,entry_number,entry_date,description,
+                        reference_type,reference_id,total_debit,total_credit,is_posted,created_by)
+                       VALUES (?,?,?,?,?,?,?,?,1,?)""",
+                    (biz_id, je_sale_num, today,
+                     f"قيد مبيعات نقدية — فاتورة {inv_number}",
+                     "invoice", invoice_id, grand_total, grand_total, user_id)
+                )
+                je_sale_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+                break
+            except sqlite3.IntegrityError as _ie:
+                if "journal_entries.business_id, journal_entries.entry_number" in str(_ie) and _je_try < 2:
+                    continue
+                raise
+        if je_sale_id is None:
+            je_sale_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
 
         if payment_method == "cash":
             cash_label = "نقدية مقبوضة"
@@ -1146,17 +1182,27 @@ def api_pos_checkout():
             )
 
         if cogs_total > 0:
-            je_cogs_num = next_entry_number(db, biz_id)
-            db.execute(
-                """INSERT INTO journal_entries
-                   (business_id,entry_number,entry_date,description,
-                    reference_type,reference_id,total_debit,total_credit,is_posted,created_by)
-                   VALUES (?,?,?,?,?,?,?,?,1,?)""",
-                (biz_id, je_cogs_num, today,
-                 f"قيد تكلفة البضاعة المباعة — فاتورة {inv_number}",
-                 "invoice", invoice_id, cogs_total, cogs_total, user_id)
-            )
-            je_cogs_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+            je_cogs_id = None
+            for _cogs_try in range(3):
+                je_cogs_num = next_entry_number(db, biz_id)
+                try:
+                    db.execute(
+                        """INSERT INTO journal_entries
+                           (business_id,entry_number,entry_date,description,
+                            reference_type,reference_id,total_debit,total_credit,is_posted,created_by)
+                           VALUES (?,?,?,?,?,?,?,?,1,?)""",
+                        (biz_id, je_cogs_num, today,
+                         f"قيد تكلفة البضاعة المباعة — فاتورة {inv_number}",
+                         "invoice", invoice_id, cogs_total, cogs_total, user_id)
+                    )
+                    je_cogs_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+                    break
+                except sqlite3.IntegrityError as _ie:
+                    if "journal_entries.business_id, journal_entry_number" in str(_ie) and _cogs_try < 2:
+                        continue
+                    raise
+            if je_cogs_id is None:
+                je_cogs_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
             db.execute(
                 "INSERT INTO journal_entry_lines (entry_id,account_id,description,debit,credit,line_order) VALUES (?,?,?,?,?,?)",
                 (je_cogs_id, cogs_acc_id, "تكلفة البضاعة المباعة", cogs_total, 0, 1)
@@ -1167,6 +1213,19 @@ def api_pos_checkout():
             )
 
         db.commit()
+
+        robot_runtime = {"processed": 0, "triggered": 0, "notified": 0}
+        try:
+            robot_runtime = process_invoice_robots(
+                db,
+                business_id=int(biz_id),
+                invoice_id=int(invoice_id),
+                invoice_total=float(grand_total or 0),
+                actor_user_id=int(user_id or 0) or None,
+                source_channel="pos",
+            )
+        except Exception:
+            robot_runtime = {"processed": 0, "triggered": 0, "notified": 0}
 
         # ── ZATCA: أضف الفاتورة لقائمة الإرسال ─────────────────────────────
         try:
@@ -1188,6 +1247,7 @@ def api_pos_checkout():
                 "tax": tax_total,
                 "payment_method": payment_method,
                 "items_count": len(validated),
+                "robot_runtime": robot_runtime,
             }, ensure_ascii=False)
         )
 

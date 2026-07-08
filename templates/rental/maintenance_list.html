@@ -1,3 +1,18 @@
+<style>
+.u_6b00e75351{display:flex;gap:10px;}
+.u_5f40b9dc3a{color:#64748b;font-size:.82rem;}
+.u_0c0fb160af{background:rgba(255,255,255,.06);padding:2px 8px;border-radius:20px;font-size:.78rem;}
+.u_500e50569b{color:#94a3b8;font-size:.85rem;}
+.u_e695f226a6{color:#f59e0b;font-weight:700;}
+.u_aa3ee35a72{color:#94a3b8;}
+.u_03a959d93d{background:#14532d;color:#86efac;padding:2px 8px;border-radius:20px;font-size:.78rem;}
+.u_75bb4f52f8{background:#78350f;color:#fcd34d;padding:2px 8px;border-radius:20px;font-size:.78rem;}
+.u_612a65f696{text-align:center;color:#64748b;padding:40px;}
+.u_6add97efa7{max-width:480px;}
+.u_adf555b36b{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.u_97294b207c{grid-column:1/-1;}
+.u_5a7bda665c{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;}
+</style>
 ﻿{% extends "base.html" %}
 {% block title %}ط³ط¬ظ„ ط§ظ„طµظٹط§ظ†ط©{% endblock %}
 {% block page_title %}ًں”§ ط³ط¬ظ„ ط§ظ„طµظٹط§ظ†ط©{% endblock %}
@@ -5,7 +20,7 @@
 {% block content %}
 <div class="page-header">
   <div><p class="page-subtitle">{{ records|length }} ط³ط¬ظ„ طµظٹط§ظ†ط©</p></div>
-  <div style="display:flex;gap:10px;">
+  <div class="u_6b00e75351">
     <a href="/rental/fleet" class="btn btn-secondary">ًںڑ— ط§ظ„ط£ط³ط·ظˆظ„</a>
     <button class="btn btn-primary" onclick="document.getElementById('newMaintModal').classList.add('show')">+ ط¥ط¶ط§ظپط© ط³ط¬ظ„</button>
   </div>
@@ -19,10 +34,10 @@
     <tbody>
       {% for r in records %}
       <tr>
-        <td style="color:#64748b;font-size:.82rem;">{{ r.id }}</td>
+        <td class="u_5f40b9dc3a">{{ r.id }}</td>
         <td><strong>{{ r.vehicle_name or 'ظ…ط±ظƒط¨ط© #'~r.vehicle_id }}</strong></td>
         <td>
-          <span style="background:rgba(255,255,255,.06);padding:2px 8px;border-radius:20px;font-size:.78rem;">
+          <span class="u_0c0fb160af">
             {% if r.maintenance_type=='routine' %}ًں”„ ط¯ظˆط±ظٹط©
             {% elif r.maintenance_type=='repair' %}ًں”§ ط¥طµظ„ط§ط­
             {% elif r.maintenance_type=='inspection' %}ًں”چ ظپط­طµ
@@ -30,18 +45,18 @@
             {% else %}{{ r.maintenance_type or 'â€”' }}{% endif %}
           </span>
         </td>
-        <td style="color:#94a3b8;font-size:.85rem;">{{ r.description or 'â€”' }}</td>
-        <td style="color:#f59e0b;font-weight:700;">{{ "{:,.2f}".format(r.cost or 0) }} ط±.ط³</td>
-        <td style="color:#64748b;font-size:.82rem;">{{ r.maintenance_date or 'â€”' }}</td>
-        <td style="color:#94a3b8;">{{ r.service_provider or 'â€”' }}</td>
+        <td class="u_500e50569b">{{ r.description or 'â€”' }}</td>
+        <td class="u_e695f226a6">{{ "{:,.2f}".format(r.cost or 0) }} ط±.ط³</td>
+        <td class="u_5f40b9dc3a">{{ r.maintenance_date or 'â€”' }}</td>
+        <td class="u_aa3ee35a72">{{ r.service_provider or 'â€”' }}</td>
         <td>
-          {% if r.status=='completed' %}<span style="background:#14532d;color:#86efac;padding:2px 8px;border-radius:20px;font-size:.78rem;">âœ“ ظ…ظƒطھظ…ظ„</span>
-          {% elif r.status=='pending' %}<span style="background:#78350f;color:#fcd34d;padding:2px 8px;border-radius:20px;font-size:.78rem;">âڈ³ ظ…ط¹ظ„ظ‚</span>
-          {% else %}<span style="color:#94a3b8;">{{ r.status or 'â€”' }}</span>{% endif %}
+          {% if r.status=='completed' %}<span class="u_03a959d93d">âœ“ ظ…ظƒطھظ…ظ„</span>
+          {% elif r.status=='pending' %}<span class="u_75bb4f52f8">âڈ³ ظ…ط¹ظ„ظ‚</span>
+          {% else %}<span class="u_aa3ee35a72">{{ r.status or 'â€”' }}</span>{% endif %}
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="8" style="text-align:center;color:#64748b;padding:40px;">ظ„ط§ طھظˆط¬ط¯ ط³ط¬ظ„ط§طھ طµظٹط§ظ†ط©</td></tr>
+      <tr><td colspan="8" class="u_612a65f696">ظ„ط§ طھظˆط¬ط¯ ط³ط¬ظ„ط§طھ طµظٹط§ظ†ط©</td></tr>
       {% endfor %}
     </tbody>
   </table>
@@ -49,13 +64,13 @@
 
 <!-- Modal: ط³ط¬ظ„ طµظٹط§ظ†ط© ط¬ط¯ظٹط¯ -->
 <div class="modal-overlay" id="newMaintModal">
-  <div class="modal-box" style="max-width:480px;">
+  <div class="modal-box u_6add97efa7">
     <div class="modal-header">
       <h3 class="modal-title">ًں”§ ط¥ط¶ط§ظپط© ط³ط¬ظ„ طµظٹط§ظ†ط©</h3>
       <button class="modal-close" onclick="document.getElementById('newMaintModal').classList.remove('show')">âœ•</button>
     </div>
     <form method="post" action="/rental/maintenance/new">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="u_adf555b36b">
         <div class="form-group">
           <label class="form-label">ظ…ط¹ط±ظپ ط§ظ„ظ…ط±ظƒط¨ط© *</label>
           <input name="vehicle_id" class="form-input" type="number" placeholder="ط±ظ‚ظ… ط§ظ„ظ…ط±ظƒط¨ط©" required>
@@ -78,7 +93,7 @@
           <label class="form-label">طھط§ط±ظٹط® ط§ظ„طµظٹط§ظ†ط©</label>
           <input name="date" type="date" class="form-input">
         </div>
-        <div class="form-group" style="grid-column:1/-1;">
+        <div class="form-group u_97294b207c">
           <label class="form-label">ظ…ظ‚ط¯ظ… ط§ظ„ط®ط¯ظ…ط©</label>
           <input name="provider" class="form-input" placeholder="ظˆط±ط´ط© / ط´ط±ظƒط©...">
         </div>
@@ -87,7 +102,7 @@
         <label class="form-label">ظˆطµظپ ط§ظ„ط¹ظ…ظ„</label>
         <textarea name="description" class="form-input" rows="3" placeholder="طھظپط§طµظٹظ„ ط£ط¹ظ…ط§ظ„ ط§ظ„طµظٹط§ظ†ط©..."></textarea>
       </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <div class="u_5a7bda665c">
         <button type="button" class="btn btn-secondary" onclick="document.getElementById('newMaintModal').classList.remove('show')">ط¥ظ„ط؛ط§ط،</button>
         <button type="submit" class="btn btn-primary">âœ… ط­ظپط¸ ط§ظ„ط³ط¬ظ„</button>
       </div>

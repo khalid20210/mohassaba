@@ -21,6 +21,9 @@
   background:rgba(99,102,241,.2);border-color:rgba(99,102,241,.4);color:#a5b4fc}
 .an-section-title{font-size:1rem;font-weight:700;margin:0 0 16px;color:var(--text);
   display:flex;align-items:center;gap:8px}
+.u_9b87de6960{font-size:.72rem;font-weight:700;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em}
+.u_417a4feb6c{height:280px}
+.u_55e0e5a08e{font-size:2.5rem}
 </style>
 {% endblock %}
 
@@ -36,7 +39,7 @@
     </div>
   </div>
   <div>
-    <div style="font-size:.72rem;font-weight:700;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">تحديد الفترة</div>
+    <div class="u_9b87de6960">تحديد الفترة</div>
     <div class="an-period-pills">
       <a href="?period=7"   class="an-period-pill {% if period=='7'   %}active{% endif %}">7 أيام</a>
       <a href="?period=30"  class="an-period-pill {% if period=='30'  %}active{% endif %}">30 يوماً</a>
@@ -97,7 +100,7 @@
   {% if top_products %}
   <div class="an-charts-row">
     <div class="an-chart-card an-chart-wide">
-      <div class="an-chart-wrap" style="height:280px">
+      <div class="an-chart-wrap u_417a4feb6c">
         <canvas id="chartTop"></canvas>
       </div>
     </div>
@@ -128,7 +131,7 @@
   </div>
   {% else %}
   <div class="empty-state">
-    <div style="font-size:2.5rem">📭</div>
+    <div class="u_55e0e5a08e">📭</div>
     <p>لا توجد بيانات مبيعات في هذه الفترة</p>
   </div>
   {% endif %}

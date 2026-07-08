@@ -1,3 +1,21 @@
+<style>
+.u_6b99de8b69{display:none}
+.u_1b0f4999d2{margin-top:16px}
+.u_5af557a50a{min-width:220px}
+.u_581be415aa{width:90px}
+.u_c6fffdfe96{width:130px}
+.u_74196377f3{width:85px}
+.u_465bfea3ed{width:120px}
+.u_d6db40ea5a{width:40px}
+.u_56f4356299{margin-top:12px}
+.u_d6f2af6e0a{margin-top:14px}
+.u_49fcd855ce{margin-top:24px}
+.u_315a68ea29{color:#f59e0b;font-weight:700;margin-inline-start:6px}
+.u_71e179386f{max-width:760px}
+.u_761d3addb2{margin-bottom:10px}
+.change-cell-old{color:#b91c1c;font-weight:700}
+.change-cell-new{color:#166534;font-weight:700}
+</style>
 {% extends "base.html" %}
 {% block title %}أوامر البيع — الجملة{% endblock %}
 
@@ -13,7 +31,7 @@
 <!-- ═══════════════════════════════════════════════════════
      نموذج إنشاء أمر البيع
 ═══════════════════════════════════════════════════════ -->
-<div id="orderFormWrap" class="ord-form-wrap" style="display:none">
+<div id="orderFormWrap" class="ord-form-wrap u_6b99de8b69">
   <div class="card">
     <div class="card-header">
       <h4>📋 أمر بيع جملة جديد</h4>
@@ -56,7 +74,7 @@
               <option value="credit">📋 آجل (ذمم مدينة)</option>
             </select>
           </div>
-          <div class="form-group" id="dueDateGroup" style="display:none">
+          <div class="form-group u_6b99de8b69" id="dueDateGroup">
             <label class="form-label">تاريخ الاستحقاق</label>
             <input type="date" name="due_date" id="dueDateInput" class="form-control">
           </div>
@@ -73,7 +91,7 @@
         </div>
 
         <!-- بنود الأمر -->
-        <div class="pur-lines-header" style="margin-top:16px">
+        <div class="pur-lines-header u_1b0f4999d2">
           <span class="section-label">📦 بنود الأمر</span>
           <button type="button" class="btn btn-secondary btn-sm" onclick="addLine()">➕ إضافة صنف</button>
         </div>
@@ -82,12 +100,12 @@
           <table class="ord-lines-table">
             <thead>
               <tr>
-                <th style="min-width:220px">المنتج</th>
-                <th style="width:90px">الكمية</th>
-                <th style="width:130px">سعر الوحدة</th>
-                <th style="width:85px">خصم %</th>
-                <th style="width:120px">صافي السطر</th>
-                <th style="width:40px"></th>
+                <th class="u_5af557a50a">المنتج</th>
+                <th class="u_581be415aa">الكمية</th>
+                <th class="u_c6fffdfe96">سعر الوحدة</th>
+                <th class="u_74196377f3">خصم %</th>
+                <th class="u_465bfea3ed">صافي السطر</th>
+                <th class="u_d6db40ea5a"></th>
               </tr>
             </thead>
             <tbody id="linesBody"></tbody>
@@ -96,7 +114,7 @@
         <p id="linesEmpty" class="ord-lines-empty">أضف صنفاً واحداً على الأقل</p>
 
         <!-- شريط الإجماليات -->
-        <div class="pur-totals-bar" style="margin-top:12px">
+        <div class="pur-totals-bar u_56f4356299">
           <div class="totals-row"><span>المجموع قبل الخصم:</span><strong id="tSubBefore">0.00</strong></div>
           <div class="totals-row"><span>الخصم الإجمالي:</span><strong id="tDisc" class="text-danger">0.00-</strong></div>
           <div class="totals-row"><span>صافي المبيعات:</span><strong id="tSubNet">0.00</strong></div>
@@ -105,7 +123,7 @@
         </div>
 
         <!-- ملاحظات -->
-        <div class="form-group" style="margin-top:14px">
+        <div class="form-group u_d6f2af6e0a">
           <label class="form-label">ملاحظات</label>
           <textarea name="notes" class="form-control" rows="2"
                     placeholder="شروط التسليم، تعليمات خاصة..."></textarea>
@@ -126,12 +144,12 @@
 <!-- ═══════════════════════════════════════════════════════
      جدول الأوامر السابقة
 ═══════════════════════════════════════════════════════ -->
-<div class="card" style="margin-top:24px">
+<div class="card u_49fcd855ce">
   <div class="card-header">
     <h4>📄 الأوامر السابقة</h4>
     <form class="search-bar-form" method="GET" action="/orders">
       <input class="form-control form-control-sm" name="q" value="{{ q }}" placeholder="ابحث برقم الأمر أو العميل...">
-      <button class="btn btn-secondary btn-sm">🔍</button>
+      <button type="submit" class="btn btn-secondary btn-sm">🔍</button>
     </form>
   </div>
 
@@ -158,7 +176,7 @@
           <td>
             <span class="ord-num-badge">{{ inv.invoice_number }}</span>
             {% if inv.has_modifications %}
-            <span title="تم تعديل/إلغاء هذه الفاتورة" style="color:#f59e0b;font-weight:700;margin-inline-start:6px">⚠️</span>
+            <span title="تم تعديل/إلغاء هذه الفاتورة" class="u_315a68ea29">⚠️</span>
             {% endif %}
           </td>
           <td class="muted-cell">{{ inv.invoice_date }}</td>
@@ -221,8 +239,8 @@
   {% endif %}
 </div>
 
-<div id="changeModal" class="tbl-modal-overlay" style="display:none" onclick="closeChangeModalOutside(event)">
-  <div class="tbl-modal-box" style="max-width:760px">
+<div id="changeModal" class="tbl-modal-overlay u_6b99de8b69" onclick="closeChangeModalOutside(event)">
+  <div class="tbl-modal-box u_71e179386f">
     <div class="tbl-modal-head">
       <div class="tbl-modal-title-group">
         <h3>⚠️ مقارنة التعديل</h3>
@@ -230,7 +248,7 @@
       <button class="btn-icon-close" onclick="closeChangeModal()">✕</button>
     </div>
     <div class="tbl-modal-body">
-      <div id="changeMeta" class="muted-cell" style="margin-bottom:10px"></div>
+      <div id="changeMeta" class="muted-cell u_761d3addb2"></div>
       <table class="data-table">
         <thead>
           <tr><th>الحقل</th><th>القيمة السابقة</th><th>القيمة الحالية</th></tr>
@@ -466,12 +484,12 @@ async function showInvoiceChanges(invoiceId) {
 
   document.getElementById('changeBody').innerHTML = rows.map(([label, oldV, newV]) => {
     const changed = String(oldV) !== String(newV);
-    const oldStyle = changed ? 'color:#b91c1c;font-weight:700' : '';
-    const newStyle = changed ? 'color:#166534;font-weight:700' : '';
+    const oldCls = changed ? 'change-cell-old' : '';
+    const newCls = changed ? 'change-cell-new' : '';
     return `<tr>
       <td>${escHtml(label)}</td>
-      <td style="${oldStyle}">${escHtml(oldV)}</td>
-      <td style="${newStyle}">${escHtml(newV)}</td>
+      <td class="${oldCls}">${escHtml(oldV)}</td>
+      <td class="${newCls}">${escHtml(newV)}</td>
     </tr>`;
   }).join('');
 

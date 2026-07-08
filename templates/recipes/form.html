@@ -37,13 +37,22 @@
          cursor:pointer; border:1px solid transparent; text-decoration:none; display:inline-block; }
   .btn-primary { background:#3b82f6; color:#fff; border-color:#3b82f6; }
   .btn-outline  { background:#fff; color:#374151; border-color:#d1d5db; }
+.u_e3f687b102{display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;}
+.u_53c1c56fc5{margin:0; font-size:1.4rem; font-weight:700;}
+.u_41790efd92{margin-top:.75rem; font-size:.82rem;}
+.u_c8be1ccba6{display:none;}
+.u_3eca75a4c9{display:flex; gap:.75rem; margin-top:1.25rem;}
+.u_4a81fa732d{max-width:90px;}
+.u_068d27fd83{max-width:80px;}
+.u_846aa05bee{color:#059669; font-weight:600;}
+.u_f8b66f4cd7{color:#ef4444; background:none; border:none; cursor:pointer;}
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
+<div class="u_e3f687b102">
   <a href="{{ url_for('recipes.list_recipes') }}" class="btn btn-outline">← العودة</a>
-  <h1 style="margin:0; font-size:1.4rem; font-weight:700;">
+  <h1 class="u_53c1c56fc5">
     {{ 'تعديل: ' + recipe.recipe_name if recipe else 'إضافة وصفة جديدة' }}
   </h1>
 </div>
@@ -148,15 +157,15 @@
       <tbody id="ing-tbody"></tbody>
     </table>
 
-    <button type="button" onclick="addIngredient()" class="btn btn-outline"
-            style="margin-top:.75rem; font-size:.82rem;">+ إضافة مكوّن</button>
+    <button type="button" onclick="addIngredient()" class="btn btn-outline u_41790efd92"
+           >+ إضافة مكوّن</button>
 
-    <div class="cost-preview" id="cost-preview" style="display:none;">
+    <div class="cost-preview u_c8be1ccba6" id="cost-preview">
       تكلفة الوصفة المقدّرة: <strong id="cost-val">0.000</strong> / حصة
     </div>
   </div>
 
-  <div style="display:flex; gap:.75rem; margin-top:1.25rem;">
+  <div class="u_3eca75a4c9">
     <button type="submit" class="btn btn-primary">
       {{ 'حفظ التعديلات' if recipe else 'إضافة الوصفة' }}
     </button>
@@ -191,16 +200,15 @@ function renderIngredients() {
         </td>
         <td>
           <input type="number" min="0.001" step="0.001" value="${ing.quantity||1}"
-                 oninput="ingChange(${i},'quantity',parseFloat(this.value)||0)" style="max-width:90px;">
+                 oninput="ingChange(${i},'quantity',parseFloat(this.value)||0)" class="u_4a81fa732d">
         </td>
         <td>
           <input type="text" maxlength="20" value="${ing.unit||'وحدة'}"
-                 oninput="ingChange(${i},'unit',this.value)" style="max-width:80px;">
+                 oninput="ingChange(${i},'unit',this.value)" class="u_068d27fd83">
         </td>
-        <td style="color:#059669; font-weight:600;">${estCost.toFixed(3)}</td>
+        <td class="u_846aa05bee">${estCost.toFixed(3)}</td>
         <td>
-          <button type="button" onclick="removeIngredient(${i})"
-                  style="color:#ef4444; background:none; border:none; cursor:pointer;">✕</button>
+          <button type="button" onclick="removeIngredient(${i})" class="u_f8b66f4cd7">✕</button>
         </td>
       </tr>`;
   });

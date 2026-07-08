@@ -1,3 +1,28 @@
+<style>
+.u_8677744d08{margin-bottom:24px}
+.u_3bfd47603c{flex-direction:column;gap:12px;align-items:flex-start;padding:20px}
+.u_ba1aab4093{font-size:2rem}
+.u_f15bdb61bd{font-size:1.1rem}
+.u_8da2fae749{align-self:stretch;text-align:center}
+.u_cda87a9e8b{flex-direction:column;gap:10px;align-items:flex-start;padding:20px}
+.u_9ececd8a25{font-size:.8rem;color:var(--text-muted);padding-right:16px;margin:8px 0 0;line-height:1.9}
+.u_53749a280d{margin-bottom:20px;border:2px dashed var(--border)}
+.u_67c0d53cdc{padding:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.u_55e0e5a08e{font-size:2.5rem}
+.u_97445a8d93{flex:1}
+.u_3bb9bd94c8{font-size:.85rem;color:var(--text-muted)}
+.u_1fe8667280{font-size:.82rem}
+.backup-type-badge{padding:2px 8px;border-radius:12px;font-size:.75rem;display:inline-block}
+.backup-type-manual{background:#dbeafe;color:#1d4ed8}
+.backup-type-scheduled{background:#dcfce7;color:#15803d}
+.u_111ad630c6{padding:40px;text-align:center;color:var(--text-muted)}
+.u_8a77e5a311{margin-top:8px}
+.u_56f4356299{margin-top:12px}
+.u_a26bda7d11{margin-top:20px}
+.u_3f81460795{padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.u_df671843ff{margin:0 0 8px}
+.u_df4dc7334a{font-size:.82rem;color:var(--text-muted);margin:0 0 12px}
+</style>
 {% extends "base.html" %}
 {% block title %}النسخ الاحتياطية{% endblock %}
 
@@ -10,26 +35,26 @@
 </div>
 
 <!-- بطاقات الإجراءات -->
-<div class="stats-grid" style="margin-bottom:24px">
+<div class="stats-grid u_8677744d08">
 
   <!-- نسخة كاملة -->
-  <div class="stat-card" style="flex-direction:column;gap:12px;align-items:flex-start;padding:20px">
-    <div style="font-size:2rem">📦</div>
+  <div class="stat-card u_3bfd47603c">
+    <div class="u_ba1aab4093">📦</div>
     <div>
-      <div class="stat-value" style="font-size:1.1rem">نسخة شاملة</div>
+      <div class="stat-value u_f15bdb61bd">نسخة شاملة</div>
       <div class="stat-label">جميع البيانات: منتجات، فواتير، محاسبة، جهات الاتصال</div>
     </div>
-    <a href="/api/v1/backup/download" class="btn btn-primary" style="align-self:stretch;text-align:center">
+    <a href="/api/v1/backup/download" class="btn btn-primary u_8da2fae749">
       ⬇️ تحميل JSON الآن
     </a>
   </div>
 
   <!-- معلومات -->
-  <div class="stat-card" style="flex-direction:column;gap:10px;align-items:flex-start;padding:20px">
-    <div style="font-size:2rem">ℹ️</div>
+  <div class="stat-card u_cda87a9e8b">
+    <div class="u_ba1aab4093">ℹ️</div>
     <div>
-      <div class="stat-value" style="font-size:1.1rem">ما يشمله الملف</div>
-      <ul style="font-size:.8rem;color:var(--text-muted);padding-right:16px;margin:8px 0 0;line-height:1.9">
+      <div class="stat-value u_f15bdb61bd">ما يشمله الملف</div>
+      <ul class="u_9ececd8a25">
         <li>بيانات المنشأة والمستخدمون</li>
         <li>جميع المنتجات والمخزون</li>
         <li>الفواتير وبنودها</li>
@@ -41,11 +66,11 @@
   </div>
 
   <!-- تعليمات الاستيراد -->
-  <div class="stat-card" style="flex-direction:column;gap:10px;align-items:flex-start;padding:20px">
-    <div style="font-size:2rem">📋</div>
+  <div class="stat-card u_cda87a9e8b">
+    <div class="u_ba1aab4093">📋</div>
     <div>
-      <div class="stat-value" style="font-size:1.1rem">للاستيراد والتوافق</div>
-      <ul style="font-size:.8rem;color:var(--text-muted);padding-right:16px;margin:8px 0 0;line-height:1.9">
+      <div class="stat-value u_f15bdb61bd">للاستيراد والتوافق</div>
+      <ul class="u_9ececd8a25">
         <li>الملف بتنسيق JSON قياسي</li>
         <li>يعمل مع PostgreSQL عند الترقية</li>
         <li>يحتوي metadata للإصدار</li>
@@ -56,12 +81,12 @@
 </div>
 
 <!-- توصيات الجدولة -->
-<div class="card" style="margin-bottom:20px;border:2px dashed var(--border)">
-  <div style="padding:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-    <div style="font-size:2.5rem">📅</div>
-    <div style="flex:1">
+<div class="card u_53749a280d">
+  <div class="u_67c0d53cdc">
+    <div class="u_55e0e5a08e">📅</div>
+    <div class="u_97445a8d93">
       <strong>توصية الجدولة</strong><br>
-      <span style="font-size:.85rem;color:var(--text-muted)">
+      <span class="u_3bb9bd94c8">
         لضمان سلامة بياناتك: نسخ يدوي <strong>أسبوعياً</strong> على الأقل.
         احفظ الملف في Google Drive أو OneDrive أو قرص خارجي.
       </span>
@@ -90,11 +115,9 @@
     <tbody>
       {% for log in backup_logs %}
       <tr>
-        <td style="font-size:.82rem">{{ log.created_at[:16] }}</td>
+        <td class="u_1fe8667280">{{ log.created_at[:16] }}</td>
         <td>
-          <span style="padding:2px 8px;border-radius:12px;font-size:.75rem;
-                background:{% if log.backup_type=='manual' %}#dbeafe{% else %}#dcfce7{% endif %};
-                color:{% if log.backup_type=='manual' %}#1d4ed8{% else %}#15803d{% endif %}">
+          <span class="backup-type-badge {% if log.backup_type=='manual' %}backup-type-manual{% else %}backup-type-scheduled{% endif %}">
             {% if log.backup_type == 'manual' %}يدوي{% else %}مجدوَل{% endif %}
           </span>
         </td>
@@ -105,30 +128,30 @@
     </tbody>
   </table>
   {% else %}
-  <div style="padding:40px;text-align:center;color:var(--text-muted)">
-    <div style="font-size:2.5rem">💾</div>
-    <p style="margin-top:8px">لا توجد نسخ سابقة — قم بإنشاء أولى النسخ الآن</p>
-    <a href="/api/v1/backup/download" class="btn btn-primary" style="margin-top:12px">⬇️ إنشاء نسخة احتياطية</a>
+  <div class="u_111ad630c6">
+    <div class="u_55e0e5a08e">💾</div>
+    <p class="u_8a77e5a311">لا توجد نسخ سابقة — قم بإنشاء أولى النسخ الآن</p>
+    <a href="/api/v1/backup/download" class="btn btn-primary u_56f4356299">⬇️ إنشاء نسخة احتياطية</a>
   </div>
   {% endif %}
 </div>
 
 <!-- قسم استيراد Excel -->
-<div class="card" style="margin-top:20px">
+<div class="card u_a26bda7d11">
   <div class="card-header">
     <span class="card-title">📊 استيراد وتصدير Excel</span>
   </div>
-  <div style="padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+  <div class="u_3f81460795">
     <div>
-      <h4 style="margin:0 0 8px">استيراد المنتجات</h4>
-      <p style="font-size:.82rem;color:var(--text-muted);margin:0 0 12px">
+      <h4 class="u_df671843ff">استيراد المنتجات</h4>
+      <p class="u_df4dc7334a">
         رفع ملف Excel بقائمة المنتجات (الاسم، الباركود، السعر، الكمية)
       </p>
       <a href="/purchase-import" class="btn btn-outline">📥 استيراد المنتجات</a>
     </div>
     <div>
-      <h4 style="margin:0 0 8px">تصدير التقارير</h4>
-      <p style="font-size:.82rem;color:var(--text-muted);margin:0 0 12px">
+      <h4 class="u_df671843ff">تصدير التقارير</h4>
+      <p class="u_df4dc7334a">
         تصدير الفواتير والمبيعات بصيغة Excel من صفحة التقارير
       </p>
       <a href="/reports" class="btn btn-outline">📈 التقارير</a>

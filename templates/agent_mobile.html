@@ -98,6 +98,42 @@ select.inp option{background:var(--bg2)}
 .reminder-days{font-size:1.1rem;font-weight:900;color:var(--red)}
 .spinner{text-align:center;color:var(--muted);padding:20px;font-size:.82rem}
 @media(min-width:481px){ #app{border-left:1px solid var(--border);border-right:1px solid var(--border)} }
+.u_015a5e7fbe{display:flex;align-items:center;gap:8px}
+.u_faac8837d6{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:4px 8px;color:#f87171;cursor:pointer;font-size:.72rem;font-family:inherit}
+.u_763908b9ab{display:none;font-size:.7rem;padding:2px 8px;border-radius:20px;border:1px solid #f59e0b;color:#f59e0b;font-weight:700;align-items:center;gap:4px}
+.u_115ac87d9c{display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px}
+.u_57f9e31d78{color:var(--muted)}
+.u_d2fba0f353{width:0%}
+.u_ca61401ab7{text-align:center;font-size:.78rem;color:var(--muted)}
+.u_f3c13b5701{text-align:center;color:var(--muted);font-size:.82rem;margin-bottom:8px}
+.u_761d3addb2{margin-bottom:10px}
+.u_7af9682282{font-size:.82rem;color:var(--muted)}
+.u_92fa2f5a0c{display:none;margin-bottom:8px}
+.u_d2c171b18b{margin-top:10px}
+.u_8a77e5a311{margin-top:8px}
+.u_6b99de8b69{display:none}
+.u_04a196f844{font-size:.75rem;color:var(--muted);margin-bottom:10px;text-align:left}
+.u_f1ae7018bf{font-size:.72rem;color:var(--muted);text-align:center;margin-top:8px}
+.u_4c90f03cb5{font-size:.75rem;color:var(--muted);margin-bottom:8px;min-height:18px}
+.u_b37b9a5a64{display:flex;gap:8px;margin-bottom:10px}
+.u_97445a8d93{flex:1}
+.u_d86c9098d5{font-size:.83rem;font-weight:700}
+.u_27e09ca548{font-size:.7rem;color:var(--muted)}
+.u_7f24e27d60{color:var(--green)}
+.u_492c8f92f2{padding:6px}
+.u_683f838bdc{font-size:.75rem;color:var(--accent)}
+.u_e791439fd7{color:#60a5fa;text-decoration:none}
+.u_da12f2858b{margin-bottom:12px}
+.u_129410bdda{font-size:.78rem;color:var(--muted);margin-bottom:10px;line-height:1.6}
+.u_a3d12b9b83{display:flex;justify-content:space-between}
+.u_1fe8667280{font-size:.82rem}
+.u_7026cc0fc2{color:var(--green);font-weight:700}
+.u_f095a805a3{font-size:.72rem;color:var(--muted);margin-top:4px}
+.u_77c27e664b{color:#4ade80}
+.u_f1449693ba{color:#60a5fa;font-size:.72rem}
+.u_c74e3dec9f{font-size:.72rem;color:var(--muted);margin-top:3px}
+.u_21fa43a842{font-size:.78rem;color:var(--muted);margin-bottom:8px}
+.u_690889226a{display:block;padding:8px 12px;margin-bottom:6px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:10px;color:#4ade80;text-decoration:none;font-size:.82rem}
 </style>
 </head>
 <body>
@@ -109,12 +145,11 @@ select.inp option{background:var(--bg2)}
         <div class="hdr-name">{{ agent.full_name }}</div>
         <div class="hdr-meta">كود: AGT-{{ '%03d'|format(agent.id) }} • عمولة {{ '%.1f'|format(agent.commission_rate or 0) }}%</div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px">
+      <div class="u_015a5e7fbe">
         <div class="battery-bar" id="batteryDisplay">
           <span class="battery-icon">🔋</span><span id="batteryPct">--</span>
         </div>
-        <button onclick="agentLogout()" title="تسجيل الخروج"
-          style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:4px 8px;color:#f87171;cursor:pointer;font-size:.72rem;font-family:inherit">
+        <button onclick="agentLogout()" title="تسجيل الخروج" class="u_faac8837d6">
           خروج
         </button>
       </div>
@@ -123,7 +158,7 @@ select.inp option{background:var(--bg2)}
       <span class="badge badge-yellow" id="attBadge">⏺ غير مسجّل</span>
       <span class="badge badge-blue" id="netBadge">🌐 متصل</span>
       <span class="badge badge-purple" id="targetBadge">🎯 --</span>
-      <span id="offlineBadge" style="display:none;font-size:.7rem;padding:2px 8px;border-radius:20px;border:1px solid #f59e0b;color:#f59e0b;font-weight:700;align-items:center;gap:4px">
+      <span id="offlineBadge" class="u_763908b9ab">
         💾 <span></span>
       </span>
     </div>
@@ -143,16 +178,16 @@ select.inp option{background:var(--bg2)}
       </div>
       <div class="card">
         <div class="card-title">🎯 هدف الشهر</div>
-        <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px">
+        <div class="u_115ac87d9c">
           <span id="targetAchieved">0 ر.س</span>
-          <span id="targetTotal" style="color:var(--muted)">من: 0 ر.س</span>
+          <span id="targetTotal" class="u_57f9e31d78">من: 0 ر.س</span>
         </div>
-        <div class="target-bar-wrap"><div class="target-bar-fill" id="targetFill" style="width:0%"></div></div>
-        <div style="text-align:center;font-size:.78rem;color:var(--muted)" id="targetPct">0%</div>
+        <div class="target-bar-wrap"><div class="target-bar-fill u_d2fba0f353" id="targetFill"></div></div>
+        <div id="targetPct" class="u_ca61401ab7">0%</div>
       </div>
       <div class="card">
         <div class="card-title">🕐 الحضور والانصراف</div>
-        <div id="attStatus" style="text-align:center;color:var(--muted);font-size:.82rem;margin-bottom:8px">جارٍ التحقق...</div>
+        <div id="attStatus" class="u_f3c13b5701">جارٍ التحقق...</div>
         <div class="att-row">
           <button class="btn btn-green" onclick="recordCheckin()">✅ تسجيل حضور</button>
           <button class="btn btn-red" onclick="recordCheckout()">🚪 انصراف</button>
@@ -171,17 +206,17 @@ select.inp option{background:var(--bg2)}
         <input class="inp" id="invClient" placeholder="اسم العميل *">
         <input class="inp" id="invPhone" placeholder="رقم جوال العميل (للواتساب)" type="tel">
         <input class="inp" id="invNotes" placeholder="ملاحظات">
-        <button class="btn btn-outline" style="margin-bottom:10px" onclick="openProductPicker()">📦 اختر من الكاتالوج</button>
+        <button class="btn btn-outline u_761d3addb2" onclick="openProductPicker()">📦 اختر من الكاتالوج</button>
         <div id="invLines"></div>
-        <button class="btn btn-outline btn-sm" style="margin-bottom:10px" onclick="addInvLine()">+ سطر يدوي</button>
+        <button class="btn btn-outline btn-sm u_761d3addb2" onclick="addInvLine()">+ سطر يدوي</button>
         <div class="inv-total-row">
-          <span style="font-size:.82rem;color:var(--muted)">الإجمالي</span>
+          <span class="u_7af9682282">الإجمالي</span>
           <span class="inv-total-val" id="invTotal">0.00 ر.س</span>
         </div>
-        <div id="invoiceDiscountRow" style="display:none;margin-bottom:8px">
+        <div id="invoiceDiscountRow" class="u_92fa2f5a0c">
           <input class="inp" id="invDiscount" placeholder="خصم (ر.س أو %)" type="number" step="0.5" min="0">
         </div>
-        <button class="btn btn-primary" style="margin-top:10px" onclick="submitInvoice()">✅ إصدار وإرسال واتساب</button>
+        <button class="btn btn-primary u_d2c171b18b" onclick="submitInvoice()">✅ إصدار وإرسال واتساب</button>
       </div>
     </div>
 
@@ -191,7 +226,7 @@ select.inp option{background:var(--bg2)}
         <div class="card-title">🏢 منشآت عملائي</div>
         <input class="inp" id="clientSearch" placeholder="🔍 بحث..." oninput="filterClients()">
         <div id="clientsList"><div class="spinner">جارٍ التحميل...</div></div>
-        <button id="addClientBtn" class="btn btn-outline btn-sm" style="margin-top:8px" onclick="openModal('addClientModal')">+ إضافة منشأة</button>
+        <button id="addClientBtn" class="btn btn-outline btn-sm u_8a77e5a311" onclick="openModal('addClientModal')">+ إضافة منشأة</button>
       </div>
     </div>
 
@@ -211,7 +246,7 @@ select.inp option{background:var(--bg2)}
           <option value="neutral">محايد 😐</option>
           <option value="rejected">رفض ❌</option>
         </select>
-        <input class="inp" id="visitRejReason" placeholder="سبب الرفض" style="display:none">
+        <input class="inp u_6b99de8b69" id="visitRejReason" placeholder="سبب الرفض">
         <textarea class="inp" id="visitNotes" rows="3" placeholder="ملاحظات الزيارة..."></textarea>
         <button class="btn btn-primary" onclick="submitVisit()">💾 حفظ الزيارة</button>
       </div>
@@ -226,9 +261,9 @@ select.inp option{background:var(--bg2)}
       <div class="card">
         <div class="card-title">📢 إرسال عروض للعملاء</div>
         <textarea class="inp" id="offerMsg" rows="5" placeholder="اكتب نص العرض هنا..." oninput="document.getElementById('offerCC').textContent=this.value.length+' / 500'"></textarea>
-        <div style="font-size:.75rem;color:var(--muted);margin-bottom:10px;text-align:left" id="offerCC">0 / 500</div>
+        <div id="offerCC" class="u_04a196f844">0 / 500</div>
         <button class="btn btn-purple" onclick="generateOfferLinks()">📤 توليد روابط الإرسال</button>
-        <div id="offerResult" style="margin-top:10px"></div>
+        <div id="offerResult" class="u_d2c171b18b"></div>
       </div>
       <div class="card">
         <div class="card-title">📝 إرسال طلب مسودة للأدمن</div>
@@ -254,7 +289,7 @@ select.inp option{background:var(--bg2)}
         </select>
         <input class="inp" id="colNotes" placeholder="ملاحظات">
         <button class="btn btn-green" onclick="submitCollection()">✅ تسجيل التحصيل</button>
-        <p style="font-size:.72rem;color:var(--muted);text-align:center;margin-top:8px">⚠️ يحتاج تأكيد الأدمن</p>
+        <p class="u_f1ae7018bf">⚠️ يحتاج تأكيد الأدمن</p>
       </div>
     </div>
 
@@ -295,9 +330,9 @@ select.inp option{background:var(--bg2)}
     <textarea class="inp" id="ncNotes" rows="2" placeholder="ملاحظات"></textarea>
     <input type="hidden" id="ncLat">
     <input type="hidden" id="ncLng">
-    <div id="ncLocStatus" style="font-size:.75rem;color:var(--muted);margin-bottom:8px;min-height:18px"></div>
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <button class="btn btn-outline btn-sm" style="flex:1" onclick="captureClientLocation()">📍 تسجيل موقع المنشأة (GPS)</button>
+    <div id="ncLocStatus" class="u_4c90f03cb5"></div>
+    <div class="u_b37b9a5a64">
+      <button class="btn btn-outline btn-sm u_97445a8d93" onclick="captureClientLocation()">📍 تسجيل موقع المنشأة (GPS)</button>
     </div>
     <button class="btn btn-primary" onclick="saveNewClient()">✅ حفظ المنشأة</button>
   </div>
@@ -609,10 +644,10 @@ async function loadHomeData(){
     if(r.success&&r.reminders.length){
       wrap.innerHTML=r.reminders.slice(0,5).map(rem=>`
         <div class="reminder-item">
-          <div><div style="font-size:.83rem;font-weight:700">${esc(rem.name)}</div><div style="font-size:.7rem;color:var(--muted)">${esc(rem.phone||'')}</div></div>
+          <div><div class="u_d86c9098d5">${esc(rem.name)}</div><div class="u_27e09ca548">${esc(rem.phone||'')}</div></div>
           <div class="reminder-days">${rem.days_since}ي</div>
         </div>`).join('');
-    } else wrap.innerHTML='<div class="spinner" style="color:var(--green)">✅ جميع عملاؤك في دائرة الاهتمام</div>';
+    } else wrap.innerHTML='<div class="spinner u_7f24e27d60">✅ جميع عملاؤك في دائرة الاهتمام</div>';
   }catch{ document.getElementById('remindersWrap').innerHTML='' }
 }
 
@@ -631,7 +666,7 @@ function renderInvLines(){
       <input class="inp" value="${esc(l.name)}" placeholder="المنتج" oninput="invLines[${i}].name=this.value">
       <input class="inp" type="number" value="${l.qty}" min="0.01" step="0.01" oninput="invLines[${i}].qty=+this.value;calcTotal()">
       <input class="inp" type="number" value="${l.price}" min="0" step="0.01" oninput="invLines[${i}].price=+this.value;calcTotal()">
-      <button class="btn btn-red btn-sm" style="padding:6px" onclick="removeInvLine(${i})">✕</button>
+      <button class="btn btn-red btn-sm u_492c8f92f2" onclick="removeInvLine(${i})">✕</button>
     </div>`).join('');
   calcTotal();
 }
@@ -760,7 +795,7 @@ function renderClients(list){
         <div class="list-item-title">🏢 ${esc(c.company_name)}</div>
         <div class="list-item-sub">${esc(c.manager_name||'')}${c.region?' • '+esc(c.region):''}</div>
       </div>
-      <div class="list-item-right" style="font-size:.75rem;color:var(--accent)">${esc(c.phone||'')}</div>
+      <div class="list-item-right u_683f838bdc">${esc(c.phone||'')}</div>
     </div>`).join('');
 }
 
@@ -776,23 +811,23 @@ async function viewClient(contactId,name){
     const last=r.last_invoice;
     const c=r.contact;
     const mapLink = c.lat&&c.lng
-      ? `<a href="https://maps.google.com/?q=${c.lat},${c.lng}" target="_blank" style="color:#60a5fa;text-decoration:none">📍 عرض موقع المنشأة على الخريطة</a>`
+      ? `<a href="https://maps.google.com/?q=${c.lat},${c.lng}" target="_blank" class="u_e791439fd7">📍 عرض موقع المنشأة على الخريطة</a>`
       : '';
     document.getElementById('cdBody').innerHTML=`
-      <div class="kpi-grid" style="margin-bottom:12px">
+      <div class="kpi-grid u_da12f2858b">
         <div class="kpi"><b>${money(r.total_spend)}</b><span>إجمالي المشتريات</span></div>
         <div class="kpi"><b>${r.invoices.length}</b><span>فواتير</span></div>
         <div class="kpi"><b>${r.visits.length}</b><span>زيارات</span></div>
       </div>
-      ${c.region||c.address||mapLink?`<div style="font-size:.78rem;color:var(--muted);margin-bottom:10px;line-height:1.6">
+      ${c.region||c.address||mapLink?`<div class="u_129410bdda">
         ${c.region?'📌 '+esc(c.region)+'  ':''}${c.address?esc(c.address)+'  ':''}${mapLink}
       </div>`:''}
-      ${last?`<div class="card" style="margin-bottom:10px"><div class="card-title">🧾 آخر فاتورة</div>
-        <div style="display:flex;justify-content:space-between">
-          <span style="font-size:.82rem">${esc(last.invoice_number)}</span>
-          <span style="color:var(--green);font-weight:700">${money(last.total)} ر.س</span>
+      ${last?`<div class="card u_761d3addb2"><div class="card-title">🧾 آخر فاتورة</div>
+        <div class="u_a3d12b9b83">
+          <span class="u_1fe8667280">${esc(last.invoice_number)}</span>
+          <span class="u_7026cc0fc2">${money(last.total)} ر.س</span>
         </div>
-        <div style="font-size:.72rem;color:var(--muted);margin-top:4px">${esc(last.invoice_date)} • ${esc(last.status)}</div>
+        <div class="u_f095a805a3">${esc(last.invoice_date)} • ${esc(last.status)}</div>
       </div>`:''}
       ${r.invoices.slice(0,5).map(i=>`
         <div class="list-item">
@@ -845,8 +880,8 @@ function captureClientLocation(){
       document.getElementById('ncLat').value = pos.coords.latitude;
       document.getElementById('ncLng').value = pos.coords.longitude;
       document.getElementById('ncLocStatus').innerHTML =
-        '✅ <span style="color:#4ade80">تم تسجيل الموقع</span> ' +
-        '— <a href="https://maps.google.com/?q='+pos.coords.latitude+','+pos.coords.longitude+'" target="_blank" style="color:#60a5fa;font-size:.72rem">عرض الخريطة</a>';
+        '✅ <span class="u_77c27e664b">تم تسجيل الموقع</span> ' +
+        '— <a href="https://maps.google.com/?q='+pos.coords.latitude+','+pos.coords.longitude+'" target="_blank" class="u_f1449693ba">عرض الخريطة</a>';
     },
     ()=>{ document.getElementById('ncLocStatus').textContent = '⚠️ تعذّر تحديد الموقع'; }
   );
@@ -893,7 +928,7 @@ async function loadVisits(){
         <div class="list-item-info">
           <div class="list-item-title">${v.contact_name?esc(v.contact_name):(v.notes?esc(v.notes.slice(0,30)):'زيارة')}</div>
           <div class="list-item-sub">${esc((v.visited_at||'').slice(0,16).replace('T',' '))}</div>
-          ${v.notes?`<div style="font-size:.72rem;color:var(--muted);margin-top:3px">${esc(v.notes.slice(0,60))}</div>`:''}
+          ${v.notes?`<div class="u_c74e3dec9f">${esc(v.notes.slice(0,60))}</div>`:''}
         </div>
         <div class="list-item-right">
           <span class="visit-outcome outcome-${v.outcome}">
@@ -913,9 +948,8 @@ async function generateOfferLinks(){
   const r=await api('POST','/api/v1/agents/'+AGENT_ID+'/send-offer',{message:msg});
   const wrap=document.getElementById('offerResult');
   if(r.success){
-    wrap.innerHTML=`<div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">${r.count} عميل:</div>`+
-      r.links.slice(0,20).map(l=>`<a href="${safeHref(l.whatsapp_url)}" target="_blank" rel="noopener noreferrer"
-        style="display:block;padding:8px 12px;margin-bottom:6px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:10px;color:#4ade80;text-decoration:none;font-size:.82rem">
+    wrap.innerHTML=`<div class="u_21fa43a842">${r.count} عميل:</div>`+
+      r.links.slice(0,20).map(l=>`<a href="${safeHref(l.whatsapp_url)}" target="_blank" rel="noopener noreferrer" class="u_690889226a">
         📤 ${esc(l.contact_name)}</a>`).join('');
   } else toast('❌ '+r.error);
 }

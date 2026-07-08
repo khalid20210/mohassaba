@@ -1,0 +1,67 @@
+{
+  "timestamp": "2026-06-18 05:57:00",
+  "base_url": "http://127.0.0.1:5001",
+  "instant_checks": {
+    "healthz": {
+      "ok": true,
+      "status": 200,
+      "latency_ms": 15.81
+    },
+    "readyz": {
+      "ok": true,
+      "status": 200,
+      "latency_ms": 24.39
+    }
+  },
+  "load_probe": {
+    "/healthz": {
+      "requests": 120,
+      "workers": 20,
+      "ok": 120,
+      "failed": 0,
+      "rps": 746.2,
+      "latency_ms": {
+        "min": 3.97,
+        "avg": 23.77,
+        "p95": 31.39,
+        "max": 36.21
+      },
+      "statuses": {
+        "200": 120
+      }
+    },
+    "/readyz": {
+      "requests": 80,
+      "workers": 10,
+      "ok": 80,
+      "failed": 0,
+      "rps": 88.52,
+      "latency_ms": {
+        "min": 55.39,
+        "avg": 110.72,
+        "p95": 143.57,
+        "max": 201.97
+      },
+      "statuses": {
+        "200": 80
+      }
+    }
+  },
+  "stuck_state": {
+    "pending_approvals": 0,
+    "stale_pending_approvals_24h": 0,
+    "queue_pending": 0,
+    "queue_failed": 0,
+    "unread_notifications": 0
+  },
+  "verdict": {
+    "pass": true,
+    "reasons": [],
+    "thresholds": {
+      "max_health_p95_ms": 50.0,
+      "max_ready_p95_ms": 170.0,
+      "max_failures": 0,
+      "require_zero_stuck": true
+    }
+  }
+}

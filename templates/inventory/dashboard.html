@@ -17,6 +17,14 @@
   .badge-low  { background:#7f1d1d; color:#fca5a5; padding:2px 8px; border-radius:20px; font-size:.75rem; }
   .badge-ok   { background:#14532d; color:#86efac; padding:2px 8px; border-radius:20px; font-size:.75rem; }
   .badge-warn { background:#78350f; color:#fcd34d; padding:2px 8px; border-radius:20px; font-size:.75rem; }
+.u_6b00e75351{display:flex;gap:10px;}
+.u_8129723856{display:flex;justify-content:space-between;align-items:center;}
+.u_29eb0c1df3{font-size:.82rem;color:#38bdf8;}
+.u_f1fa12bbea{color:#38bdf8;}
+.u_ed6c8eb819{color:#64748b;text-align:center;padding:24px;}
+.u_b81b828844{color:#22c55e;font-weight:600;}
+.u_9eb125f52f{margin-top:20px;}
+.u_dbb4ae192d{display:flex;flex-wrap:wrap;gap:12px;padding:16px 0 0;}
 </style>
 
 <div class="page-header">
@@ -24,7 +32,7 @@
     <h1 class="page-title">📦 لوحة المخزون</h1>
     <p class="page-subtitle">نظرة شاملة على المخزون والتنبيهات</p>
   </div>
-  <div style="display:flex;gap:10px;">
+  <div class="u_6b00e75351">
     <a href="/inventory/products/new" class="btn btn-primary">+ منتج جديد</a>
     <a href="/inventory/movements/add" class="btn btn-secondary">تسجيل حركة</a>
     <a href="/inventory/stock-count" class="btn btn-secondary">جرد المخزون</a>
@@ -58,9 +66,9 @@
 <div class="section-grid">
   <!-- تنبيهات المخزون المنخفض -->
   <div class="card">
-    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div class="card-header u_8129723856">
       <h3 class="card-title">⚠️ مخزون منخفض</h3>
-      <a href="/inventory/alerts" style="font-size:.82rem;color:#38bdf8;">عرض الكل</a>
+      <a href="/inventory/alerts" class="u_29eb0c1df3">عرض الكل</a>
     </div>
     {% if low_stock %}
       <table class="table table-compact">
@@ -68,7 +76,7 @@
         <tbody>
           {% for p in low_stock[:8] %}
           <tr>
-            <td><a href="/inventory/products/{{ p.id }}" style="color:#38bdf8;">{{ p.name }}</a></td>
+            <td><a href="/inventory/products/{{ p.id }}" class="u_f1fa12bbea">{{ p.name }}</a></td>
             <td><span class="badge-low">{{ p.current_qty }} {{ p.unit }}</span></td>
             <td>{{ p.min_qty }}</td>
           </tr>
@@ -76,15 +84,15 @@
         </tbody>
       </table>
     {% else %}
-      <p style="color:#64748b;text-align:center;padding:24px;">✅ لا يوجد مخزون منخفض</p>
+      <p class="u_ed6c8eb819">✅ لا يوجد مخزون منخفض</p>
     {% endif %}
   </div>
 
   <!-- أكثر المنتجات حركةً -->
   <div class="card">
-    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div class="card-header u_8129723856">
       <h3 class="card-title">🔥 أكثر المنتجات مبيعاً</h3>
-      <a href="/inventory/reports" style="font-size:.82rem;color:#38bdf8;">تقارير</a>
+      <a href="/inventory/reports" class="u_29eb0c1df3">تقارير</a>
     </div>
     {% if top_sellers %}
       <table class="table table-compact">
@@ -93,21 +101,21 @@
           {% for p in top_sellers[:8] %}
           <tr>
             <td>{{ p.name }}</td>
-            <td style="color:#22c55e;font-weight:600;">{{ p.sold_qty }}</td>
+            <td class="u_b81b828844">{{ p.sold_qty }}</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     {% else %}
-      <p style="color:#64748b;text-align:center;padding:24px;">لا توجد بيانات مبيعات بعد</p>
+      <p class="u_ed6c8eb819">لا توجد بيانات مبيعات بعد</p>
     {% endif %}
   </div>
 </div>
 
 <!-- روابط سريعة -->
-<div class="card" style="margin-top:20px;">
+<div class="card u_9eb125f52f">
   <div class="card-header"><h3 class="card-title">⚡ وصول سريع</h3></div>
-  <div style="display:flex;flex-wrap:wrap;gap:12px;padding:16px 0 0;">
+  <div class="u_dbb4ae192d">
     <a href="/inventory/products" class="btn btn-secondary">📋 قائمة المنتجات</a>
     <a href="/inventory/movements" class="btn btn-secondary">🔄 سجل الحركات</a>
     <a href="/inventory/alerts" class="btn btn-secondary">🔔 التنبيهات</a>

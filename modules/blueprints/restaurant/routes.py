@@ -16,6 +16,7 @@ from modules.middleware import (
     login_required, onboarding_required, user_has_perm, write_audit_log
 )
 from modules.validators import validate, V, SCHEMA_PRICING_UPDATE
+from modules.robot_runtime import process_invoice_robots
 from modules.zatca_queue import enqueue_invoice
 
 bp = Blueprint("restaurant", __name__)
@@ -341,6 +342,19 @@ def orders():
                        (je_cogs_id, inv_acc_id, "إقفال مخزون مباع جملة", 0, cogs_total, 2))
 
         db.commit()
+
+        try:
+            process_invoice_robots(
+                db,
+                business_id=int(biz_id),
+                invoice_id=int(inv_id),
+                invoice_total=float(grand_total or 0),
+                actor_user_id=int(user_id or 0) or None,
+                source_channel="restaurant_orders",
+            )
+        except Exception:
+            pass
+
         flash(f"✓ تم إنشاء أمر البيع {order_number} وتوليد القيد المحاسبي", "success")
         return redirect(url_for("restaurant.orders"))
 
@@ -940,6 +954,18 @@ def api_tables_checkout():
         db.execute("UPDATE invoices SET status='paid',paid_amount=?,journal_entry_id=? WHERE id=?",
                    (grand_total, je_id, int(invoice_id)))
         db.commit()
+
+        try:
+            process_invoice_robots(
+                db,
+                business_id=int(biz_id),
+                invoice_id=int(invoice_id),
+                invoice_total=float(grand_total or 0),
+                actor_user_id=int(user_id or 0) or None,
+                source_channel="restaurant_tables_checkout",
+            )
+        except Exception:
+            pass
 
         # ── ZATCA: أضف الفاتورة لقائمة الإرسال ───────────────────────────────
         try:

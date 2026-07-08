@@ -1,3 +1,38 @@
+<style>
+.u_500e50569b{color:#94a3b8;font-size:.85rem;}
+.u_a3a5568692{margin-top:4px;}
+.u_58703f152a{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.u_ea05ddcbca{background:#f59e0b;border-color:#f59e0b}
+.u_e3c78f39dd{display:grid;grid-template-columns:1fr 2fr;gap:20px;}
+.u_aa3ee35a72{color:#94a3b8;}
+.qty-highlight{font-size:1.4rem;}
+.qty-highlight-low{color:#ef4444;}
+.qty-highlight-ok{color:#22c55e;}
+.u_6fe47583b2{color:#22c55e;}
+.u_cfc294ffc2{color:#f59e0b;}
+.u_8a359a76eb{margin-top:16px;}
+.u_2f7afa576b{padding:8px 0;}
+.u_3ef1fa1aa1{margin-bottom:12px;}
+.u_e4ad4a163b{margin-bottom:8px;}
+.u_cad980f4b7{width:100%;}
+.u_8129723856{display:flex;justify-content:space-between;align-items:center;}
+.u_29eb0c1df3{font-size:.82rem;color:#38bdf8;}
+.u_5f40b9dc3a{color:#64748b;font-size:.82rem;}
+.u_3498000b8f{color:#94a3b8;font-size:.82rem;}
+.movement-qty-positive{color:#22c55e;}
+.movement-qty-negative{color:#ef4444;}
+.u_a8f90b7a0f{color:#64748b;text-align:center;padding:32px;}
+.u_d2f6265eb2{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.u_31f9d06e7d{background:#fff;border-radius:12px;padding:24px;max-width:420px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,.2)}
+.u_8672b533da{margin:0 0 16px;font-size:1.1rem;color:#1e293b}
+.u_6098465f63{margin-bottom:16px;padding:12px;background:#f0fdf4;border-radius:8px;border-left:4px solid #22c55e;font-size:.85rem;color:#065f46}
+.u_e12feb99b2{display:flex;flex-direction:column;gap:12px}
+.u_5942a1ccf6{display:block;font-weight:600;font-size:.85rem;color:#475569;margin-bottom:6px}
+.u_86eb5aa3c2{width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:.9rem}
+.u_a6b9b8355a{display:flex;gap:10px;margin-top:8px}
+.u_3938071a84{flex:1;background:#22c55e;border-color:#22c55e;padding:10px}
+.u_af6a64be4a{flex:1;background:#f1f5f9;border:1px solid #d1d5db;color:#374151;padding:10px}
+</style>
 {% extends "base.html" %}
 {% block title %}{{ product.name }}{% endblock %}
 {% block page_title %}📦 {{ product.name }}{% endblock %}
@@ -5,68 +40,68 @@
 {% block content %}
 <div class="page-header">
   <div>
-    <a href="/inventory/products" style="color:#94a3b8;font-size:.85rem;">← قائمة المنتجات</a>
-    <h1 class="page-title" style="margin-top:4px;">{{ product.name }}</h1>
+    <a href="/inventory/products" class="u_500e50569b">← قائمة المنتجات</a>
+    <h1 class="page-title u_a3a5568692">{{ product.name }}</h1>
     <p class="page-subtitle">SKU: {{ product.sku or '—' }} | باركود: {{ product.barcode or '—' }}</p>
   </div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-    <button onclick="openQuickAdjust()" class="btn btn-primary" style="background:#f59e0b;border-color:#f59e0b">⚡ تسوية سريعة</button>
+  <div class="u_58703f152a">
+    <button onclick="openQuickAdjust()" class="btn btn-primary u_ea05ddcbca">⚡ تسوية سريعة</button>
     <a href="/inventory/products/{{ product.id }}/edit" class="btn btn-primary">تعديل</a>
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;">
+<div class="u_e3c78f39dd">
   <!-- بطاقة المعلومات -->
   <div>
     <div class="card">
       <div class="card-header"><h3 class="card-title">📋 معلومات المنتج</h3></div>
       <table class="table">
-        <tr><td style="color:#94a3b8;">الكمية الحالية</td>
-            <td><strong style="font-size:1.4rem;color:{% if product.current_qty <= product.min_qty %}#ef4444{% else %}#22c55e{% endif %};">{{ product.current_qty }} {{ product.unit }}</strong></td></tr>
-        <tr><td style="color:#94a3b8;">الحد الأدنى</td><td>{{ product.min_qty }} {{ product.unit }}</td></tr>
-        <tr><td style="color:#94a3b8;">سعر الشراء</td><td>{{ "{:,.2f}".format(product.cost_price or 0) }} ر.س</td></tr>
-        <tr><td style="color:#94a3b8;">سعر البيع</td><td>{{ "{:,.2f}".format(product.sell_price or 0) }} ر.س</td></tr>
-        <tr><td style="color:#94a3b8;">هامش الربح</td>
-            <td style="color:#22c55e;">
+        <tr><td class="u_aa3ee35a72">الكمية الحالية</td>
+            <td><strong class="qty-highlight {% if product.current_qty <= product.min_qty %}qty-highlight-low{% else %}qty-highlight-ok{% endif %}">{{ product.current_qty }} {{ product.unit }}</strong></td></tr>
+        <tr><td class="u_aa3ee35a72">الحد الأدنى</td><td>{{ product.min_qty }} {{ product.unit }}</td></tr>
+        <tr><td class="u_aa3ee35a72">سعر الشراء</td><td>{{ "{:,.2f}".format(product.cost_price or 0) }} ر.س</td></tr>
+        <tr><td class="u_aa3ee35a72">سعر البيع</td><td>{{ "{:,.2f}".format(product.sell_price or 0) }} ر.س</td></tr>
+        <tr><td class="u_aa3ee35a72">هامش الربح</td>
+            <td class="u_6fe47583b2">
               {% if product.cost_price and product.sell_price and product.cost_price > 0 %}
                 {{ "{:.1f}".format(((product.sell_price - product.cost_price)/product.cost_price)*100) }}%
               {% else %}—{% endif %}
             </td></tr>
-        <tr><td style="color:#94a3b8;">الموقع</td><td>{{ product.location or '—' }}</td></tr>
+        <tr><td class="u_aa3ee35a72">الموقع</td><td>{{ product.location or '—' }}</td></tr>
         {% if product.expiry_date %}
-        <tr><td style="color:#94a3b8;">انتهاء الصلاحية</td><td style="color:#f59e0b;">{{ product.expiry_date }}</td></tr>
+        <tr><td class="u_aa3ee35a72">انتهاء الصلاحية</td><td class="u_cfc294ffc2">{{ product.expiry_date }}</td></tr>
         {% endif %}
         {% if product.serial_number %}
-        <tr><td style="color:#94a3b8;">الرقم التسلسلي</td><td>{{ product.serial_number }}</td></tr>
+        <tr><td class="u_aa3ee35a72">الرقم التسلسلي</td><td>{{ product.serial_number }}</td></tr>
         {% endif %}
       </table>
     </div>
 
     <!-- إضافة حركة سريعة -->
-    <div class="card" style="margin-top:16px;">
+    <div class="card u_8a359a76eb">
       <div class="card-header"><h3 class="card-title">⚡ إضافة حركة</h3></div>
-      <form action="/inventory/movements/add" method="post" style="padding:8px 0;">
+      <form action="/inventory/movements/add" method="post" class="u_2f7afa576b">
         <input type="hidden" name="product_id" value="{{ product.id }}">
-        <div style="margin-bottom:12px;">
-          <select name="movement_type" class="form-input" style="margin-bottom:8px;">
+        <div class="u_3ef1fa1aa1">
+          <select name="movement_type" class="form-input u_e4ad4a163b" title="نوع حركة المخزون">
             <option value="purchase">شراء / إضافة مخزون</option>
             <option value="adjustment">تعديل يدوي</option>
             <option value="return">مرتجع من عميل</option>
             <option value="damage">تلف / هالك</option>
           </select>
-          <input type="number" name="quantity" placeholder="الكمية" class="form-input" style="margin-bottom:8px;" min="0" step="0.01" required>
+          <input type="number" name="quantity" placeholder="الكمية" class="form-input u_e4ad4a163b" min="0" step="0.01" required>
           <input type="text" name="notes" placeholder="ملاحظات (اختياري)" class="form-input">
         </div>
-        <button type="submit" class="btn btn-primary" style="width:100%;">تسجيل الحركة</button>
+        <button type="submit" class="btn btn-primary u_cad980f4b7">تسجيل الحركة</button>
       </form>
     </div>
   </div>
 
   <!-- سجل الحركات -->
   <div class="card">
-    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div class="card-header u_8129723856">
       <h3 class="card-title">🔄 سجل الحركات</h3>
-      <a href="/inventory/movements?product_id={{ product.id }}" style="font-size:.82rem;color:#38bdf8;">الكل</a>
+      <a href="/inventory/movements?product_id={{ product.id }}" class="u_29eb0c1df3">الكل</a>
     </div>
     {% if movements %}
       <table class="table">
@@ -82,33 +117,33 @@
               {% elif m.movement_type == 'return' %}🟡 مرتجع
               {% else %}{{ m.movement_type }}{% endif %}
             </td>
-            <td style="color:{% if m.quantity > 0 %}#22c55e{% else %}#ef4444{% endif %};">
+            <td class="{% if m.quantity > 0 %}movement-qty-positive{% else %}movement-qty-negative{% endif %}">
               {{ '+' if m.quantity > 0 else '' }}{{ m.quantity }}
             </td>
             <td>{{ m.qty_after }}</td>
-            <td style="color:#64748b;font-size:.82rem;">{{ m.created_at[:16] if m.created_at else '—' }}</td>
-            <td style="color:#94a3b8;font-size:.82rem;">{{ m.reason or m.notes or '—' }}</td>
+            <td class="u_5f40b9dc3a">{{ m.created_at[:16] if m.created_at else '—' }}</td>
+            <td class="u_3498000b8f">{{ m.reason or m.notes or '—' }}</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     {% else %}
-      <p style="color:#64748b;text-align:center;padding:32px;">لا توجد حركات مسجلة</p>
+      <p class="u_a8f90b7a0f">لا توجد حركات مسجلة</p>
     {% endif %}
   </div>
 </div>
 
 <!-- مودال التسوية السريعة -->
-<div id="quickAdjustModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center;padding:20px">
-  <div style="background:#fff;border-radius:12px;padding:24px;max-width:420px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,.2)">
-    <h2 style="margin:0 0 16px;font-size:1.1rem;color:#1e293b">⚡ تسوية سريعة للمخزون</h2>
-    <div style="margin-bottom:16px;padding:12px;background:#f0fdf4;border-radius:8px;border-left:4px solid #22c55e;font-size:.85rem;color:#065f46">
+<div id="quickAdjustModal" class="u_d2f6265eb2">
+  <div class="u_31f9d06e7d">
+    <h2 class="u_8672b533da">⚡ تسوية سريعة للمخزون</h2>
+    <div class="u_6098465f63">
       <strong>{{ product.sku }}</strong> — الرصيد الحالي: <strong>{{ product.current_qty }}</strong>
     </div>
-    <form id="quickAdjustForm" onsubmit="submitQuickAdjust(event)" style="display:flex;flex-direction:column;gap:12px">
+    <form id="quickAdjustForm" onsubmit="submitQuickAdjust(event)" class="u_e12feb99b2">
       <div>
-        <label style="display:block;font-weight:600;font-size:.85rem;color:#475569;margin-bottom:6px">نوع التسوية *</label>
-        <select id="qaType" required style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:.9rem">
+        <label class="u_5942a1ccf6">نوع التسوية *</label>
+        <select id="qaType" required class="u_86eb5aa3c2">
           <option value="damage">⚫ تلف / هالك</option>
           <option value="adjustment">🔵 تعديل يدوي</option>
           <option value="purchase">🟢 إضافة مخزون</option>
@@ -116,16 +151,16 @@
         </select>
       </div>
       <div>
-        <label style="display:block;font-weight:600;font-size:.85rem;color:#475569;margin-bottom:6px">الكمية *</label>
-        <input id="qaQty" type="number" min="0.001" step="0.01" required placeholder="أدخل الكمية" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:.9rem">
+        <label class="u_5942a1ccf6">الكمية *</label>
+        <input id="qaQty" type="number" min="0.001" step="0.01" required placeholder="أدخل الكمية" class="u_86eb5aa3c2">
       </div>
       <div>
-        <label style="display:block;font-weight:600;font-size:.85rem;color:#475569;margin-bottom:6px">السبب / الملاحظة</label>
-        <input id="qaReason" type="text" placeholder="مثال: تلف أثناء التخزين" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:.9rem">
+        <label class="u_5942a1ccf6">السبب / الملاحظة</label>
+        <input id="qaReason" type="text" placeholder="مثال: تلف أثناء التخزين" class="u_86eb5aa3c2">
       </div>
-      <div style="display:flex;gap:10px;margin-top:8px">
-        <button type="submit" class="btn btn-primary" style="flex:1;background:#22c55e;border-color:#22c55e;padding:10px">✓ حفظ التسوية</button>
-        <button type="button" onclick="closeQuickAdjust()" class="btn" style="flex:1;background:#f1f5f9;border:1px solid #d1d5db;color:#374151;padding:10px">إلغاء</button>
+      <div class="u_a6b9b8355a">
+        <button type="submit" class="btn btn-primary u_3938071a84">✓ حفظ التسوية</button>
+        <button type="button" onclick="closeQuickAdjust()" class="btn u_af6a64be4a">إلغاء</button>
       </div>
     </form>
   </div>

@@ -26,13 +26,19 @@
   .value-positive { color: #10b981; }
   .value-warning { color: #f59e0b; }
   .value-danger { color: #ef4444; }
+.u_e8bffc0aaa{color: white; margin: 0;}
+.u_b864eea42a{color: #333;}
+.u_5f9070db75{color: #666; margin-bottom: 12px;}
+.u_970db817a9{text-align: center; color: #999;}
+.u_f29f4705f2{background: #e0f2fe; border-right: 4px solid #0284c7; padding: 16px; border-radius: 4px; margin-top: 20px;}
+.u_e4f379c8dd{margin: 8px 0 0 20px; color: #333;}
 </style>
 
 <div class="report-container">
   <!-- الفلاتر -->
   <div class="filter-bar">
-    <label style="color: white; margin: 0;">عدد الأيام:</label>
-    <select onchange="window.location.href='?days=' + this.value" style="color: #333;">
+    <label class="u_e8bffc0aaa">عدد الأيام:</label>
+    <select onchange="window.location.href='?days=' + this.value" class="u_b864eea42a">
       <option value="7" {% if days == 7 %}selected{% endif %}>7 أيام</option>
       <option value="30" {% if days == 30 %}selected{% endif %}>30 يوم</option>
       <option value="60" {% if days == 60 %}selected{% endif %}>60 يوم</option>
@@ -43,7 +49,7 @@
   <!-- جدول معدل الدوران -->
   <div class="card">
     <div class="card-title">📊 معدل دوران المخزون</div>
-    <p style="color: #666; margin-bottom: 12px;">معدل الدوران = إجمالي المبيعات / متوسط المخزون</p>
+    <p class="u_5f9070db75">معدل الدوران = إجمالي المبيعات / متوسط المخزون</p>
     <table>
       <thead>
         <tr>
@@ -89,7 +95,7 @@
           {% endfor %}
         {% else %}
         <tr>
-          <td colspan="9" style="text-align: center; color: #999;">لا توجد بيانات</td>
+          <td colspan="9" class="u_970db817a9">لا توجد بيانات</td>
         </tr>
         {% endif %}
       </tbody>
@@ -130,7 +136,7 @@
           {% endfor %}
         {% else %}
         <tr>
-          <td colspan="6" style="text-align: center; color: #999;">جميع الأصناف نشطة ✓</td>
+          <td colspan="6" class="u_970db817a9">جميع الأصناف نشطة ✓</td>
         </tr>
         {% endif %}
       </tbody>
@@ -138,9 +144,9 @@
   </div>
 
   <!-- ملاحظات -->
-  <div style="background: #e0f2fe; border-right: 4px solid #0284c7; padding: 16px; border-radius: 4px; margin-top: 20px;">
+  <div class="u_f29f4705f2">
     <strong>💡 ملاحظات:</strong>
-    <ul style="margin: 8px 0 0 20px; color: #333;">
+    <ul class="u_e4f379c8dd">
       <li><strong>معدل الدوران العالي (> 2x):</strong> الصنف نشط جداً وينصح بزيادة المخزون.</li>
       <li><strong>معدل الدوران المتوسط (0.5 - 2x):</strong> أداء طبيعي.</li>
       <li><strong>معدل الدوران المنخفض (< 0.5x):</strong> قد يحتاج لتقليل المخزون أو عرض خاص.</li>

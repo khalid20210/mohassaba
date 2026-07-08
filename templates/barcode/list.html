@@ -1,3 +1,13 @@
+<style>
+.u_6b00e75351{display:flex;gap:10px;}
+.u_11433de40f{background:rgba(255,255,255,.06);padding:2px 8px;border-radius:4px;font-size:.85rem;}
+.u_3bddbddd2b{background:rgba(59,130,246,.15);color:#93c5fd;padding:2px 8px;border-radius:20px;font-size:.78rem;}
+.u_03a959d93d{background:#14532d;color:#86efac;padding:2px 8px;border-radius:20px;font-size:.78rem;}
+.u_d450675e3a{background:#374151;color:#9ca3af;padding:2px 8px;border-radius:20px;font-size:.78rem;}
+.u_5f40b9dc3a{color:#64748b;font-size:.82rem;}
+.u_ed402632eb{padding:4px 12px;font-size:.8rem;}
+.u_612a65f696{text-align:center;color:#64748b;padding:40px;}
+</style>
 {% extends "base.html" %}
 {% block title %}قائمة الباركودات{% endblock %}
 {% block page_title %}📷 قائمة الباركودات{% endblock %}
@@ -8,7 +18,7 @@
     <h1 class="page-title">📷 الباركودات</h1>
     <p class="page-subtitle">{{ total }} باركود مسجل</p>
   </div>
-  <div style="display:flex;gap:10px;">
+  <div class="u_6b00e75351">
     <a href="/barcode/print?ids={{ barcodes[:10]|map(attribute='id')|join(',') if barcodes else '' }}" class="btn btn-secondary">🖨️ طباعة</a>
     <a href="/barcode/generate" class="btn btn-primary">+ توليد باركود</a>
   </div>
@@ -22,23 +32,23 @@
     <tbody>
       {% for b in barcodes %}
       <tr>
-        <td><code style="background:rgba(255,255,255,.06);padding:2px 8px;border-radius:4px;font-size:.85rem;">{{ b.barcode_value }}</code></td>
+        <td><code class="u_11433de40f">{{ b.barcode_value }}</code></td>
         <td>{{ b.product_name or 'منتج #' ~ b.product_id }}</td>
-        <td><span style="background:rgba(59,130,246,.15);color:#93c5fd;padding:2px 8px;border-radius:20px;font-size:.78rem;">{{ b.format or 'CODE128' }}</span></td>
+        <td><span class="u_3bddbddd2b">{{ b.format or 'CODE128' }}</span></td>
         <td>
           {% if b.is_active %}
-            <span style="background:#14532d;color:#86efac;padding:2px 8px;border-radius:20px;font-size:.78rem;">✓ نشط</span>
+            <span class="u_03a959d93d">✓ نشط</span>
           {% else %}
-            <span style="background:#374151;color:#9ca3af;padding:2px 8px;border-radius:20px;font-size:.78rem;">معطل</span>
+            <span class="u_d450675e3a">معطل</span>
           {% endif %}
         </td>
-        <td style="color:#64748b;font-size:.82rem;">{{ b.created_at[:10] if b.created_at else '—' }}</td>
+        <td class="u_5f40b9dc3a">{{ b.created_at[:10] if b.created_at else '—' }}</td>
         <td>
-          <a href="/barcode/print?ids={{ b.id }}" class="btn btn-secondary" style="padding:4px 12px;font-size:.8rem;">🖨️ طباعة</a>
+          <a href="/barcode/print?ids={{ b.id }}" class="btn btn-secondary u_ed402632eb">🖨️ طباعة</a>
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="6" style="text-align:center;color:#64748b;padding:40px;">لا توجد باركودات</td></tr>
+      <tr><td colspan="6" class="u_612a65f696">لا توجد باركودات</td></tr>
       {% endfor %}
     </tbody>
   </table>

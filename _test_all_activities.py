@@ -15,6 +15,7 @@ import time
 import sqlite3
 import random
 import string
+import re
 import traceback
 from collections import defaultdict
 
@@ -80,6 +81,17 @@ def get_test_db():
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
+
+
+def _extract_csrf_token(html: str) -> str:
+    """استخراج csrf_token من HTML بشكل مرن."""
+    if not html:
+        return ""
+    m = re.search(r'name=["\']csrf_token["\']\s+value=["\']([^"\']+)["\']', html)
+    if m:
+        return m.group(1)
+    m = re.search(r'value=["\']([^"\']+)["\']\s+name=["\']csrf_token["\']', html)
+    return m.group(1) if m else ""
 
 
 def create_test_business(db: sqlite3.Connection, industry_type: str) -> int:
@@ -289,38 +301,49 @@ def test_onboarding_via_flask(sample_types: list[str]) -> dict:
     for itype in sample_types:
         try:
             with flask_app.test_client() as c:
-                # تسجيل مستخدم جديد
+                # إنشاء مستخدم + منشأة اختبارية مباشرة (بدلاً من /auth/register)
                 uid = "".join(random.choices(string.ascii_lowercase, k=5))
-                reg = c.post("/auth/register", data={
-                    "full_name": f"Test {uid}",
-                    "username": f"ob_{uid}",
-                    "country": "SA",
-                    "email": f"{uid}@test.local",
-                    "password": "Test@12345",
-                    "password_confirm": "Test@12345",
-                }, follow_redirects=False)
-
-                if reg.status_code not in (200, 302):
-                    results[itype] = f"register={reg.status_code}"
-                    continue
-
-                # اكتشاف business_id من قاعدة البيانات
+                username = f"ob_{uid}"
+                email = f"{uid}@test.local"
+                password = "Test@12345"
                 db2 = get_test_db()
-                biz_row = db2.execute(
-                    "SELECT id FROM businesses ORDER BY id DESC LIMIT 1"
-                ).fetchone()
-                biz_id = biz_row["id"] if biz_row else None
+                db2.execute(
+                    "INSERT INTO businesses (name, is_active, country_code, account_status) VALUES (?, 0, ?, 'pending')",
+                    (f"منشأة {username}", "SA")
+                )
+                biz_id = db2.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+                db2.execute(
+                    "INSERT INTO roles (business_id, name, permissions, is_system) VALUES (?,?,?,1)",
+                    (biz_id, "مدير", '{"all":true}')
+                )
+                role_id = db2.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+                db2.execute(
+                    """
+                    INSERT INTO users
+                    (business_id, role_id, username, full_name, email, password_hash, is_active)
+                    VALUES (?,?,?,?,?,?,1)
+                    """,
+                    (biz_id, role_id, username, f"Test {uid}", email, password)
+                )
+                user_id = db2.execute("SELECT last_insert_rowid()").fetchone()[0]
+                db2.commit()
                 db2.close()
 
-                if not biz_id:
+                if not biz_id or not user_id:
                     results[itype] = "no_biz_created"
                     continue
 
                 # onboarding POST
                 with c.session_transaction() as sess:
-                    sess["user_id"] = 1
+                    sess["user_id"] = user_id
                     sess["business_id"] = biz_id
                     sess["needs_onboarding"] = True
+
+                # GET onboarding لاستخراج CSRF
+                ob_get = c.get("/onboarding")
+                ob_token = _extract_csrf_token(ob_get.get_data(as_text=True))
 
                 ob = c.post("/onboarding", data={
                     "business_name": f"شركة {uid}",
@@ -328,13 +351,17 @@ def test_onboarding_via_flask(sample_types: list[str]) -> dict:
                     "city": "الرياض",
                     "tax_number": "300000000000003",
                     "phone": "0501234567",
+                    "csrf_token": ob_token,
                 }, follow_redirects=False)
 
                 results[itype] = ob.status_code
 
                 # تنظيف
                 db3 = get_test_db()
+                db3.execute("DELETE FROM users WHERE business_id=?", (biz_id,))
+                db3.execute("DELETE FROM roles WHERE business_id=?", (biz_id,))
                 cleanup_test_business(db3, biz_id)
+                db3.commit()
                 db3.close()
 
         except Exception as e:

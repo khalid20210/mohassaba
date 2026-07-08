@@ -137,28 +137,60 @@
     font-size: .85rem; color: #1e40af; margin-bottom: .75rem;
   }
   .vat-num { font-weight: 700; font-size: .8rem; }
+.u_924412fe68{display:flex; align-items:center; gap:1rem; margin-bottom:1.25rem; flex-wrap:wrap;}
+.u_8b31313d9c{margin:0; font-size:1.35rem; font-weight:700;}
+.u_8e44f56ebc{font-size:.75rem; color:#6b7280;}
+.u_bb128a0183{background:#fef9c3; border:1px solid #fde68a; border-radius:.5rem; padding:.6rem 1rem; margin-bottom:.75rem; font-size:.88rem; color:#854d0e;}
+.u_7492f84794{color:#1e40af; font-weight:600;}
+.u_33a23d9692{background:#eef2ff; border:1px solid #c7d2fe; border-radius:.55rem; padding:.65rem .95rem; margin-bottom:1rem; font-size:.84rem; color:#3730a3;}
+.u_97294b207c{grid-column:1/-1;}
+.u_f267e3ca68{margin-bottom: 1rem;}
+.u_09d0582992{width:100%; padding:.6rem; border:1px solid #d1d5db; border-radius:.5rem; font-size:.9rem;}
+.u_1958f7bc06{display:none; background:#f9fafb; border:1px solid #d1d5db; border-top:none; max-height:250px; overflow-y:auto; border-radius:0 0 .5rem .5rem;}
+.u_f024223221{width:40%;}
+.u_bc1989dcad{width:12%;}
+.u_745ab36395{width:16%;}
+.u_226a9d6195{width:14%;}
+.u_1c7ac9074b{width:6%;}
+.u_f1b7b5476e{font-weight:600; color:#1e293b;}
+.u_9d56aaf28c{font-size:.85rem;}
+.u_a11026735b{display:flex; gap:2rem; align-items:flex-start; flex-wrap:wrap;}
+.u_d90bed4a18{flex:1; min-width:200px;}
+.u_c71f9e72a8{min-width:280px;}
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.25rem; flex-wrap:wrap;">
+{% set cp = compliance_profile or {} %}
+{% set tax_label_ar = cp.get('tax_label_ar', 'الضريبة') %}
+{% set tax_number_label = cp.get('tax_number_label', 'الرقم الضريبي') %}
+{% set tax_rate = cp.get('default_tax_rate', 0) %}
+{% set currency_symbol = cp.get('currency_symbol', 'ر.س') %}
+{% set tax_system = cp.get('tax_system', 'none') %}
+<div class="u_924412fe68">
   <a href="{{ url_for('invoices.list_invoices') }}" class="btn btn-outline">← العودة</a>
-  <h1 style="margin:0; font-size:1.35rem; font-weight:700;">🧾 إصدار فاتورة مبيعات جديدة</h1>
+  <h1 class="u_8b31313d9c">🧾 إصدار فاتورة مبيعات جديدة</h1>
 </div>
 
 <!-- ── بيانات الرقم الضريبي للمنشأة ── -->
 {% if biz_vat %}
 <div class="tax-badge">
-  🏛️ الرقم الضريبي للمنشأة:
+  🏛️ {{ tax_number_label }} للمنشأة:
   <span class="vat-num">{{ biz_vat }}</span>
-  <span style="font-size:.75rem; color:#6b7280;">— سيظهر تلقائياً في الفاتورة</span>
+  <span class="u_8e44f56ebc">— سيظهر تلقائياً في الفاتورة وفق {{ tax_label_ar }}</span>
 </div>
 {% else %}
-<div style="background:#fef9c3; border:1px solid #fde68a; border-radius:.5rem; padding:.6rem 1rem; margin-bottom:.75rem; font-size:.88rem; color:#854d0e;">
-  ⚠️ لم يُضف الرقم الضريبي بعد.
-  <a href="{{ url_for('core.settings') }}" style="color:#1e40af; font-weight:600;">أضفه من الإعدادات</a>
+<div class="u_bb128a0183">
+  ⚠️ لم يُضف {{ tax_number_label }} بعد.
+  <a href="{{ url_for('core.settings') }}" class="u_7492f84794">أضفه من الإعدادات</a>
 </div>
 {% endif %}
+
+<div class="u_33a23d9692">
+  الدولة: <strong>{{ cp.get('country_name_ar', 'غير محدد') }}</strong>
+  • النظام الضريبي: <strong>{{ tax_system }}</strong>
+  • {{ tax_label_ar }} الافتراضية: <strong>{{ '%.2f'|format(tax_rate) }}%</strong>
+</div>
 
 <form method="POST" id="inv-form">
 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -178,8 +210,8 @@
         </datalist>
       </div>
       <div class="field">
-        <label>الرقم الضريبي للعميل (اختياري)</label>
-        <input type="text" name="client_vat" placeholder="3XXXXXXXXXXXXX3" maxlength="15">
+        <label>{{ tax_number_label }} للعميل (اختياري)</label>
+        <input type="text" name="client_vat" placeholder="أدخل {{ tax_number_label }}" maxlength="32">
       </div>
       <div class="field">
         <label>طريقة الدفع</label>
@@ -194,7 +226,7 @@
         <label>تاريخ الاستحقاق (للآجل)</label>
         <input type="date" name="due_date">
       </div>
-      <div class="field" style="grid-column:1/-1;">
+      <div class="field u_97294b207c">
         <label>ملاحظات</label>
         <textarea name="notes" rows="2" placeholder="ملاحظات إضافية (اختياري)"></textarea>
       </div>
@@ -206,22 +238,21 @@
     <h3>📦 أسطر الفاتورة</h3>
     
     <!-- 🔍 بحث سريع عن المنتج -->
-    <div style="margin-bottom: 1rem;">
-      <input type="text" id="product-search" placeholder="🔍 بحث: اسم المنتج / الشركة / SKU ..." 
-             style="width:100%; padding:.6rem; border:1px solid #d1d5db; border-radius:.5rem; font-size:.9rem;">
-      <div id="search-results" style="display:none; background:#f9fafb; border:1px solid #d1d5db; border-top:none; max-height:250px; overflow-y:auto; border-radius:0 0 .5rem .5rem;">
+    <div class="u_f267e3ca68">
+      <input type="text" id="product-search" placeholder="🔍 بحث: اسم المنتج / الشركة / SKU ..." class="u_09d0582992">
+      <div id="search-results" class="u_1958f7bc06">
       </div>
     </div>
     
     <table class="lines-table" id="lines-tbl">
       <thead>
         <tr>
-          <th style="width:40%;">الصنف / الخدمة</th>
-          <th style="width:12%;">الكمية</th>
-          <th style="width:16%;">سعر الوحدة</th>
-          <th style="width:12%;">الخصم%</th>
-          <th style="width:14%;">الإجمالي</th>
-          <th style="width:6%;"></th>
+          <th class="u_f024223221">الصنف / الخدمة</th>
+          <th class="u_bc1989dcad">الكمية</th>
+          <th class="u_745ab36395">سعر الوحدة</th>
+          <th class="u_bc1989dcad">الخصم%</th>
+          <th class="u_226a9d6195">الإجمالي</th>
+          <th class="u_1c7ac9074b"></th>
         </tr>
       </thead>
       <tbody id="lines-body">
@@ -231,7 +262,7 @@
           <td><input type="number" name="qty[]" value="1" min="0.01" step="0.01" class="qty-input" required></td>
           <td><input type="number" name="price[]" value="0" min="0" step="0.01" class="price-input" required></td>
           <td><input type="number" name="disc[]" value="0" min="0" max="100" step="0.01" class="disc-input"></td>
-          <td class="line-total" style="font-weight:600; color:#1e293b;">0.00</td>
+          <td class="line-total u_f1b7b5476e">0.00</td>
           <td><button type="button" class="btn-del-row" onclick="delRow(this)">✕</button></td>
         </tr>
       </tbody>
@@ -241,22 +272,22 @@
       <option value="{{ p.name }} ({{ p.sku or p.barcode }})" data-price="{{ p.sell_price or 0 }}" data-sku="{{ p.sku }}" data-cat="{{ p.category_name }}">
       {% endfor %}
     </datalist>
-    <button type="button" onclick="addRow()" class="btn btn-outline" style="font-size:.85rem;">+ إضافة سطر</button>
+    <button type="button" onclick="addRow()" class="btn btn-outline u_9d56aaf28c">+ إضافة سطر</button>
   </div>
 
   <!-- ── الإجماليات والضريبة ── -->
-  <div class="inv-card" style="display:flex; gap:2rem; align-items:flex-start; flex-wrap:wrap;">
-    <div style="flex:1; min-width:200px;">
+  <div class="inv-card u_a11026735b">
+    <div class="u_d90bed4a18">
       <div class="field">
         <label>
-          <input type="checkbox" id="vat-toggle" name="apply_vat" value="1" checked>
-          تطبيق ضريبة القيمة المضافة (VAT 15%)
+          <input type="checkbox" id="vat-toggle" name="apply_vat" value="1" {% if tax_rate > 0 and tax_system != 'none' %}checked{% endif %} {% if tax_rate <= 0 or tax_system == 'none' %}disabled{% endif %}>
+          تطبيق {{ tax_label_ar }} ({{ '%.2f'|format(tax_rate) }}%)
         </label>
       </div>
     </div>
-    <div class="totals-box" style="min-width:280px;">
+    <div class="totals-box u_c71f9e72a8">
       <div class="row"><span>المجموع قبل الضريبة</span><span id="t-sub">0.00</span></div>
-      <div class="row"><span>الضريبة 15%</span><span id="t-vat">0.00</span></div>
+      <div class="row"><span>{{ tax_label_ar }} {{ '%.2f'|format(tax_rate) }}%</span><span id="t-vat">0.00</span></div>
       <div class="row grand"><span>الإجمالي</span><span id="t-total">0.00</span></div>
     </div>
   </div>
@@ -287,7 +318,8 @@ function calcTotals() {
   let sub = 0;
   document.querySelectorAll('.line-row').forEach(r => { sub += calcRow(r); });
   const applyVat = document.getElementById('vat-toggle').checked;
-  const vat   = applyVat ? sub * 0.15 : 0;
+  const vatRate = {{ (tax_rate or 0) / 100.0 }};
+  const vat   = applyVat ? sub * vatRate : 0;
   const total = sub + vat;
   document.getElementById('t-sub').textContent   = sub.toFixed(2);
   document.getElementById('t-vat').textContent   = vat.toFixed(2);
@@ -386,7 +418,7 @@ function initProductSearch() {
       const meta = document.createElement('div');
       meta.style.color = '#6b7280';
       meta.style.fontSize = '.8rem';
-      meta.textContent = `SKU: ${sku} | السعر: ${price} ر.س`;
+      meta.textContent = `SKU: ${sku} | السعر: ${price} {{ currency_symbol }}`;
 
       row.appendChild(title);
       row.appendChild(meta);

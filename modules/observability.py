@@ -107,9 +107,11 @@ class PerformanceTracker:
     
     def track_endpoint(self, method: str, path: str, status: int, 
                       duration_ms: float, bytes_sent: int = 0):
-        """تسجيل استدعاء API مع التنبيه للبطيئة."""
+        """تسجيل استدعاء API: تنبيهات البطء/الأخطاء فقط لتقليل كلفة الـ hot path."""
         is_slow = duration_ms > self.thresholds["api_endpoint"]
-        level = "WARNING" if is_slow else "INFO"
+        if not is_slow and int(status) < 500:
+            return
+        level = "WARNING" if is_slow else "ERROR"
         
         self.logger.log(
             getattr(logging, level),
@@ -156,12 +158,6 @@ class MetricsCollector:
         """زيادة counter."""
         key = f"{metric_name}:{json.dumps(tags or {})}"
         self.counters[key] = self.counters.get(key, 0) + value
-        
-        if value > 0:
-            self.logger.debug(
-                f"COUNTER | {metric_name}={self.counters[key]}",
-                extra={"metric": metric_name, "value": self.counters[key], "tags": tags}
-            )
     
     def observe_histogram(self, metric_name: str, value: float, tags: dict = None):
         """تسجيل observation في histogram."""
@@ -169,11 +165,6 @@ class MetricsCollector:
         if key not in self.histograms:
             self.histograms[key] = []
         self.histograms[key].append(value)
-        
-        self.logger.debug(
-            f"HISTOGRAM | {metric_name}={value:.2f}",
-            extra={"metric": metric_name, "value": value, "tags": tags}
-        )
     
     def get_metrics_summary(self) -> dict:
         """ملخص المؤشرات الحالية (للـ /metrics endpoint)."""

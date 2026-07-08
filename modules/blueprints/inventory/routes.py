@@ -11,6 +11,8 @@ from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, jsonify, g, redirect, flash, Response
 from functools import wraps
 
+from modules.sovereign_controls import create_owner_action_request, ensure_sovereign_tables, get_owner_policy_bool, log_owner_impact
+
 bp = Blueprint("inventory", __name__, url_prefix="/inventory")
 
 
@@ -169,24 +171,20 @@ def require_perm(*perms):
 def log_activity(module, action, entity_id=None, changes=None):
     """تسجيل النشاط في audit_logs"""
     from modules.extensions import get_db
+    from modules.middleware import write_audit_log
     
     if not g.user or not g.business:
         return
     
     db = get_db()
-    db.execute("""
-        INSERT INTO audit_logs (business_id, user_id, action, entity_type, entity_id, new_value, ip_address, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
-    """, (
-        g.business["id"],
-        g.user.get("id"),
-        action,
-        module,
-        entity_id,
-        json.dumps(changes) if changes else None,
-        request.remote_addr
-    ))
-    db.commit()
+    write_audit_log(
+        db,
+        business_id=int(g.business["id"]),
+        action=action,
+        entity_type=module,
+        entity_id=entity_id,
+        new_value=changes,
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -935,6 +933,7 @@ def add_movement():
 
     db = get_db()
     business_id = g.business["id"]
+    ensure_sovereign_tables(db)
 
     data = request.form
     product_id = int(data.get("product_id"))
@@ -968,6 +967,40 @@ def add_movement():
     reason = (data.get("reason") or data.get("notes") or "").strip()
     if raw_type in ("broken", "waste"):
         reason = f"{raw_type}: {reason}" if reason else raw_type
+
+    if movement_type == "damage" and get_owner_policy_bool(db, int(business_id), "inventory_damage_requires_owner", True):
+        request_id = create_owner_action_request(
+            db,
+            business_id=int(business_id),
+            request_type="inventory.damage.writeoff",
+            entity_type="product_inventory",
+            entity_id=int(product_id),
+            requested_by=int(g.user.get("id") or 0) or None,
+            reason=reason or "طلب شطب/تالف يدوي",
+            payload={
+                "movement_type": raw_type or movement_type,
+                "normalized_type": movement_type,
+                "quantity": quantity,
+                "current_qty": float(product["current_qty"] or 0),
+                "requested_new_qty": float(new_qty),
+                "sku": product["sku"],
+            },
+        )
+        log_owner_impact(
+            db,
+            business_id=int(business_id),
+            category="anti_fraud",
+            action_key="inventory.damage_request_pending",
+            summary=f"تحويل شطب/تالف الصنف {product['sku']} إلى طلب اعتماد للمالك",
+            reason=reason,
+            entity_type="product_inventory",
+            entity_id=int(product_id),
+            actor_user_id=int(g.user.get("id") or 0) or None,
+            protected_amount=float(quantity or 0),
+            payload={"request_id": request_id, "movement_type": raw_type or movement_type},
+        )
+        db.commit()
+        return jsonify({"success": False, "pending_owner_request": True, "request_id": request_id, "error": "تم تحويل العملية إلى طلب اعتماد للمالك"}), 202
 
     # تسجيل الحركة
     db.execute("""
@@ -1241,6 +1274,7 @@ def api_quick_adjust():
 
     db = get_db()
     business_id = g.business["id"]
+    ensure_sovereign_tables(db)
     payload = request.get_json(silent=True) or {}
 
     try:
@@ -1272,6 +1306,40 @@ def api_quick_adjust():
     reason = str(payload.get("reason") or "").strip()
     if raw_type in ("broken", "waste"):
         reason = f"{raw_type}: {reason}" if reason else raw_type
+
+    if movement_type == "damage" and get_owner_policy_bool(db, int(business_id), "inventory_damage_requires_owner", True):
+        request_id = create_owner_action_request(
+            db,
+            business_id=int(business_id),
+            request_type="inventory.damage.writeoff",
+            entity_type="product_inventory",
+            entity_id=int(product_id),
+            requested_by=int(g.user.get("id") or 0) or None,
+            reason=reason or "طلب شطب/تالف سريع",
+            payload={
+                "movement_type": raw_type or movement_type,
+                "normalized_type": movement_type,
+                "quantity": quantity,
+                "current_qty": float(current),
+                "requested_new_qty": float(new_qty),
+                "sku": product["sku"],
+            },
+        )
+        log_owner_impact(
+            db,
+            business_id=int(business_id),
+            category="anti_fraud",
+            action_key="inventory.quick_damage_request_pending",
+            summary=f"إيقاف شطب سريع للصنف {product['sku']} وتحويله إلى موافقة مالك",
+            reason=reason,
+            entity_type="product_inventory",
+            entity_id=int(product_id),
+            actor_user_id=int(g.user.get("id") or 0) or None,
+            protected_amount=float(quantity or 0),
+            payload={"request_id": request_id, "movement_type": raw_type or movement_type},
+        )
+        db.commit()
+        return jsonify({"success": False, "pending_owner_request": True, "request_id": request_id, "error": "تم تحويل العملية إلى طلب اعتماد للمالك"}), 202
 
     db.execute(
         """INSERT INTO inventory_movements

@@ -4,7 +4,9 @@ blueprints/auth/routes.py — المصادقة: تسجيل دخول، تسجيل
 import os
 import re
 import secrets
+import threading
 from datetime import datetime
+from time import monotonic
 
 from flask import (
     Blueprint, current_app, flash, g, jsonify, redirect, render_template,
@@ -16,11 +18,17 @@ from modules.config import INDUSTRY_TYPES, _load_secret_key
 from modules.extensions import (
     check_password, csrf_protect, get_db, hash_password, seed_business_accounts, safe_sql_identifier
 )
+from modules.engines.user_permissions_engine import sync_role_permissions_from_legacy_json, sync_user_role_assignment
 from modules.middleware import write_audit_log
 from modules.terminology import get_terms
 from modules.unit_localization import ensure_unit_localization_defaults
 
 bp = Blueprint("auth", __name__)
+
+_LANDING_METRICS_TTL_SEC = 30.0
+_landing_metrics_cache = {"at": 0.0, "payload": None, "refreshing": False}
+_landing_metrics_lock = threading.Lock()
+_landing_schema_cache = {}
 
 # متغير Rate Limiting (يُشارك عبر الـ import)
 _login_attempts: dict = {}
@@ -184,6 +192,7 @@ def _social_signin_or_register(db, provider: str, social_sub: str, email: str, f
             (biz_id, "مدير", '{"all":true}'),
         )
         role_id = int(db.execute("SELECT last_insert_rowid()").fetchone()[0])
+        sync_role_permissions_from_legacy_json(db, role_id, '{"all":true}')
 
         random_pass = hash_password(secrets.token_urlsafe(32))
         db.execute(
@@ -196,6 +205,7 @@ def _social_signin_or_register(db, provider: str, social_sub: str, email: str, f
             (biz_id, role_id, username, full_name, email, random_pass, provider, social_sub, 1 if email else 0),
         )
         user_id = int(db.execute("SELECT last_insert_rowid()").fetchone()[0])
+        sync_user_role_assignment(db, user_id, role_id)
         db.commit()
     except Exception:
         db.rollback()
@@ -223,14 +233,39 @@ def index():
 @bp.route("/auth/landing-metrics")
 def auth_landing_metrics():
     """مؤشرات حقيقية لصفحة الدخول (بدون بيانات حساسة)."""
+    now = monotonic()
+    with _landing_metrics_lock:
+        cached_at = float(_landing_metrics_cache.get("at") or 0.0)
+        cached_payload = _landing_metrics_cache.get("payload")
+        refreshing = bool(_landing_metrics_cache.get("refreshing"))
+
+        if cached_payload is not None and (now - cached_at) < _LANDING_METRICS_TTL_SEC:
+            return jsonify(cached_payload)
+
+        # stale-while-refresh: نخدم آخر نسخة بينما طلب واحد فقط يعيد الحساب.
+        if refreshing and cached_payload is not None:
+            return jsonify(cached_payload)
+
+        _landing_metrics_cache["refreshing"] = True
+
     db = get_db()
+    payload = None
 
     def _column_exists(table: str, column: str) -> bool:
+        cache_key = f"{table}.{column}"
+        with _landing_metrics_lock:
+            if cache_key in _landing_schema_cache:
+                return bool(_landing_schema_cache[cache_key])
         try:
             safe_table = safe_sql_identifier(table)
             rows = db.execute(f"PRAGMA table_info({safe_table})").fetchall()
-            return any(r[1] == column for r in rows)
+            exists = any(r[1] == column for r in rows)
+            with _landing_metrics_lock:
+                _landing_schema_cache[cache_key] = bool(exists)
+            return exists
         except Exception:
+            with _landing_metrics_lock:
+                _landing_schema_cache[cache_key] = False
             return False
 
     def _scalar(sql: str, params=(), default=0):
@@ -455,17 +490,25 @@ def auth_landing_metrics():
             "biz_count":      real_bizs,
         })
 
-    return jsonify({
-        "success": True,
-        "global": {
-            "total_invoices": total_invoices,
-            "ai_accuracy": ai_accuracy,
-            "profiles_count": len(showcase),
-            "businesses_count": total_businesses,
-            "users_count": total_users,
-        },
-        "showcase": showcase,
-    })
+    try:
+        payload = {
+            "success": True,
+            "global": {
+                "total_invoices": total_invoices,
+                "ai_accuracy": ai_accuracy,
+                "profiles_count": len(showcase),
+                "businesses_count": total_businesses,
+                "users_count": total_users,
+            },
+            "showcase": showcase,
+        }
+        with _landing_metrics_lock:
+            _landing_metrics_cache["at"] = now
+            _landing_metrics_cache["payload"] = payload
+        return jsonify(payload)
+    finally:
+        with _landing_metrics_lock:
+            _landing_metrics_cache["refreshing"] = False
 
 
 @bp.route("/auth/login", methods=["GET", "POST"])
@@ -519,6 +562,14 @@ def auth_login():
                                    username=username, full_name=user["full_name"])
         if status == "rejected":
             flash("تم رفض طلب تسجيلك. تواصل مع الإدارة لمزيد من المعلومات.", "error")
+            try:
+                from modules.blueprints.admin.routes import get_active_badges
+                _badges = get_active_badges(db, on_login=True)
+            except Exception:
+                _badges = []
+            return render_template("auth/login.html", marketing_badges=_badges)
+        if status == "suspended":
+            flash("تم تعليق المنشأة تلقائياً بسبب انتهاء الاشتراك أو التجربة وعدم التجديد.", "error")
             try:
                 from modules.blueprints.admin.routes import get_active_badges
                 _badges = get_active_badges(db, on_login=True)
@@ -610,6 +661,7 @@ def auth_register():
                 (biz_id, "مدير", '{"all":true}')
             )
             role_id = db.execute("SELECT last_insert_rowid()" ).fetchone()[0]
+            sync_role_permissions_from_legacy_json(db, int(role_id), '{"all":true}')
 
             db.execute(
                 """INSERT INTO users
@@ -618,6 +670,7 @@ def auth_register():
                 (biz_id, role_id, username, full_name, email, hash_password(password))
             )
             user_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+            sync_user_role_assignment(db, int(user_id), int(role_id))
             db.commit()
         except Exception:
             db.rollback()

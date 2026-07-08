@@ -1,0 +1,85 @@
+{
+  "timestamp": "2026-06-19 18:20:57",
+  "scope": "Official Final Acceptance - Functional + Performance",
+  "environment": {
+    "server": "waitress",
+    "base_url": "http://127.0.0.1:5003",
+    "note": "Pipeline executed on production-like WSGI server for stable performance validation"
+  },
+  "pipeline": {
+    "stages": [
+      "Build",
+      "Stabilize",
+      "Simulate",
+      "Audit",
+      "Optimize",
+      "Deploy",
+      "Monitor"
+    ],
+    "status": "pass",
+    "stabilize": {
+      "pass": true,
+      "healthz_p95_ms": 28.14,
+      "readyz_p95_ms": 55.49,
+      "max_health_p95_threshold_ms": 70.0,
+      "max_ready_p95_threshold_ms": 170.0,
+      "stuck_state_zero": true
+    },
+    "simulate": {
+      "pass": true,
+      "success_rate": 100.0,
+      "failed_requests": 0,
+      "timeout_errors": 0,
+      "min_success_rate_threshold": 99.0,
+      "max_failed_requests_threshold": 2,
+      "max_timeout_errors_threshold": 1
+    },
+    "audit": {
+      "pass": true,
+      "baseline_pass": true,
+      "simulation_pass": true
+    },
+    "deploy": {
+      "pass": true,
+      "mode": "gated-safe-mode",
+      "note": "No production deployment executed unless -ExecuteDeploy is explicitly provided"
+    },
+    "monitor": {
+      "pass": true,
+      "healthz_status": "ok",
+      "readyz_status": "ready"
+    }
+  },
+  "functional": {
+    "status": "pass",
+    "tests": {
+      "passed": 28,
+      "failed": 0,
+      "warnings": 0,
+      "suite": [
+        "tests/test_rbac_contract.py",
+        "tests/test_notifications_contract.py",
+        "tests/test_policy_approval_engine.py",
+        "tests/test_execution_queue.py",
+        "tests/test_monitoring_dashboard.py",
+        "tests/test_approval_policies_contract.py",
+        "tests/test_audit_service.py",
+        "tests/test_smoke.py",
+        "tests/test_health_api.py",
+        "tests/test_core_utils_and_engines.py",
+        "tests/test_core_routes_refactor_contract.py"
+      ]
+    }
+  },
+  "final_verdict": {
+    "official_acceptance": "approved",
+    "system_status": "Ready for official acceptance (Functional + Performance)",
+    "blocking_issues": []
+  },
+  "evidence_files": {
+    "pipeline_baseline": "exports/pipeline_baseline.json",
+    "pipeline_simulation": "exports/pipeline_simulation.json",
+    "pipeline_audit_summary": "exports/pipeline_audit_summary.json",
+    "pipeline_optimize_notes": "exports/pipeline_optimize_notes.json"
+  }
+}

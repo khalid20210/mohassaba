@@ -26,6 +26,10 @@ jobs:
           python -m pip install pytest pytest-cov
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
+      - name: Architecture Guard
+        run: |
+          python scripts/check_architecture_imports.py
+
       - name: Run tests with reports
         run: |
           mkdir -p artifacts
@@ -33,6 +37,7 @@ jobs:
             --junitxml=artifacts/junit.xml \
             --cov=modules \
             --cov=app \
+            --cov-fail-under=20 \
             --cov-report=term \
             --cov-report=xml:artifacts/coverage.xml
 

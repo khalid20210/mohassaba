@@ -1,11 +1,15 @@
+<style>
+.u_e8c2a805d7{padding:120px 20px;}
+.u_8a359a76eb{margin-top:16px;}
+</style>
 {% extends "base.html" %}
 {% block title %}404 — الصفحة غير موجودة{% endblock %}
 {% block content %}
-<div class="empty-state" style="padding:120px 20px;">
+<div class="empty-state u_e8c2a805d7">
   <div class="empty-icon">🔍</div>
   <h3>الصفحة غير موجودة</h3>
   <p>الرابط الذي طلبته غير موجود.</p>
-  <a href="{{ url_for('dashboard') }}" class="btn btn-primary" style="margin-top:16px;">
+  <a href="{{ url_for('dashboard') }}" class="btn btn-primary u_8a359a76eb">
     ← لوحة التحكم
   </a>
 </div>

@@ -2,59 +2,110 @@
 {% block title %}إعدادات المنشأة{% endblock %}
 
 {% block content %}
+{% set cp = country_profile or {} %}
+{% set tax_label_ar = cp.get('tax_label_ar', 'الضريبة') %}
+{% set tax_number_label = cp.get('tax_number_label', 'الرقم الضريبي') %}
+{% set default_tax_rate = cp.get('default_tax_rate', 0) %}
+{% set requires_zatca_profile = cp.get('requires_zatca', 0) %}
+{% set tax_system = cp.get('tax_system', 'none') %}
+{% set is_zatca = requires_zatca_profile or tax_system == 'zatca' %}
+{% set compliance = compliance_report or {} %}
+{% set compliance_score = compliance.get('score', 0) %}
+{% set compliance_level = compliance.get('level', 'warning') %}
 <div class="page-header">
   <div>
     <h2 class="page-title">⚙️ إعدادات المنشأة</h2>
-    <p class="page-subtitle">بيانات المنشأة تظهر في الفواتير ورمز ZATCA تلقائياً</p>
+    <p class="page-subtitle">بيانات المنشأة تظهر في الفواتير ورمز {% if is_zatca %}ZATCA{% else %}{{ tax_label_ar }}{% endif %} تلقائياً</p>
+  </div>
+</div>
+
+<!-- ═══════════════ مصفوفة الامتثال الضريبي ═══════════════ -->
+<div class="card u_729d2fa421">
+  <div class="u_729d2fa421">
+    <div class="u_729d2fa421">
+      <span class="u_8e8c2c36e1">🧭 مصفوفة الامتثال — {{ cp.get('country_name_ar', 'غير محدد') }}</span>
+      <div class="u_d2324fe4d6">درجة الامتثال الحالية: {{ compliance_score }}% • النظام: {{ tax_system }}</div>
+    </div>
+    <div class="u_42f7de9ba5">{{ compliance_score }}%</div>
+  </div>
+  <div class="u_186530a1e0">
+    <table class="u_67990216a6">
+      <thead>
+        <tr class="u_71514c350f">
+          <th class="u_423a86ca79">البند</th>
+          <th class="u_423a86ca79">الحالة</th>
+          <th class="u_423a86ca79">الأولوية</th>
+          <th class="u_423a86ca79">ملاحظة</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for chk in compliance.get('checks', []) %}
+        <tr class="u_b96942628a">
+          <td class="u_04e88e64b0">{{ chk.label }}</td>
+          <td class="u_04e88e64b0">{% if chk.ok %}<span class="u_92aa23fbc9">✅ مستوفى</span>{% else %}<span class="u_39870f8d26">❌ ناقص</span>{% endif %}</td>
+          <td class="u_04e88e64b0">
+            {% if chk.severity == 'high' %}<span class="u_39870f8d26">عالية</span>
+            {% elif chk.severity == 'medium' %}<span class="u_2266a078c7">متوسطة</span>
+            {% else %}<span class="u_7bb097a86b">منخفضة</span>{% endif %}
+          </td>
+          <td class="u_dccfff26b3">{{ chk.note or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 </div>
 
 {% if not can_edit_business %}
-<div class="alert alert-warning" style="background:#fff8e1;border:1px solid #f59e0b;border-radius:10px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;gap:10px">
-  <span style="font-size:1.3rem">🔒</span>
+<div class="alert alert-warning u_8677f19df7">
+  <span class="u_27e46985ca">🔒</span>
   <div>
     <strong>وضع القراءة فقط</strong><br>
-    <span style="font-size:.85rem;color:#6b7280">ليس لديك صلاحية تعديل بيانات المنشأة. تواصل مع المدير لمنحك الصلاحية.</span>
+    <span class="u_0a4aef16c3">ليس لديك صلاحية تعديل بيانات المنشأة. تواصل مع المدير لمنحك الصلاحية.</span>
   </div>
 </div>
 {% endif %}
 
-<!-- ═══════════════ بطاقة جاهزية ZATCA ═══════════════ -->
+<!-- ═══════════════ بطاقة الجاهزية الضريبية ═══════════════ -->
 {% set zatca_score = 0 %}
-{% if biz.tax_number and biz.tax_number|length == 15 %}{% set zatca_score = zatca_score + 35 %}{% endif %}
+{% set tax_number_valid = false %}
+{% for chk in compliance.get('checks', []) %}
+  {% if chk.code == 'tax_number' and chk.ok %}{% set tax_number_valid = true %}{% endif %}
+{% endfor %}
+{% if tax_number_valid %}{% set zatca_score = zatca_score + 35 %}{% endif %}
 {% if biz.cr_number %}{% set zatca_score = zatca_score + 25 %}{% endif %}
 {% if biz.name %}{% set zatca_score = zatca_score + 15 %}{% endif %}
 {% if biz.address %}{% set zatca_score = zatca_score + 10 %}{% endif %}
 {% if biz.city %}{% set zatca_score = zatca_score + 10 %}{% endif %}
 {% if biz.logo_path %}{% set zatca_score = zatca_score + 5 %}{% endif %}
 
-<div class="card" style="margin-bottom:20px;border:2px solid {% if zatca_score >= 85 %}#6ee7b7{% elif zatca_score >= 50 %}#fcd34d{% else %}#fca5a5{% endif %};border-radius:14px;overflow:hidden">
-  <div style="background:{% if zatca_score >= 85 %}linear-gradient(90deg,#064e3b,#065f46){% elif zatca_score >= 50 %}linear-gradient(90deg,#78350f,#92400e){% else %}linear-gradient(90deg,#7f1d1d,#991b1b){% endif %};padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-    <div style="color:#fff">
-      <span style="font-size:1.1rem;font-weight:700">
-        {% if zatca_score >= 85 %}✅ ZATCA — جاهز للتقديم{% elif zatca_score >= 50 %}⚠️ ZATCA — يحتاج اكتمال{% else %}❌ ZATCA — بيانات ناقصة{% endif %}
+<div class="card u_f3330aeb48">
+  <div class="u_729d2fa421">
+    <div class="u_729d2fa421">
+      <span class="u_dbf08a4bb2">
+        {% if zatca_score >= 85 %}✅ {% if is_zatca %}ZATCA{% else %}جاهزية {{ tax_label_ar }}{% endif %} — جاهز للتقديم{% elif zatca_score >= 50 %}⚠️ {% if is_zatca %}ZATCA{% else %}جاهزية {{ tax_label_ar }}{% endif %} — يحتاج اكتمال{% else %}❌ {% if is_zatca %}ZATCA{% else %}جاهزية {{ tax_label_ar }}{% endif %} — بيانات ناقصة{% endif %}
       </span>
-      <div style="font-size:.8rem;opacity:.85;margin-top:3px">درجة الجاهزية: {{ zatca_score }}%</div>
+      <div class="u_aedeaada41">درجة الجاهزية: {{ zatca_score }}%</div>
     </div>
-    <div style="background:rgba(255,255,255,.15);border-radius:50px;padding:6px 20px;color:#fff;font-weight:700;font-size:1.3rem">
+    <div class="u_f3330aeb48">
       {{ zatca_score }}%
     </div>
   </div>
-  <div style="padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
+  <div class="u_582449a6c8">
     {% macro zatca_item(label, val, points, hint='') %}
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;background:{% if val %}#f0fdf4{% else %}#fff1f2{% endif %};border:1px solid {% if val %}#86efac{% else %}#fca5a5{% endif %}">
-      <div style="font-size:1.4rem">{% if val %}✅{% else %}❌{% endif %}</div>
+    <div class="u_bea3ad6b7c">
+      <div class="u_bea3ad6b7c">{% if val %}✅{% else %}❌{% endif %}</div>
       <div>
-        <div style="font-size:.85rem;font-weight:600;color:{% if val %}#15803d{% else %}#b91c1c{% endif %}">{{ label }}</div>
-        <div style="font-size:.75rem;color:#6b7280">
+        <div class="u_92aa23fbc9">{{ label }}</div>
+        <div class="u_d2dda226dd">
           {% if val %}{{ val[:25] }}{% if val|length > 25 %}...{% endif %}{% else %}{{ hint or 'غير مُدخل' }}{% endif %}
-          <span style="color:{% if val %}#059669{% else %}#dc2626{% endif %}">(+{{ points }}%)</span>
+          <span class="u_92aa23fbc9">(+{{ points }}%)</span>
         </div>
       </div>
     </div>
     {% endmacro %}
 
-    {{ zatca_item('الرقم الضريبي (VAT)', biz.tax_number if biz.tax_number and biz.tax_number|length == 15 else '', 35, 'يجب أن يكون 15 رقماً') }}
+    {{ zatca_item(tax_number_label, biz.tax_number if tax_number_valid else '', 35, 'تحقق من الصيغة المحلية') }}
     {{ zatca_item('رقم السجل التجاري', biz.cr_number, 25, 'مطلوب للفواتير') }}
     {{ zatca_item('اسم المنشأة', biz.name, 15) }}
     {{ zatca_item('العنوان', biz.address, 10, 'العنوان التفصيلي') }}
@@ -62,40 +113,40 @@
     {{ zatca_item('الشعار', biz.logo_path, 5, 'لإضفاء الاحترافية') }}
   </div>
   {% if zatca_score < 100 %}
-  <div style="padding:0 20px 16px;color:#6b7280;font-size:.82rem">
+  <div class="u_e8f12fd2c2">
     💡 <strong>للارتقاء بدرجة الجاهزية:</strong> أكمل الحقول الناقصة في نموذج هوية المنشأة أدناه ثم احفظ.
   </div>
   {% endif %}
 </div>
 
 <!-- ═══════════════ الخدمات المحاسبية المشتركة (مجانية) ═══════════════ -->
-<div class="card" id="shared-services-section" style="margin-bottom:20px;border:1px solid #d1fae5;box-shadow:0 10px 25px rgba(2,6,23,.06)">
-  <div class="card-header" style="background:linear-gradient(90deg,#065f46,#047857);color:#fff;border-radius:12px 12px 0 0">
-    <span class="card-title" style="color:#fff">🧾 الخدمات المحاسبية المشتركة — مجانية بالكامل</span>
+<div class="card u_0f171caf72" id="shared-services-section">
+  <div class="card-header u_e45984f602">
+    <span class="card-title u_729d2fa421">🧾 الخدمات المحاسبية المشتركة — مجانية بالكامل</span>
   </div>
-  <div style="padding:12px 20px 4px;color:var(--text-muted);font-size:.86rem">
+  <div class="u_dce9d85660">
     جميع هذه الخدمات مجانية ومتاحة لكل الأنشطة. يمكنك تفعيل أو تعطيل أي خدمة في أي وقت بدون رسوم.
   </div>
 
   {% if shared_services %}
-  <div style="padding:12px 20px 20px">
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">
+  <div class="u_ea7c607adc">
+    <div class="u_a377dc703c">
       {% for svc in shared_services %}
-      <div style="border:1px solid {% if svc.is_active %}#6ee7b7{% else %}#e5e7eb{% endif %};border-radius:10px;padding:12px 16px;background:{% if svc.is_active %}#f0fdf4{% else %}#fafafa{% endif %};display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <div class="u_0f171caf72">
         <div>
-          <div style="font-weight:600;font-size:.9rem;color:{% if svc.is_active %}#065f46{% else %}#6b7280{% endif %}">{{ svc.name }}</div>
-          <div style="font-size:.76rem;color:var(--text-muted)">{{ svc.category_name }} — مجانية</div>
+          <div class="u_7c8be2e0c8">{{ svc.name }}</div>
+          <div class="u_e284037e67">{{ svc.category_name }} — مجانية</div>
         </div>
-        <form method="POST" action="{{ url_for('core.settings') }}#shared-services-section" style="display:flex;gap:6px;flex-shrink:0">
+        <form method="POST" action="{{ url_for('core.settings') }}#shared-services-section" class="u_b71a0331a9">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <input type="hidden" name="action" value="toggle_shared_service">
           <input type="hidden" name="product_id" value="{{ svc.id }}">
           {% if svc.is_active %}
           <input type="hidden" name="enable" value="0">
-          <button type="submit" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:7px;padding:5px 12px;font-size:.8rem;cursor:pointer;white-space:nowrap">⛔ تعطيل</button>
+          <button type="submit" class="u_abeae7d160">⛔ تعطيل</button>
           {% else %}
           <input type="hidden" name="enable" value="1">
-          <button type="submit" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;border-radius:7px;padding:5px 12px;font-size:.8rem;cursor:pointer;white-space:nowrap">✅ تفعيل</button>
+          <button type="submit" class="u_bb9b637df8">✅ تفعيل</button>
           {% endif %}
         </form>
       </div>
@@ -103,17 +154,17 @@
     </div>
   </div>
   {% else %}
-  <div style="padding:20px;color:var(--text-muted);font-size:.88rem">لا توجد خدمات مشتركة مسجلة لهذه المنشأة بعد.</div>
+  <div class="u_9a9ac45e43">لا توجد خدمات مشتركة مسجلة لهذه المنشأة بعد.</div>
   {% endif %}
 </div>
 
 <!-- ═══════════════ الخدمات المميزة (اشتراكات) ═══════════════ -->
-<div class="card" style="margin-bottom:20px;border:1px solid #d6e4ff;box-shadow:0 10px 25px rgba(2,6,23,.06)">
-  <div class="card-header" style="background:linear-gradient(90deg,#0b132b,#1c2541);color:#fff;border-radius:12px 12px 0 0">
-    <span class="card-title" style="color:#fff">🚀 الخدمات المميزة (Subscription Add-ons)</span>
+<div class="card u_d3cf63fd5b">
+  <div class="card-header u_a1187838df">
+    <span class="card-title u_729d2fa421">🚀 الخدمات المميزة (Subscription Add-ons)</span>
   </div>
 
-  <div style="padding:16px 20px 4px;color:var(--text-muted);font-size:.86rem">
+  <div class="u_f1838e0ec2">
     جميع الخدمات التالية تمثل مصادر دخل مستقلة للمنصة ويمكن تفعيلها/تعطيلها بشكل فوري.
   </div>
 
@@ -145,60 +196,60 @@
     <ul class="premium-feature-list" id="premiumFeatureList"></ul>
 
     {% if can_manage_premium %}
-    <form method="POST" action="{{ url_for('core.settings') }}" id="premiumToggleForm" style="display:flex;gap:10px;flex-wrap:wrap">
+    <form method="POST" action="{{ url_for('core.settings') }}" id="premiumToggleForm" class="u_6002dd784e">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="action" value="toggle_premium_addon">
       <input type="hidden" name="premium_addon_code" id="premiumAddonCode" value="">
       <input type="hidden" name="enable" id="premiumEnable" value="1">
       <button type="button" class="btn btn-success" id="premiumEnableBtn">✅ تفعيل الخدمة</button>
       <button type="button" class="btn btn-secondary" id="premiumDisableBtn">⛔ تعطيل الخدمة</button>
-      <span id="premiumStatusInline" style="align-self:center;color:var(--text-muted);font-size:.83rem"></span>
+      <span id="premiumStatusInline" class="u_98e0b2c733"></span>
     </form>
     {% else %}
-    <div style="margin-top:10px;font-size:.82rem;color:#b45309">🔒 التفعيل والإلغاء متاحان للمالك فقط</div>
+    <div class="u_164959e1b0">🔒 التفعيل والإلغاء متاحان للمالك فقط</div>
     {% endif %}
   </div>
 </div>
 
 <!-- ═══════════════ تسعير جماعي بهامش ربح ═══════════════ -->
-<div class="card" style="margin-bottom:20px;border:1px solid #bbf7d0;box-shadow:0 10px 25px rgba(2,6,23,.06)">
-  <div class="card-header" style="background:linear-gradient(90deg,#064e3b,#065f46);color:#fff;border-radius:12px 12px 0 0">
-    <span class="card-title" style="color:#fff">💹 تسعير جماعي بهامش ربح</span>
+<div class="card u_ccf06c8c0c">
+  <div class="card-header u_db6cc31025">
+    <span class="card-title u_729d2fa421">💹 تسعير جماعي بهامش ربح</span>
   </div>
 
-  <form method="POST" action="{{ url_for('core.settings') }}" style="padding:16px 20px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:end">
+  <form method="POST" action="{{ url_for('core.settings') }}" class="u_788f41dda5">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" name="action" value="apply_global_profit_margin">
 
-    <div class="form-group" style="margin:0">
+    <div class="form-group u_1169661891">
       <label class="form-label">نسبة هامش الربح %</label>
-      <input type="number" name="margin_pct" class="form-control" min="0" step="0.01" value="30" {% if not can_edit_business %}disabled{% endif %}>
+      <input type="number" name="margin_pct" class="form-control" min="0" step="0.01" value="30" title="نسبة هامش الربح" {% if not can_edit_business %}disabled{% endif %}>
       <p class="field-hint">مثال: 30 يعني زيادة 30% على التكلفة</p>
     </div>
 
-    <div class="form-group" style="margin:0">
+    <div class="form-group u_1169661891">
       <label class="form-label">طريقة الضريبة</label>
-      <select name="tax_mode" class="form-control" {% if not can_edit_business %}disabled{% endif %}>
-        <option value="without_tax" selected>بدون ضريبة</option>
-        <option value="with_tax">مع الضريبة</option>
+      <select name="tax_mode" class="form-control" title="طريقة الضريبة" aria-label="طريقة الضريبة" {% if not can_edit_business %}disabled{% endif %}>
+        <option value="without_tax" selected>بدون {{ tax_label_ar }}</option>
+        <option value="with_tax">مع {{ tax_label_ar }}</option>
       </select>
     </div>
 
-    <div class="form-group" style="margin:0">
-      <label class="form-label">نسبة الضريبة % (عند الاختيار)</label>
-      <input type="number" name="tax_pct" class="form-control" min="0" step="0.01" value="15" {% if not can_edit_business %}disabled{% endif %}>
+    <div class="form-group u_1169661891">
+      <label class="form-label">نسبة {{ tax_label_ar }} % (عند الاختيار)</label>
+      <input type="number" name="tax_pct" class="form-control" min="0" step="0.01" value="{{ default_tax_rate }}" title="نسبة الضريبة" {% if not can_edit_business %}disabled{% endif %}>
     </div>
 
-    <div class="form-group" style="margin:0">
+    <div class="form-group u_1169661891">
       {% if can_edit_business %}
-      <button type="submit" class="btn btn-success" style="width:100%">⚡ تطبيق الهامش على كل المنتجات فوراً</button>
+      <button type="submit" class="btn btn-success u_0466783d98">⚡ تطبيق الهامش على كل المنتجات فوراً</button>
       {% else %}
-      <button type="button" class="btn btn-secondary" style="width:100%" disabled>🔒 لا تملك صلاحية التعديل</button>
+      <button type="button" class="btn btn-secondary u_0466783d98" disabled>🔒 لا تملك صلاحية التعديل</button>
       {% endif %}
     </div>
   </form>
 
-  <div style="padding:0 20px 16px;color:var(--text-muted);font-size:.82rem">
+  <div class="u_18028a4422">
     يطبّق على كل الأسعار مرة واحدة فوراً في جداول المنتجات والمخزون. يُفضّل أخذ نسخة احتياطية قبل التنفيذ.
   </div>
 </div>
@@ -207,36 +258,33 @@
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
   <!-- ═══════════════ هوية المنشأة ═══════════════ -->
-  <div class="card" style="margin-bottom:20px">
+  <div class="card u_49f14f8f83">
     <div class="card-header">
       <span class="card-title">🏢 هوية المنشأة</span>
     </div>
 
     <!-- اللوجو -->
-    <div style="display:flex;align-items:center;gap:24px;margin-bottom:20px;padding:0 20px;flex-wrap:wrap">
-      <div id="logoPreviewWrap" style="width:100px;height:100px;border-radius:12px;
-           border:2px dashed var(--border);display:flex;align-items:center;
-           justify-content:center;overflow:hidden;background:var(--bg);flex-shrink:0">
+    <div class="u_89ba656e6d">
+      <div id="logoPreviewWrap" class="u_187d4c9975">
         {% if biz.logo_path %}
-          <img id="logoPreview" src="{{ biz.logo_path }}" alt="logo"
-               style="width:100%;height:100%;object-fit:contain">
+          <img id="logoPreview" src="{{ biz.logo_path }}" alt="logo" class="u_8f350e0267">
         {% else %}
-          <div id="logoPreview" style="font-size:2.5rem;color:var(--text-muted)">🏪</div>
+          <div id="logoPreview" class="u_719e20b129">🏪</div>
         {% endif %}
       </div>
-      <div style="flex:1">
+      <div class="u_97445a8d93">
         <label class="form-label">شعار المنشأة (اختياري)</label>
-        <input type="file" name="logo" id="logoInput" class="form-control"
+        <input type="file" name="logo" id="logoInput" class="form-control" title="رفع شعار المنشأة"
                accept=".png,.jpg,.jpeg,.svg,.webp,.gif"
                onchange="previewLogo(this)"
                {% if not can_edit_business %}disabled{% endif %}>
-        <p style="font-size:.75rem;color:var(--text-muted);margin-top:6px">
+        <p class="u_ff51dbe79f">
           PNG, JPG, SVG — يظهر في ترويسة كل فاتورة
         </p>
       </div>
     </div>
 
-    <div class="form-grid-2" style="padding:0 20px 20px">
+    <div class="form-grid-2 u_5d5b0773ae">
       <div class="form-group">
         <label class="form-label">الاسم التجاري <span class="required">*</span></label>
         <input type="text" name="business_name" class="form-control"
@@ -244,13 +292,13 @@
                {% if not can_edit_business %}disabled{% endif %}>
       </div>
       <div class="form-group">
-        <label class="form-label">الرقم الضريبي (VAT)</label>
+        <label class="form-label">{{ tax_number_label }}</label>
         <input type="text" name="tax_number" class="form-control" dir="ltr"
                value="{{ biz.tax_number or '' }}"
-               placeholder="300XXXXXXXXXX003 — 15 رقماً"
+           placeholder="أدخل {{ tax_number_label }} وفق صيغة الدولة"
                maxlength="20"
                {% if not can_edit_business %}disabled{% endif %}>
-        <p class="field-hint">يدخل تلقائياً في رمز ZATCA</p>
+        <p class="field-hint">يدخل تلقائياً في رمز {% if is_zatca %}ZATCA{% else %}{{ tax_label_ar }}{% endif %}</p>
       </div>
       <div class="form-group">
         <label class="form-label">رقم السجل التجاري</label>
@@ -260,7 +308,7 @@
       </div>
       <div class="form-group">
         <label class="form-label">العملة</label>
-        <select name="currency" class="form-control" {% if not can_edit_business %}disabled{% endif %}>
+        <select name="currency" class="form-control" title="عملة المنشأة" aria-label="عملة المنشأة" {% if not can_edit_business %}disabled{% endif %}>
           {% for code, label in [('SAR','ريال سعودي — SAR'),('AED','درهم إماراتي — AED'),('USD','دولار أمريكي — USD'),('KWD','دينار كويتي — KWD'),('BHD','دينار بحريني — BHD'),('QAR','ريال قطري — QAR'),('OMR','ريال عُماني — OMR')] %}
           <option value="{{ code }}" {% if biz.currency == code %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
@@ -270,11 +318,11 @@
   </div>
 
   <!-- ═══════════════ بيانات الاتصال ═══════════════ -->
-  <div class="card" style="margin-bottom:20px">
+  <div class="card u_49f14f8f83">
     <div class="card-header">
       <span class="card-title">📞 بيانات الاتصال والعنوان</span>
     </div>
-    <div class="form-grid-2" style="padding:0 20px 20px">
+    <div class="form-grid-2 u_5d5b0773ae">
       <div class="form-group">
         <label class="form-label">رقم الجوال / الهاتف</label>
         <input type="tel" name="phone" class="form-control" dir="ltr"
@@ -303,11 +351,11 @@
   </div>
 
   <!-- ═══════════════ إعدادات الفواتير ═══════════════ -->
-  <div class="card" style="margin-bottom:20px">
+  <div class="card u_49f14f8f83">
     <div class="card-header">
       <span class="card-title">🧾 إعدادات الفواتير</span>
     </div>
-    <div class="form-grid-2" style="padding:0 20px 20px">
+    <div class="form-grid-2 u_5d5b0773ae">
       <div class="form-group">
         <label class="form-label">بادئة رقم الفاتورة</label>
         <input type="text" name="invoice_prefix" class="form-control" dir="ltr"
@@ -320,36 +368,36 @@
 
   <!-- ═══════════════ سبب التعديل ═══════════════ -->
   {% if can_edit_business %}
-  <div class="card" style="margin-bottom:20px;border:2px solid {% if not can_skip_reason %}#f59e0b{% else %}var(--border){% endif %}">
+  <div class="card u_0e434ab179">
     <div class="card-header">
-      <span class="card-title">📝 سبب التعديل {% if not can_skip_reason %}<span style="color:#ef4444">*</span>{% endif %}</span>
+      <span class="card-title">📝 سبب التعديل {% if not can_skip_reason %}<span class="u_b0eb59c131">*</span>{% endif %}</span>
     </div>
-    <div style="padding:16px 20px">
-      <input type="text" name="change_reason" class="form-control"
+    <div class="u_01b92734ce">
+      <input type="text" name="change_reason" class="form-control u_cd90f7a775"
              placeholder="{% if not can_skip_reason %}سبب التعديل إلزامي{% else %}اختياري — وصف مختصر للتغيير{% endif %}"
              {% if not can_skip_reason %}required{% endif %}
-             style="max-width:600px">
+            >
       {% if not can_skip_reason %}
-      <p style="font-size:.78rem;color:#f59e0b;margin-top:6px">⚠️ صلاحيتك تتطلب ذكر سبب التعديل</p>
+      <p class="u_5b1e65a378">⚠️ صلاحيتك تتطلب ذكر سبب التعديل</p>
       {% endif %}
     </div>
   </div>
   {% endif %}
 
   <!-- ═══════════════ معاينة رمز QR ═══════════════ -->
-  <div class="card" style="margin-bottom:20px">
+  <div class="card u_49f14f8f83">
     <div class="card-header">
-      <span class="card-title">🟢 معاينة رمز ZATCA</span>
+      <span class="card-title">🟢 معاينة رمز {% if is_zatca %}ZATCA{% else %}{{ tax_label_ar }}{% endif %}</span>
     </div>
-    <div style="padding:20px;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
-      <div id="zatcaPreviewQr" style="width:120px;height:120px"></div>
-      <div style="flex:1">
-        <p style="font-size:.85rem;margin:0 0 8px">
+    <div class="u_212bef9c2f">
+      <div id="zatcaPreviewQr" class="u_cc45e3d2cc"></div>
+      <div class="u_97445a8d93">
+        <p class="u_57602974d1">
           يظهر هذا الرمز في أسفل كل فاتورة ويحتوي على:
         </p>
-        <ul style="font-size:.82rem;color:var(--text-muted);padding-right:16px;margin:0">
+        <ul class="u_8b5c9ad4d2">
           <li>اسم المنشأة: <strong id="previewName">{{ biz.name or '—' }}</strong></li>
-          <li>الرقم الضريبي: <strong id="previewVat" dir="ltr">{{ biz.tax_number or '—' }}</strong></li>
+          <li>{{ tax_number_label }}: <strong id="previewVat" dir="ltr">{{ biz.tax_number or '—' }}</strong></li>
           <li>الإجمالي والضريبة (تلقائي من الفاتورة)</li>
         </ul>
       </div>
@@ -477,6 +525,7 @@ function previewLogo(input) {
 (function() {
   const name   = document.getElementById('previewName')?.textContent?.trim() || '';
   const vat    = document.getElementById('previewVat')?.textContent?.trim()  || '';
+  const isZatca = {{ 'true' if is_zatca else 'false' }};
   if (!name || name === '—') return;
 
   // TLV Base64 بسيط لأغراض المعاينة
@@ -485,7 +534,8 @@ function previewLogo(input) {
     return new Uint8Array([tag, enc.length, ...enc]);
   }
   const ts    = new Date().toISOString();
-  const parts = [tlv(1,name), tlv(2,vat||'300000000000003'), tlv(3,ts), tlv(4,'0.00'), tlv(5,'0.00')];
+  const fallbackTaxNo = isZatca ? '300000000000003' : 'TAX-NUMBER';
+  const parts = [tlv(1,name), tlv(2,vat||fallbackTaxNo), tlv(3,ts), tlv(4,'0.00'), tlv(5,'0.00')];
   const total = parts.reduce((a,b) => a + b.length, 0);
   const buf   = new Uint8Array(total);
   let off = 0;
@@ -604,5 +654,70 @@ initPremiumServices();
   font-size: .84rem;
   line-height: 1.75;
 }
+.u_729d2fa421{color:#fff}
+.u_8e8c2c36e1{font-size:1.05rem;font-weight:700}
+.u_d2324fe4d6{font-size:.8rem;opacity:.9;margin-top:3px}
+.u_42f7de9ba5{background:rgba(255,255,255,.15);border-radius:50px;padding:6px 18px;color:#fff;font-weight:700;font-size:1.2rem}
+.u_186530a1e0{padding:14px 18px}
+.u_67990216a6{width:100%;border-collapse:collapse;font-size:.86rem}
+.u_71514c350f{background:#f8fafc;border-bottom:1px solid #e5e7eb}
+.u_423a86ca79{text-align:right;padding:8px}
+.u_b96942628a{border-bottom:1px solid #f1f5f9}
+.u_04e88e64b0{padding:8px 6px}
+.u_92aa23fbc9{color:#15803d;font-weight:700}
+.u_39870f8d26{color:#b91c1c;font-weight:700}
+.u_2266a078c7{color:#92400e;font-weight:700}
+.u_7bb097a86b{color:#475569;font-weight:700}
+.u_dccfff26b3{padding:8px 6px;color:#64748b}
+.u_8677f19df7{background:#fff8e1;border:1px solid #f59e0b;border-radius:10px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.u_27e46985ca{font-size:1.3rem}
+.u_0a4aef16c3{font-size:.85rem;color:#6b7280}
+.u_dbf08a4bb2{font-size:1.1rem;font-weight:700}
+.u_aedeaada41{font-size:.8rem;opacity:.85;margin-top:3px}
+.u_f3330aeb48{background:rgba(255,255,255,.15);border-radius:50px;padding:6px 20px;color:#fff;font-weight:700;font-size:1.3rem}
+.u_582449a6c8{padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.u_bea3ad6b7c{font-size:1.4rem}
+.u_d2dda226dd{font-size:.75rem;color:#6b7280}
+.u_e8f12fd2c2{padding:0 20px 16px;color:#6b7280;font-size:.82rem}
+.u_0f171caf72{margin-bottom:20px;border:1px solid #d1fae5;box-shadow:0 10px 25px rgba(2,6,23,.06)}
+.u_e45984f602{background:linear-gradient(90deg,#065f46,#047857);color:#fff;border-radius:12px 12px 0 0}
+.u_dce9d85660{padding:12px 20px 4px;color:var(--text-muted);font-size:.86rem}
+.u_ea7c607adc{padding:12px 20px 20px}
+.u_a377dc703c{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.u_e284037e67{font-size:.76rem;color:var(--text-muted)}
+.u_b71a0331a9{display:flex;gap:6px;flex-shrink:0}
+.u_abeae7d160{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:7px;padding:5px 12px;font-size:.8rem;cursor:pointer;white-space:nowrap}
+.u_bb9b637df8{background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;border-radius:7px;padding:5px 12px;font-size:.8rem;cursor:pointer;white-space:nowrap}
+.u_9a9ac45e43{padding:20px;color:var(--text-muted);font-size:.88rem}
+.u_d3cf63fd5b{margin-bottom:20px;border:1px solid #d6e4ff;box-shadow:0 10px 25px rgba(2,6,23,.06)}
+.u_a1187838df{background:linear-gradient(90deg,#0b132b,#1c2541);color:#fff;border-radius:12px 12px 0 0}
+.u_f1838e0ec2{padding:16px 20px 4px;color:var(--text-muted);font-size:.86rem}
+.u_6002dd784e{display:flex;gap:10px;flex-wrap:wrap}
+.u_98e0b2c733{align-self:center;color:var(--text-muted);font-size:.83rem}
+.u_164959e1b0{margin-top:10px;font-size:.82rem;color:#b45309}
+.u_ccf06c8c0c{margin-bottom:20px;border:1px solid #bbf7d0;box-shadow:0 10px 25px rgba(2,6,23,.06)}
+.u_db6cc31025{background:linear-gradient(90deg,#064e3b,#065f46);color:#fff;border-radius:12px 12px 0 0}
+.u_788f41dda5{padding:16px 20px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:end}
+.u_1169661891{margin:0}
+.u_0466783d98{width:100%}
+.u_18028a4422{padding:0 20px 16px;color:var(--text-muted);font-size:.82rem}
+.u_49f14f8f83{margin-bottom:20px}
+.u_89ba656e6d{display:flex;align-items:center;gap:24px;margin-bottom:20px;padding:0 20px;flex-wrap:wrap}
+.u_187d4c9975{width:100px;height:100px;border-radius:12px;
+           border:2px dashed var(--border);display:flex;align-items:center;
+           justify-content:center;overflow:hidden;background:var(--bg);flex-shrink:0}
+.u_8f350e0267{width:100%;height:100%;object-fit:contain}
+.u_719e20b129{font-size:2.5rem;color:var(--text-muted)}
+.u_97445a8d93{flex:1}
+.u_ff51dbe79f{font-size:.75rem;color:var(--text-muted);margin-top:6px}
+.u_5d5b0773ae{padding:0 20px 20px}
+.u_b0eb59c131{color:#ef4444}
+.u_01b92734ce{padding:16px 20px}
+.u_cd90f7a775{max-width:600px}
+.u_5b1e65a378{font-size:.78rem;color:#f59e0b;margin-top:6px}
+.u_212bef9c2f{padding:20px;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.u_cc45e3d2cc{width:120px;height:120px}
+.u_57602974d1{font-size:.85rem;margin:0 0 8px}
+.u_8b5c9ad4d2{font-size:.82rem;color:var(--text-muted);padding-right:16px;margin:0}
 </style>
 {% endblock %}

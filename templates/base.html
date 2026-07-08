@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<html lang="{{ lang }}" dir="{{ text_dir }}" data-theme="light">
+<html lang="ar" dir="{{ text_dir }}" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}{{ t('app_short') }}{% endblock %} — {{ t('app_name') }}</title>
   <!-- PWA -->
   <link rel="manifest" href="/static/manifest.json">
-  <meta name="theme-color" content="#3b82f6">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -17,7 +16,56 @@
   <link rel="stylesheet" href="/admin/theme.css">
   <!-- خط مخصص من لوحة المالك -->
   {% if ux_font_family %}
-  <style>body,*{font-family:'{{ ux_font_family }}',Tahoma,sans-serif!important}</style>
+  <style>body,*{font-family:'{{ ux_font_family }}',Tahoma,sans-serif!important}.u_a4ab966226{
+  background:linear-gradient(90deg,#1e40af,#7c3aed);
+  color:#fff;text-align:center;padding:7px 16px;
+  font-size:.84rem;font-weight:600;position:relative;z-index:9999;
+}
+.u_776b0b62fd{position:absolute;left:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:1rem;cursor:pointer}
+.u_673bc12444{
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:99;
+}
+.u_a130030218{height:32px;border-radius:5px;object-fit:contain;margin-left:6px}
+.u_ac5a78bbde{display:flex; align-items:center; gap:12px;}
+.u_12870874be{
+          background:none;border:1px solid var(--border);border-radius:8px;
+          padding:5px 10px;font-size:.8rem;font-weight:700;
+          color:var(--text-muted);text-decoration:none;
+        }
+.u_ec11f03871{
+          display:none; align-items:center; gap:5px;
+          background:rgba(59,130,246,.15); border:1px solid rgba(59,130,246,.4);
+          color:#93c5fd; border-radius:8px; padding:5px 11px;
+          font-size:.77rem; font-weight:600; cursor:pointer; font-family:inherit;
+          transition:background .15s;}
+.u_3258bcd377{font-size:.82rem; color:#64748b;}
+.u_caac6ce1a9{padding: 16px 24px 0;}
+.u_014c58953c{
+  display:none; position:fixed; bottom:56px; left:0; right:0;
+  background:var(--card-bg); border-top:1px solid var(--border);
+  z-index:199; padding:12px 16px;
+  display:none; flex-wrap:wrap; gap:10px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,.15);
+}
+.u_ccec692fb1{display:flex;align-items:center;gap:8px;padding:10px 14px;
+            border:1px solid var(--border);border-radius:10px;
+            background:var(--bg);color:var(--text);text-decoration:none;
+            font-size:.82rem;font-weight:500;min-width:140px;flex:1}
+.u_16c357ae9f{
+  display:none; position:fixed; bottom:0; left:0; right:0;
+  background:#ef4444; color:#fff; text-align:center;
+  padding:8px; font-size:.85rem; z-index:9999;
+  animation:slideUp .3s ease;}
+.u_58c2a5470b{
+  position:fixed;bottom:20px;left:20px;z-index:9999;
+  display:flex;flex-direction:column;gap:8px;max-width:340px;
+}
+.u_d38365f76d{font-size:1.2rem;flex-shrink:0}
+.u_97445a8d93{flex:1}
+.u_9ab25a324c{font-weight:700;margin-bottom:2px}
+.u_775bc5f064{font-size:.78rem;opacity:.8}
+.notif-close-btn{background:none;border:none;color:inherit;cursor:pointer;font-size:1rem;flex-shrink:0;opacity:.7;padding:0}
+</style>
   {% endif %}
   <!-- تطبيق الثيم قبل رسم الصفحة لتجنب الوميض -->
   <script>
@@ -33,14 +81,9 @@
 <body>
 
 {% if platform_announcement %}
-<div id="jb-announcement" style="
-  background:linear-gradient(90deg,#1e40af,#7c3aed);
-  color:#fff;text-align:center;padding:7px 16px;
-  font-size:.84rem;font-weight:600;position:relative;z-index:9999;
-">
+<div id="jb-announcement" class="u_a4ab966226">
   📢 {{ platform_announcement }}
-  <button onclick="document.getElementById('jb-announcement').style.display='none'"
-    style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:1rem;cursor:pointer">✕</button>
+  <button onclick="document.getElementById('jb-announcement').style.display='none'" class="u_776b0b62fd">✕</button>
 </div>
 {% endif %}
 
@@ -48,9 +91,7 @@
 <!-- ═══════════════════════════════════════════════════════════
      LAYOUT: Sidebar + Main
      ═══════════════════════════════════════════════════════════ -->
-<div id="sidebar-overlay" style="
-  display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:99;
-" onclick="this.style.display='none';document.querySelector('.sidebar').classList.remove('open')">
+<div id="sidebar-overlay" onclick="this.style.display='none';document.querySelector('.sidebar').classList.remove('open')" class="u_673bc12444">
 </div>
 
 <div class="app-layout">
@@ -62,8 +103,8 @@
     <div class="sidebar-logo">
       {% if platform_logo_url %}
       <img src="{{ platform_logo_url }}" alt="{{ platform_name }}"
-           style="height:32px;border-radius:5px;object-fit:contain;margin-left:6px"
-           onerror="this.style.display='none'">
+          
+           onerror="this.style.display='none'" class="u_a130030218">
       {% else %}
       <div class="logo-icon">م</div>
       {% endif %}
@@ -75,20 +116,7 @@
 
     <!-- القائمة الديناميكية -->
     <div class="sidebar-section">
-      <ul class="sidebar-nav" id="nav-main">
-        {% for item in sidebar_items %}
-          {% if item.key == 'settings' %}
-            <li><div class="sidebar-divider"></div></li>
-          {% endif %}
-          <li>
-            <a href="{{ item.url }}"
-               {% if request.path == item.url %}class="active"{% endif %}>
-              <span class="nav-icon">{{ item.icon }}</span>
-              {% if lang == 'en' and item.label_en %}{{ item.label_en }}{% else %}{{ item.label }}{% endif %}
-            </a>
-          </li>
-        {% endfor %}
-      </ul>
+      <div class="sidebar-nav" id="nav-main">{% for item in sidebar_items %}{% if item.key == 'settings' %}<div class="sidebar-divider"></div>{% endif %}<a href="{{ item.url }}" class="sidebar-link {% if request.path == item.url %}active{% endif %}"><span class="nav-icon">{{ item.icon }}</span>{% if lang == 'en' and item.label_en %}{{ item.label_en }}{% else %}{{ item.label }}{% endif %}</a>{% endfor %}</div>
     </div>
 
     <!-- معلومات المستخدم + تسجيل خروج -->
@@ -110,7 +138,7 @@
 
     <!-- Topbar -->
     <header class="topbar">
-      <div style="display:flex; align-items:center; gap:12px;">
+      <div class="u_ac5a78bbde">
         <button class="hamburger" id="hamburger" aria-label="{{ t('menu') }}">&#9776;</button>
         <span class="topbar-title">{% block page_title %}{% endblock %}</span>
       </div>
@@ -122,31 +150,18 @@
         </button>
         <!-- زر تبديل اللغة -->
         {% if lang == 'ar' %}
-        <a href="{{ url_for('core.set_lang', lang='en') }}" title="Switch to English" style="
-          background:none;border:1px solid var(--border);border-radius:8px;
-          padding:5px 10px;font-size:.8rem;font-weight:700;
-          color:var(--text-muted);text-decoration:none;
-        ">EN</a>
+        <a href="{{ url_for('core.set_lang', lang='en') }}" title="Switch to English" class="u_12870874be">EN</a>
         {% else %}
-        <a href="{{ url_for('core.set_lang', lang='ar') }}" title="تبديل للعربية" style="
-          background:none;border:1px solid var(--border);border-radius:8px;
-          padding:5px 10px;font-size:.8rem;font-weight:700;
-          color:var(--text-muted);text-decoration:none;
-        ">عر</a>
+        <a href="{{ url_for('core.set_lang', lang='ar') }}" title="تبديل للعربية" class="u_12870874be">عر</a>
         {% endif %}
         <!-- زر تثبيت التطبيق PWA -->
-        <button id="pwaInstallBtn" onclick="triggerPwaInstall()" title="{{ t('install_app') }}" style="
-          display:none; align-items:center; gap:5px;
-          background:rgba(59,130,246,.15); border:1px solid rgba(59,130,246,.4);
-          color:#93c5fd; border-radius:8px; padding:5px 11px;
-          font-size:.77rem; font-weight:600; cursor:pointer; font-family:inherit;
-          transition:background .15s;">
+        <button id="pwaInstallBtn" onclick="triggerPwaInstall()" title="{{ t('install_app') }}" class="u_ec11f03871">
           📲 {{ t('install') }}
         </button>
         <span class="topbar-biz-badge">
           {% for k, v in industry_types if k == current_business.industry_type %}{{ v }}{% endfor %}
         </span>
-        <span style="font-size:.82rem; color:#64748b;">
+        <span class="u_3258bcd377">
           {{ current_user.full_name or current_user.username }}
         </span>
       </div>
@@ -155,7 +170,7 @@
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        <div style="padding: 16px 24px 0;">
+        <div class="u_caac6ce1a9">
           {% for category, message in messages %}
             <div class="alert alert-{{ category }}">
               <span>{{ '✓' if category == 'success' else ('ℹ' if category == 'info' else '✕') }}</span>
@@ -208,19 +223,9 @@
 </nav>
 
 <!-- قائمة "المزيد" المنبثقة -->
-<div id="bnav-more-menu" style="
-  display:none; position:fixed; bottom:56px; left:0; right:0;
-  background:var(--card-bg); border-top:1px solid var(--border);
-  z-index:199; padding:12px 16px;
-  display:none; flex-wrap:wrap; gap:10px;
-  box-shadow: 0 -4px 20px rgba(0,0,0,.15);
-" aria-label="قائمة التنقل الإضافية">
+<div id="bnav-more-menu" aria-label="قائمة التنقل الإضافية" class="u_014c58953c">
   {% for item in sidebar_items %}
-  <a href="{{ item.url or '#' }}"
-     style="display:flex;align-items:center;gap:8px;padding:10px 14px;
-            border:1px solid var(--border);border-radius:10px;
-            background:var(--bg);color:var(--text);text-decoration:none;
-            font-size:.82rem;font-weight:500;min-width:140px;flex:1">
+  <a href="{{ item.url or '#' }}" class="u_ccec692fb1">
     <span>{{ item.icon or '▪' }}</span>
     <span>{{ item.label }}</span>
   </a>
@@ -258,11 +263,7 @@ document.addEventListener('click', function(e) {
 {% block scripts %}{% endblock %}
 
 <!-- ── مؤشر الاتصال ────────────────────────────────── -->
-<div id="offlineBanner" style="
-  display:none; position:fixed; bottom:0; left:0; right:0;
-  background:#ef4444; color:#fff; text-align:center;
-  padding:8px; font-size:.85rem; z-index:9999;
-  animation:slideUp .3s ease;">📡 {{ t('offline_msg') }}</div>
+<div id="offlineBanner" class="u_16c357ae9f">📡 {{ t('offline_msg') }}</div>
 
 <!-- ── تسجيل Service Worker ─────────────────────── -->
 <script>
@@ -357,10 +358,7 @@ function toggleTheme(){
 
 {% if current_user %}
 <!-- ══ نظام الإشعارات الداخلية (In-App Notifications) ══ -->
-<div id="jb-notif-stack" style="
-  position:fixed;bottom:20px;left:20px;z-index:9999;
-  display:flex;flex-direction:column;gap:8px;max-width:340px;
-"></div>
+<div id="jb-notif-stack" class="u_58c2a5470b"></div>
 <script>
 (function(){
   const stack = document.getElementById('jb-notif-stack');
@@ -379,13 +377,12 @@ function toggleTheme(){
       box-shadow:0 4px 20px rgba(0,0,0,.4);display:flex;gap:10px;align-items:flex-start;
       animation:jbSlideIn .3s ease;max-width:340px`;
     el.innerHTML = `
-      <span style="font-size:1.2rem;flex-shrink:0">${c.icon}</span>
-      <div style="flex:1">
-        <div style="font-weight:700;margin-bottom:2px">${n.title}</div>
-        ${n.body ? `<div style="font-size:.78rem;opacity:.8">${n.body}</div>` : ''}
+      <span class="u_d38365f76d">${c.icon}</span>
+      <div class="u_97445a8d93">
+        <div class="u_9ab25a324c">${n.title}</div>
+        ${n.body ? `<div class="u_775bc5f064">${n.body}</div>` : ''}
       </div>
-      <button onclick="dismissNotif(${n.id},this.parentElement)"
-        style="background:none;border:none;color:${c.text};cursor:pointer;font-size:1rem;flex-shrink:0;opacity:.7;padding:0">✕</button>`;
+      <button onclick="dismissNotif(${n.id},this.parentElement)" class="notif-close-btn">✕</button>`;
     stack.appendChild(el);
     // إزالة تلقائية بعد 7 ثوانٍ
     setTimeout(() => dismissNotif(n.id, el), 7000);

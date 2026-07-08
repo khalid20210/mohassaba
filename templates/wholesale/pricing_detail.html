@@ -1,3 +1,16 @@
+<style>
+.u_500e50569b{color:#94a3b8;font-size:.85rem;}
+.u_a3a5568692{margin-top:4px;}
+.u_0cd28ce9ba{display:inline;}
+.u_79a1c5a5db{margin-bottom:16px;}
+.u_0c345ca86b{background:#14532d;color:#86efac;padding:6px 18px;border-radius:20px;font-size:.85rem;font-weight:700;}
+.u_277f7c4114{background:rgba(255,255,255,.06);color:#64748b;padding:6px 18px;border-radius:20px;font-size:.85rem;font-weight:700;}
+.u_aa3ee35a72{color:#94a3b8;}
+.u_d4e0978054{color:#22c55e;font-weight:700;font-size:1.1rem;}
+.u_8a359a76eb{margin-top:16px;}
+.u_28509e840a{color:#cbd5e1;line-height:1.8;}
+.u_2ee9cc3b59{color:#64748b;padding:20px;text-align:center;}
+</style>
 {% extends "base.html" %}
 {% block title %}{{ pricing.list_name or 'قائمة أسعار' }}{% endblock %}
 {% block page_title %}💲 {{ pricing.list_name or 'قائمة أسعار' }}{% endblock %}
@@ -5,46 +18,46 @@
 {% block content %}
 <div class="page-header">
   <div>
-    <a href="/wholesale/pricing" style="color:#94a3b8;font-size:.85rem;">← قوائم الأسعار</a>
-    <p class="page-subtitle" style="margin-top:4px;">{{ pricing.customer_type or '' }}</p>
+    <a href="/wholesale/pricing" class="u_500e50569b">← قوائم الأسعار</a>
+    <p class="page-subtitle u_a3a5568692">{{ pricing.customer_type or '' }}</p>
   </div>
-  <form method="post" action="/wholesale/pricing/{{ pricing.id }}/toggle" style="display:inline;">
+  <form method="post" action="/wholesale/pricing/{{ pricing.id }}/toggle" class="u_0cd28ce9ba">
     <button type="submit" class="btn {% if pricing.is_active %}btn-secondary{% else %}btn-primary{% endif %}">
       {% if pricing.is_active %}⏸ تعطيل{% else %}▶ تفعيل{% endif %}
     </button>
   </form>
 </div>
 
-<div style="margin-bottom:16px;">
+<div class="u_79a1c5a5db">
   {% if pricing.is_active %}
-    <span style="background:#14532d;color:#86efac;padding:6px 18px;border-radius:20px;font-size:.85rem;font-weight:700;">✓ نشطة</span>
+    <span class="u_0c345ca86b">✓ نشطة</span>
   {% else %}
-    <span style="background:rgba(255,255,255,.06);color:#64748b;padding:6px 18px;border-radius:20px;font-size:.85rem;font-weight:700;">◎ معطلة</span>
+    <span class="u_277f7c4114">◎ معطلة</span>
   {% endif %}
 </div>
 
 <div class="card">
   <div class="card-header"><h3 class="card-title">📋 تفاصيل القائمة</h3></div>
   <table class="table">
-    <tr><td style="color:#94a3b8;">الاسم</td><td><strong>{{ pricing.list_name }}</strong></td></tr>
-    <tr><td style="color:#94a3b8;">نوع العميل</td><td>{{ pricing.customer_type or '—' }}</td></tr>
-    <tr><td style="color:#94a3b8;">نسبة الخصم</td><td style="color:#22c55e;font-weight:700;font-size:1.1rem;">{{ pricing.discount_percent or 0 }}%</td></tr>
-    <tr><td style="color:#94a3b8;">حد أدنى للكمية</td><td>{{ pricing.min_order_qty or '—' }} وحدة</td></tr>
-    <tr><td style="color:#94a3b8;">تاريخ البدء</td><td>{{ pricing.valid_from or '—' }}</td></tr>
-    <tr><td style="color:#94a3b8;">تاريخ الانتهاء</td><td>{{ pricing.valid_to or '—' }}</td></tr>
+    <tr><td class="u_aa3ee35a72">الاسم</td><td><strong>{{ pricing.list_name }}</strong></td></tr>
+    <tr><td class="u_aa3ee35a72">نوع العميل</td><td>{{ pricing.customer_type or '—' }}</td></tr>
+    <tr><td class="u_aa3ee35a72">نسبة الخصم</td><td class="u_d4e0978054">{{ pricing.discount_percent or 0 }}%</td></tr>
+    <tr><td class="u_aa3ee35a72">حد أدنى للكمية</td><td>{{ pricing.min_order_qty or '—' }} وحدة</td></tr>
+    <tr><td class="u_aa3ee35a72">تاريخ البدء</td><td>{{ pricing.valid_from or '—' }}</td></tr>
+    <tr><td class="u_aa3ee35a72">تاريخ الانتهاء</td><td>{{ pricing.valid_to or '—' }}</td></tr>
   </table>
 </div>
 
 {% if pricing.description %}
-<div class="card" style="margin-top:16px;">
+<div class="card u_8a359a76eb">
   <div class="card-header"><h3 class="card-title">📝 وصف</h3></div>
-  <p style="color:#cbd5e1;line-height:1.8;">{{ pricing.description }}</p>
+  <p class="u_28509e840a">{{ pricing.description }}</p>
 </div>
 {% endif %}
 
 <!-- الطلبات المرتبطة -->
-<div class="card" style="margin-top:16px;">
+<div class="card u_8a359a76eb">
   <div class="card-header"><h3 class="card-title">📦 الطلبات المستخدمة لهذه القائمة</h3></div>
-  <p style="color:#64748b;padding:20px;text-align:center;">سيتم عرض الطلبات المرتبطة هنا</p>
+  <p class="u_2ee9cc3b59">سيتم عرض الطلبات المرتبطة هنا</p>
 </div>
 {% endblock %}

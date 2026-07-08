@@ -9,40 +9,62 @@
   th { background:#f5f5f5; padding:10px; text-align:right; font-weight:bold; border-bottom:2px solid #ddd; }
   td { padding:9px 10px; border-bottom:1px solid #eee; }
   tr:hover { background:#fafafa; }
+.u_79eb9beb47{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.u_c1f82e51f6{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.u_6daa1f58be{display:block;font-size:12px;color:#666;margin-bottom:3px}
+.u_27b35ec486{padding:7px 10px;border:1px solid #ddd;border-radius:6px}
+.u_d6f5df47c9{background:#3b82f6;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;align-self:flex-end}
+.u_a76d597a07{display:flex;gap:8px}
+.u_81fe8756c4{background:#10b981;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold}
+.u_78a0fc5c82{background:#8b5cf6;color:white;padding:10px 16px;border-radius:6px;text-decoration:none}
+.u_ef8472ea89{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.u_2c20afeb83{background:linear-gradient(135deg,#ef4444,#dc2626);color:white;padding:18px;border-radius:8px;text-align:center}
+.u_3e644b66ba{font-size:12px;opacity:.8}
+.u_07be723ea9{font-size:1.8rem;font-weight:900;margin:6px 0}
+.u_efd1aa7a5e{background:white;border:1px solid #e5e7eb;padding:18px;border-radius:8px;text-align:center}
+.u_b393da4633{font-size:12px;color:#666}
+.u_5a9dc13c88{font-size:1.4rem;font-weight:900;margin:4px 0;color:#374151}
+.u_1f858a71c1{font-size:11px;color:#999}
+.u_441a250e18{background:#f3f4f6;padding:2px 8px;border-radius:12px;font-size:12px}
+.u_f0031b3bfc{font-weight:bold;color:#dc2626}
+.u_7548c7e90e{background:#fee2e2;color:#dc2626;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px}
+.u_e8d0fd0913{text-align:center;color:#999;padding:30px}
+.u_5bc5dcb834{background:#fef2f2;font-weight:bold}
+.u_2056554381{color:#dc2626}
 </style>
 
 <!-- أدوات -->
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-  <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-    <div><label style="display:block;font-size:12px;color:#666;margin-bottom:3px">من</label>
-    <input type="date" name="from" value="{{ date_from }}" style="padding:7px 10px;border:1px solid #ddd;border-radius:6px"></div>
-    <div><label style="display:block;font-size:12px;color:#666;margin-bottom:3px">إلى</label>
-    <input type="date" name="to" value="{{ date_to }}" style="padding:7px 10px;border:1px solid #ddd;border-radius:6px"></div>
-    <div><label style="display:block;font-size:12px;color:#666;margin-bottom:3px">الفئة</label>
-    <select name="category" style="padding:7px 10px;border:1px solid #ddd;border-radius:6px">
+<div class="u_79eb9beb47">
+  <form method="get" class="u_c1f82e51f6">
+    <div><label class="u_6daa1f58be">من</label>
+    <input type="date" name="from" value="{{ date_from }}" class="u_27b35ec486"></div>
+    <div><label class="u_6daa1f58be">إلى</label>
+    <input type="date" name="to" value="{{ date_to }}" class="u_27b35ec486"></div>
+    <div><label class="u_6daa1f58be">الفئة</label>
+    <select name="category" class="u_27b35ec486">
       <option value="">— الكل —</option>
       {% for cat in categories %}<option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>{% endfor %}
     </select></div>
-    <button type="submit" style="background:#3b82f6;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;align-self:flex-end">🔍 بحث</button>
+    <button type="submit" class="u_d6f5df47c9">🔍 بحث</button>
   </form>
-  <div style="display:flex;gap:8px">
-    <a href="/expenses/new" style="background:#10b981;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold">+ مصروف جديد</a>
-    <a href="/expenses/report" style="background:#8b5cf6;color:white;padding:10px 16px;border-radius:6px;text-decoration:none">📊 التقرير</a>
+  <div class="u_a76d597a07">
+    <a href="/expenses/new" class="u_81fe8756c4">+ مصروف جديد</a>
+    <a href="/expenses/report" class="u_78a0fc5c82">📊 التقرير</a>
   </div>
 </div>
 
 <!-- بطاقات ملخص -->
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px">
-  <div style="background:linear-gradient(135deg,#ef4444,#dc2626);color:white;padding:18px;border-radius:8px;text-align:center">
-    <div style="font-size:12px;opacity:.8">إجمالي المصاريف</div>
-    <div style="font-size:1.8rem;font-weight:900;margin:6px 0">{{ "{:,.2f}".format(total) }}</div>
-    <div style="font-size:12px;opacity:.8">ريال — {{ expenses|length }} سجل</div>
+<div class="u_ef8472ea89">
+  <div class="u_2c20afeb83">
+    <div class="u_3e644b66ba">إجمالي المصاريف</div>
+    <div class="u_07be723ea9">{{ "{:,.2f}".format(total) }}</div>
+    <div class="u_3e644b66ba">ريال — {{ expenses|length }} سجل</div>
   </div>
   {% for cat in by_category[:3] %}
-  <div style="background:white;border:1px solid #e5e7eb;padding:18px;border-radius:8px;text-align:center">
-    <div style="font-size:12px;color:#666">{{ cat.category }}</div>
-    <div style="font-size:1.4rem;font-weight:900;margin:4px 0;color:#374151">{{ "{:,.2f}".format(cat.total) }}</div>
-    <div style="font-size:11px;color:#999">{{ cat.cnt }} عملية</div>
+  <div class="u_efd1aa7a5e">
+    <div class="u_b393da4633">{{ cat.category }}</div>
+    <div class="u_5a9dc13c88">{{ "{:,.2f}".format(cat.total) }}</div>
+    <div class="u_1f858a71c1">{{ cat.cnt }} عملية</div>
   </div>
   {% endfor %}
 </div>
@@ -57,26 +79,26 @@
       {% for exp in expenses %}
       <tr>
         <td>{{ exp.expense_date }}</td>
-        <td><span style="background:#f3f4f6;padding:2px 8px;border-radius:12px;font-size:12px">{{ exp.category }}</span></td>
+        <td><span class="u_441a250e18">{{ exp.category }}</span></td>
         <td>{{ exp.description or '—' }}</td>
-        <td style="font-weight:bold;color:#dc2626">{{ "{:,.2f}".format(exp.amount) }} ر.س</td>
+        <td class="u_f0031b3bfc">{{ "{:,.2f}".format(exp.amount) }} ر.س</td>
         <td>{{ 'كاش' if exp.payment_method=='cash' else ('شيك' if exp.payment_method=='cheque' else 'حوالة') }}</td>
         <td>{{ exp.vendor_name or '—' }}</td>
         <td>
           <form method="post" action="/expenses/{{ exp.id }}/delete" onsubmit="return confirm('حذف هذا المصروف؟')">
-            <button style="background:#fee2e2;color:#dc2626;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">حذف</button>
+            <button class="u_7548c7e90e">حذف</button>
           </form>
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="7" style="text-align:center;color:#999;padding:30px">لا توجد مصاريف مسجّلة للفترة المحددة</td></tr>
+      <tr><td colspan="7" class="u_e8d0fd0913">لا توجد مصاريف مسجّلة للفترة المحددة</td></tr>
       {% endfor %}
     </tbody>
     {% if expenses %}
     <tfoot>
-      <tr style="background:#fef2f2;font-weight:bold">
+      <tr class="u_5bc5dcb834">
         <td colspan="3">الإجمالي</td>
-        <td colspan="4" style="color:#dc2626">{{ "{:,.2f}".format(total) }} ر.س</td>
+        <td colspan="4" class="u_2056554381">{{ "{:,.2f}".format(total) }} ر.س</td>
       </tr>
     </tfoot>
     {% endif %}

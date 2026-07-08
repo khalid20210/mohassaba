@@ -1,3 +1,26 @@
+<style>
+.u_6b99de8b69{display:none}
+.u_3daa0382f8{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.u_1169661891{margin:0}
+.u_ba1aab4093{font-size:2rem}
+.u_49fcd855ce{margin-top:24px}
+.u_b46e7b086b{padding:3px 8px;font-size:.75rem}
+.u_3383d6fa84{padding:14px 20px}
+.u_5872de20d5{color:var(--text-muted)}
+.u_90ad96210e{color:red}
+.u_fd379f9a79{text-align:center;padding:30px}
+.u_101860af8c{font-size:1.2rem}
+.u_f4289d0a76{display:none;margin-top:12px}
+.u_ca4dc3e95d{margin-bottom:8px;font-weight:700;}
+.u_56f4356299{margin-top:12px}
+.u_db33ec0673{max-width:440px;text-align:center}
+.u_a562f4fd76{justify-content:space-between}
+.u_54c2afb7ba{text-align:right}
+.u_54dca8b50e{padding-top:8px}
+.u_df174d9133{display:flex;justify-content:center;margin:16px 0}
+.u_1bf412e681{font-size:.72rem;color:var(--text-muted);margin-top:10px}
+.u_d2cb19f987{justify-content:center;gap:10px}
+</style>
 {% extends "base.html" %}
 {% block title %}المشتريات{% endblock %}
 
@@ -13,7 +36,7 @@
 <!-- ═══════════════════════════════════════════════
      نموذج إدخال فاتورة الشراء
 ═══════════════════════════════════════════════ -->
-<div id="purchaseForm" class="pur-form-wrap" style="display:none">
+<div id="purchaseForm" class="pur-form-wrap u_6b99de8b69">
   <div class="card">
     <div class="card-header">
       <h4>📄 إدخال فاتورة شراء جديدة</h4>
@@ -52,9 +75,9 @@
 
       <!-- رفع صورة / PDF الفاتورة + OCR -->
       <div class="form-group pur-upload-zone" id="uploadZone">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <label class="form-label" style="margin:0">📎 رفع صورة أو PDF للفاتورة</label>
-          <button type="button" id="btnOCR" class="btn-ocr" onclick="runOCR()" style="display:none">
+        <div class="u_3daa0382f8">
+          <label class="form-label u_1169661891">📎 رفع صورة أو PDF للفاتورة</label>
+          <button type="button" id="btnOCR" class="btn-ocr u_6b99de8b69" onclick="runOCR()">
             🤖 قراءة بـ OCR
           </button>
         </div>
@@ -64,19 +87,19 @@
              ondragover="event.preventDefault()" ondrop="handleDrop(event)">
           <input type="file" name="invoice_file" id="fileInput"
                  accept=".pdf,.jpg,.jpeg,.png,.webp"
-                 style="display:none" onchange="onFileChosen(this)">
+                 onchange="onFileChosen(this)" class="u_6b99de8b69">
           <div id="uploadPlaceholder">
-            <span style="font-size:2rem">📤</span>
+            <span class="u_ba1aab4093">📤</span>
             <p>اسحب الملف هنا أو <strong>اضغط للاختيار</strong></p>
             <p class="upload-hint">PDF، JPG، PNG — حجم أقصى 10MB</p>
           </div>
-          <div id="uploadFileName" style="display:none" class="upload-file-name"></div>
+          <div id="uploadFileName" class="upload-file-name u_6b99de8b69"></div>
         </div>
 
       </div>
 
       <!-- Spinner Overlay -->
-      <div id="ocrSpinner" class="ocr-spinner-overlay" style="display:none">
+      <div id="ocrSpinner" class="ocr-spinner-overlay u_6b99de8b69">
         <div class="ocr-spinner-box">
           <div class="ocr-spinner"></div>
           <p>🤖 جارٍ قراءة الفاتورة بالذكاء الاصطناعي...<br>
@@ -148,7 +171,7 @@
      جدول فواتير الشراء السابقة
 ═══════════════════════════════════════════════ -->
 {% if invoices %}
-<div class="card" style="margin-top:24px">
+<div class="card u_49fcd855ce">
   <div class="card-header">
     <h4>📋 سجل المشتريات</h4>
     <span class="badge-total">{{ total }} فاتورة</span>
@@ -186,7 +209,7 @@
           </td>
           <td class="muted-cell">{{ inv.notes or '—' }}</td>
           <td>
-            <button class="btn btn-sm btn-outline" style="padding:3px 8px;font-size:.75rem"
+            <button class="btn btn-sm btn-outline u_b46e7b086b"
               onclick='showZatcaQr({{ inv.id }}, {{ inv.invoice_number | tojson }})'>
               🟢 QR
             </button>
@@ -198,7 +221,7 @@
   </div>
 
   {% if total_pages > 1 %}
-  <div class="pagination" style="padding:14px 20px">
+  <div class="pagination u_3383d6fa84">
     {% if page > 1 %}<a href="{{ url_for('purchases', page=page-1) }}" class="page-btn">← السابق</a>{% endif %}
     <span class="page-info">{{ page }} / {{ total_pages }}</span>
     {% if page < total_pages %}<a href="{{ url_for('purchases', page=page+1) }}" class="page-btn">التالي →</a>{% endif %}
@@ -207,7 +230,7 @@
 </div>
 
 {% else %}
-<div class="empty-state" style="margin-top:24px">
+<div class="empty-state u_49fcd855ce">
   <div class="empty-icon">🛍️</div>
   <h3>لا توجد فواتير شراء بعد</h3>
   <p>اضغط "فاتورة شراء جديدة" لإضافة أول فاتورة.</p>
@@ -518,7 +541,7 @@ async function showZatcaQr(invId, invNum) {
   document.getElementById('zatcaSubtitle').textContent = 'فاتورة رقم: ' + invNum;
   const container = document.getElementById('zatcaQrContainer');
   const infoBox   = document.getElementById('zatcaInfo');
-  container.innerHTML = '<p style="color:var(--text-muted)">⏳ جارٍ التحميل...</p>';
+  container.innerHTML = '<p class="u_5872de20d5">⏳ جارٍ التحميل...</p>';
   infoBox.innerHTML   = '';
   document.getElementById('zatcaModal').style.display = 'flex';
   document.body.style.overflow = 'hidden';
@@ -526,7 +549,7 @@ async function showZatcaQr(invId, invNum) {
   try {
     const res  = await fetch(`/api/invoice/${invId}/zatca-qr`);
     const data = await res.json();
-    if (!data.success) { container.innerHTML = '<p style="color:red">⚠️ ' + escHtml(data.error) + '</p>'; return; }
+    if (!data.success) { container.innerHTML = '<p class="u_90ad96210e">⚠️ ' + escHtml(data.error) + '</p>'; return; }
 
     container.innerHTML = '';
     new QRCode(container, {
@@ -544,7 +567,7 @@ async function showZatcaQr(invId, invNum) {
       <div class="zatca-row"><span>الضريبة</span><strong>${parseFloat(data.vat||0).toFixed(2)} ر.س</strong></div>
     `;
   } catch(err) {
-    container.innerHTML = '<p style="color:red">⚠️ ' + escHtml(err.message) + '</p>';
+    container.innerHTML = '<p class="u_90ad96210e">⚠️ ' + escHtml(err.message) + '</p>';
   }
 }
 
@@ -556,7 +579,7 @@ function closeZatcaModal() {
 function printZatcaQr() {
   const content = document.getElementById('zatcaQrContainer').innerHTML;
   const w = window.open('', '_blank', 'width=400,height=400');
-  w.document.write(`<html><body style="text-align:center;padding:30px">
+  w.document.write(`<html><body class="u_fd379f9a79">
     <h3>رمز ZATCA</h3>${content}
     <script>setTimeout(()=>window.print(),300)<\/script>
   </body></html>`);
@@ -570,7 +593,7 @@ function printZatcaQr() {
 <!-- ═══════════════════════════════════════════════
      مودال التحقق من OCR — صمام الأمان
 ═══════════════════════════════════════════════ -->
-<div id="ocrModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeOcrModal()">
+<div id="ocrModal" class="modal-overlay u_6b99de8b69" onclick="if(event.target===this)closeOcrModal()">
   <div class="modal-box ocr-modal-box">
     <div class="modal-header">
       <div>
@@ -582,7 +605,7 @@ function printZatcaQr() {
 
     <div class="modal-body">
       <div class="ocr-verify-banner">
-        <span style="font-size:1.2rem">⚠️</span>
+        <span class="u_101860af8c">⚠️</span>
         <span>الذكاء الاصطناعي قد يُخطئ أحياناً — تأكد من صحة الأرقام قبل الحفظ</span>
       </div>
 
@@ -605,10 +628,10 @@ function printZatcaQr() {
         </div>
       </div>
 
-      <div id="ocrLinesSection" style="display:none;margin-top:12px">
-        <div class="form-label" style="margin-bottom:8px;font-weight:700;">📦 البنود المُكتشفة تلقائياً</div>
+      <div id="ocrLinesSection" class="u_f4289d0a76">
+        <div class="form-label u_ca4dc3e95d">📦 البنود المُكتشفة تلقائياً</div>
         <div class="table-responsive">
-          <table class="data-table" style="margin:0">
+          <table class="data-table u_1169661891">
             <thead><tr><th>المنتج</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead>
             <tbody id="ocrLinesBody"></tbody>
           </table>
@@ -616,7 +639,7 @@ function printZatcaQr() {
         <p class="ocr-lines-hint">ستُضاف هذه البنود للفاتورة تلقائياً</p>
       </div>
 
-      <details style="margin-top:12px">
+      <details class="u_56f4356299">
         <summary class="ocr-raw-toggle">🔍 النص الخام المستخرج</summary>
         <pre id="ocrRawText" class="ocr-raw-pre"></pre>
       </details>
@@ -633,23 +656,23 @@ function printZatcaQr() {
 <!-- ═══════════════════════════════════════════════
      مودال ZATCA QR Code
 ═══════════════════════════════════════════════ -->
-<div id="zatcaModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeZatcaModal()">
-  <div class="modal-box" style="max-width:440px;text-align:center">
-    <div class="modal-header" style="justify-content:space-between">
-      <div style="text-align:right">
+<div id="zatcaModal" class="modal-overlay u_6b99de8b69" onclick="if(event.target===this)closeZatcaModal()">
+  <div class="modal-box u_db33ec0673">
+    <div class="modal-header u_a562f4fd76">
+      <div class="u_54c2afb7ba">
         <h3>🟢 رمز ZATCA (المرحلة الأولى)</h3>
         <p class="modal-subtitle" id="zatcaSubtitle"></p>
       </div>
       <button class="btn-icon-close" onclick="closeZatcaModal()">✕</button>
     </div>
-    <div class="modal-body" style="padding-top:8px">
-      <div id="zatcaQrContainer" style="display:flex;justify-content:center;margin:16px 0"></div>
+    <div class="modal-body u_54dca8b50e">
+      <div id="zatcaQrContainer" class="u_df174d9133"></div>
       <div id="zatcaInfo" class="zatca-info-box"></div>
-      <p style="font-size:.72rem;color:var(--text-muted);margin-top:10px">
+      <p class="u_1bf412e681">
         متوافق مع متطلبات هيئة الزكاة والضريبة والجمارك — TLV Base64
       </p>
     </div>
-    <div class="modal-footer" style="justify-content:center;gap:10px">
+    <div class="modal-footer u_d2cb19f987">
       <button type="button" class="btn btn-secondary" onclick="closeZatcaModal()">إغلاق</button>
       <button type="button" class="btn btn-outline" onclick="printZatcaQr()">🖨️ طباعة</button>
     </div>

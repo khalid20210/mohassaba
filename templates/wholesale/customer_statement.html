@@ -1,26 +1,40 @@
+<style>
+.u_cd4426f836{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+.u_1da9facb4d{margin:0;}
+.u_4a32e09715{margin:4px 0 0;}
+.u_b9bbe540d3{display:flex;gap:8px;}
+.u_438f21ab65{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:10px;margin-bottom:14px;}
+.u_3498000b8f{color:#94a3b8;font-size:.82rem;}
+.u_496e5baee8{font-weight:800;font-size:1.1rem;color:#f59e0b;}
+.u_c35e0444c1{font-weight:800;font-size:1.1rem;}
+.u_38d3b34caf{font-weight:800;font-size:1.1rem;color:#22c55e;}
+.u_a82d7062cc{margin-bottom:14px;}
+.u_cfc294ffc2{color:#f59e0b;}
+.u_dac4fe6c9b{text-align:center;}
+</style>
 {% extends "base.html" %}
 {% block title %}كشف حساب {{ customer.name }}{% endblock %}
 {% block page_title %}كشف حساب العميل{% endblock %}
 
 {% block content %}
-<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+<div class="page-header u_cd4426f836">
   <div>
-    <h3 style="margin:0;">{{ customer.name }}</h3>
-    <p class="page-subtitle" style="margin:4px 0 0;">{{ customer.phone or '' }}</p>
+    <h3 class="u_1da9facb4d">{{ customer.name }}</h3>
+    <p class="page-subtitle u_4a32e09715">{{ customer.phone or '' }}</p>
   </div>
-  <div style="display:flex;gap:8px;">
+  <div class="u_b9bbe540d3">
     <a href="/wholesale/reports/aging" class="btn btn-secondary">تقرير الأعمار</a>
     <a href="/wholesale/orders" class="btn btn-secondary">الطلبات</a>
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:10px;margin-bottom:14px;">
-  <div class="card"><div style="color:#94a3b8;font-size:.82rem;">الرصيد الحالي</div><div style="font-weight:800;font-size:1.1rem;color:#f59e0b;">{{ "{:,.2f}".format(current_balance) }}</div></div>
-  <div class="card"><div style="color:#94a3b8;font-size:.82rem;">سقف الائتمان</div><div style="font-weight:800;font-size:1.1rem;">{{ "{:,.2f}".format(credit_limit) }}</div></div>
-  <div class="card"><div style="color:#94a3b8;font-size:.82rem;">المتاح</div><div style="font-weight:800;font-size:1.1rem;color:#22c55e;">{{ "{:,.2f}".format(available_credit) }}</div></div>
+<div class="u_438f21ab65">
+  <div class="card"><div class="u_3498000b8f">الرصيد الحالي</div><div class="u_496e5baee8">{{ "{:,.2f}".format(current_balance) }}</div></div>
+  <div class="card"><div class="u_3498000b8f">سقف الائتمان</div><div class="u_c35e0444c1">{{ "{:,.2f}".format(credit_limit) }}</div></div>
+  <div class="card"><div class="u_3498000b8f">المتاح</div><div class="u_38d3b34caf">{{ "{:,.2f}".format(available_credit) }}</div></div>
 </div>
 
-<div class="card" style="margin-bottom:14px;">
+<div class="card u_a82d7062cc">
   <div class="card-header"><h3 class="card-title">فواتير المبيعات</h3></div>
   <table class="table">
     <thead>
@@ -41,10 +55,10 @@
         <td>{{ i.due_date or '—' }}</td>
         <td>{{ i.status or '—' }}</td>
         <td>{{ "{:,.2f}".format(i.total or 0) }}</td>
-        <td style="color:#f59e0b;">{{ "{:,.2f}".format(i.outstanding or 0) }}</td>
+        <td class="u_cfc294ffc2">{{ "{:,.2f}".format(i.outstanding or 0) }}</td>
       </tr>
       {% else %}
-      <tr><td colspan="6" style="text-align:center;">لا توجد فواتير لهذا العميل</td></tr>
+      <tr><td colspan="6" class="u_dac4fe6c9b">لا توجد فواتير لهذا العميل</td></tr>
       {% endfor %}
     </tbody>
   </table>
@@ -74,7 +88,7 @@
         <td>{{ t.created_at or '' }}</td>
       </tr>
       {% else %}
-      <tr><td colspan="6" style="text-align:center;">لا توجد حركات بعد</td></tr>
+      <tr><td colspan="6" class="u_dac4fe6c9b">لا توجد حركات بعد</td></tr>
       {% endfor %}
     </tbody>
   </table>

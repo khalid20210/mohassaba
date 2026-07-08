@@ -2,19 +2,19 @@
 {% block title %}سجل العمليات{% endblock %}
 
 {% block content %}
-<div class="page-header" style="margin-bottom:1.5rem">
-  <h1 style="font-size:1.5rem;font-weight:700;display:flex;align-items:center;gap:.5rem">
+<div class="page-header u_561f378bf0">
+  <h1 class="u_0ff1e549e2">
     🗂️ سجل العمليات
-    <span style="font-size:.85rem;font-weight:400;color:#6b7280">(Audit Trail)</span>
+    <span class="u_63bfbb3dc1">(Audit Trail)</span>
   </h1>
-  <p style="color:#6b7280;margin-top:.25rem">كل حركة في النظام مسجّلة — دخول، بيع، تعديل، حذف</p>
+  <p class="u_a97f69fd89">كل حركة في النظام مسجّلة — دخول، بيع، تعديل، حذف</p>
 </div>
 
 <!-- فلاتر البحث -->
-<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end">
-  <div style="display:flex;flex-direction:column;gap:.35rem;min-width:160px">
-    <label style="font-size:.8rem;color:#374151;font-weight:600">نوع الحدث</label>
-    <select id="filterAction" style="border:1px solid #d1d5db;border-radius:8px;padding:.45rem .75rem;font-size:.875rem">
+<div class="u_ef577c4eb7">
+  <div class="u_ee46526d9f">
+    <label class="u_a5a3fe5554">نوع الحدث</label>
+    <select id="filterAction" class="u_6d04c438df" title="فلتر نوع الحدث">
       <option value="">الكل</option>
       <option value="login">تسجيل دخول</option>
       <option value="login_failed">محاولة دخول فاشلة</option>
@@ -25,51 +25,51 @@
       <option value="delete">حذف</option>
     </select>
   </div>
-  <div style="display:flex;flex-direction:column;gap:.35rem;min-width:160px">
-    <label style="font-size:.8rem;color:#374151;font-weight:600">المستخدم</label>
-    <input type="text" id="filterUser" placeholder="اسم المستخدم..." style="border:1px solid #d1d5db;border-radius:8px;padding:.45rem .75rem;font-size:.875rem">
+  <div class="u_ee46526d9f">
+    <label class="u_a5a3fe5554">المستخدم</label>
+    <input type="text" id="filterUser" placeholder="اسم المستخدم..." class="u_6d04c438df">
   </div>
-  <div style="display:flex;flex-direction:column;gap:.35rem">
-    <label style="font-size:.8rem;color:#374151;font-weight:600">من تاريخ</label>
-    <input type="date" id="filterFrom" style="border:1px solid #d1d5db;border-radius:8px;padding:.45rem .75rem;font-size:.875rem">
+  <div class="u_ed189e2cf6">
+    <label class="u_a5a3fe5554">من تاريخ</label>
+    <input type="date" id="filterFrom" class="u_6d04c438df" title="تاريخ البداية">
   </div>
-  <div style="display:flex;flex-direction:column;gap:.35rem">
-    <label style="font-size:.8rem;color:#374151;font-weight:600">إلى تاريخ</label>
-    <input type="date" id="filterTo" style="border:1px solid #d1d5db;border-radius:8px;padding:.45rem .75rem;font-size:.875rem">
+  <div class="u_ed189e2cf6">
+    <label class="u_a5a3fe5554">إلى تاريخ</label>
+    <input type="date" id="filterTo" class="u_6d04c438df" title="تاريخ النهاية">
   </div>
-  <button onclick="loadLogs(1)" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:.55rem 1.25rem;font-size:.875rem;font-weight:600;cursor:pointer">🔍 بحث</button>
-  <button onclick="clearFilters()" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;border-radius:8px;padding:.55rem 1rem;font-size:.875rem;cursor:pointer">مسح</button>
+  <button onclick="loadLogs(1)" class="u_13d308a0ab">🔍 بحث</button>
+  <button onclick="clearFilters()" class="u_ba94192dda">مسح</button>
 </div>
 
 <!-- إحصائيات سريعة -->
-<div id="statsRow" style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.25rem"></div>
+<div id="statsRow" class="u_79106c7c92"></div>
 
 <!-- الجدول -->
-<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
-  <div style="padding:.875rem 1.25rem;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center">
-    <span style="font-weight:600;color:#111827" id="logCount">يتم التحميل…</span>
-    <button onclick="exportCSV()" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:8px;padding:.4rem .9rem;font-size:.8rem;cursor:pointer">⬇️ تصدير CSV</button>
+<div class="u_6d7ea6b4b4">
+  <div class="u_33b8c2d3f0">
+    <span id="logCount" class="u_5fa47bf173">يتم التحميل…</span>
+    <button onclick="exportCSV()" class="u_032fd054d0">⬇️ تصدير CSV</button>
   </div>
-  <div style="overflow-x:auto">
-    <table style="width:100%;border-collapse:collapse;font-size:.855rem">
+  <div class="u_0ddf068bfb">
+    <table class="u_c720f30c63">
       <thead>
-        <tr style="background:#f9fafb;color:#6b7280;font-size:.78rem;text-align:right">
-          <th style="padding:.75rem 1rem;font-weight:600">التاريخ والوقت</th>
-          <th style="padding:.75rem 1rem;font-weight:600">المستخدم</th>
-          <th style="padding:.75rem 1rem;font-weight:600">الدور</th>
-          <th style="padding:.75rem 1rem;font-weight:600">الحدث</th>
-          <th style="padding:.75rem 1rem;font-weight:600">النوع</th>
-          <th style="padding:.75rem 1rem;font-weight:600">التفاصيل</th>
-          <th style="padding:.75rem 1rem;font-weight:600">عنوان IP</th>
+        <tr class="u_7655465c50">
+          <th class="u_f57cf623d1">التاريخ والوقت</th>
+          <th class="u_f57cf623d1">المستخدم</th>
+          <th class="u_f57cf623d1">الدور</th>
+          <th class="u_f57cf623d1">الحدث</th>
+          <th class="u_f57cf623d1">النوع</th>
+          <th class="u_f57cf623d1">التفاصيل</th>
+          <th class="u_f57cf623d1">عنوان IP</th>
         </tr>
       </thead>
       <tbody id="logsBody">
-        <tr><td colspan="7" style="text-align:center;padding:2rem;color:#9ca3af">جاري التحميل…</td></tr>
+        <tr><td colspan="7" class="u_ebeb0ed2e0">جاري التحميل…</td></tr>
       </tbody>
     </table>
   </div>
   <!-- Pagination -->
-  <div id="pagination" style="padding:1rem;display:flex;justify-content:center;gap:.5rem"></div>
+  <div id="pagination" class="u_127f2b3e7e"></div>
 </div>
 
 <style>
@@ -83,6 +83,44 @@
 .badge-delete      { background:#fee2e2;color:#dc2626 }
 .badge-default     { background:#f3f4f6;color:#6b7280 }
 tbody tr:hover { background:#f9fafb }
+.u_561f378bf0{margin-bottom:1.5rem}
+.u_0ff1e549e2{font-size:1.5rem;font-weight:700;display:flex;align-items:center;gap:.5rem}
+.u_63bfbb3dc1{font-size:.85rem;font-weight:400;color:#6b7280}
+.u_a97f69fd89{color:#6b7280;margin-top:.25rem}
+.u_ef577c4eb7{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end}
+.u_ee46526d9f{display:flex;flex-direction:column;gap:.35rem;min-width:160px}
+.u_a5a3fe5554{font-size:.8rem;color:#374151;font-weight:600}
+.u_6d04c438df{border:1px solid #d1d5db;border-radius:8px;padding:.45rem .75rem;font-size:.875rem}
+.u_ed189e2cf6{display:flex;flex-direction:column;gap:.35rem}
+.u_13d308a0ab{background:#2563eb;color:#fff;border:none;border-radius:8px;padding:.55rem 1.25rem;font-size:.875rem;font-weight:600;cursor:pointer}
+.u_ba94192dda{background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;border-radius:8px;padding:.55rem 1rem;font-size:.875rem;cursor:pointer}
+.u_79106c7c92{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.25rem}
+.stats-chip{border-radius:10px;padding:.5rem 1rem;font-size:.82rem;font-weight:600}
+.stats-chip-login{background:#dbeafe;color:#1d4ed8}
+.stats-chip-login_failed{background:#fee2e2;color:#dc2626}
+.stats-chip-pos_sale{background:#d1fae5;color:#065f46}
+.stats-chip-logout{background:#f3f4f6;color:#6b7280}
+.stats-chip-default{background:#f3f4f6;color:#6b7280}
+.u_6d7ea6b4b4{background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden}
+.u_33b8c2d3f0{padding:.875rem 1.25rem;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center}
+.u_5fa47bf173{font-weight:600;color:#111827}
+.u_032fd054d0{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:8px;padding:.4rem .9rem;font-size:.8rem;cursor:pointer}
+.u_0ddf068bfb{overflow-x:auto}
+.u_c720f30c63{width:100%;border-collapse:collapse;font-size:.855rem}
+.u_7655465c50{background:#f9fafb;color:#6b7280;font-size:.78rem;text-align:right}
+.u_f57cf623d1{padding:.75rem 1rem;font-weight:600}
+.u_ebeb0ed2e0{text-align:center;padding:2rem;color:#9ca3af}
+.u_127f2b3e7e{padding:1rem;display:flex;justify-content:center;gap:.5rem}
+.audit-page-btn{border:none;border-radius:6px;padding:.4rem .8rem;cursor:pointer;font-size:.82rem;background:#f3f4f6;color:#374151}
+.audit-page-btn-active{background:#2563eb;color:#fff}
+.u_96672e1a00{text-align:center;padding:2rem;color:#ef4444}
+.u_db12fa5528{color:#6b7280}
+.u_bddd422a9f{padding:.65rem 1rem;color:#374151;white-space:nowrap}
+.u_51d087d2a9{padding:.65rem 1rem;font-weight:600;color:#111827}
+.u_82f3e411d8{padding:.65rem 1rem;color:#6b7280}
+.u_142a3ab8b1{padding:.65rem 1rem}
+.u_5be0c4f24e{padding:.65rem 1rem;color:#374151;font-size:.8rem;max-width:260px;overflow:hidden;text-overflow:ellipsis}
+.u_d4ec887aa3{padding:.65rem 1rem;color:#9ca3af;font-size:.78rem;direction:ltr}
 </style>
 
 <script>
@@ -121,10 +159,9 @@ function renderStats(logs) {
   const counts = {};
   logs.forEach(l => { counts[l.action] = (counts[l.action] || 0) + 1; });
   const statsEl = document.getElementById('statsRow');
-  const colors = { login:'#dbeafe:#1d4ed8', login_failed:'#fee2e2:#dc2626', pos_sale:'#d1fae5:#065f46', logout:'#f3f4f6:#6b7280' };
   statsEl.innerHTML = Object.entries(counts).slice(0,6).map(([k,v]) => {
-    const [bg, fg] = (colors[k] || '#f3f4f6:#6b7280').split(':');
-    return `<div style="background:${bg};color:${fg};border-radius:10px;padding:.5rem 1rem;font-size:.82rem;font-weight:600">
+    const cls = ['login','login_failed','pos_sale','logout'].includes(k) ? `stats-chip-${k}` : 'stats-chip-default';
+    return `<div class="stats-chip ${cls}">
       ${escHtml(ACTION_LABELS[k]||k)}: ${escHtml(v)}
     </div>`;
   }).join('');
@@ -150,14 +187,14 @@ function loadLogs(page = 1) {
     })
     .catch(() => {
       document.getElementById('logsBody').innerHTML =
-        '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#ef4444">حدث خطأ أثناء التحميل</td></tr>';
+        '<tr><td colspan="7" class="u_96672e1a00">حدث خطأ أثناء التحميل</td></tr>';
     });
 }
 
 function renderTable(logs) {
   const tbody = document.getElementById('logsBody');
   if (!logs.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#9ca3af">لا توجد سجلات</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="u_ebeb0ed2e0">لا توجد سجلات</td></tr>';
     return;
   }
   tbody.innerHTML = logs.map(l => {
@@ -165,18 +202,18 @@ function renderTable(logs) {
     if (l.new_value) {
       try {
         const obj = JSON.parse(l.new_value);
-        details = Object.entries(obj).slice(0,3).map(([k,v]) => `<span style="color:#6b7280">${escHtml(k)}:</span> ${escHtml(v)}`).join(' &nbsp;|&nbsp; ');
+        details = Object.entries(obj).slice(0,3).map(([k,v]) => `<span class="u_db12fa5528">${escHtml(k)}:</span> ${escHtml(v)}`).join(' &nbsp;|&nbsp; ');
       } catch { details = escHtml(String(l.new_value).slice(0,80)); }
     }
     const badgeCls = 'log-badge badge-' + (ACTION_LABELS[l.action] ? l.action : 'default');
     return `<tr>
-      <td style="padding:.65rem 1rem;color:#374151;white-space:nowrap">${escHtml(formatDate(l.created_at))}</td>
-      <td style="padding:.65rem 1rem;font-weight:600;color:#111827">${escHtml(l.actor_name || '—')}</td>
-      <td style="padding:.65rem 1rem;color:#6b7280">${escHtml(l.actor_role || '—')}</td>
-      <td style="padding:.65rem 1rem"><span class="${badgeCls}">${escHtml(ACTION_LABELS[l.action]||l.action)}</span></td>
-      <td style="padding:.65rem 1rem;color:#6b7280">${escHtml(l.entity_type || '—')} ${l.entity_id ? '#'+escHtml(l.entity_id) : ''}</td>
-      <td style="padding:.65rem 1rem;color:#374151;font-size:.8rem;max-width:260px;overflow:hidden;text-overflow:ellipsis">${details}</td>
-      <td style="padding:.65rem 1rem;color:#9ca3af;font-size:.78rem;direction:ltr">${escHtml(l.ip_address || '—')}</td>
+      <td class="u_bddd422a9f">${escHtml(formatDate(l.created_at))}</td>
+      <td class="u_51d087d2a9">${escHtml(l.actor_name || '—')}</td>
+      <td class="u_82f3e411d8">${escHtml(l.actor_role || '—')}</td>
+      <td class="u_142a3ab8b1"><span class="${badgeCls}">${escHtml(ACTION_LABELS[l.action]||l.action)}</span></td>
+      <td class="u_82f3e411d8">${escHtml(l.entity_type || '—')} ${l.entity_id ? '#'+escHtml(l.entity_id) : ''}</td>
+      <td class="u_5be0c4f24e">${details}</td>
+      <td class="u_d4ec887aa3">${escHtml(l.ip_address || '—')}</td>
     </tr>`;
   }).join('');
 }
@@ -186,8 +223,8 @@ function renderPagination(page, pages) {
   if (pages <= 1) { el.innerHTML = ''; return; }
   let btns = '';
   for (let i = 1; i <= Math.min(pages, 10); i++) {
-    const active = i === page ? 'background:#2563eb;color:#fff' : 'background:#f3f4f6;color:#374151';
-    btns += `<button onclick="loadLogs(${i})" style="${active};border:none;border-radius:6px;padding:.4rem .8rem;cursor:pointer;font-size:.82rem">${i}</button>`;
+    const cls = i === page ? 'audit-page-btn audit-page-btn-active' : 'audit-page-btn';
+    btns += `<button onclick="loadLogs(${i})" class="${cls}">${i}</button>`;
   }
   el.innerHTML = btns;
 }

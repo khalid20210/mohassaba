@@ -52,24 +52,20 @@ def require_perm(*perms):
 def log_activity(module, action, entity_id=None, changes=None):
     """تسجيل النشاط"""
     from modules.extensions import get_db
+    from modules.middleware import write_audit_log
     
     if not g.user or not g.business:
         return
     
     db = get_db()
-    db.execute("""
-        INSERT INTO audit_logs (business_id, user_id, action, entity_type, entity_id, new_value, ip_address, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
-    """, (
-        g.business["id"],
-        g.user.get("id"),
-        action,
-        module,
-        entity_id,
-        json.dumps(changes) if changes else None,
-        request.remote_addr
-    ))
-    db.commit()
+    write_audit_log(
+        db,
+        business_id=int(g.business["id"]),
+        action=action,
+        entity_type=module,
+        entity_id=entity_id,
+        new_value=changes,
+    )
 
 
 def _ensure_supplier_compliance_table(db):

@@ -14,9 +14,52 @@
 .dist-bar-head{display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:5px;}
 .dist-bar-bg{height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;}
 .dist-bar-fill{height:100%;border-radius:4px;transition:width .6s ease;}
+.patient-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;}
+.patient-avatar.male{background:linear-gradient(135deg,#1e40af,#3b82f6);}
+.patient-avatar.female{background:linear-gradient(135deg,#9d174d,#ec4899);}
+.patient-avatar.unknown{background:linear-gradient(135deg,#374151,#6b7280);}
 .med-nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;padding:12px 16px;background:linear-gradient(135deg,rgba(14,165,233,.12),rgba(99,102,241,.08));border:1px solid rgba(56,189,248,.18);border-radius:14px;}
 .med-nav a{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;color:#94a3b8;text-decoration:none;font-size:.84rem;font-weight:600;transition:all .2s;}
 .med-nav a:hover,.med-nav a.active{background:rgba(56,189,248,.15);color:#38bdf8;}
+.u_e22320a03a{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:24px;}
+.u_8bfb7b1437{background:linear-gradient(135deg,rgba(14,165,233,.2),rgba(14,165,233,.1));}
+.u_f1fa12bbea{color:#38bdf8;}
+.u_9cee639886{background:linear-gradient(135deg,rgba(139,92,246,.2),rgba(139,92,246,.1));}
+.u_26db632a73{color:#a78bfa;}
+.u_e88b9c0c24{background:linear-gradient(135deg,rgba(245,158,11,.2),rgba(245,158,11,.1));}
+.u_cfc294ffc2{color:#f59e0b;}
+.u_98cc62f827{background:linear-gradient(135deg,rgba(134,239,172,.2),rgba(134,239,172,.1));}
+.u_a257b41ae9{color:#86efac;}
+.u_3ea759031c{background:linear-gradient(135deg,rgba(252,165,165,.2),rgba(252,165,165,.1));}
+.u_dbc3a0c3d5{color:#fca5a5;}
+.u_57ab16b3ad{background:linear-gradient(135deg,rgba(52,211,153,.2),rgba(52,211,153,.1));}
+.u_bfb0e999ae{color:#34d399;}
+.u_13c95a2c1b{background:linear-gradient(135deg,rgba(147,197,253,.2),rgba(147,197,253,.1));}
+.u_4560323b0e{color:#93c5fd;}
+.u_90e79be64d{background:linear-gradient(135deg,rgba(251,191,36,.2),rgba(251,191,36,.1));}
+.u_2ddf87696d{color:#fbbf24;}
+.u_c6d83d5361{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.u_16b16385a0{padding:4px 0;}
+.u_befba95058{font-weight:700;color:#38bdf8;}
+.u_35ae8ea58b{text-align:center;padding:40px;color:#64748b;}
+.u_82b83cc514{font-size:2.5rem;margin-bottom:8px;}
+.u_9d56aaf28c{font-size:.85rem;}
+.u_5db2a6d627{font-weight:700;color:#a78bfa;}
+.u_79a1c5a5db{margin-bottom:16px;}
+.u_91565afc05{display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border-radius:8px;background:rgba(56,189,248,.1);color:#38bdf8;text-decoration:none;font-size:.82rem;font-weight:600;}
+.u_ccfd023702{color:#f1f5f9;}
+.u_a80c3ed505{color:#64748b;font-size:.82rem;margin-right:6px;}
+.u_6a623b3c84{color:#38bdf8;text-decoration:none;font-weight:600;}
+.u_0e0e7a19f5{padding:3px 10px;border-radius:20px;font-size:.78rem;background:rgba(56,189,248,.1);color:#38bdf8;}
+.u_a0983e2934{padding:5px 14px;border-radius:8px;background:rgba(56,189,248,.1);color:#38bdf8;text-decoration:none;font-size:.8rem;font-weight:600;}
+.u_a6ccd6dcc6{display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border-radius:8px;background:rgba(139,92,246,.1);color:#a78bfa;text-decoration:none;font-size:.82rem;font-weight:600;}
+.u_5a07e13a3f{font-family:monospace;color:#64748b;font-size:.82rem;}
+.u_e3f61041ef{display:flex;align-items:center;gap:8px;}
+.u_9882982b32{color:#94a3b8;font-size:.83rem;}
+.u_5dc3e8eb5e{color:#cbd5e1;font-family:monospace;font-size:.83rem;}
+.u_f425e292c1{background:rgba(239,68,68,.15);color:#ef4444;padding:3px 10px;border-radius:20px;font-size:.8rem;font-weight:700;border:1px solid rgba(239,68,68,.2);}
+.u_5f40b9dc3a{color:#64748b;font-size:.82rem;}
+.u_2b037633d9{padding:5px 14px;border-radius:8px;background:rgba(56,189,248,.08);color:#38bdf8;text-decoration:none;font-size:.8rem;font-weight:600;}
 </style>
 
 <!-- Navigation -->
@@ -30,82 +73,82 @@
 </div>
 
 <!-- Stats Grid -->
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:24px;">
+<div class="u_e22320a03a">
 
   <div class="stat-card">
-    <div class="stat-icon" style="background:linear-gradient(135deg,rgba(14,165,233,.2),rgba(14,165,233,.1));">🏥</div>
+    <div class="stat-icon u_8bfb7b1437">🏥</div>
     <div>
-      <div class="stat-val" style="color:#38bdf8;">{{ stats.total_patients }}</div>
+      <div class="stat-val u_f1fa12bbea">{{ stats.total_patients }}</div>
       <div class="stat-lbl">إجمالي المرضى</div>
     </div>
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon" style="background:linear-gradient(135deg,rgba(139,92,246,.2),rgba(139,92,246,.1));">🆕</div>
+    <div class="stat-icon u_9cee639886">🆕</div>
     <div>
-      <div class="stat-val" style="color:#a78bfa;">{{ stats.new_patients_month }}</div>
+      <div class="stat-val u_26db632a73">{{ stats.new_patients_month }}</div>
       <div class="stat-lbl">مرضى هذا الشهر</div>
     </div>
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon" style="background:linear-gradient(135deg,rgba(245,158,11,.2),rgba(245,158,11,.1));">📅</div>
+    <div class="stat-icon u_e88b9c0c24">📅</div>
     <div>
-      <div class="stat-val" style="color:#f59e0b;">{{ stats.today_appointments }}</div>
+      <div class="stat-val u_cfc294ffc2">{{ stats.today_appointments }}</div>
       <div class="stat-lbl">مواعيد اليوم</div>
     </div>
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon" style="background:linear-gradient(135deg,rgba(134,239,172,.2),rgba(134,239,172,.1));">✅</div>
+    <div class="stat-icon u_98cc62f827">✅</div>
     <div>
-      <div class="stat-val" style="color:#86efac;">{{ stats.completed_visits }}</div>
+      <div class="stat-val u_a257b41ae9">{{ stats.completed_visits }}</div>
       <div class="stat-lbl">زيارات منجزة</div>
     </div>
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon" style="background:linear-gradient(135deg,rgba(252,165,165,.2),rgba(252,165,165,.1));">🗓️</div>
+    <div class="stat-icon u_3ea759031c">🗓️</div>
     <div>
-      <div class="stat-val" style="color:#fca5a5;">{{ stats.total_appointments }}</div>
+      <div class="stat-val u_dbc3a0c3d5">{{ stats.total_appointments }}</div>
       <div class="stat-lbl">إجمالي المواعيد</div>
     </div>
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon" style="background:linear-gradient(135deg,rgba(52,211,153,.2),rgba(52,211,153,.1));">👨‍⚕️</div>
+    <div class="stat-icon u_57ab16b3ad">👨‍⚕️</div>
     <div>
-      <div class="stat-val" style="color:#34d399;">{{ stats.total_doctors }}</div>
+      <div class="stat-val u_bfb0e999ae">{{ stats.total_doctors }}</div>
       <div class="stat-lbl">الأطباء النشطون</div>
     </div>
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon" style="background:linear-gradient(135deg,rgba(147,197,253,.2),rgba(147,197,253,.1));">🛡️</div>
+    <div class="stat-icon u_13c95a2c1b">🛡️</div>
     <div>
-      <div class="stat-val" style="color:#93c5fd;">{{ stats.insurance_patients }}</div>
+      <div class="stat-val u_4560323b0e">{{ stats.insurance_patients }}</div>
       <div class="stat-lbl">مرضى التأمين</div>
     </div>
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon" style="background:linear-gradient(135deg,rgba(251,191,36,.2),rgba(251,191,36,.1));">💊</div>
+    <div class="stat-icon u_90e79be64d">💊</div>
     <div>
-      <div class="stat-val" style="color:#fbbf24;">{{ stats.total_prescriptions }}</div>
+      <div class="stat-val u_2ddf87696d">{{ stats.total_prescriptions }}</div>
       <div class="stat-lbl">الوصفات الطبية</div>
     </div>
   </div>
 </div>
 
 <!-- Distribution Charts -->
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+<div class="u_c6d83d5361">
 
   <!-- By Doctor -->
   <div class="card">
     <div class="card-header">
       <h3 class="card-title">👨‍⚕️ مواعيد حسب الطبيب</h3>
     </div>
-    <div style="padding:4px 0;">
+    <div class="u_16b16385a0">
       {% if by_doctor %}
         {% set max_count = by_doctor[0].cnt %}
         {% set colors = ['linear-gradient(90deg,#38bdf8,#818cf8)','linear-gradient(90deg,#a78bfa,#f472b6)','linear-gradient(90deg,#34d399,#0ea5e9)','linear-gradient(90deg,#fbbf24,#f59e0b)','linear-gradient(90deg,#f87171,#ec4899)'] %}
@@ -113,17 +156,17 @@
         <div class="dist-bar-wrap">
           <div class="dist-bar-head">
             <span>{{ row.name }}</span>
-            <span style="font-weight:700;color:#38bdf8;">{{ row.cnt }} موعد</span>
+            <span class="u_befba95058">{{ row.cnt }} موعد</span>
           </div>
           <div class="dist-bar-bg">
-            <div class="dist-bar-fill" style="width:{{ (row.cnt / max_count * 100)|int }}%;background:{{ colors[loop.index0 % colors|length] }};"></div>
+            <div class="dist-bar-fill" data-width="{{ (row.cnt / max_count * 100)|int }}" data-bg="{{ colors[loop.index0 % colors|length] }}"></div>
           </div>
         </div>
         {% endfor %}
       {% else %}
-        <div style="text-align:center;padding:40px;color:#64748b;">
-          <div style="font-size:2.5rem;margin-bottom:8px;">👨‍⚕️</div>
-          <p style="font-size:.85rem;">لا توجد بيانات متاحة</p>
+        <div class="u_35ae8ea58b">
+          <div class="u_82b83cc514">👨‍⚕️</div>
+          <p class="u_9d56aaf28c">لا توجد بيانات متاحة</p>
         </div>
       {% endif %}
     </div>
@@ -134,7 +177,7 @@
     <div class="card-header">
       <h3 class="card-title">🛡️ مرضى حسب شركة التأمين</h3>
     </div>
-    <div style="padding:4px 0;">
+    <div class="u_16b16385a0">
       {% if by_insurance %}
         {% set max_ins = by_insurance[0].cnt %}
         {% set ins_colors = ['linear-gradient(90deg,#a78bfa,#f472b6)','linear-gradient(90deg,#38bdf8,#818cf8)','linear-gradient(90deg,#fbbf24,#f59e0b)','linear-gradient(90deg,#34d399,#0ea5e9)','linear-gradient(90deg,#f87171,#ec4899)'] %}
@@ -142,17 +185,17 @@
         <div class="dist-bar-wrap">
           <div class="dist-bar-head">
             <span>{{ row.name }}</span>
-            <span style="font-weight:700;color:#a78bfa;">{{ row.cnt }} مريض</span>
+            <span class="u_5db2a6d627">{{ row.cnt }} مريض</span>
           </div>
           <div class="dist-bar-bg">
-            <div class="dist-bar-fill" style="width:{{ (row.cnt / max_ins * 100)|int }}%;background:{{ ins_colors[loop.index0 % ins_colors|length] }};"></div>
+            <div class="dist-bar-fill" data-width="{{ (row.cnt / max_ins * 100)|int }}" data-bg="{{ ins_colors[loop.index0 % ins_colors|length] }}"></div>
           </div>
         </div>
         {% endfor %}
       {% else %}
-        <div style="text-align:center;padding:40px;color:#64748b;">
-          <div style="font-size:2.5rem;margin-bottom:8px;">🛡️</div>
-          <p style="font-size:.85rem;">لا توجد بيانات متاحة</p>
+        <div class="u_35ae8ea58b">
+          <div class="u_82b83cc514">🛡️</div>
+          <p class="u_9d56aaf28c">لا توجد بيانات متاحة</p>
         </div>
       {% endif %}
     </div>
@@ -160,10 +203,10 @@
 </div>
 
 <!-- Upcoming Appointments -->
-<div class="card" style="margin-bottom:16px;">
+<div class="card u_79a1c5a5db">
   <div class="card-header">
     <h3 class="card-title">📅 المواعيد القادمة</h3>
-    <a href="/medical/appointments" style="display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border-radius:8px;background:rgba(56,189,248,.1);color:#38bdf8;text-decoration:none;font-size:.82rem;font-weight:600;">عرض الكل ←</a>
+    <a href="/medical/appointments" class="u_91565afc05">عرض الكل ←</a>
   </div>
   <table class="table">
     <thead>
@@ -179,26 +222,26 @@
       {% for a in upcoming %}
       <tr>
         <td>
-          <strong style="color:#f1f5f9;">{{ a.appointment_date }}</strong>
-          {% if a.appointment_time %}<span style="color:#64748b;font-size:.82rem;margin-right:6px;">{{ a.appointment_time }}</span>{% endif %}
+          <strong class="u_ccfd023702">{{ a.appointment_date }}</strong>
+          {% if a.appointment_time %}<span class="u_a80c3ed505">{{ a.appointment_time }}</span>{% endif %}
         </td>
-        <td><a href="/medical/patients/{{ a.patient_id }}" style="color:#38bdf8;text-decoration:none;font-weight:600;">{{ a.patient_name }}</a></td>
+        <td><a href="/medical/patients/{{ a.patient_id }}" class="u_6a623b3c84">{{ a.patient_name }}</a></td>
         <td>{{ a.doctor_name or '—' }}</td>
         <td>
-          <span style="padding:3px 10px;border-radius:20px;font-size:.78rem;background:rgba(56,189,248,.1);color:#38bdf8;">
+          <span class="u_0e0e7a19f5">
             {{ a.appointment_type or 'كشف' }}
           </span>
         </td>
         <td>
-          <a href="/medical/appointments/{{ a.id }}" style="padding:5px 14px;border-radius:8px;background:rgba(56,189,248,.1);color:#38bdf8;text-decoration:none;font-size:.8rem;font-weight:600;">
+          <a href="/medical/appointments/{{ a.id }}" class="u_a0983e2934">
             فتح ←
           </a>
         </td>
       </tr>
       {% else %}
       <tr>
-        <td colspan="5" style="text-align:center;padding:40px;color:#64748b;">
-          <div style="font-size:2.5rem;margin-bottom:8px;">📅</div>
+        <td colspan="5" class="u_35ae8ea58b">
+          <div class="u_82b83cc514">📅</div>
           <p>لا توجد مواعيد قادمة</p>
         </td>
       </tr>
@@ -211,7 +254,7 @@
 <div class="card">
   <div class="card-header">
     <h3 class="card-title">🆕 آخر المرضى المسجلين</h3>
-    <a href="/medical/patients" style="display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border-radius:8px;background:rgba(139,92,246,.1);color:#a78bfa;text-decoration:none;font-size:.82rem;font-weight:600;">عرض الكل ←</a>
+    <a href="/medical/patients" class="u_a6ccd6dcc6">عرض الكل ←</a>
   </div>
   <table class="table">
     <thead>
@@ -228,33 +271,33 @@
     <tbody>
       {% for p in recent_patients %}
       <tr>
-        <td style="font-family:monospace;color:#64748b;font-size:.82rem;">{{ p.file_number or '—' }}</td>
+        <td class="u_5a07e13a3f">{{ p.file_number or '—' }}</td>
         <td>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:32px;height:32px;border-radius:50%;background:{% if p.gender=='male' %}linear-gradient(135deg,#1e40af,#3b82f6){% elif p.gender=='female' %}linear-gradient(135deg,#9d174d,#ec4899){% else %}linear-gradient(135deg,#374151,#6b7280){% endif %};display:flex;align-items:center;justify-content:center;font-size:1rem;">
+          <div class="u_e3f61041ef">
+            <div class="patient-avatar {% if p.gender=='male' %}male{% elif p.gender=='female' %}female{% else %}unknown{% endif %}">
               {{ '👨' if p.gender=='male' else '👩' if p.gender=='female' else '🧑' }}
             </div>
-            <a href="/medical/patients/{{ p.id }}" style="color:#38bdf8;text-decoration:none;font-weight:600;">{{ p.patient_name }}</a>
+            <a href="/medical/patients/{{ p.id }}" class="u_6a623b3c84">{{ p.patient_name }}</a>
           </div>
         </td>
-        <td style="color:#94a3b8;font-size:.83rem;">{{ '♂ ذكر' if p.gender=='male' else '♀ أنثى' if p.gender=='female' else '—' }}</td>
-        <td style="color:#cbd5e1;font-family:monospace;font-size:.83rem;">{{ p.patient_phone or '—' }}</td>
+        <td class="u_9882982b32">{{ '♂ ذكر' if p.gender=='male' else '♀ أنثى' if p.gender=='female' else '—' }}</td>
+        <td class="u_5dc3e8eb5e">{{ p.patient_phone or '—' }}</td>
         <td>
           {% if p.blood_type %}
-          <span style="background:rgba(239,68,68,.15);color:#ef4444;padding:3px 10px;border-radius:20px;font-size:.8rem;font-weight:700;border:1px solid rgba(239,68,68,.2);">{{ p.blood_type }}</span>
+          <span class="u_f425e292c1">{{ p.blood_type }}</span>
           {% else %}—{% endif %}
         </td>
-        <td style="color:#64748b;font-size:.82rem;">{{ (p.created_at[:10] if p.created_at else '—') }}</td>
+        <td class="u_5f40b9dc3a">{{ (p.created_at[:10] if p.created_at else '—') }}</td>
         <td>
-          <a href="/medical/patients/{{ p.id }}" style="padding:5px 14px;border-radius:8px;background:rgba(56,189,248,.08);color:#38bdf8;text-decoration:none;font-size:.8rem;font-weight:600;">
+          <a href="/medical/patients/{{ p.id }}" class="u_2b037633d9">
             ملف ←
           </a>
         </td>
       </tr>
       {% else %}
       <tr>
-        <td colspan="7" style="text-align:center;padding:40px;color:#64748b;">
-          <div style="font-size:2.5rem;margin-bottom:8px;">🏥</div>
+        <td colspan="7" class="u_35ae8ea58b">
+          <div class="u_82b83cc514">🏥</div>
           <p>لا توجد بيانات</p>
         </td>
       </tr>
@@ -262,4 +305,15 @@
     </tbody>
   </table>
 </div>
+<script>
+document.querySelectorAll('.dist-bar-fill[data-width]').forEach(function (el) {
+  var w = Number(el.getAttribute('data-width') || 0);
+  var normalized = Math.max(0, Math.min(100, w));
+  el.style.width = normalized + '%';
+  var bg = el.getAttribute('data-bg');
+  if (bg) {
+    el.style.background = bg;
+  }
+});
+</script>
 {% endblock %}

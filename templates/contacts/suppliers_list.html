@@ -1,3 +1,11 @@
+<style>
+.u_140f00b59f{color:#38bdf8;font-weight:500;}
+.u_ed402632eb{padding:4px 12px;font-size:.8rem;}
+.balance-positive{color:#ef4444;}
+.balance-negative{color:#22c55e;}
+.balance-zero{color:#94a3b8;}
+.u_612a65f696{text-align:center;color:#64748b;padding:40px;}
+</style>
 {% extends "base.html" %}
 {% block title %}الموردون{% endblock %}
 {% block page_title %}🏭 قائمة الموردين{% endblock %}
@@ -20,18 +28,18 @@
       {% for s in suppliers %}
       <tr>
         <td>
-          <a href="/contacts/suppliers/{{ s.id }}" style="color:#38bdf8;font-weight:500;">{{ s.name }}</a>
+          <a href="/contacts/suppliers/{{ s.id }}" class="u_140f00b59f">{{ s.name }}</a>
         </td>
         <td>{{ s.phone or '—' }}</td>
-        <td style="color:{% if (s.balance or 0) > 0 %}#ef4444{% elif (s.balance or 0) < 0 %}#22c55e{% else %}#94a3b8{% endif %};">
+        <td class="{% if (s.balance or 0) > 0 %}balance-positive{% elif (s.balance or 0) < 0 %}balance-negative{% else %}balance-zero{% endif %}">
           {{ "{:,.2f}".format(s.balance or 0) }}
         </td>
         <td>
-          <a href="/contacts/suppliers/{{ s.id }}" class="btn btn-secondary" style="padding:4px 12px;font-size:.8rem;">تفاصيل</a>
+          <a href="/contacts/suppliers/{{ s.id }}" class="btn btn-secondary u_ed402632eb">تفاصيل</a>
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="5" style="text-align:center;color:#64748b;padding:40px;">لا يوجد موردون</td></tr>
+      <tr><td colspan="5" class="u_612a65f696">لا يوجد موردون</td></tr>
       {% endfor %}
     </tbody>
   </table>

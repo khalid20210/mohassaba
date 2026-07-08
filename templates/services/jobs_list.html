@@ -1,3 +1,31 @@
+<style>
+.u_6b00e75351{display:flex;gap:10px;}
+.u_bf694c931f{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.service-filter-chip{padding:6px 14px;border-radius:20px;text-decoration:none;font-size:.82rem;border:1px solid rgba(255,255,255,.1);display:inline-block;}
+.service-filter-chip-active{background:rgba(59,130,246,.15);color:#60a5fa;border-color:#3b82f6;}
+.service-filter-chip-idle{color:#64748b;}
+.u_0f3fc745ac{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.u_117b0b4715{text-align:center;padding:12px;}
+.u_e6e7766129{font-size:1.4rem;font-weight:800;}
+.u_f9a4328dd8{font-size:.78rem;color:#94a3b8;}
+.u_5dc68fde29{font-size:1.4rem;font-weight:800;color:#38bdf8;}
+.u_8c05353798{font-size:1.4rem;font-weight:800;color:#f59e0b;}
+.u_855544f65d{font-size:1.4rem;font-weight:800;color:#22c55e;}
+.u_5f40b9dc3a{color:#64748b;font-size:.82rem;}
+.u_efcae60f02{color:#ef4444;font-weight:700;}
+.u_e695f226a6{color:#f59e0b;font-weight:700;}
+.u_6fe47583b2{color:#22c55e;}
+.u_626786f2dd{background:#1e3a5f;color:#93c5fd;padding:2px 10px;border-radius:20px;font-size:.78rem;}
+.u_685d43043e{background:#78350f;color:#fcd34d;padding:2px 10px;border-radius:20px;font-size:.78rem;}
+.u_7ece42bebd{background:#14532d;color:#86efac;padding:2px 10px;border-radius:20px;font-size:.78rem;}
+.u_234737c85e{background:#7f1d1d;color:#fca5a5;padding:2px 10px;border-radius:20px;font-size:.78rem;}
+.u_aa3ee35a72{color:#94a3b8;}
+.u_ed402632eb{padding:4px 12px;font-size:.8rem;}
+.u_612a65f696{text-align:center;color:#64748b;padding:40px;}
+.u_c84570c5b3{max-width:540px;}
+.u_adf555b36b{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.u_5a7bda665c{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;}
+</style>
 ﻿{% extends "base.html" %}
 {% block title %}ط£ظˆط§ظ…ط± ط§ظ„ط¹ظ…ظ„{% endblock %}
 {% block page_title %}ًں”§ ط£ظˆط§ظ…ط± ط§ظ„ط¹ظ…ظ„{% endblock %}
@@ -7,30 +35,29 @@
   <div>
     <p class="page-subtitle">{{ jobs|length }} ط£ظ…ط± ط¹ظ…ظ„</p>
   </div>
-  <div style="display:flex;gap:10px;">
+  <div class="u_6b00e75351">
     <a href="/services/contracts" class="btn btn-secondary">ًں“„ ط§ظ„ط¹ظ‚ظˆط¯</a>
     <button class="btn btn-primary" onclick="document.getElementById('newJobModal').classList.add('show')">+ ط£ظ…ط± ط¹ظ…ظ„ ط¬ط¯ظٹط¯</button>
   </div>
 </div>
 
 <!-- ظپظ„طھط± ط§ظ„ط­ط§ظ„ط© -->
-<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+<div class="u_bf694c931f">
   {% for s, label in [('','ط§ظ„ظƒظ„'),('open','ظ…ظپطھظˆط­'),('in_progress','ظ‚ظٹط¯ ط§ظ„طھظ†ظپظٹط°'),('completed','ظ…ظ†ط¬ط²'),('cancelled','ظ…ظ„ط؛ظٹ')] %}
-  <a href="/services/jobs{% if s %}?status={{ s }}{% endif %}"
-     style="padding:6px 14px;border-radius:20px;text-decoration:none;font-size:.82rem;border:1px solid rgba(255,255,255,.1);{% if request.args.get('status','')==s %}background:rgba(59,130,246,.15);color:#60a5fa;border-color:#3b82f6;{% else %}color:#64748b;{% endif %}">
+  <a href="/services/jobs{% if s %}?status={{ s }}{% endif %}" class="service-filter-chip {% if request.args.get('status','')==s %}service-filter-chip-active{% else %}service-filter-chip-idle{% endif %}">
     {{ label }}
   </a>
   {% endfor %}
 </div>
 
 <!-- ط¥ط­طµط§ط¦ظٹط§طھ -->
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+<div class="u_0f3fc745ac">
   {% set cnt = {'open':0,'in_progress':0,'completed':0} %}
   {% for j in jobs %}{% if j.job_status in cnt %}{% set _ = cnt.update({j.job_status: cnt[j.job_status]+1}) %}{% endif %}{% endfor %}
-  <div class="card" style="text-align:center;padding:12px;"><div style="font-size:1.4rem;font-weight:800;">{{ jobs|length }}</div><div style="font-size:.78rem;color:#94a3b8;">ط§ظ„ط¥ط¬ظ…ط§ظ„ظٹ</div></div>
-  <div class="card" style="text-align:center;padding:12px;"><div style="font-size:1.4rem;font-weight:800;color:#38bdf8;">{{ cnt.open }}</div><div style="font-size:.78rem;color:#94a3b8;">ظ…ظپطھظˆط­</div></div>
-  <div class="card" style="text-align:center;padding:12px;"><div style="font-size:1.4rem;font-weight:800;color:#f59e0b;">{{ cnt.in_progress }}</div><div style="font-size:.78rem;color:#94a3b8;">ظ‚ظٹط¯ ط§ظ„طھظ†ظپظٹط°</div></div>
-  <div class="card" style="text-align:center;padding:12px;"><div style="font-size:1.4rem;font-weight:800;color:#22c55e;">{{ cnt.completed }}</div><div style="font-size:.78rem;color:#94a3b8;">ظ…ظ†ط¬ط²</div></div>
+  <div class="card u_117b0b4715"><div class="u_e6e7766129">{{ jobs|length }}</div><div class="u_f9a4328dd8">ط§ظ„ط¥ط¬ظ…ط§ظ„ظٹ</div></div>
+  <div class="card u_117b0b4715"><div class="u_5dc68fde29">{{ cnt.open }}</div><div class="u_f9a4328dd8">ظ…ظپطھظˆط­</div></div>
+  <div class="card u_117b0b4715"><div class="u_8c05353798">{{ cnt.in_progress }}</div><div class="u_f9a4328dd8">ظ‚ظٹط¯ ط§ظ„طھظ†ظپظٹط°</div></div>
+  <div class="card u_117b0b4715"><div class="u_855544f65d">{{ cnt.completed }}</div><div class="u_f9a4328dd8">ظ…ظ†ط¬ط²</div></div>
 </div>
 
 <div class="card">
@@ -44,28 +71,28 @@
     <tbody>
       {% for j in jobs %}
       <tr>
-        <td style="color:#64748b;font-size:.82rem;">{{ j.id }}</td>
+        <td class="u_5f40b9dc3a">{{ j.id }}</td>
         <td><strong>{{ j.client_id or 'â€”' }}</strong></td>
         <td>{{ j.job_type or 'â€”' }}</td>
-        <td style="color:#64748b;font-size:.82rem;">{{ j.location or 'â€”' }}</td>
+        <td class="u_5f40b9dc3a">{{ j.location or 'â€”' }}</td>
         <td>{{ j.technician_id or 'â€”' }}</td>
         <td>
-          {% if j.priority=='urgent' %}<span style="color:#ef4444;font-weight:700;">ًں”´ ط¹ط§ط¬ظ„</span>
-          {% elif j.priority=='high' %}<span style="color:#f59e0b;font-weight:700;">ًںں  ط¹ط§ظ„ظچ</span>
-          {% else %}<span style="color:#22c55e;">ًںں¢ ط¹ط§ط¯ظٹ</span>{% endif %}
+          {% if j.priority=='urgent' %}<span class="u_efcae60f02">ًں”´ ط¹ط§ط¬ظ„</span>
+          {% elif j.priority=='high' %}<span class="u_e695f226a6">ًںں  ط¹ط§ظ„ظچ</span>
+          {% else %}<span class="u_6fe47583b2">ًںں¢ ط¹ط§ط¯ظٹ</span>{% endif %}
         </td>
         <td>
-          {% if j.job_status=='open' %}<span style="background:#1e3a5f;color:#93c5fd;padding:2px 10px;border-radius:20px;font-size:.78rem;">â—ژ ظ…ظپطھظˆط­</span>
-          {% elif j.job_status=='in_progress' %}<span style="background:#78350f;color:#fcd34d;padding:2px 10px;border-radius:20px;font-size:.78rem;">âڈ³ ط¬ط§ط±ظچ</span>
-          {% elif j.job_status=='completed' %}<span style="background:#14532d;color:#86efac;padding:2px 10px;border-radius:20px;font-size:.78rem;">âœ“ ظ…ظ†ط¬ط²</span>
-          {% elif j.job_status=='cancelled' %}<span style="background:#7f1d1d;color:#fca5a5;padding:2px 10px;border-radius:20px;font-size:.78rem;">âœ• ظ…ظ„ط؛ظٹ</span>
-          {% else %}<span style="color:#94a3b8;">{{ j.job_status or 'pending' }}</span>{% endif %}
+          {% if j.job_status=='open' %}<span class="u_626786f2dd">â—ژ ظ…ظپطھظˆط­</span>
+          {% elif j.job_status=='in_progress' %}<span class="u_685d43043e">âڈ³ ط¬ط§ط±ظچ</span>
+          {% elif j.job_status=='completed' %}<span class="u_7ece42bebd">âœ“ ظ…ظ†ط¬ط²</span>
+          {% elif j.job_status=='cancelled' %}<span class="u_234737c85e">âœ• ظ…ظ„ط؛ظٹ</span>
+          {% else %}<span class="u_aa3ee35a72">{{ j.job_status or 'pending' }}</span>{% endif %}
         </td>
-        <td style="color:#64748b;font-size:.82rem;">{{ j.scheduled_date or (j.created_at[:10] if j.created_at else 'â€”') }}</td>
-        <td><a href="/services/jobs/{{ j.id }}" class="btn btn-secondary" style="padding:4px 12px;font-size:.8rem;">ط¥ط¯ط§ط±ط©</a></td>
+        <td class="u_5f40b9dc3a">{{ j.scheduled_date or (j.created_at[:10] if j.created_at else 'â€”') }}</td>
+        <td><a href="/services/jobs/{{ j.id }}" class="btn btn-secondary u_ed402632eb">ط¥ط¯ط§ط±ط©</a></td>
       </tr>
       {% else %}
-      <tr><td colspan="9" style="text-align:center;color:#64748b;padding:40px;">ظ„ط§ طھظˆط¬ط¯ ط£ظˆط§ظ…ط± ط¹ظ…ظ„</td></tr>
+      <tr><td colspan="9" class="u_612a65f696">ظ„ط§ طھظˆط¬ط¯ ط£ظˆط§ظ…ط± ط¹ظ…ظ„</td></tr>
       {% endfor %}
     </tbody>
   </table>
@@ -73,13 +100,13 @@
 
 <!-- Modal: ط£ظ…ط± ط¹ظ…ظ„ ط¬ط¯ظٹط¯ -->
 <div class="modal-overlay" id="newJobModal">
-  <div class="modal-box" style="max-width:540px;">
+  <div class="modal-box u_c84570c5b3">
     <div class="modal-header">
       <h3 class="modal-title">ًں”§ ط£ظ…ط± ط¹ظ…ظ„ ط¬ط¯ظٹط¯</h3>
       <button class="modal-close" onclick="document.getElementById('newJobModal').classList.remove('show')">âœ•</button>
     </div>
     <form method="post" action="/services/jobs/new">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="u_adf555b36b">
         <div class="form-group">
           <label class="form-label">ط±ظ‚ظ… ط§ظ„ط£ظ…ط±</label>
           <input name="job_number" class="form-input" placeholder="JOB-001">
@@ -98,11 +125,11 @@
         </div>
         <div class="form-group">
           <label class="form-label">طھط§ط±ظٹط® ط§ظ„ط¬ط¯ظˆظ„ط©</label>
-          <input name="scheduled_date" type="date" class="form-input">
+          <input name="scheduled_date" type="date" class="form-input" title="تاريخ جدولة أمر العمل">
         </div>
         <div class="form-group">
           <label class="form-label">ط§ظ„ط£ظˆظ„ظˆظٹط©</label>
-          <select name="priority" class="form-input">
+          <select name="priority" class="form-input" title="أولوية أمر العمل">
             <option value="normal">ط¹ط§ط¯ظٹ</option>
             <option value="high">ط¹ط§ظ„ظچ</option>
             <option value="urgent">ط¹ط§ط¬ظ„</option>
@@ -117,7 +144,7 @@
         <label class="form-label">ظˆطµظپ ط§ظ„ظ…ط´ظƒظ„ط©</label>
         <textarea name="description" class="form-input" rows="3" placeholder="ط§ظƒطھط¨ ظˆطµظپ ط§ظ„ظ…ط´ظƒظ„ط©..."></textarea>
       </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <div class="u_5a7bda665c">
         <button type="button" class="btn btn-secondary" onclick="document.getElementById('newJobModal').classList.remove('show')">ط¥ظ„ط؛ط§ط،</button>
         <button type="submit" class="btn btn-primary">âœ… ط¥ظ†ط´ط§ط، ط§ظ„ط£ظ…ط±</button>
       </div>

@@ -1,3 +1,20 @@
+<style>
+.u_6b00e75351{display:flex;gap:10px;}
+.u_27bbf70e77{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px;}
+.u_dac4fe6c9b{text-align:center;}
+.u_aa86919bf7{font-size:1.8rem;font-weight:700;color:#38bdf8;}
+.u_f3e020a82b{color:#94a3b8;margin-top:4px;}
+.u_3e8902d99f{font-size:1.8rem;font-weight:700;color:#22c55e;}
+.u_36e5df2276{font-size:1.8rem;font-weight:700;color:#f59e0b;}
+.u_0a1d28e275{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.u_2f7afa576b{padding:8px 0;}
+.u_e4ad4a163b{margin-bottom:8px;}
+.u_3ef1fa1aa1{margin-bottom:12px;}
+.u_cad980f4b7{width:100%;}
+.u_cb2b4913f1{text-align:center;padding:20px;}
+.u_9cd3c36e24{display:block;font-size:3rem;margin-bottom:12px;text-decoration:none;}
+.u_72f54d9acf{color:#94a3b8;margin-bottom:16px;}
+</style>
 {% extends "base.html" %}
 {% block title %}الباركود{% endblock %}
 {% block page_title %}📷 إدارة الباركود{% endblock %}
@@ -7,54 +24,54 @@
   <div>
     <h1 class="page-title">📷 إدارة الباركود</h1>
   </div>
-  <div style="display:flex;gap:10px;">
+  <div class="u_6b00e75351">
     <a href="/barcode/list" class="btn btn-secondary">قائمة الباركودات</a>
     <a href="/barcode/scan" class="btn btn-secondary">📱 مسح باركود</a>
     <a href="/barcode/generate" class="btn btn-primary">+ توليد باركود</a>
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px;">
-  <div class="card" style="text-align:center;">
-    <div style="font-size:1.8rem;font-weight:700;color:#38bdf8;">{{ stats.total or 0 }}</div>
-    <div style="color:#94a3b8;margin-top:4px;">إجمالي الباركودات</div>
+<div class="u_27bbf70e77">
+  <div class="card u_dac4fe6c9b">
+    <div class="u_aa86919bf7">{{ stats.total or 0 }}</div>
+    <div class="u_f3e020a82b">إجمالي الباركودات</div>
   </div>
-  <div class="card" style="text-align:center;">
-    <div style="font-size:1.8rem;font-weight:700;color:#22c55e;">{{ stats.active or 0 }}</div>
-    <div style="color:#94a3b8;margin-top:4px;">نشط</div>
+  <div class="card u_dac4fe6c9b">
+    <div class="u_3e8902d99f">{{ stats.active or 0 }}</div>
+    <div class="u_f3e020a82b">نشط</div>
   </div>
-  <div class="card" style="text-align:center;">
-    <div style="font-size:1.8rem;font-weight:700;color:#f59e0b;">{{ stats.scans_today or 0 }}</div>
-    <div style="color:#94a3b8;margin-top:4px;">مسح اليوم</div>
+  <div class="card u_dac4fe6c9b">
+    <div class="u_36e5df2276">{{ stats.scans_today or 0 }}</div>
+    <div class="u_f3e020a82b">مسح اليوم</div>
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+<div class="u_0a1d28e275">
   <div class="card">
     <div class="card-header"><h3 class="card-title">⚡ توليد باركود سريع</h3></div>
-    <form action="/barcode/generate" method="post" style="padding:8px 0;">
-      <select name="product_id" class="form-input" style="margin-bottom:8px;">
+    <form action="/barcode/generate" method="post" class="u_2f7afa576b">
+      <select name="product_id" class="form-input u_e4ad4a163b">
         <option value="">اختر منتجاً...</option>
         {% for p in all_products %}
         <option value="{{ p.id }}">{{ p.name }}{% if p.barcode %} — {{ p.barcode }}{% endif %}</option>
         {% endfor %}
       </select>
-      <select name="format" class="form-input" style="margin-bottom:8px;">
+      <select name="format" class="form-input u_e4ad4a163b">
         <option value="CODE128">CODE128</option>
         <option value="EAN13">EAN13</option>
         <option value="QR">QR Code</option>
         <option value="UPC">UPC</option>
       </select>
-      <input type="number" name="quantity" value="1" min="1" max="100" class="form-input" style="margin-bottom:12px;" placeholder="العدد">
-      <button type="submit" class="btn btn-primary" style="width:100%;">🔖 توليد</button>
+      <input type="number" name="quantity" value="1" min="1" max="100" class="form-input u_3ef1fa1aa1" placeholder="العدد">
+      <button type="submit" class="btn btn-primary u_cad980f4b7">🔖 توليد</button>
     </form>
   </div>
 
   <div class="card">
     <div class="card-header"><h3 class="card-title">📱 مسح باركود</h3></div>
-    <div style="text-align:center;padding:20px;">
-      <a href="/barcode/scan" style="display:block;font-size:3rem;margin-bottom:12px;text-decoration:none;">📷</a>
-      <p style="color:#94a3b8;margin-bottom:16px;">امسح أي باركود للبحث عن المنتج</p>
+    <div class="u_cb2b4913f1">
+      <a href="/barcode/scan" class="u_9cd3c36e24">📷</a>
+      <p class="u_72f54d9acf">امسح أي باركود للبحث عن المنتج</p>
       <a href="/barcode/scan" class="btn btn-primary">فتح الماسح</a>
     </div>
   </div>

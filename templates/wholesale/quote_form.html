@@ -14,11 +14,23 @@
   .btn { padding:10px 22px; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; }
   .btn-green { background:#10b981; color:white; }
   .btn-blue  { background:#3b82f6; color:white; }
+.u_19a7599870{margin:0 0 16px;font-size:16px}
+.u_c6783796bf{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.u_4499790d6e{margin:0;font-size:16px}
+.u_b143af5696{text-align:left;padding-top:8px}
+.u_efd3b001a1{font-size:15px;margin-bottom:8px}
+.u_be34430c6d{font-size:20px;font-weight:900;color:#059669}
+.u_15c241382f{margin-top:20px;text-align:left}
+.u_a0e58dac00{width:100%;padding:6px;border:1px solid #ddd;border-radius:4px}
+.u_44540697aa{width:80px;padding:6px;border:1px solid #ddd;border-radius:4px}
+.u_a3eb5d48fd{width:100px;padding:6px;border:1px solid #ddd;border-radius:4px}
+.u_4e9683444a{font-weight:bold;min-width:80px}
+.u_3abc93d84c{background:#fee2e2;color:#dc2626;border:none;padding:4px 8px;border-radius:4px;cursor:pointer}
 </style>
 
 <form id="quoteForm">
 <div class="card">
-  <h3 style="margin:0 0 16px;font-size:16px">بيانات العميل</h3>
+  <h3 class="u_19a7599870">بيانات العميل</h3>
   <div class="grid2">
     <div>
       <label>العميل</label>
@@ -38,8 +50,8 @@
 </div>
 
 <div class="card">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-    <h3 style="margin:0;font-size:16px">الأصناف</h3>
+  <div class="u_c6783796bf">
+    <h3 class="u_4499790d6e">الأصناف</h3>
     <button type="button" class="btn btn-blue" onclick="addRow()">+ إضافة صنف</button>
   </div>
   <table id="items-table">
@@ -62,13 +74,13 @@
       <label>ملاحظات</label>
       <textarea id="notes" name="notes" rows="3" placeholder="ملاحظات اختيارية..."></textarea>
     </div>
-    <div style="text-align:left;padding-top:8px">
-      <div style="font-size:15px;margin-bottom:8px">الإجمالي قبل الضريبة: <strong id="sub-display">0.00</strong> ر.س</div>
-      <div style="font-size:15px;margin-bottom:8px">ضريبة القيمة المضافة (15%): <strong id="tax-display">0.00</strong> ر.س</div>
-      <div style="font-size:20px;font-weight:900;color:#059669">الإجمالي: <span id="total-display">0.00</span> ر.س</div>
+    <div class="u_b143af5696">
+      <div class="u_efd3b001a1">الإجمالي قبل الضريبة: <strong id="sub-display">0.00</strong> ر.س</div>
+      <div class="u_efd3b001a1">ضريبة القيمة المضافة (15%): <strong id="tax-display">0.00</strong> ر.س</div>
+      <div class="u_be34430c6d">الإجمالي: <span id="total-display">0.00</span> ر.س</div>
     </div>
   </div>
-  <div style="margin-top:20px;text-align:left">
+  <div class="u_15c241382f">
     <button type="button" onclick="saveQuote()" class="btn btn-green">💾 حفظ عرض السعر</button>
   </div>
 </div>
@@ -89,16 +101,16 @@ function addRow() {
   tr.dataset.idx = rowIndex;
   tr.innerHTML = `
     <td>
-      <select onchange="fillPrice(${rowIndex},this)" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:4px">
+      <select onchange="fillPrice(${rowIndex},this)" class="u_a0e58dac00">
         <option value="">— اختر صنفاً —</option>
         ${products.map(p => `<option value="${p.id}" data-price="${p.sale_price}" data-name="${p.name}">${p.name}</option>`).join('')}
       </select>
       <input type="hidden" name="item_name_${rowIndex}">
     </td>
-    <td><input type="number" id="qty${rowIndex}" value="1" min="0.001" step="0.001" style="width:80px;padding:6px;border:1px solid #ddd;border-radius:4px" oninput="calcRow(${rowIndex})"></td>
-    <td><input type="number" id="price${rowIndex}" value="0" min="0" step="0.01" style="width:100px;padding:6px;border:1px solid #ddd;border-radius:4px" oninput="calcRow(${rowIndex})"></td>
-    <td id="line${rowIndex}" style="font-weight:bold;min-width:80px">0.00</td>
-    <td><button type="button" onclick="this.closest('tr').remove();calcTotal()" style="background:#fee2e2;color:#dc2626;border:none;padding:4px 8px;border-radius:4px;cursor:pointer">✕</button></td>
+    <td><input type="number" id="qty${rowIndex}" value="1" min="0.001" step="0.001" oninput="calcRow(${rowIndex})" class="u_44540697aa"></td>
+    <td><input type="number" id="price${rowIndex}" value="0" min="0" step="0.01" oninput="calcRow(${rowIndex})" class="u_a3eb5d48fd"></td>
+    <td id="line${rowIndex}" class="u_4e9683444a">0.00</td>
+    <td><button type="button" onclick="this.closest('tr').remove();calcTotal()" class="u_3abc93d84c">✕</button></td>
   `;
   tbody.appendChild(tr);
   rowIndex++;

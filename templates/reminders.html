@@ -11,28 +11,28 @@
 </div>
 
 <!-- إحصائيات سريعة -->
-<div class="stats-grid" id="statsGrid" style="margin-bottom:20px"></div>
+<div class="stats-grid u_49f14f8f83" id="statsGrid"></div>
 
 <!-- الجداول -->
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px" id="typeSections"></div>
+<div id="typeSections" class="u_7d9fadec11"></div>
 
 <!-- جميع التنبيهات -->
 <div class="card">
-  <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+  <div class="card-header u_13313b1a3a">
     <span class="card-title">📋 كل التنبيهات</span>
-    <label style="display:flex;align-items:center;gap:6px;font-size:.82rem">
+    <label class="u_c42ea07d94">
       <input type="checkbox" id="showDismissed" onchange="loadReminders()"> عرض المرفوضة
     </label>
   </div>
-  <div id="remindersBody" style="padding:0 4px 16px"></div>
+  <div id="remindersBody" class="u_74fb8db8c7"></div>
 </div>
 
 <!-- نافذة الإضافة/التعديل -->
-<div id="reminderModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;padding:20px;overflow:auto">
-  <div style="background:var(--card-bg);border-radius:16px;max-width:540px;margin:40px auto;padding:28px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
-      <h3 id="modalTitle" style="margin:0">➕ إضافة تنبيه</h3>
-      <button onclick="closeModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer">✕</button>
+<div id="reminderModal" class="u_3a7c4c9d27">
+  <div class="u_abc0e49379">
+    <div class="u_1f225888e2">
+      <h3 id="modalTitle" class="u_1169661891">➕ إضافة تنبيه</h3>
+      <button onclick="closeModal()" class="u_7b61763c20">✕</button>
     </div>
     <div class="form-group">
       <label class="form-label">العنوان <span class="required">*</span></label>
@@ -58,10 +58,10 @@
         <input id="rAmount" type="number" step="0.01" min="0" class="form-control" placeholder="0.00">
       </div>
       <div class="form-group">
-        <label class="form-label" style="display:flex;align-items:center;gap:8px">
+        <label class="form-label u_015a5e7fbe">
           <input type="checkbox" id="rRecurring" onchange="toggleRecurrence()"> متكرر
         </label>
-        <div id="recurrenceDays" style="display:none;margin-top:8px">
+        <div id="recurrenceDays" class="u_9714b43b47">
           <input id="rRecurrenceDays" type="number" min="1" class="form-control"
                  placeholder="كل كم يوم؟ (مثلاً: 30 للشهري)">
         </div>
@@ -71,8 +71,8 @@
       <label class="form-label">ملاحظات</label>
       <textarea id="rNotes" class="form-control" rows="2" placeholder="تفاصيل إضافية..."></textarea>
     </div>
-    <div style="display:flex;gap:10px;margin-top:20px">
-      <button onclick="saveReminder()" class="btn btn-primary btn-lg" style="flex:1">💾 حفظ</button>
+    <div class="u_7935f992a8">
+      <button onclick="saveReminder()" class="btn btn-primary btn-lg u_97445a8d93">💾 حفظ</button>
       <button onclick="closeModal()" class="btn btn-secondary">إلغاء</button>
     </div>
   </div>
@@ -83,6 +83,7 @@
   display:flex;align-items:flex-start;gap:14px;padding:14px 20px;
   border-bottom:1px solid var(--border);transition:background .15s;
 }
+.reminder-card-dimmed{opacity:.55;}
 .reminder-card:last-child { border-bottom:none; }
 .reminder-card:hover { background:var(--bg); }
 .reminder-icon {
@@ -98,6 +99,24 @@
 .days-urgent   { background:#fef3c7;color:#d97706; }
 .days-upcoming { background:#dbeafe;color:#1d4ed8; }
 .days-ok       { background:#dcfce7;color:#15803d; }
+.u_49f14f8f83{margin-bottom:20px}
+.u_7d9fadec11{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.u_13313b1a3a{display:flex;justify-content:space-between;align-items:center}
+.u_c42ea07d94{display:flex;align-items:center;gap:6px;font-size:.82rem}
+.u_74fb8db8c7{padding:0 4px 16px}
+.u_3a7c4c9d27{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;padding:20px;overflow:auto}
+.u_abc0e49379{background:var(--card-bg);border-radius:16px;max-width:540px;margin:40px auto;padding:28px}
+.u_1f225888e2{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.u_1169661891{margin:0}
+.u_7b61763c20{background:none;border:none;font-size:1.4rem;cursor:pointer}
+.u_015a5e7fbe{display:flex;align-items:center;gap:8px}
+.u_9714b43b47{display:none;margin-top:8px}
+.u_7935f992a8{display:flex;gap:10px;margin-top:20px}
+.u_97445a8d93{flex:1}
+.u_111ad630c6{padding:40px;text-align:center;color:var(--text-muted)}
+.u_7d7a523fbc{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.u_90237fa409{display:flex;gap:6px;margin-top:4px}
+.u_4fb9f2f426{color:var(--text-muted);padding:8px 0}
 </style>
 
 <script>
@@ -223,7 +242,7 @@ function loadReminders() {
       const body  = document.getElementById('remindersBody');
 
       if (items.length === 0) {
-        body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)">🔔 لا توجد تنبيهات</div>';
+        body.innerHTML = '<div class="u_111ad630c6">🔔 لا توجد تنبيهات</div>';
         return;
       }
 
@@ -233,9 +252,9 @@ function loadReminders() {
         const due   = item.due_date || '';
         const daysLeft = Math.round((new Date(due) - new Date(today)) / 86400000);
         const badge = daysBadge(daysLeft);
-        const dimmed = item.is_dismissed ? 'opacity:.55;' : '';
+        const cardClass = item.is_dismissed ? 'reminder-card reminder-card-dimmed' : 'reminder-card';
 
-        return `<div class="reminder-card" style="${dimmed}">
+        return `<div class="${cardClass}">
           <div class="reminder-icon">${meta.icon}</div>
           <div class="reminder-meta">
             <p class="reminder-title">${escHtml(item.title)}</p>
@@ -247,9 +266,9 @@ function loadReminders() {
               ${item.notes ? `<span title="${escHtml(item.notes)}">📝 ${escHtml(item.notes.slice(0,40))}${item.notes.length>40?'…':''}</span>` : ''}
             </div>
           </div>
-          <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+          <div class="u_7d7a523fbc">
             ${badge}
-            <div style="display:flex;gap:6px;margin-top:4px">
+            <div class="u_90237fa409">
               <button data-item="${escHtml(encodeReminder(item))}" onclick="openEditEncoded(this.dataset.item)" class="btn btn-sm btn-outline">✏️</button>
               ${!item.is_dismissed ? `<button onclick="dismissReminder(${item.id})" class="btn btn-sm btn-outline" title="رفض">✓</button>` : ''}
               <button onclick="deleteReminder(${item.id})" class="btn btn-sm btn-danger" title="حذف">🗑️</button>
@@ -270,7 +289,7 @@ function loadReminders() {
           <div class="stat-icon">${m.icon}</div>
           <div><div class="stat-value">${escHtml(cnt)}</div><div class="stat-label">${escHtml(m.label)}</div></div>
         </div>`;
-      }).join('') || '<p style="color:var(--text-muted);padding:8px 0">لا توجد تنبيهات نشطة</p>';
+      }).join('') || '<p class="u_4fb9f2f426">لا توجد تنبيهات نشطة</p>';
     });
 }
 

@@ -15,19 +15,40 @@
   td { padding:9px 10px; border-bottom:1px solid #eee; }
   tr:hover { background:#fafafa; }
   .stat-box { text-align:center; padding:18px; border-radius:8px; color:white; }
+.u_ae125572d5{display:contents}
+.u_2c7dd3ded6{background:#3b82f6;color:white;border:none;padding:8px 20px;border-radius:6px;cursor:pointer;font-size:14px;align-self:flex-end}
+.u_1b89509184{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:20px}
+.u_273ed79404{background:linear-gradient(135deg,#3b82f6,#2563eb)}
+.u_6f32bbbaa9{font-size:11px;opacity:.8}
+.u_07be723ea9{font-size:1.8rem;font-weight:900;margin:6px 0}
+.u_89e6bfaa99{background:linear-gradient(135deg,#10b981,#059669)}
+.u_6a28d2d798{background:linear-gradient(135deg,#8b5cf6,#7c3aed)}
+.u_7bcd49fe1f{background:linear-gradient(135deg,#f59e0b,#d97706)}
+.u_d9a50764da{font-size:17px;font-weight:bold;margin-bottom:14px}
+.u_d9fe14b120{color:#999}
+.u_e943550a6d{color:#059669;font-weight:bold}
+.u_b88d1817be{display:flex;align-items:center;gap:6px}
+.u_421e375c36{background:#e5e7eb;border-radius:4px;height:6px;flex:1;max-width:80px}
+.sales-share-fill{background:#3b82f6;height:6px;border-radius:4px}
+.u_b393da4633{font-size:12px;color:#666}
+.u_cb9f76be80{font-weight:bold;color:#059669}
+.u_e8d0fd0913{text-align:center;color:#999;padding:30px}
+.u_cab1c959b6{background:#f0fdf4;font-weight:bold}
+.u_f60ddf1b95{color:#059669}
+.u_bff3d12c90{font-weight:bold}
 </style>
 
 <!-- فلاتر البحث -->
 <div class="card">
-  <form method="get" style="display:contents">
+  <form method="get" class="u_ae125572d5">
     <div class="filter-bar">
       <div class="filter-group">
         <label>من تاريخ</label>
-        <input type="date" name="from" value="{{ date_from }}">
+        <input type="date" name="from" value="{{ date_from }}" title="تاريخ بداية التقرير">
       </div>
       <div class="filter-group">
         <label>إلى تاريخ</label>
-        <input type="date" name="to" value="{{ date_to }}">
+        <input type="date" name="to" value="{{ date_to }}" title="تاريخ نهاية التقرير">
       </div>
       <div class="filter-group">
         <label>الصنف (جزئي)</label>
@@ -35,14 +56,14 @@
       </div>
       <div class="filter-group">
         <label>الكاشير</label>
-        <select name="cashier">
+        <select name="cashier" title="فلتر الكاشير">
           <option value="">— الكل —</option>
           {% for c in cashiers %}
           <option value="{{ c.id }}" {% if cashier_filter == c.id|string %}selected{% endif %}>{{ c.name }}</option>
           {% endfor %}
         </select>
       </div>
-      <button type="submit" style="background:#3b82f6;color:white;border:none;padding:8px 20px;border-radius:6px;cursor:pointer;font-size:14px;align-self:flex-end">
+      <button type="submit" class="u_2c7dd3ded6">
         🔍 بحث
       </button>
     </div>
@@ -50,32 +71,32 @@
 </div>
 
 <!-- بطاقات الإجمالي -->
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:20px">
-  <div class="stat-box" style="background:linear-gradient(135deg,#3b82f6,#2563eb)">
-    <div style="font-size:11px;opacity:.8">إجمالي الإيرادات</div>
-    <div style="font-size:1.8rem;font-weight:900;margin:6px 0">{{ "{:,.2f}".format(grand_total) }}</div>
-    <div style="font-size:11px;opacity:.8">ريال</div>
+<div class="u_1b89509184">
+  <div class="stat-box u_273ed79404">
+    <div class="u_6f32bbbaa9">إجمالي الإيرادات</div>
+    <div class="u_07be723ea9">{{ "{:,.2f}".format(grand_total) }}</div>
+    <div class="u_6f32bbbaa9">ريال</div>
   </div>
-  <div class="stat-box" style="background:linear-gradient(135deg,#10b981,#059669)">
-    <div style="font-size:11px;opacity:.8">عدد أيام البيع</div>
-    <div style="font-size:1.8rem;font-weight:900;margin:6px 0">{{ daily_summary|length }}</div>
-    <div style="font-size:11px;opacity:.8">يوم</div>
+  <div class="stat-box u_89e6bfaa99">
+    <div class="u_6f32bbbaa9">عدد أيام البيع</div>
+    <div class="u_07be723ea9">{{ daily_summary|length }}</div>
+    <div class="u_6f32bbbaa9">يوم</div>
   </div>
-  <div class="stat-box" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed)">
-    <div style="font-size:11px;opacity:.8">سطور المبيعات</div>
-    <div style="font-size:1.8rem;font-weight:900;margin:6px 0">{{ sales_lines|length }}</div>
-    <div style="font-size:11px;opacity:.8">صنف مُباع</div>
+  <div class="stat-box u_6a28d2d798">
+    <div class="u_6f32bbbaa9">سطور المبيعات</div>
+    <div class="u_07be723ea9">{{ sales_lines|length }}</div>
+    <div class="u_6f32bbbaa9">صنف مُباع</div>
   </div>
-  <div class="stat-box" style="background:linear-gradient(135deg,#f59e0b,#d97706)">
-    <div style="font-size:11px;opacity:.8">متوسط اليومي</div>
-    <div style="font-size:1.8rem;font-weight:900;margin:6px 0">{{ "{:,.0f}".format(grand_total / daily_summary|length) if daily_summary else 0 }}</div>
-    <div style="font-size:11px;opacity:.8">ريال</div>
+  <div class="stat-box u_7bcd49fe1f">
+    <div class="u_6f32bbbaa9">متوسط اليومي</div>
+    <div class="u_07be723ea9">{{ "{:,.0f}".format(grand_total / daily_summary|length) if daily_summary else 0 }}</div>
+    <div class="u_6f32bbbaa9">ريال</div>
   </div>
 </div>
 
 <!-- الأصناف الأكثر مبيعاً -->
 <div class="card">
-  <div style="font-size:17px;font-weight:bold;margin-bottom:14px">🏆 الأصناف الأكثر مبيعاً</div>
+  <div class="u_d9a50764da">🏆 الأصناف الأكثر مبيعاً</div>
   <table>
     <thead>
       <tr>
@@ -91,20 +112,20 @@
     <tbody>
       {% for p in product_summary %}
       <tr>
-        <td style="color:#999">{{ loop.index }}</td>
+        <td class="u_d9fe14b120">{{ loop.index }}</td>
         <td><strong>{{ p.product_name }}</strong></td>
         <td>{{ "{:,.2f}".format(p.total_qty) }}</td>
         <td>{{ "{:,.2f}".format(p.avg_price) }} ر.س</td>
-        <td style="color:#059669;font-weight:bold">{{ "{:,.2f}".format(p.total_revenue) }} ر.س</td>
+        <td class="u_e943550a6d">{{ "{:,.2f}".format(p.total_revenue) }} ر.س</td>
         <td>{{ p.sale_count }}</td>
         <td>
           {% if grand_total > 0 %}
             {% set pct = (p.total_revenue / grand_total * 100)|round(1) %}
-            <div style="display:flex;align-items:center;gap:6px">
-              <div style="background:#e5e7eb;border-radius:4px;height:6px;flex:1;max-width:80px">
-                <div style="background:#3b82f6;height:6px;border-radius:4px;width:{{ [pct, 100]|min }}%"></div>
+            <div class="u_b88d1817be">
+              <div class="u_421e375c36">
+                <div class="sales-share-fill" data-width="{{ [pct, 100]|min }}"></div>
               </div>
-              <span style="font-size:12px;color:#666">{{ pct }}%</span>
+              <span class="u_b393da4633">{{ pct }}%</span>
             </div>
           {% endif %}
         </td>
@@ -116,7 +137,7 @@
 
 <!-- ملخص يومي -->
 <div class="card">
-  <div style="font-size:17px;font-weight:bold;margin-bottom:14px">📅 ملخص يومي</div>
+  <div class="u_d9a50764da">📅 ملخص يومي</div>
   <table>
     <thead>
       <tr>
@@ -132,17 +153,17 @@
         <td>{{ d.sale_date }}</td>
         <td>{{ d.invoice_count }}</td>
         <td>{{ "{:,.2f}".format(d.total_qty) }}</td>
-        <td style="font-weight:bold;color:#059669">{{ "{:,.2f}".format(d.total_revenue) }} ر.س</td>
+        <td class="u_cb9f76be80">{{ "{:,.2f}".format(d.total_revenue) }} ر.س</td>
       </tr>
       {% else %}
-      <tr><td colspan="4" style="text-align:center;color:#999;padding:30px">لا توجد بيانات للفترة المحددة</td></tr>
+      <tr><td colspan="4" class="u_e8d0fd0913">لا توجد بيانات للفترة المحددة</td></tr>
       {% endfor %}
     </tbody>
     {% if daily_summary %}
     <tfoot>
-      <tr style="background:#f0fdf4;font-weight:bold">
+      <tr class="u_cab1c959b6">
         <td colspan="3">الإجمالي</td>
-        <td style="color:#059669">{{ "{:,.2f}".format(grand_total) }} ر.س</td>
+        <td class="u_f60ddf1b95">{{ "{:,.2f}".format(grand_total) }} ر.س</td>
       </tr>
     </tfoot>
     {% endif %}
@@ -152,7 +173,7 @@
 <!-- سطور المبيعات التفصيلية -->
 {% if sales_lines %}
 <div class="card">
-  <div style="font-size:17px;font-weight:bold;margin-bottom:14px">📋 تفاصيل سطور المبيعات (أحدث {{ sales_lines|length }} سجل)</div>
+  <div class="u_d9a50764da">📋 تفاصيل سطور المبيعات (أحدث {{ sales_lines|length }} سجل)</div>
   <table>
     <thead>
       <tr>
@@ -173,7 +194,7 @@
         <td>{{ row.product_name }}</td>
         <td>{{ "{:,.3f}".format(row.qty) }}</td>
         <td>{{ "{:,.2f}".format(row.unit_price) }}</td>
-        <td style="font-weight:bold">{{ "{:,.2f}".format(row.line_total) }} ر.س</td>
+        <td class="u_bff3d12c90">{{ "{:,.2f}".format(row.line_total) }} ر.س</td>
         <td>{{ row.cashier_name }}</td>
       </tr>
       {% endfor %}
@@ -181,4 +202,10 @@
   </table>
 </div>
 {% endif %}
+<script>
+document.querySelectorAll('.sales-share-fill[data-width]').forEach(function (el) {
+  var w = Number(el.getAttribute('data-width') || 0);
+  el.style.width = Math.max(0, Math.min(100, w)) + '%';
+});
+</script>
 {% endblock %}

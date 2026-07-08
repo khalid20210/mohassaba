@@ -1,3 +1,16 @@
+<style>
+.u_500e50569b{color:#94a3b8;font-size:.85rem;}
+.u_a3a5568692{margin-top:4px;}
+.u_2dce2ae7ea{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+.u_dac4fe6c9b{text-align:center;}
+.u_aa86919bf7{font-size:1.8rem;font-weight:700;color:#38bdf8;}
+.u_f3e020a82b{color:#94a3b8;margin-top:4px;}
+.u_3e8902d99f{font-size:1.8rem;font-weight:700;color:#22c55e;}
+.u_36e5df2276{font-size:1.8rem;font-weight:700;color:#f59e0b;}
+.u_f1fa12bbea{color:#38bdf8;}
+.u_6fe47583b2{color:#22c55e;}
+.u_612a65f696{text-align:center;color:#64748b;padding:40px;}
+</style>
 {% extends "base.html" %}
 {% block title %}تقرير قيمة المخزون{% endblock %}
 {% block page_title %}💰 تقرير قيمة المخزون{% endblock %}
@@ -5,23 +18,23 @@
 {% block content %}
 <div class="page-header">
   <div>
-    <a href="/inventory/reports" style="color:#94a3b8;font-size:.85rem;">← التقارير</a>
-    <h1 class="page-title" style="margin-top:4px;">💰 قيمة المخزون</h1>
+    <a href="/inventory/reports" class="u_500e50569b">← التقارير</a>
+    <h1 class="page-title u_a3a5568692">💰 قيمة المخزون</h1>
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;">
-  <div class="card" style="text-align:center;">
-    <div style="font-size:1.8rem;font-weight:700;color:#38bdf8;">{{ "{:,.2f}".format(data.total_cost or 0) }}</div>
-    <div style="color:#94a3b8;margin-top:4px;">إجمالي تكلفة الشراء (ر.س)</div>
+<div class="u_2dce2ae7ea">
+  <div class="card u_dac4fe6c9b">
+    <div class="u_aa86919bf7">{{ "{:,.2f}".format(data.total_cost or 0) }}</div>
+    <div class="u_f3e020a82b">إجمالي تكلفة الشراء (ر.س)</div>
   </div>
-  <div class="card" style="text-align:center;">
-    <div style="font-size:1.8rem;font-weight:700;color:#22c55e;">{{ "{:,.2f}".format(data.total_sell or 0) }}</div>
-    <div style="color:#94a3b8;margin-top:4px;">إجمالي قيمة البيع (ر.س)</div>
+  <div class="card u_dac4fe6c9b">
+    <div class="u_3e8902d99f">{{ "{:,.2f}".format(data.total_sell or 0) }}</div>
+    <div class="u_f3e020a82b">إجمالي قيمة البيع (ر.س)</div>
   </div>
-  <div class="card" style="text-align:center;">
-    <div style="font-size:1.8rem;font-weight:700;color:#f59e0b;">{{ "{:,.2f}".format((data.total_sell or 0) - (data.total_cost or 0)) }}</div>
-    <div style="color:#94a3b8;margin-top:4px;">هامش الربح المتوقع (ر.س)</div>
+  <div class="card u_dac4fe6c9b">
+    <div class="u_36e5df2276">{{ "{:,.2f}".format((data.total_sell or 0) - (data.total_cost or 0)) }}</div>
+    <div class="u_f3e020a82b">هامش الربح المتوقع (ر.س)</div>
   </div>
 </div>
 
@@ -33,15 +46,15 @@
     <tbody>
       {% for p in data.products or [] %}
       <tr>
-        <td><a href="/inventory/products/{{ p.id }}" style="color:#38bdf8;">{{ p.name }}</a></td>
+        <td><a href="/inventory/products/{{ p.id }}" class="u_f1fa12bbea">{{ p.name }}</a></td>
         <td>{{ p.current_qty }} {{ p.unit }}</td>
         <td>{{ "{:,.2f}".format(p.cost_price or 0) }}</td>
-        <td style="color:#38bdf8;">{{ "{:,.2f}".format((p.cost_price or 0) * (p.current_qty or 0)) }}</td>
+        <td class="u_f1fa12bbea">{{ "{:,.2f}".format((p.cost_price or 0) * (p.current_qty or 0)) }}</td>
         <td>{{ "{:,.2f}".format(p.sell_price or 0) }}</td>
-        <td style="color:#22c55e;">{{ "{:,.2f}".format((p.sell_price or 0) * (p.current_qty or 0)) }}</td>
+        <td class="u_6fe47583b2">{{ "{:,.2f}".format((p.sell_price or 0) * (p.current_qty or 0)) }}</td>
       </tr>
       {% else %}
-      <tr><td colspan="6" style="text-align:center;color:#64748b;padding:40px;">لا توجد بيانات</td></tr>
+      <tr><td colspan="6" class="u_612a65f696">لا توجد بيانات</td></tr>
       {% endfor %}
     </tbody>
   </table>

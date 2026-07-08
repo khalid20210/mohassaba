@@ -253,7 +253,10 @@ CREATE TABLE IF NOT EXISTS invoices (
     tax_amount      REAL    DEFAULT 0,
     total           REAL    DEFAULT 0,
     paid_amount     REAL    DEFAULT 0,
+    payment_method  TEXT    DEFAULT 'cash',
     status          TEXT    DEFAULT 'draft', -- draft|issued|paid|partial|cancelled
+    party_vat       TEXT    DEFAULT '',
+    pos_shift_id    INTEGER REFERENCES pos_shifts(id),
     journal_entry_id INTEGER REFERENCES journal_entries(id),
     notes           TEXT,
     created_by      INTEGER REFERENCES users(id),

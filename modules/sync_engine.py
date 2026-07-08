@@ -27,7 +27,8 @@ from pathlib import Path
 from typing import Optional
 
 from modules.config import DB_PATH, SQLITE_BUSY_TIMEOUT_MS
-from modules.extensions import get_account_id, next_entry_number, next_invoice_number
+from modules.extensions import get_account_id, next_entry_number, next_invoice_number, seed_business_accounts
+from modules.robot_runtime import process_invoice_robots
 
 logger = logging.getLogger(__name__)
 
@@ -460,11 +461,24 @@ def _handle_create_invoice(
             )
 
     # قيود يومية المبيعات + COGS داخل sync لمنع فساد القيد المزدوج.
-    recv_acc_id = get_account_id(conn, biz_id, "1201")
+    recv_acc_id = get_account_id(conn, biz_id, "1201") or get_account_id(conn, biz_id, "1103")
     sales_acc_id = get_account_id(conn, biz_id, "4101")
     tax_acc_id = get_account_id(conn, biz_id, "2102")
     cogs_acc_id = get_account_id(conn, biz_id, "5101")
     inv_acc_id = get_account_id(conn, biz_id, "1104")
+
+    # بعض البيئات التجريبية تُنشئ منشآت بدون شجرة حسابات كاملة.
+    # نحاول seed مرة واحدة قبل إسقاط القيد لضمان سلامة اليومية في الضغط العالي.
+    if not (recv_acc_id and sales_acc_id and cogs_acc_id and inv_acc_id):
+        try:
+            seed_business_accounts(conn, biz_id)
+            recv_acc_id = recv_acc_id or get_account_id(conn, biz_id, "1201") or get_account_id(conn, biz_id, "1103")
+            sales_acc_id = sales_acc_id or get_account_id(conn, biz_id, "4101")
+            tax_acc_id = tax_acc_id or get_account_id(conn, biz_id, "2102")
+            cogs_acc_id = cogs_acc_id or get_account_id(conn, biz_id, "5101")
+            inv_acc_id = inv_acc_id or get_account_id(conn, biz_id, "1104")
+        except Exception as seed_err:
+            logger.warning("[SyncWorker] فشل تهيئة شجرة الحسابات تلقائياً: %s", seed_err)
 
     if recv_acc_id and sales_acc_id:
         je_sale_num = next_entry_number(conn, biz_id)
@@ -539,6 +553,19 @@ def _handle_create_invoice(
         "INSERT OR IGNORE INTO agent_invoice_links (business_id, agent_id, invoice_id) VALUES (?,?,?)",
         (biz_id, agent_id, inv_id),
     )
+
+    try:
+        process_invoice_robots(
+            conn,
+            business_id=int(biz_id),
+            invoice_id=int(inv_id),
+            invoice_total=float(grand or 0),
+            actor_user_id=int(agent_id or 0) or None,
+            source_channel="sync_engine_offline",
+            auto_commit=False,
+        )
+    except Exception:
+        pass
 
     # ── تسجيل التضاربات ────────────────────────────────────────────────
     if conflicts_found:

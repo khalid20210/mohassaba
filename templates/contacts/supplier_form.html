@@ -1,50 +1,135 @@
 {% extends "base.html" %}
-{% block title %}مورد جديد{% endblock %}
-{% block page_title %}🏭 إضافة مورد{% endblock %}
+{% block title %}إضافة مورد جديد{% endblock %}
+{% block page_title %}إضافة مورد جديد{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <div>
-    <a href="/contacts/suppliers" style="color:#94a3b8;font-size:.85rem;">← قائمة الموردين</a>
-    <h1 class="page-title" style="margin-top:4px;">إضافة مورد جديد</h1>
-  </div>
-</div>
+<style>
+.sf-page{max-width:1120px;margin:0 auto;padding:8px 4px 30px;}
+.sf-back{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:#60a5fa;font-size:.88rem;font-weight:600;margin-bottom:14px;}
+.sf-back:hover{color:#93c5fd;}
+.sf-hero{display:flex;gap:16px;align-items:center;padding:22px 24px;border-radius:18px;
+  border:1px solid rgba(251,191,36,.22);background:linear-gradient(130deg,rgba(251,191,36,.12),rgba(245,158,11,.08),rgba(16,185,129,.08));margin-bottom:18px;}
+.sf-hero-icon{width:58px;height:58px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;
+  background:linear-gradient(135deg,#f59e0b,#fbbf24);box-shadow:0 10px 24px rgba(245,158,11,.25);}
+.sf-hero h1{margin:0 0 4px;color:#f1f5f9;font-size:1.35rem;font-weight:800;}
+.sf-hero p{margin:0;color:#94a3b8;font-size:.9rem;}
+.sf-form{background:rgba(15,23,42,.66);border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;}
+.sf-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:22px;}
+.sf-sec{grid-column:1/-1;background:linear-gradient(145deg,rgba(30,41,59,.86),rgba(15,23,42,.62));border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:18px;}
+.sf-sec.half{grid-column:span 1;}
+.sf-sec-title{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.07);
+  color:#94a3b8;font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+.sf-rows{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.sf-field{display:flex;flex-direction:column;gap:6px;}
+.sf-field.full{grid-column:1/-1;}
+.sf-label{font-size:.8rem;font-weight:600;color:#64748b;}
+.sf-label .req{color:#ef4444;}
+.sf-input{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;font-size:.93rem;color:#f1f5f9;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);transition:all .2s;}
+.sf-input:focus{outline:none;border-color:#fbbf24;background:rgba(251,191,36,.06);box-shadow:0 0 0 3px rgba(251,191,36,.12);}
+.sf-input::placeholder{color:#475569;}
+.sf-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%2364748b' viewBox='0 0 20 20'%3E%3Cpath d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:left 12px center;background-size:16px;padding-left:34px;}
+.sf-actions{display:flex;gap:10px;justify-content:flex-end;padding:16px 22px;border-top:1px solid rgba(255,255,255,.08);
+  background:rgba(15,23,42,.86);position:sticky;bottom:0;}
+.sf-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:10px;
+  font-size:.9rem;font-weight:700;text-decoration:none;cursor:pointer;transition:all .2s;border:1px solid transparent;}
+.sf-btn.save{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;box-shadow:0 8px 18px rgba(245,158,11,.26);}
+.sf-btn.save:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(245,158,11,.33);}
+.sf-btn.edit{background:rgba(14,165,233,.12);border-color:rgba(14,165,233,.24);color:#7dd3fc;}
+.sf-btn.edit:hover{background:rgba(14,165,233,.2);}
+.sf-btn.back{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12);color:#cbd5e1;}
+.sf-btn.back:hover{background:rgba(255,255,255,.1);}
+.sf-btn.cancel{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.22);color:#fca5a5;}
+.sf-btn.cancel:hover{background:rgba(239,68,68,.18);color:#fecaca;}
+@media(max-width:900px){.sf-grid{grid-template-columns:1fr;}.sf-sec.half{grid-column:1/-1;}}
+@media(max-width:640px){.sf-rows{grid-template-columns:1fr;}.sf-actions{position:relative;flex-wrap:wrap;}.sf-btn{flex:1;}}
+</style>
 
-<div class="card" style="max-width:600px;margin:0 auto;">
-  <form action="/contacts/suppliers/new" method="post">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      <div style="grid-column:1/-1;">
-        <label class="form-label">اسم المورد / الشركة *</label>
-        <input type="text" name="name" class="form-input" required placeholder="اسم المورد">
-      </div>
-      <div>
-        <label class="form-label">الهاتف</label>
-        <input type="text" name="phone" class="form-input" placeholder="05xxxxxxxx">
-      </div>
-      <div>
-        <label class="form-label">البريد الإلكتروني</label>
-        <input type="email" name="email" class="form-input">
-      </div>
-      <div style="grid-column:1/-1;">
-        <label class="form-label">العنوان</label>
-        <input type="text" name="address" class="form-input" placeholder="المدينة، العنوان">
-      </div>
-      <div>
-        <label class="form-label">الرقم الضريبي</label>
-        <input type="text" name="tax_number" class="form-input" required>
-      </div>
-      <div>
-        <label class="form-label">رقم السجل التجاري</label>
-        <input type="text" name="commercial_reg" class="form-input" pattern="\d{10}" required>
-      </div>
-      <div style="grid-column:1/-1;">
-        <label class="form-label">مرجع شهادة الضريبة *</label>
-        <input type="text" name="tax_certificate_ref" class="form-input" required placeholder="رقم الشهادة أو مرجع التحقق">
-      </div>
+<div class="sf-page">
+  <a href="/contacts/suppliers" class="sf-back">← رجوع لقائمة الموردين</a>
+
+  <div class="sf-hero">
+    <div class="sf-hero-icon">🏭</div>
+    <div>
+      <h1>إضافة مورد جديد</h1>
+      <p>سجّل بيانات المورد الكاملة — البيانات التجارية والضريبية وبيانات التواصل</p>
     </div>
-    <div style="margin-top:24px;display:flex;gap:12px;">
-      <button type="submit" class="btn btn-primary">💾 حفظ</button>
-      <a href="/contacts/suppliers" class="btn btn-secondary">إلغاء</a>
+  </div>
+
+  <form class="sf-form" action="/contacts/suppliers/new" method="post">
+    <div class="sf-grid">
+
+      <div class="sf-sec">
+        <div class="sf-sec-title">بيانات المورد الأساسية</div>
+        <div class="sf-rows">
+          <div class="sf-field full">
+            <label class="sf-label">اسم المورد / الشركة <span class="req">*</span></label>
+            <input type="text" name="name" class="sf-input" required placeholder="اسم الشركة أو المورد الفردي">
+          </div>
+          <div class="sf-field">
+            <label class="sf-label">الهاتف</label>
+            <input type="text" name="phone" class="sf-input" placeholder="05xxxxxxxx" dir="ltr">
+          </div>
+          <div class="sf-field">
+            <label class="sf-label">البريد الإلكتروني</label>
+            <input type="email" name="email" class="sf-input" placeholder="supplier@example.com" dir="ltr">
+          </div>
+          <div class="sf-field full">
+            <label class="sf-label">العنوان</label>
+            <input type="text" name="address" class="sf-input" placeholder="المدينة، العنوان الكامل">
+          </div>
+        </div>
+      </div>
+
+      <div class="sf-sec half">
+        <div class="sf-sec-title">البيانات الضريبية والتجارية</div>
+        <div class="sf-rows">
+          <div class="sf-field">
+            <label class="sf-label">الرقم الضريبي (VAT) <span class="req">*</span></label>
+            <input type="text" name="tax_number" class="sf-input" required placeholder="15 رقماً" dir="ltr">
+          </div>
+          <div class="sf-field">
+            <label class="sf-label">رقم السجل التجاري <span class="req">*</span></label>
+            <input type="text" name="commercial_reg" class="sf-input" pattern="\d{10}" required placeholder="10 أرقام" dir="ltr">
+          </div>
+          <div class="sf-field full">
+            <label class="sf-label">مرجع شهادة الضريبة <span class="req">*</span></label>
+            <input type="text" name="tax_certificate_ref" class="sf-input" required placeholder="رقم الشهادة أو مرجع التحقق" dir="ltr">
+          </div>
+        </div>
+      </div>
+
+      <div class="sf-sec half">
+        <div class="sf-sec-title">بيانات إضافية</div>
+        <div class="sf-rows">
+          <div class="sf-field">
+            <label class="sf-label">حد الائتمان (ر.س)</label>
+            <input type="number" name="credit_limit" class="sf-input" value="0" min="0" step="0.01">
+          </div>
+          <div class="sf-field">
+            <label class="sf-label">شروط الدفع</label>
+            <select name="payment_terms" class="sf-input sf-select">
+              <option value="cash">فوري نقداً</option>
+              <option value="net15">صافي 15 يوم</option>
+              <option value="net30">صافي 30 يوم</option>
+              <option value="net60">صافي 60 يوم</option>
+            </select>
+          </div>
+          <div class="sf-field full">
+            <label class="sf-label">ملاحظات</label>
+            <textarea name="notes" class="sf-input" rows="3" placeholder="أي ملاحظات على هذا المورد..."></textarea>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="sf-actions">
+      <a href="/contacts/suppliers" class="sf-btn back">رجوع</a>
+      <button type="button" class="sf-btn edit" onclick="document.querySelector('[name=name]').focus()">تعديل</button>
+      <a href="/contacts/suppliers" class="sf-btn cancel">إلغاء</a>
+      <button type="submit" class="sf-btn save">حفظ المورد</button>
     </div>
   </form>
 </div>

@@ -1,0 +1,758 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة مالك البرنامج{% endblock %}
+{% block page_title %}إدارة المنصة المركزية{% endblock %}
+
+{% block head %}
+<style>
+.admin-core-grid { display: grid; gap: 16px; }
+.admin-card {
+  background: var(--card-bg, #0f172a);
+  border: 1px solid var(--border, #334155);
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(2, 6, 23, .15);
+}
+.admin-card .card-head {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border, #334155);
+  font-weight: 800;
+  color: var(--text, #e2e8f0);
+}
+.admin-card .card-body { padding: 16px; }
+.admin-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.admin-label { font-size: .78rem; font-weight: 700; color: var(--text-muted, #94a3b8); margin-bottom: 6px; display: block; }
+.admin-input, .admin-select, .admin-textarea {
+  width: 100%;
+  border: 1px solid var(--border, #334155);
+  background: var(--bg, #0b1220);
+  color: var(--text, #e2e8f0);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: inherit;
+}
+.admin-textarea { min-height: 110px; resize: vertical; font-family: Consolas, monospace; }
+.admin-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
+.admin-btn {
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 800;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb, #0ea5e9);
+}
+.switch-wrap { display: flex; align-items: center; gap: 10px; }
+.switch-input { width: 52px; height: 28px; }
+.muted-note { color: var(--text-muted, #94a3b8); font-size: .82rem; }
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: .76rem;
+  font-weight: 700;
+}
+.status-on { background: rgba(16, 185, 129, .15); color: #34d399; border: 1px solid rgba(16, 185, 129, .35); }
+.status-off { background: rgba(239, 68, 68, .15); color: #f87171; border: 1px solid rgba(239, 68, 68, .35); }
+.flash-inline { margin-top: 12px; font-size: .86rem; }
+.danger-btn {
+  border: 1px solid rgba(239, 68, 68, .4);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 800;
+  cursor: pointer;
+  color: #fecaca;
+  background: rgba(127, 29, 29, .35);
+}
+.safe-btn {
+  border: 1px solid rgba(16, 185, 129, .4);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 800;
+  cursor: pointer;
+  color: #bbf7d0;
+  background: rgba(6, 78, 59, .35);
+}
+.mini-btn {
+  border: 1px solid rgba(148, 163, 184, .35);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-weight: 800;
+  cursor: pointer;
+  color: #cbd5e1;
+  background: rgba(15, 23, 42, .45);
+}
+.services-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.services-wrap {
+  max-height: 380px;
+  overflow: auto;
+  border: 1px solid var(--border, #334155);
+  border-radius: 10px;
+}
+.services-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.services-table th,
+.services-table td {
+  padding: 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, .2);
+  text-align: right;
+  font-size: .84rem;
+}
+.services-table th {
+  position: sticky;
+  top: 0;
+  background: #0f172a;
+  z-index: 1;
+}
+.risk-pill {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 800;
+}
+.risk-low { background: rgba(34,197,94,.14); color:#86efac; border:1px solid rgba(34,197,94,.3); }
+.risk-medium { background: rgba(245,158,11,.14); color:#fcd34d; border:1px solid rgba(245,158,11,.3); }
+.risk-high { background: rgba(249,115,22,.18); color:#fdba74; border:1px solid rgba(249,115,22,.35); }
+.risk-critical { background: rgba(239,68,68,.18); color:#fca5a5; border:1px solid rgba(239,68,68,.35); }
+@media (max-width: 960px) {
+  .admin-row { grid-template-columns: 1fr; }
+}
+.u_a3262b6383{display:flex;justify-content:space-between;align-items:center;gap:16px;}
+.u_634d8d9f44{margin:0 0 6px;font-weight:900;color:#60a5fa;}
+.u_1da9facb4d{margin:0;}
+.u_b1ecc496e0{margin-top:8px;}
+.u_9374e84210{margin-top:12px;}
+.u_cb7251ae6a{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.u_1158a48b13{width:auto;min-width:140px;}
+.u_4b57b502d0{width:auto;min-width:160px;}
+.u_d8a81eac84{margin-top:10px;}
+.u_75246c4f65{justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.u_6b00e75351{display:flex;gap:10px;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-core-grid">
+  <div class="admin-row">
+    <div class="admin-card">
+      <div class="card-body u_a3262b6383">
+        <div>
+          <h5 class="u_634d8d9f44">🛡️ حارس بوابة المنصة المركزي</h5>
+          <p class="muted-note u_1da9facb4d">تفعيل أو إلغاء الموافقة اليدوية على الحسابات الجديدة فوراً.</p>
+          <div id="gatekeeperStatusBadge" class="status-pill status-off u_b1ecc496e0">غير مفعل</div>
+        </div>
+        <div class="switch-wrap">
+          <input class="switch-input" type="checkbox" id="mainGatekeeperToggle">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-card">
+    <div class="card-head">🚀 مركز إطلاق الأقسام والخدمات والميزات الجديدة</div>
+    <div class="card-body">
+      <form id="featureManagerForm">
+        <div class="admin-row">
+          <div>
+            <label class="admin-label">كود الميزة الفريد (System Code)</label>
+            <input type="text" class="admin-input" id="featCode" placeholder="e.g., pharmacy_module" required>
+          </div>
+          <div>
+            <label class="admin-label">اسم القسم أو الخدمة (العربي)</label>
+            <input type="text" class="admin-input" id="featName" placeholder="e.g., قسم الصيدلة المتقدم" required>
+          </div>
+          <div>
+            <label class="admin-label">القطاع التابع له</label>
+            <select class="admin-select" id="featCategory">
+              <option value="Medical">القطاع الطبي (Medical)</option>
+              <option value="Wholesale">قطاع الجملة (Wholesale)</option>
+              <option value="Retail">قطاع التجزئة (Retail)</option>
+              <option value="Services">الخدمات العامة (Services)</option>
+            </select>
+          </div>
+          <div>
+            <label class="admin-label">نوع الخدمة</label>
+            <select class="admin-select" id="featPremium">
+              <option value="0">عامة ومجانية لكافة المنشآت</option>
+              <option value="1">باقة مدفوعة (Premium Flag)</option>
+            </select>
+          </div>
+          <div>
+            <label class="admin-label">السعر الشهري (ريال)</label>
+            <input type="number" min="0" step="0.01" class="admin-input" id="featPrice" placeholder="مثال: 99.00">
+          </div>
+          <div>
+            <label class="admin-label">العرض الحالي</label>
+            <input type="text" class="admin-input" id="featOffer" placeholder="مثال: خصم 20% لأول شهر">
+          </div>
+          <div>
+            <label class="admin-label">الأيقونة</label>
+            <input type="text" class="admin-input" id="featIcon" placeholder="مثال: 💊 أو la-capsules">
+          </div>
+          <div>
+            <label class="admin-label">رابط/مسار الصفحة</label>
+            <input type="text" class="admin-input" id="featRoute" placeholder="مثال: /medical/pharmacy">
+          </div>
+          <div>
+            <label class="admin-label">ترتيب الظهور</label>
+            <input type="number" min="0" step="1" class="admin-input" id="featOrder" placeholder="0">
+          </div>
+        </div>
+
+        <div class="u_9374e84210">
+          <label class="admin-label">تخصيص هيكل القائمة الجانبية للقسم (Sidebar JSON Config)</label>
+          <textarea class="admin-textarea" id="featSidebar" placeholder='{"icon": "la-capsules", "route": "/medical/pharmacy", "label": "إدارة المخزون الطبي"}'></textarea>
+        </div>
+
+        <div class="admin-actions">
+          <button type="submit" class="admin-btn">🎯 حقن وتفعيل الميزة في النظام فوراً</button>
+        </div>
+      </form>
+
+      <div id="featureResult" class="flash-inline"></div>
+    </div>
+  </div>
+
+  <div class="admin-card">
+    <div class="card-head">🧠 إدارة الخدمات تلقائياً (بدون إعادة برمجة)</div>
+    <div class="card-body">
+      <div class="services-toolbar">
+        <span class="muted-note">أي خدمة معرفة داخل إعدادات النظام تظهر تلقائياً هنا، ويمكن تفعيلها/تعطيلها بضغطة واحدة.</span>
+        <button type="button" class="mini-btn" id="refreshServicesBtn">تحديث الكتالوج الآن</button>
+      </div>
+
+      <div class="services-wrap">
+        <table class="services-table" id="servicesCatalogTable">
+          <thead>
+            <tr>
+              <th>الخدمة</th>
+              <th>القطاع</th>
+              <th>المسار</th>
+              <th>السعر</th>
+              <th>العرض</th>
+              <th>الحالة</th>
+              <th>إجراء</th>
+            </tr>
+          </thead>
+          <tbody id="servicesCatalogBody">
+            <tr><td colspan="7" class="muted-note">جاري تحميل الخدمات...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="servicesCatalogResult" class="flash-inline"></div>
+    </div>
+  </div>
+
+  <div class="admin-card">
+    <div class="card-head">🤖 مركز الروبوتات الذكية (مشتركة + حسب النشاط)</div>
+    <div class="card-body">
+      <div class="services-toolbar">
+        <span class="muted-note">تفعيل تدريجي فقط: <b>Off</b> أو <b>Pilot</b> أو <b>On</b> مع قيود صارمة قبل التشغيل الكامل.</span>
+        <div class="u_cb7251ae6a">
+          <select class="admin-select u_1158a48b13" id="robotScopeFilter" title="تصفية نوع الروبوت">
+            <option value="all">كل الأنواع</option>
+            <option value="shared">مشتركة</option>
+            <option value="sector">حسب النشاط</option>
+          </select>
+          <select class="admin-select u_4b57b502d0" id="robotSectorFilter" title="تصفية قطاع الروبوت">
+            <option value="all">كل القطاعات</option>
+            <option value="education">تعليم</option>
+            <option value="healthcare">طبي</option>
+            <option value="wholesale">جملة</option>
+            <option value="retail">تجزئة</option>
+            <option value="ecommerce">تجارة إلكترونية</option>
+            <option value="services">خدمات/مقاولات</option>
+            <option value="realestate">عقارات</option>
+          </select>
+          <button type="button" class="mini-btn" id="refreshRobotsBtn">تحديث الروبوتات</button>
+        </div>
+      </div>
+
+      <div class="services-wrap">
+        <table class="services-table">
+          <thead>
+            <tr>
+              <th>الروبوت</th>
+              <th>النطاق</th>
+              <th>القطاع</th>
+              <th>المخاطر</th>
+              <th>منشآت مطابقة</th>
+              <th>الوضع</th>
+              <th>إجراء</th>
+            </tr>
+          </thead>
+          <tbody id="robotsCatalogBody">
+            <tr><td colspan="7" class="muted-note">جاري تحميل الروبوتات...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="muted-note u_d8a81eac84">ملاحظة أمان: تشغيل روبوت عالي الحساسية يتطلب تأكيد العبارة الصارمة وإقرارًا صريحًا.</div>
+      <div id="robotsCatalogResult" class="flash-inline"></div>
+    </div>
+  </div>
+
+  <div class="admin-card">
+    <div class="card-head">⛔ Kill Switch - تعليق أو إعادة تنشيط المنشآت فورياً</div>
+    <div class="card-body">
+      <div class="admin-row">
+        <div>
+          <label class="admin-label">المنشأة الهدف</label>
+          <select class="admin-select" id="killBusinessId">
+            <option value="">اختر منشأة...</option>
+            {% for biz in businesses_list or [] %}
+            <option value="{{ biz.id }}">
+              #{{ biz.id }} - {{ biz.name }}
+              {% if biz.is_active %}(نشطة){% else %}(متوقفة){% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="admin-label">سبب الإجراء</label>
+          <input type="text" class="admin-input" id="killReason" placeholder="مثال: انتهاء الاشتراك أو مخالفة شروط المنصة">
+        </div>
+      </div>
+
+      <div class="admin-actions u_75246c4f65">
+        <span class="muted-note">هذا الإجراء يوقف أو يفعّل جميع مستخدمي المنشأة مباشرة.</span>
+        <div class="u_6b00e75351">
+          <button type="button" class="danger-btn" id="suspendBusinessBtn">تعليق المنشأة الآن</button>
+          <button type="button" class="safe-btn" id="activateBusinessBtn">إعادة تنشيط المنشأة</button>
+        </div>
+      </div>
+
+      <div id="killResult" class="flash-inline"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var gateToggle = document.getElementById('mainGatekeeperToggle');
+  var gateBadge = document.getElementById('gatekeeperStatusBadge');
+  var featureForm = document.getElementById('featureManagerForm');
+  var featureResult = document.getElementById('featureResult');
+  var suspendBusinessBtn = document.getElementById('suspendBusinessBtn');
+  var activateBusinessBtn = document.getElementById('activateBusinessBtn');
+  var killBusinessId = document.getElementById('killBusinessId');
+  var killReason = document.getElementById('killReason');
+  var killResult = document.getElementById('killResult');
+  var refreshServicesBtn = document.getElementById('refreshServicesBtn');
+  var servicesCatalogBody = document.getElementById('servicesCatalogBody');
+  var servicesCatalogResult = document.getElementById('servicesCatalogResult');
+  var refreshRobotsBtn = document.getElementById('refreshRobotsBtn');
+  var robotsCatalogBody = document.getElementById('robotsCatalogBody');
+  var robotsCatalogResult = document.getElementById('robotsCatalogResult');
+  var robotScopeFilter = document.getElementById('robotScopeFilter');
+  var robotSectorFilter = document.getElementById('robotSectorFilter');
+  var robotsCache = [];
+
+  function setGateBadge(active) {
+    if (!gateBadge) return;
+    gateBadge.className = 'status-pill ' + (active ? 'status-on' : 'status-off');
+    gateBadge.textContent = active ? 'مفعل' : 'غير مفعل';
+  }
+
+  function escapeHtml(txt) {
+    return String(txt || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  async function setServiceStatus(code, active) {
+    try {
+      var res = await fetch('/admin/core/api/features/' + encodeURIComponent(code) + '/toggle', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: !!active })
+      });
+      var data = await res.json();
+      var ok = res.ok && data && data.status === 'success';
+      showResult(servicesCatalogResult, (data && data.message) || (ok ? 'تم التحديث' : 'فشل التحديث'), ok);
+      if (ok) {
+        loadServicesCatalog();
+      }
+    } catch (e) {
+      showResult(servicesCatalogResult, e.message || 'تعذر تحديث الخدمة', false);
+    }
+  }
+
+  function renderServicesCatalog(features) {
+    if (!servicesCatalogBody) return;
+    if (!features || !features.length) {
+      servicesCatalogBody.innerHTML = '<tr><td colspan="7" class="muted-note">لا توجد خدمات حالياً.</td></tr>';
+      return;
+    }
+
+    servicesCatalogBody.innerHTML = features.map(function (f) {
+      var side = f && f.sidebar ? f.sidebar : {};
+      var url = side.url || '#';
+      var isActive = !!(f && parseInt(f.is_active, 10));
+      var btnLabel = isActive ? 'تعطيل' : 'تفعيل';
+      var btnClass = isActive ? 'danger-btn' : 'safe-btn';
+      var priceVal = parseFloat((f && f.monthly_price) || 0);
+      var offerVal = (f && f.offer_text) || '';
+      return '' +
+        '<tr>' +
+          '<td>' + escapeHtml((side.icon || '📌') + ' ' + (f.feature_name || f.feature_code || '')) + '</td>' +
+          '<td>' + escapeHtml(f.category || '-') + '</td>' +
+          '<td><span class="muted-note">' + escapeHtml(url) + '</span></td>' +
+          '<td>' + escapeHtml(priceVal > 0 ? (priceVal.toFixed(2) + ' ريال') : 'مجاني') + '</td>' +
+          '<td>' + escapeHtml(offerVal || '-') + '</td>' +
+          '<td>' +
+            '<span class="status-pill ' + (isActive ? 'status-on' : 'status-off') + '">' +
+              (isActive ? 'مفعلة' : 'معطلة') +
+            '</span>' +
+          '</td>' +
+          '<td>' +
+            '<button type="button" class="mini-btn" data-action="edit" data-feature="' + encodeURIComponent(JSON.stringify(f || {})) + '">تعديل</button> ' +
+            '<button type="button" class="' + btnClass + '" data-feature-code="' + escapeHtml(f.feature_code || '') + '" data-active="' + (isActive ? '0' : '1') + '">' + btnLabel + '</button>' +
+          '</td>' +
+        '</tr>';
+    }).join('');
+
+    servicesCatalogBody.querySelectorAll('button[data-action="edit"]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var raw = btn.getAttribute('data-feature') || '';
+        try {
+          var f = JSON.parse(decodeURIComponent(raw));
+          var side = f && f.sidebar ? f.sidebar : {};
+          (document.getElementById('featCode') || {}).value = f.feature_code || '';
+          (document.getElementById('featName') || {}).value = f.feature_name || '';
+          (document.getElementById('featCategory') || {}).value = f.category || 'Services';
+          (document.getElementById('featPremium') || {}).value = String(parseInt(f.is_premium || 0, 10) ? 1 : 0);
+          (document.getElementById('featPrice') || {}).value = (parseFloat(f.monthly_price || 0) || 0).toFixed(2);
+          (document.getElementById('featOffer') || {}).value = f.offer_text || '';
+          (document.getElementById('featIcon') || {}).value = side.icon || '';
+          (document.getElementById('featRoute') || {}).value = side.url || side.route || '';
+          (document.getElementById('featOrder') || {}).value = parseInt(f.display_order || 0, 10) || 0;
+          (document.getElementById('featSidebar') || {}).value = JSON.stringify(side, null, 2);
+          showResult(featureResult, 'تم تحميل الخدمة داخل النموذج. عدّل ثم اضغط حفظ.', true);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch (e) {
+          showResult(featureResult, 'تعذر تحميل بيانات الخدمة للتعديل', false);
+        }
+      });
+    });
+
+    servicesCatalogBody.querySelectorAll('button[data-feature-code]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var code = btn.getAttribute('data-feature-code') || '';
+        var active = btn.getAttribute('data-active') === '1';
+        if (!code) return;
+        setServiceStatus(code, active);
+      });
+    });
+  }
+
+  async function loadServicesCatalog() {
+    if (servicesCatalogBody) {
+      servicesCatalogBody.innerHTML = '<tr><td colspan="7" class="muted-note">جاري مزامنة وتحميل الخدمات...</td></tr>';
+    }
+    try {
+      var res = await fetch('/admin/core/api/features/catalog', { method: 'GET', credentials: 'same-origin' });
+      var data = await res.json();
+      if (!res.ok || !data || data.status !== 'success') {
+        throw new Error((data && data.message) || 'فشل تحميل الكتالوج');
+      }
+      renderServicesCatalog(data.features || []);
+      var sync = data.sync || {};
+      showResult(
+        servicesCatalogResult,
+        'تمت المزامنة تلقائياً: جديد ' + (sync.inserted || 0) + ' | الإجمالي ' + (sync.total || 0),
+        true
+      );
+    } catch (e) {
+      if (servicesCatalogBody) {
+        servicesCatalogBody.innerHTML = '<tr><td colspan="7" class="muted-note">تعذر تحميل الكتالوج.</td></tr>';
+      }
+      showResult(servicesCatalogResult, e.message || 'تعذر تحميل الخدمات', false);
+    }
+  }
+
+  function riskClass(level) {
+    var x = String(level || 'medium').toLowerCase();
+    if (x === 'low') return 'risk-low';
+    if (x === 'high') return 'risk-high';
+    if (x === 'critical') return 'risk-critical';
+    return 'risk-medium';
+  }
+
+  function getFilteredRobots() {
+    var scope = (robotScopeFilter && robotScopeFilter.value) || 'all';
+    var sector = (robotSectorFilter && robotSectorFilter.value) || 'all';
+    return (robotsCache || []).filter(function (r) {
+      if (scope !== 'all' && String(r.scope_type || '') !== scope) return false;
+      if (sector !== 'all' && String(r.activity_sector || '') !== sector) return false;
+      return true;
+    });
+  }
+
+  function renderRobotsCatalog() {
+    if (!robotsCatalogBody) return;
+    var robots = getFilteredRobots();
+    if (!robots.length) {
+      robotsCatalogBody.innerHTML = '<tr><td colspan="7" class="muted-note">لا توجد روبوتات مطابقة للفلاتر.</td></tr>';
+      return;
+    }
+
+    robotsCatalogBody.innerHTML = robots.map(function (r) {
+      var isActive = !!parseInt(r.is_active || 0, 10);
+      var state = String(r.rollout_state || 'off').toLowerCase();
+      var sectorLabel = r.scope_type === 'shared' ? 'مشترك' : (r.activity_sector || '-');
+      return '' +
+        '<tr>' +
+          '<td><b>' + escapeHtml(r.robot_name || r.robot_code || '') + '</b><div class="muted-note">' + escapeHtml(r.robot_code || '') + '</div></td>' +
+          '<td>' + escapeHtml(r.scope_type === 'shared' ? 'مشترك' : 'قطاعي') + '</td>' +
+          '<td>' + escapeHtml(sectorLabel) + '</td>' +
+          '<td><span class="risk-pill ' + riskClass(r.risk_level) + '">' + escapeHtml(r.risk_level || 'medium') + '</span></td>' +
+          '<td>' + escapeHtml(r.matched_businesses || 0) + '</td>' +
+          '<td><span class="status-pill ' + (isActive ? 'status-on' : 'status-off') + '">' + escapeHtml(state) + '</span></td>' +
+          '<td>' +
+            '<button type="button" class="mini-btn" data-robot="' + escapeHtml(r.robot_code || '') + '" data-state="off">Off</button> ' +
+            '<button type="button" class="mini-btn" data-robot="' + escapeHtml(r.robot_code || '') + '" data-state="pilot">Pilot</button> ' +
+            '<button type="button" class="mini-btn" data-robot="' + escapeHtml(r.robot_code || '') + '" data-state="on">On</button>' +
+          '</td>' +
+        '</tr>';
+    }).join('');
+
+    robotsCatalogBody.querySelectorAll('button[data-robot]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var code = btn.getAttribute('data-robot') || '';
+        var state = btn.getAttribute('data-state') || 'off';
+        if (!code) return;
+        setRobotState(code, state);
+      });
+    });
+  }
+
+  async function setRobotState(code, state) {
+    try {
+      var payload = { rollout_state: state };
+      if (state !== 'off') {
+        var phrase = window.prompt('لتفعيل وضع ' + state + ' أدخل عبارة التأكيد الصارمة: I_UNDERSTAND_STRICT_MODE', '');
+        if (phrase === null) return;
+        payload.confirm_phrase = String(phrase || '').trim();
+        if (state === 'on') {
+          payload.allow_high_risk = window.confirm('قد يكون هذا الروبوت عالي الحساسية. هل تريد متابعة التشغيل الكامل؟');
+        }
+      }
+
+      var res = await fetch('/admin/core/api/robots/' + encodeURIComponent(code) + '/state', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      var data = await res.json();
+      var ok = res.ok && data && data.status === 'success';
+      showResult(robotsCatalogResult, (data && data.message) || (ok ? 'تم تحديث الروبوت' : 'فشل التحديث'), ok);
+      if (!ok && data && data.required_confirm_phrase) {
+        showResult(robotsCatalogResult, (data.message || 'فشل التفعيل') + ' | العبارة المطلوبة: ' + data.required_confirm_phrase, false);
+      }
+      if (ok) await loadRobotsCatalog();
+    } catch (e) {
+      showResult(robotsCatalogResult, e.message || 'تعذر تحديث الروبوت', false);
+    }
+  }
+
+  async function loadRobotsCatalog() {
+    if (robotsCatalogBody) {
+      robotsCatalogBody.innerHTML = '<tr><td colspan="7" class="muted-note">جاري مزامنة وتحميل الروبوتات...</td></tr>';
+    }
+    try {
+      var res = await fetch('/admin/core/api/robots/catalog', { method: 'GET', credentials: 'same-origin' });
+      var data = await res.json();
+      if (!res.ok || !data || data.status !== 'success') {
+        throw new Error((data && data.message) || 'فشل تحميل الروبوتات');
+      }
+      robotsCache = data.robots || [];
+      renderRobotsCatalog();
+      var sync = data.sync || {};
+      showResult(robotsCatalogResult, 'تمت مزامنة الروبوتات: جديد ' + (sync.inserted || 0) + ' | الإجمالي ' + (sync.total || 0), true);
+    } catch (e) {
+      if (robotsCatalogBody) {
+        robotsCatalogBody.innerHTML = '<tr><td colspan="7" class="muted-note">تعذر تحميل الروبوتات.</td></tr>';
+      }
+      showResult(robotsCatalogResult, e.message || 'تعذر تحميل الكتالوج', false);
+    }
+  }
+
+  function showResult(el, msg, ok) {
+    if (!el) return;
+    el.style.color = ok ? '#34d399' : '#f87171';
+    el.textContent = msg || '';
+  }
+
+  async function loadGatekeeper() {
+    try {
+      var res = await fetch('/admin/core/api/gatekeeper/status', { method: 'GET', credentials: 'same-origin' });
+      var data = await res.json();
+      var active = !!(data && data.gatekeeper_active);
+      if (gateToggle) gateToggle.checked = active;
+      setGateBadge(active);
+    } catch (e) {
+      setGateBadge(false);
+      showResult(featureResult, 'تعذر تحميل حالة حارس البوابة.', false);
+    }
+  }
+
+  if (gateToggle) {
+    gateToggle.addEventListener('change', async function () {
+      var active = !!gateToggle.checked;
+      try {
+        var res = await fetch('/admin/core/api/gatekeeper/status', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ active: active })
+        });
+        var data = await res.json();
+        if (!res.ok || !data || data.status !== 'success') {
+          throw new Error((data && data.message) || 'فشل تحديث الحالة');
+        }
+        setGateBadge(active);
+      } catch (e) {
+        gateToggle.checked = !active;
+        setGateBadge(!active);
+        showResult(featureResult, e.message || 'فشل تحديث حارس البوابة', false);
+      }
+    });
+  }
+
+  if (featureForm) {
+    featureForm.addEventListener('submit', async function (ev) {
+      ev.preventDefault();
+
+      var rawSidebar = (document.getElementById('featSidebar') || {}).value || '{}';
+      var sidebarJson = {};
+      try {
+        sidebarJson = rawSidebar.trim() ? JSON.parse(rawSidebar) : {};
+      } catch (e) {
+        showResult(featureResult, 'صيغة Sidebar JSON غير صحيحة.', false);
+        return;
+      }
+
+      var featNameVal = (document.getElementById('featName') || {}).value || '';
+      var featIconVal = (document.getElementById('featIcon') || {}).value || '';
+      var featRouteVal = (document.getElementById('featRoute') || {}).value || '';
+      if (featIconVal && !sidebarJson.icon) sidebarJson.icon = featIconVal;
+      if (featRouteVal) {
+        if (!sidebarJson.route) sidebarJson.route = featRouteVal;
+        if (!sidebarJson.url) sidebarJson.url = featRouteVal;
+      }
+      if (!sidebarJson.label && featNameVal) sidebarJson.label = featNameVal;
+
+      var payload = {
+        feature_code: (document.getElementById('featCode') || {}).value || '',
+        feature_name: featNameVal,
+        category: (document.getElementById('featCategory') || {}).value || 'Services',
+        is_premium: parseInt(((document.getElementById('featPremium') || {}).value || '0'), 10) ? 1 : 0,
+        monthly_price: parseFloat(((document.getElementById('featPrice') || {}).value || '0') || 0),
+        offer_text: ((document.getElementById('featOffer') || {}).value || '').trim(),
+        display_order: parseInt(((document.getElementById('featOrder') || {}).value || '0'), 10) || 0,
+        is_active: 1,
+        sidebar_json: sidebarJson
+      };
+
+      try {
+        var res = await fetch('/admin/core/api/features/manage', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        var data = await res.json();
+        var ok = res.ok && data && data.status === 'success';
+        showResult(featureResult, (data && data.message) || (ok ? 'تم التنفيذ بنجاح' : 'فشل التنفيذ'), ok);
+        if (ok) {
+          featureForm.reset();
+        }
+      } catch (e) {
+        showResult(featureResult, e.message || 'تعذر الاتصال بالخادم', false);
+      }
+    });
+  }
+
+  async function callKillSwitch(shouldSuspend) {
+    var bid = parseInt((killBusinessId && killBusinessId.value) || '', 10);
+    if (!bid) {
+      showResult(killResult, 'اختر منشأة أولاً.', false);
+      return;
+    }
+
+    var reason = ((killReason && killReason.value) || '').trim();
+    if (!reason) {
+      reason = shouldSuspend ? 'تعليق إداري من لوحة الأدمن' : 'إعادة تنشيط إداري من لوحة الأدمن';
+    }
+
+    try {
+      var res = await fetch('/admin/core/api/business/' + bid + '/suspend', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ suspend: shouldSuspend, reason: reason })
+      });
+      var data = await res.json();
+      var ok = res.ok && data && data.status === 'success';
+      showResult(killResult, (data && data.message) || (ok ? 'تم التنفيذ بنجاح' : 'فشل التنفيذ'), ok);
+    } catch (e) {
+      showResult(killResult, e.message || 'تعذر الاتصال بالخادم', false);
+    }
+  }
+
+  if (suspendBusinessBtn) {
+    suspendBusinessBtn.addEventListener('click', function () {
+      callKillSwitch(true);
+    });
+  }
+
+  if (activateBusinessBtn) {
+    activateBusinessBtn.addEventListener('click', function () {
+      callKillSwitch(false);
+    });
+  }
+
+  if (refreshServicesBtn) {
+    refreshServicesBtn.addEventListener('click', function () {
+      loadServicesCatalog();
+    });
+  }
+
+  if (refreshRobotsBtn) {
+    refreshRobotsBtn.addEventListener('click', function () {
+      loadRobotsCatalog();
+    });
+  }
+
+  if (robotScopeFilter) {
+    robotScopeFilter.addEventListener('change', renderRobotsCatalog);
+  }
+
+  if (robotSectorFilter) {
+    robotSectorFilter.addEventListener('change', renderRobotsCatalog);
+  }
+
+  loadGatekeeper();
+  loadServicesCatalog();
+  loadRobotsCatalog();
+})();
+</script>
+{% endblock %}

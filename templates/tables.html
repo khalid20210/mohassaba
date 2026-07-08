@@ -1,3 +1,12 @@
+<style>
+.u_6b99de8b69{display:none}
+.u_fa760d8107{display:none;position:relative}
+.u_951b72dbdd{font-size:1rem}
+.u_ba1aab4093{font-size:2rem}
+.u_3872989743{width:36px}
+.u_9bcd21d223{font-size:.85rem}
+.u_60a356bc4e{width:auto;min-width:140px}
+</style>
 {% extends "base.html" %}
 {% block title %}إدارة الطاولات{% endblock %}
 
@@ -64,7 +73,7 @@
 <!-- ══════════════════════════════════════════════════════════════
      Modal: إدارة الطاولة
 ══════════════════════════════════════════════════════════════ -->
-<div id="tableModal" class="tbl-modal-overlay" style="display:none" onclick="closeModalOutside(event)">
+<div id="tableModal" class="tbl-modal-overlay u_6b99de8b69" onclick="closeModalOutside(event)">
   <div class="tbl-modal-box">
 
     <!-- رأس المودال -->
@@ -80,30 +89,30 @@
     <div class="tbl-modal-body">
 
       <!-- بحث المنتجات (متاح في draft و partial) -->
-      <div id="addItemSection" style="display:none;position:relative">
+      <div id="addItemSection" class="u_fa760d8107">
         <div class="tbl-search-bar">
-          <span style="font-size:1rem">🔍</span>
+          <span class="u_951b72dbdd">🔍</span>
           <input type="text" id="productSearch" class="form-control"
                  placeholder="ابحث عن صنف للإضافة بالاسم أو الباركود..."
                  oninput="searchProducts(this.value)" autocomplete="off">
         </div>
-        <div id="productDropdown" class="tbl-product-dropdown" style="display:none"></div>
+        <div id="productDropdown" class="tbl-product-dropdown u_6b99de8b69"></div>
       </div>
 
       <!-- قائمة الأصناف المطلوبة -->
       <div class="tbl-items-wrap">
         <div class="tbl-items-empty" id="itemsEmpty">
-          <div style="font-size:2rem">🍽️</div>
+          <div class="u_ba1aab4093">🍽️</div>
           <p>السلة فارغة — ابدأ بالبحث عن الأصناف</p>
         </div>
-        <table class="tbl-items-table" id="itemsTable" style="display:none">
+        <table class="tbl-items-table u_6b99de8b69" id="itemsTable">
           <thead>
             <tr>
               <th>الصنف</th>
               <th class="num-col">الكمية</th>
               <th class="num-col">السعر</th>
               <th class="num-col">الإجمالي</th>
-              <th style="width:36px"></th>
+              <th class="u_3872989743"></th>
             </tr>
           </thead>
           <tbody id="itemsBody"></tbody>
@@ -114,25 +123,25 @@
       <div class="tbl-total-bar">
         <span>الإجمالي الكلي:</span>
         <strong id="modalTotal">0.00</strong>
-        <span id="modalCurrency" class="muted-cell" style="font-size:.85rem"></span>
+        <span id="modalCurrency" class="muted-cell u_9bcd21d223"></span>
       </div>
 
     </div>
 
     <!-- تذييل الأزرار -->
     <div class="tbl-modal-foot">
-      <select id="payModalMethod" class="form-control form-control-sm" style="width:auto;min-width:140px">
+      <select id="payModalMethod" class="form-control form-control-sm u_60a356bc4e">
         <option value="cash">💵 نقداً</option>
         <option value="bank">🏦 بطاقة/تحويل</option>
       </select>
 
       <div class="tbl-action-btns">
-        <button id="btnSendKitchen" class="btn btn-primary"
-                onclick="sendToKitchen()" style="display:none">
+        <button id="btnSendKitchen" class="btn btn-primary u_6b99de8b69"
+                onclick="sendToKitchen()">
           👨‍🍳 إرسال للمطبخ
         </button>
-        <button id="btnCheckout" class="btn-success"
-                onclick="checkoutTable()" style="display:none">
+        <button id="btnCheckout" class="btn-success u_6b99de8b69"
+                onclick="checkoutTable()">
           ✅ دفع وإغلاق الطاولة
         </button>
         <button class="btn btn-secondary" onclick="closeModal()">إغلاق</button>
@@ -144,7 +153,7 @@
 <!-- ══════════════════════════════════════════════════════════════
      Overlay: نجاح الدفع
 ══════════════════════════════════════════════════════════════ -->
-<div id="checkoutSuccess" class="tbl-modal-overlay" style="display:none">
+<div id="checkoutSuccess" class="tbl-modal-overlay u_6b99de8b69">
   <div class="tbl-success-box">
     <div class="tbl-success-icon">✅</div>
     <h3>تم إغلاق الطاولة</h3>

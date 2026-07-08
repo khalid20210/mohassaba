@@ -1,11 +1,16 @@
+<style>
+.u_cd4426f836{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+.u_b9bbe540d3{display:flex;gap:8px;}
+.u_dac4fe6c9b{text-align:center;}
+</style>
 ﻿{% extends "base.html" %}
 {% block title %}قوائم الأسعار{% endblock %}
 {% block page_title %}قوائم الأسعار{% endblock %}
 
 {% block content %}
-<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+<div class="page-header u_cd4426f836">
   <div><p class="page-subtitle">{{ pricing_lists|length }} قائمة سعر</p></div>
-  <div style="display:flex;gap:8px;">
+  <div class="u_b9bbe540d3">
     <a href="/wholesale/orders" class="btn btn-secondary">الطلبات</a>
   </div>
 </div>
@@ -29,7 +34,7 @@
         <td><a href="/wholesale/pricing/{{ pl.id }}" class="btn btn-secondary">تفاصيل</a></td>
       </tr>
       {% else %}
-      <tr><td colspan="4" style="text-align:center;">لا توجد قوائم أسعار</td></tr>
+      <tr><td colspan="4" class="u_dac4fe6c9b">لا توجد قوائم أسعار</td></tr>
       {% endfor %}
     </tbody>
   </table>

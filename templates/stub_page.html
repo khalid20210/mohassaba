@@ -1,3 +1,7 @@
+<style>
+.u_3b4351d91b{padding:80px 20px;}
+.u_6c41ebbda4{max-width:320px; margin:10px auto 24px;}
+</style>
 {% extends "base.html" %}
 {% block title %}{{ page_name }}{% endblock %}
 {% block page_title %}{{ page_name|title }}{% endblock %}
@@ -34,10 +38,10 @@
 </div>
 
 <div class="card">
-  <div class="empty-state" style="padding:80px 20px;">
+  <div class="empty-state u_3b4351d91b">
     <div class="empty-icon">{{ icons.get(page_name, '📄') }}</div>
     <h3>{{ labels.get(page_name, page_name) }}</h3>
-    <p style="max-width:320px; margin:10px auto 24px;">
+    <p class="u_6c41ebbda4">
       هذه الشاشة ستكون متاحة قريباً. يتم بناؤها الآن بما يناسب نشاط
       <strong>
         {% for k, v in industry_types if k == current_business.industry_type %}{{ v }}{% endfor %}

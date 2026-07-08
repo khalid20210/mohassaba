@@ -1,3 +1,19 @@
+<style>
+.u_79a1c5a5db{margin-bottom:16px;}
+.u_fbcbada639{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;}
+.u_33526c6ad5{font-size:.8rem;color:#94a3b8;display:block;margin-bottom:4px;}
+.u_f1fa12bbea{color:#38bdf8;}
+.u_6fe47583b2{color:#22c55e;}
+.u_9dd1207e58{color:#ef4444;}
+.u_cfc294ffc2{color:#f59e0b;}
+.u_5544c5689d{color:#6b7280;}
+.u_aa3ee35a72{color:#94a3b8;}
+.movement-qty-positive{font-weight:600;color:#22c55e;}
+.movement-qty-negative{font-weight:600;color:#ef4444;}
+.u_5f40b9dc3a{color:#64748b;font-size:.82rem;}
+.u_3498000b8f{color:#94a3b8;font-size:.82rem;}
+.u_612a65f696{text-align:center;color:#64748b;padding:40px;}
+</style>
 {% extends "base.html" %}
 {% block title %}سجل الحركات{% endblock %}
 {% block page_title %}🔄 سجل حركات المخزون{% endblock %}
@@ -12,11 +28,11 @@
 </div>
 
 <!-- فلاتر -->
-<div class="card" style="margin-bottom:16px;">
-  <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+<div class="card u_79a1c5a5db">
+  <form method="get" class="u_fbcbada639">
     <div>
-      <label style="font-size:.8rem;color:#94a3b8;display:block;margin-bottom:4px;">نوع الحركة</label>
-      <select name="type" class="form-input">
+      <label class="u_33526c6ad5">نوع الحركة</label>
+      <select name="type" class="form-input" title="فلتر نوع حركة المخزون">
         <option value="">الكل</option>
         <option value="purchase" {% if request.args.get('type')=='purchase' %}selected{% endif %}>شراء</option>
         <option value="sale" {% if request.args.get('type')=='sale' %}selected{% endif %}>بيع</option>
@@ -26,12 +42,12 @@
       </select>
     </div>
     <div>
-      <label style="font-size:.8rem;color:#94a3b8;display:block;margin-bottom:4px;">من تاريخ</label>
-      <input type="date" name="from" value="{{ request.args.get('from','') }}" class="form-input">
+      <label class="u_33526c6ad5">من تاريخ</label>
+      <input type="date" name="from" value="{{ request.args.get('from','') }}" class="form-input" title="تاريخ البداية لتصفية الحركات">
     </div>
     <div>
-      <label style="font-size:.8rem;color:#94a3b8;display:block;margin-bottom:4px;">إلى تاريخ</label>
-      <input type="date" name="to" value="{{ request.args.get('to','') }}" class="form-input">
+      <label class="u_33526c6ad5">إلى تاريخ</label>
+      <input type="date" name="to" value="{{ request.args.get('to','') }}" class="form-input" title="تاريخ النهاية لتصفية الحركات">
     </div>
     <button type="submit" class="btn btn-primary">تطبيق</button>
     <a href="/inventory/movements" class="btn btn-secondary">إعادة تعيين</a>
@@ -47,27 +63,27 @@
       {% for m in movements %}
       <tr>
         <td>
-          <a href="/inventory/products/{{ m.product_id }}" style="color:#38bdf8;">{{ m.product_name or m.product_id }}</a>
+          <a href="/inventory/products/{{ m.product_id }}" class="u_f1fa12bbea">{{ m.product_name or m.product_id }}</a>
         </td>
         <td>
-          {% if m.movement_type == 'purchase' %}<span style="color:#22c55e;">🟢 شراء</span>
-          {% elif m.movement_type == 'sale' %}<span style="color:#ef4444;">🔴 بيع</span>
-          {% elif m.movement_type == 'adjustment' %}<span style="color:#38bdf8;">🔵 تعديل</span>
-          {% elif m.movement_type == 'return' %}<span style="color:#f59e0b;">🟡 مرتجع</span>
-          {% elif m.movement_type == 'damage' %}<span style="color:#6b7280;">⚫ تلف</span>
+          {% if m.movement_type == 'purchase' %}<span class="u_6fe47583b2">🟢 شراء</span>
+          {% elif m.movement_type == 'sale' %}<span class="u_9dd1207e58">🔴 بيع</span>
+          {% elif m.movement_type == 'adjustment' %}<span class="u_f1fa12bbea">🔵 تعديل</span>
+          {% elif m.movement_type == 'return' %}<span class="u_cfc294ffc2">🟡 مرتجع</span>
+          {% elif m.movement_type == 'damage' %}<span class="u_5544c5689d">⚫ تلف</span>
           {% else %}{{ m.movement_type }}{% endif %}
         </td>
-        <td style="font-weight:600;color:{% if m.quantity > 0 %}#22c55e{% else %}#ef4444{% endif %};">
+        <td class="{% if m.quantity > 0 %}movement-qty-positive{% else %}movement-qty-negative{% endif %}">
           {{ '+' if m.quantity > 0 else '' }}{{ m.quantity }}
         </td>
-        <td style="color:#94a3b8;">{{ m.qty_before }}</td>
+        <td class="u_aa3ee35a72">{{ m.qty_before }}</td>
         <td>{{ m.qty_after }}</td>
-        <td style="color:#64748b;font-size:.82rem;">{{ m.reference or '—' }}</td>
-        <td style="color:#64748b;font-size:.82rem;">{{ m.created_at[:16] if m.created_at else '—' }}</td>
-        <td style="color:#94a3b8;font-size:.82rem;">{{ m.reason or m.notes or '—' }}</td>
+        <td class="u_5f40b9dc3a">{{ m.reference or '—' }}</td>
+        <td class="u_5f40b9dc3a">{{ m.created_at[:16] if m.created_at else '—' }}</td>
+        <td class="u_3498000b8f">{{ m.reason or m.notes or '—' }}</td>
       </tr>
       {% else %}
-      <tr><td colspan="8" style="text-align:center;color:#64748b;padding:40px;">لا توجد حركات</td></tr>
+      <tr><td colspan="8" class="u_612a65f696">لا توجد حركات</td></tr>
       {% endfor %}
     </tbody>
   </table>

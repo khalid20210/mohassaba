@@ -4,13 +4,16 @@ modules/middleware.py — RBAC، ديكوراتورات الحماية، before/
 import json
 import secrets
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 from threading import BoundedSemaphore, Lock
 from time import monotonic
 from typing import Optional
 
 from flask import g, redirect, session, url_for, flash, request, jsonify
+
+from .audit_service import record_audit_event
+from .rbac_service import get_effective_permissions
 
 from .config import SIDEBAR_CONFIG, SIDEBAR_PERM, get_sidebar_key
 from .extensions import get_db, generate_csrf_token
@@ -27,11 +30,204 @@ from .runtime_services import (
     check_rate_limit_distributed,
 )
 from .i18n import SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE
+from .notifications_service import create_notifications_for_users
 
 
 _rate_limit_state: dict[str, deque] = {}
 _rate_lock = Lock()
 _inflight_semaphore = BoundedSemaphore(max(1, MAX_INFLIGHT_REQUESTS))
+
+_EXPIRY_WARNING_HOURS = 71
+_EXPIRY_GRACE_HOURS = 24
+
+
+def _parse_expiry_datetime(raw_value: Optional[str]) -> Optional[datetime]:
+    value = (raw_value or "").strip()
+    if not value:
+        return None
+
+    # صيغة تاريخ فقط => نهاية اليوم لتجنب الإغلاق المبكر.
+    if len(value) == 10:
+        try:
+            d = datetime.strptime(value, "%Y-%m-%d")
+            return d.replace(hour=23, minute=59, second=59)
+        except Exception:
+            return None
+
+    for fmt in (
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S.%f",
+    ):
+        try:
+            return datetime.strptime(value, fmt)
+        except Exception:
+            continue
+
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).replace(tzinfo=None)
+    except Exception:
+        return None
+
+
+def _setting_get(db, business_id: int, key: str) -> Optional[str]:
+    row = db.execute(
+        "SELECT value FROM settings WHERE business_id=? AND key=? LIMIT 1",
+        (int(business_id), str(key)),
+    ).fetchone()
+    if not row:
+        return None
+    return row["value"] if isinstance(row, dict) else row[0]
+
+
+def _setting_upsert(db, business_id: int, key: str, value: str) -> None:
+    db.execute(
+        """
+        INSERT OR REPLACE INTO settings (business_id, key, value)
+        VALUES (?, ?, ?)
+        """,
+        (int(business_id), str(key), str(value)),
+    )
+
+
+def _setting_delete(db, business_id: int, key: str) -> None:
+    db.execute(
+        "DELETE FROM settings WHERE business_id=? AND key=?",
+        (int(business_id), str(key)),
+    )
+
+
+def _business_has_column(db, column_name: str) -> bool:
+    try:
+        cols = db.execute("PRAGMA table_info(businesses)").fetchall()
+        return any((c[1] if not isinstance(c, dict) else c.get("name")) == column_name for c in cols)
+    except Exception:
+        return False
+
+
+def _resolve_business_expiry(db, business_id: int, business_row: dict) -> tuple[Optional[datetime], Optional[str], Optional[str]]:
+    # أولوية الاشتراك المدفوع ثم التجربة.
+    subscription_keys = ("subscription_expires_at", "subscription_end_at", "plan_expires_at")
+    trial_keys = ("trial_expires_at", "trial_end_at", "trial_ends_at")
+
+    for k in subscription_keys:
+        dt = _parse_expiry_datetime(_setting_get(db, business_id, k))
+        if dt:
+            return dt, "subscription", k
+
+    for k in trial_keys:
+        dt = _parse_expiry_datetime(_setting_get(db, business_id, k))
+        if dt:
+            return dt, "trial", k
+
+    # fallback من الأعمدة إن وجدت.
+    for col, src in (
+        ("subscription_expires_at", "subscription"),
+        ("trial_expires_at", "trial"),
+        ("trial_end_at", "trial"),
+        ("trial_ends_at", "trial"),
+        ("expires_at", "subscription"),
+    ):
+        if col in business_row:
+            dt = _parse_expiry_datetime(str(business_row.get(col) or ""))
+            if dt:
+                return dt, src, f"businesses.{col}"
+
+    return None, None, None
+
+
+def _enforce_subscription_lifecycle(db, user_id: int, business_row: dict):
+    biz_id = int(business_row.get("id") or 0)
+    if not biz_id:
+        return None
+
+    expiry_at, expiry_source, expiry_key = _resolve_business_expiry(db, biz_id, business_row)
+    if not expiry_at or not expiry_source:
+        return None
+
+    now = datetime.utcnow()
+    notice_key = f"{expiry_source}_notice_71h_sent_at"
+    suspended_key = "subscription_auto_suspended_at"
+
+    # إذا حصل تجديد لاحقاً وتم تمديد النهاية بعيداً عن نافذة التنبيه نعيد ضبط علامة التنبيه.
+    if expiry_at > now + timedelta(hours=_EXPIRY_WARNING_HOURS):
+        if _setting_get(db, biz_id, notice_key):
+            _setting_delete(db, biz_id, notice_key)
+            db.commit()
+        return None
+
+    # إشعار استباقي قبل انتهاء المدة بـ 71 ساعة.
+    if now < expiry_at <= now + timedelta(hours=_EXPIRY_WARNING_HOURS):
+        if not _setting_get(db, biz_id, notice_key):
+            active_users = db.execute(
+                "SELECT id FROM users WHERE business_id=? AND is_active=1",
+                (biz_id,),
+            ).fetchall()
+            user_ids = [int((r[0] if not isinstance(r, dict) else r.get("id")) or 0) for r in active_users]
+            user_ids = [uid for uid in user_ids if uid > 0]
+            if user_ids:
+                create_notifications_for_users(
+                    db,
+                    user_ids=user_ids,
+                    notif_type="subscription_expiry_warning",
+                    title="تنبيه قرب انتهاء الاشتراك",
+                    message="سيتوقف النظام تلقائياً إذا لم يتم التجديد خلال المهلة المحددة.",
+                )
+            _setting_upsert(db, biz_id, notice_key, now.strftime("%Y-%m-%d %H:%M:%S"))
+            db.commit()
+        return None
+
+    # إيقاف تلقائي بعد 24 ساعة من الانتهاء إذا لم يتجدد الاشتراك/التجربة.
+    if now >= (expiry_at + timedelta(hours=_EXPIRY_GRACE_HOURS)):
+        already_suspended = str(business_row.get("account_status") or "").lower() == "suspended"
+        if not already_suspended:
+            if _business_has_column(db, "account_status"):
+                db.execute(
+                    "UPDATE businesses SET account_status='suspended' WHERE id=?",
+                    (biz_id,),
+                )
+            if _business_has_column(db, "status"):
+                db.execute(
+                    "UPDATE businesses SET status='suspended' WHERE id=?",
+                    (biz_id,),
+                )
+            if _business_has_column(db, "is_active"):
+                db.execute(
+                    "UPDATE businesses SET is_active=0 WHERE id=?",
+                    (biz_id,),
+                )
+
+            db.execute(
+                "UPDATE users SET is_active=0 WHERE business_id=?",
+                (biz_id,),
+            )
+
+            write_audit_log(
+                db,
+                biz_id,
+                action="business_auto_suspended_expiry",
+                entity_type="business",
+                entity_id=biz_id,
+                new_value=json.dumps(
+                    {
+                        "expiry_source": expiry_source,
+                        "expiry_key": expiry_key,
+                        "expired_at": expiry_at.strftime("%Y-%m-%d %H:%M:%S"),
+                        "grace_hours": _EXPIRY_GRACE_HOURS,
+                    },
+                    ensure_ascii=False,
+                ),
+            )
+            _setting_upsert(db, biz_id, suspended_key, now.strftime("%Y-%m-%d %H:%M:%S"))
+            db.commit()
+
+        # إنهاء الجلسة الحالية للمنشأة المتوقفة.
+        if session.get("business_id") == biz_id and session.get("user_id") == user_id:
+            session.clear()
+            flash("تم إيقاف المنشأة تلقائياً لانتهاء الاشتراك وعدم التجديد خلال المهلة.", "error")
+            return redirect(url_for("auth.auth_login"))
+
+    return None
 
 
 def _is_onboarding_complete() -> bool:
@@ -71,9 +267,13 @@ def user_has_perm(perm_key: str) -> bool:
     if not g.user:
         return False
     try:
-        perms = json.loads(g.user["permissions"] or "{}")
+        db = get_db()
+        perms = get_effective_permissions(db, g.user)
     except Exception:
-        perms = {}
+        try:
+            perms = json.loads(g.user["permissions"] or "{}")
+        except Exception:
+            perms = {}
     return bool(perms.get("all") or perms.get(perm_key))
 
 
@@ -169,28 +369,30 @@ def admin_required(f):
     return decorated
 
 
-def write_audit_log(db, business_id: int, action: str,
-                    entity_type: Optional[str] = None, entity_id: Optional[int] = None,
-                    old_value: Optional[str] = None, new_value: Optional[str] = None):
-    """تسجيل حدث في جدول audit_logs"""
+def write_audit_log(
+    db,
+    business_id: int,
+    action: str,
+    entity_type: Optional[str] = None,
+    entity_id: Optional[int] = None,
+    old_value: Optional[str] = None,
+    new_value: Optional[str] = None,
+    reason: Optional[str] = None,
+    metadata: Optional[dict] = None,
+):
+    """تسجيل حدث تدقيقي عبر خدمة موحدة (audit_logs + enhanced_audit_logs)."""
     try:
-        user_id    = session.get("user_id")
-        actor_name = ""
-        actor_role = ""
-        if g.user:
-            actor_name = g.user["full_name"] or g.user.get("username", "")
-            actor_role = g.user.get("role_name", "")
-        ip_address = request.remote_addr or ""
-        user_agent = (request.user_agent.string or "")[:255]
-        db.execute(
-            """INSERT INTO audit_logs
-                   (business_id, user_id, actor_name, actor_role, action,
-                    entity_type, entity_id, old_value, new_value, ip_address, user_agent)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (business_id, user_id, actor_name, actor_role, action,
-             entity_type, entity_id, old_value, new_value, ip_address, user_agent)
+        record_audit_event(
+            db,
+            business_id=business_id,
+            action=action,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            old_value=old_value,
+            new_value=new_value,
+            reason=reason,
+            metadata=metadata,
         )
-        db.commit()
     except Exception:
         pass  # لا نوقف العملية بسبب فشل الـ audit log
 
@@ -247,9 +449,12 @@ def load_user():
 
         if g.user:
             try:
-                g.user_perms = json.loads(g.user["permissions"] or "{}")
+                g.user_perms = get_effective_permissions(db, g.user)
             except Exception:
-                g.user_perms = {}
+                try:
+                    g.user_perms = json.loads(g.user["permissions"] or "{}")
+                except Exception:
+                    g.user_perms = {}
 
         biz_id = session.get("business_id")
         if biz_id:
@@ -259,6 +464,11 @@ def load_user():
 
             if g.business:
                 g.business = dict(g.business)
+
+            if g.business:
+                lifecycle_response = _enforce_subscription_lifecycle(db, int(user_id), g.business)
+                if lifecycle_response is not None:
+                    return lifecycle_response
 
             if g.business:
                 itype       = g.business["industry_type"] or "retail_other"

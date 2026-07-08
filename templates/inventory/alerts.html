@@ -1,3 +1,16 @@
+<style>
+.u_f1fa12bbea{color:#38bdf8;}
+.u_ed5d4cc536{background:#78350f;color:#fcd34d;padding:2px 10px;border-radius:20px;font-size:.8rem;}
+.u_06ad599faf{background:#7f1d1d;color:#fca5a5;padding:2px 10px;border-radius:20px;font-size:.8rem;}
+.u_d810075e19{background:#1e3a5f;color:#93c5fd;padding:2px 10px;border-radius:20px;font-size:.8rem;}
+.u_500e50569b{color:#94a3b8;font-size:.85rem;}
+.u_5f40b9dc3a{color:#64748b;font-size:.82rem;}
+.u_0cd28ce9ba{display:inline;}
+.u_ed402632eb{padding:4px 12px;font-size:.8rem;}
+.u_badef93ce7{text-align:center;padding:60px;}
+.u_ed86f0e6c8{font-size:3rem;margin-bottom:16px;}
+.u_93e6231cbb{color:#64748b;}
+</style>
 {% extends "base.html" %}
 {% block title %}التنبيهات{% endblock %}
 {% block page_title %}🔔 تنبيهات المخزون{% endblock %}
@@ -17,19 +30,19 @@
     <tbody>
       {% for a in alerts %}
       <tr>
-        <td><a href="/inventory/products/{{ a.product_id }}" style="color:#38bdf8;">{{ a.product_name or 'منتج #' ~ a.product_id }}</a></td>
+        <td><a href="/inventory/products/{{ a.product_id }}" class="u_f1fa12bbea">{{ a.product_name or 'منتج #' ~ a.product_id }}</a></td>
         <td>
-          {% if a.alert_type == 'low_stock' %}<span style="background:#78350f;color:#fcd34d;padding:2px 10px;border-radius:20px;font-size:.8rem;">⚠️ مخزون منخفض</span>
-          {% elif a.alert_type == 'out_of_stock' %}<span style="background:#7f1d1d;color:#fca5a5;padding:2px 10px;border-radius:20px;font-size:.8rem;">❌ نفد المخزون</span>
-          {% elif a.alert_type == 'expiry_soon' %}<span style="background:#1e3a5f;color:#93c5fd;padding:2px 10px;border-radius:20px;font-size:.8rem;">⏰ ينتهي قريباً</span>
+          {% if a.alert_type == 'low_stock' %}<span class="u_ed5d4cc536">⚠️ مخزون منخفض</span>
+          {% elif a.alert_type == 'out_of_stock' %}<span class="u_06ad599faf">❌ نفد المخزون</span>
+          {% elif a.alert_type == 'expiry_soon' %}<span class="u_d810075e19">⏰ ينتهي قريباً</span>
           {% else %}{{ a.alert_type }}{% endif %}
         </td>
         <td>{{ a.current_qty }}</td>
-        <td style="color:#94a3b8;font-size:.85rem;">{{ a.message or '—' }}</td>
-        <td style="color:#64748b;font-size:.82rem;">{{ a.created_at[:10] if a.created_at else '—' }}</td>
+        <td class="u_500e50569b">{{ a.message or '—' }}</td>
+        <td class="u_5f40b9dc3a">{{ a.created_at[:10] if a.created_at else '—' }}</td>
         <td>
-          <form action="/inventory/alerts/{{ a.id }}/resolve" method="post" style="display:inline;">
-            <button type="submit" class="btn btn-secondary" style="padding:4px 12px;font-size:.8rem;">✓ حل</button>
+          <form action="/inventory/alerts/{{ a.id }}/resolve" method="post" class="u_0cd28ce9ba">
+            <button type="submit" class="btn btn-secondary u_ed402632eb">✓ حل</button>
           </form>
         </td>
       </tr>
@@ -39,10 +52,10 @@
 </div>
 {% else %}
 <div class="card">
-  <div style="text-align:center;padding:60px;">
-    <div style="font-size:3rem;margin-bottom:16px;">✅</div>
+  <div class="u_badef93ce7">
+    <div class="u_ed86f0e6c8">✅</div>
     <h3>لا توجد تنبيهات نشطة</h3>
-    <p style="color:#64748b;">جميع المنتجات ضمن النطاق الطبيعي</p>
+    <p class="u_93e6231cbb">جميع المنتجات ضمن النطاق الطبيعي</p>
   </div>
 </div>
 {% endif %}

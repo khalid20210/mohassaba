@@ -53,27 +53,44 @@
     font-size:.85rem; color:#374151; text-decoration:none; }
   .pagination .active { background:#3b82f6; color:#fff; border-color:#3b82f6; }
   .pagination a:hover { background:#f1f5f9; }
+.u_e3f687b102{display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;}
+.u_0e1ea1df91{margin:0; font-size:1.5rem; font-weight:700; color:#1e293b;}
+.u_5c1640394b{margin:.25rem 0 0; color:#64748b; font-size:.88rem;}
+.u_7b5d3466ba{margin-right:auto; display:flex; gap:.5rem; flex-wrap:wrap;}
+.u_5773a501c0{background:#16a34a;color:#fff;border-color:#16a34a;padding:.55rem .95rem;}
+.u_4688a21bd8{background:#7f1d1d;color:#fee2e2;border-color:#fecaca;padding:.55rem .95rem;}
+.u_b528212463{background:#eef2ff;color:#3730a3;border-color:#c7d2fe;padding:.55rem .95rem;}
+.u_ce59760dd7{color:#15803d;}
+.u_4a3b60b397{color:#b45309;}
+.u_04e869f849{color:#991b1b;}
+.u_58c6974acf{background:#3b82f6;color:#fff;border-color:#3b82f6;padding:.5rem 1rem;}
+.u_f541d975fe{background:#f1f5f9;}
+.u_173cf3afaf{font-weight:600; font-family:monospace;}
+.u_0b87e9e0af{font-weight:600;}
+.u_8379166c26{text-align:center; padding:3rem; color:#94a3b8;}
+.u_dd6e2e4952{font-size:2.5rem; margin-bottom:.5rem;}
+.u_e6100f4590{text-align:center; color:#94a3b8; font-size:.82rem; margin-top:.5rem;}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="page-header" style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
+<div class="page-header u_e3f687b102">
   <div>
-    <h1 style="margin:0; font-size:1.5rem; font-weight:700; color:#1e293b;">الفواتير</h1>
-    <p style="margin:.25rem 0 0; color:#64748b; font-size:.88rem;">
+    <h1 class="u_0e1ea1df91">الفواتير</h1>
+    <p class="u_5c1640394b">
       إدارة شاملة لجميع الفواتير (مبيعات + مشتريات)
     </p>
   </div>
-  <div style="margin-right:auto; display:flex; gap:.5rem; flex-wrap:wrap;">
-    <a href="{{ url_for('invoices.new_invoice') }}" class="btn-sm" style="background:#16a34a;color:#fff;border-color:#16a34a;padding:.55rem .95rem;">
+  <div class="u_7b5d3466ba">
+    <a href="{{ url_for('invoices.new_invoice') }}" class="btn-sm u_5773a501c0">
       + إصدار فاتورة جديدة
     </a>
     {% if can_manage_cancel_requests %}
-    <a href="{{ url_for('invoices.pending_cancel_requests_page') }}" class="btn-sm" style="background:#7f1d1d;color:#fee2e2;border-color:#fecaca;padding:.55rem .95rem;">
+    <a href="{{ url_for('invoices.pending_cancel_requests_page') }}" class="btn-sm u_4688a21bd8">
       🚨 طلبات الإلغاء المعلقة
     </a>
     {% endif %}
-    <a href="{{ url_for('core.settings') }}" class="btn-sm" style="background:#eef2ff;color:#3730a3;border-color:#c7d2fe;padding:.55rem .95rem;">
+    <a href="{{ url_for('core.settings') }}" class="btn-sm u_b528212463">
       ⚙️ إعدادات المنشأة (الشعار/الضريبي)
     </a>
   </div>
@@ -86,15 +103,15 @@
     <div class="lbl">إجمالي الفواتير</div>
   </div>
   <div class="inv-stat">
-    <div class="val" style="color:#15803d;">{{ "%.2f"|format(stats.paid_total|default(0)|float) }}</div>
+    <div class="val u_ce59760dd7">{{ "%.2f"|format(stats.paid_total|default(0)|float) }}</div>
     <div class="lbl">المبالغ المحصّلة</div>
   </div>
   <div class="inv-stat">
-    <div class="val" style="color:#b45309;">{{ "%.2f"|format(stats.pending_total|default(0)|float) }}</div>
+    <div class="val u_4a3b60b397">{{ "%.2f"|format(stats.pending_total|default(0)|float) }}</div>
     <div class="lbl">مستحقة التحصيل</div>
   </div>
   <div class="inv-stat">
-    <div class="val" style="color:#991b1b;">{{ stats.cancelled_count | default(0) }}</div>
+    <div class="val u_04e869f849">{{ stats.cancelled_count | default(0) }}</div>
     <div class="lbl">ملغية</div>
   </div>
 </div>
@@ -135,11 +152,11 @@
       <label>بحث (رقم / عميل)</label>
       <input type="text" name="q" value="{{ filter_q }}" placeholder="ابحث..." maxlength="100">
     </div>
-    <button type="submit" class="btn-sm" style="background:#3b82f6;color:#fff;border-color:#3b82f6;padding:.5rem 1rem;">
+    <button type="submit" class="btn-sm u_58c6974acf">
       🔍 بحث
     </button>
     {% if filter_type or filter_status or filter_from or filter_to or filter_q %}
-    <a href="{{ url_for('invoices.list_invoices') }}" class="btn-sm" style="background:#f1f5f9;">مسح</a>
+    <a href="{{ url_for('invoices.list_invoices') }}" class="btn-sm u_f541d975fe">مسح</a>
     {% endif %}
   </form>
 </div>
@@ -163,7 +180,7 @@
     <tbody>
       {% for inv in invoices %}
       <tr>
-        <td style="font-weight:600; font-family:monospace;">{{ inv.invoice_number }}</td>
+        <td class="u_173cf3afaf">{{ inv.invoice_number }}</td>
         <td>
           {% set type_labels = {'sale':'مبيعات','purchase':'مشتريات','table':'طاولة','return':'مرتجع'} %}
           <span class="badge badge-type-{{ inv.invoice_type }}">
@@ -172,7 +189,7 @@
         </td>
         <td>{{ inv.invoice_date[:10] if inv.invoice_date else '—' }}</td>
         <td>{{ inv.party_name or '—' }}</td>
-        <td style="font-weight:600;">{{ "%.2f"|format(inv.total|float) }}</td>
+        <td class="u_0b87e9e0af">{{ "%.2f"|format(inv.total|float) }}</td>
         <td>{{ "%.2f"|format(inv.tax_amount|float) }}</td>
         <td>
           {% set status_labels = {'paid':'مدفوعة','pending':'معلقة','draft':'مسودة','cancelled':'ملغية','partial':'جزئي'} %}
@@ -194,8 +211,8 @@
     </tbody>
   </table>
   {% else %}
-  <div style="text-align:center; padding:3rem; color:#94a3b8;">
-    <div style="font-size:2.5rem; margin-bottom:.5rem;">📄</div>
+  <div class="u_8379166c26">
+    <div class="u_dd6e2e4952">📄</div>
     <p>لا توجد فواتير تطابق معايير البحث</p>
   </div>
   {% endif %}
@@ -218,7 +235,7 @@
 </div>
 {% endif %}
 
-<p style="text-align:center; color:#94a3b8; font-size:.82rem; margin-top:.5rem;">
+<p class="u_e6100f4590">
   إجمالي النتائج: {{ total }} فاتورة
 </p>
 

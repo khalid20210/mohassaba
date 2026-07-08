@@ -15,6 +15,10 @@
   .barcode-label img { max-width:130px; height:80px; object-fit:contain; }
   .barcode-label .prod-name { font-size:.78rem; margin-top:6px; color:#94a3b8; }
   .barcode-label .barcode-val { font-size:.7rem; font-family:monospace; color:#64748b; margin-top:2px; }
+.u_79a1c5a5db{margin-bottom:16px;}
+.u_aa3ee35a72{color:#94a3b8;}
+.u_9956bc67f9{height:80px;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:.8rem;}
+.u_93e6231cbb{color:#64748b;}
 </style>
 {% endblock %}
 
@@ -24,8 +28,8 @@
   <button onclick="window.print()" class="btn btn-primary no-print">🖨️ طباعة</button>
 </div>
 
-<div class="card no-print" style="margin-bottom:16px;">
-  <p style="color:#94a3b8;">{{ barcodes|length }} باركود جاهز للطباعة</p>
+<div class="card no-print u_79a1c5a5db">
+  <p class="u_aa3ee35a72">{{ barcodes|length }} باركود جاهز للطباعة</p>
 </div>
 
 <div class="barcode-grid">
@@ -34,7 +38,7 @@
     {% if b.image_data %}
       <img src="data:image/png;base64,{{ b.image_data }}" alt="{{ b.barcode_value }}">
     {% else %}
-      <div style="height:80px;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:.8rem;">
+      <div class="u_9956bc67f9">
         {{ b.barcode_value }}
       </div>
     {% endif %}
@@ -42,7 +46,7 @@
     <div class="barcode-val">{{ b.barcode_value }}</div>
   </div>
   {% else %}
-  <p style="color:#64748b;">لا توجد باركودات للطباعة</p>
+  <p class="u_93e6231cbb">لا توجد باركودات للطباعة</p>
   {% endfor %}
 </div>
 {% endblock %}

@@ -40,17 +40,57 @@
   .btn-success  { background:#22c55e; color:#fff; border-color:#22c55e; }
   .btn-danger   { background:#ef4444; color:#fff; border-color:#ef4444; }
   .btn-outline  { background:#fff; color:#374151; border-color:#d1d5db; }
+.u_579d51c2d9{display:flex; align-items:center; gap:1rem; margin-bottom:1.25rem;}
+.u_53c1c56fc5{margin:0; font-size:1.4rem; font-weight:700;}
+.u_1c8cc28587{font-size:.8rem;color:#64748b;margin-top:.2rem;}
+.u_628708a7e7{background:#fff; border:1px solid #e2e8f0; border-radius:.75rem; overflow:auto; margin-bottom:1.25rem;}
+.u_bc29e27169{padding:1rem 1.25rem; font-weight:700; border-bottom:1px solid #f1f5f9;}
+.u_3b986a8697{font-size:.74rem;color:#64748b;}
+.u_ba29b1e8f0{font-size:.74rem;color:#475569;}
+.u_0daae06d92{display:inline-flex; gap:.4rem; align-items:center;}
+.u_6fb42119d1{padding:.35rem .5rem; border:1px solid #d1d5db; border-radius:.45rem; font-size:.78rem; width:160px;}
+.u_b1da94fb49{padding:.35rem .6rem; font-size:.78rem;}
+.u_9403771028{display:inline-flex; gap:.4rem; align-items:center; margin-right:.35rem;}
+.u_80cb011076{padding:.35rem .5rem; border:1px solid #d1d5db; border-radius:.45rem; font-size:.78rem; width:140px;}
+.u_13ce9e87cc{display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:.5rem;}
+.u_ac4f3bb813{font-size:1.15rem; font-weight:700;}
+.u_17d96aa175{background:#dbeafe;color:#1e40af; margin-right:.5rem;}
+.u_186ddf5ae7{font-size:.9rem;}
+.u_97294b207c{grid-column:1/-1;}
+.u_9dd1207e58{color:#ef4444;}
+.u_0b87e9e0af{font-weight:600;}
+.u_f7f559772c{background:#fff; border:1px solid #e2e8f0; border-radius:.75rem; overflow:auto;}
+.u_8f58842bb3{display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
+     z-index:999; align-items:center; justify-content:center;}
+.u_68dd7212c5{background:#fff; border-radius:1rem; padding:2rem; max-width:480px; width:90%;}
+.u_e356a64e3f{margin:0 0 1rem; font-size:1.2rem; color:#dc2626;}
+.u_fbe9b5db62{font-weight:600; font-size:.9rem;}
+.u_f1e2248fab{width:100%; margin:.5rem 0 1rem; padding:.6rem; border:1px solid #d1d5db;
+               border-radius:.5rem; font-size:.9rem; resize:vertical; direction:rtl;}
+.u_c2dfbdd197{width:100%; margin:.5rem 0 1rem; padding:.6rem; border:1px solid #d1d5db;
+                    border-radius:.5rem; font-size:.9rem; direction:rtl;}
+.u_b04b7eae15{font-size:.8rem; color:#b45309; margin-top:-.5rem; margin-bottom:1rem;}
+.u_31f7477821{display:flex; gap:.75rem; justify-content:flex-end;}
+.u_fc5a953120{padding:.55rem 1.1rem; border:1px solid #d1d5db; border-radius:.6rem; background:#fff; cursor:pointer;}
+.u_df50355497{padding:.55rem 1.1rem; background:#ef4444; color:#fff; border:none; border-radius:.6rem; cursor:pointer; font-weight:600;}
 </style>
 {% endblock %}
 
 {% block content %}
+{% set cp = compliance_profile or {} %}
+{% set tax_label_ar = cp.get('tax_label_ar', 'الضريبة') %}
+{% set tax_number_label = cp.get('tax_number_label', 'الرقم الضريبي') %}
+{% set currency_symbol = cp.get('currency_symbol', '') %}
 <!-- رأس الصفحة -->
-<div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.25rem;">
+<div class="u_579d51c2d9">
   <a href="{{ url_for('invoices.list_invoices') }}" class="btn btn-outline">← العودة للفواتير</a>
   <div>
-    <h1 style="margin:0; font-size:1.4rem; font-weight:700;">
+    <h1 class="u_53c1c56fc5">
       فاتورة {{ inv.invoice_number }}
     </h1>
+    <div class="u_1c8cc28587">
+      {{ cp.get('country_name_ar', 'غير محدد') }} • {{ tax_label_ar }} • {{ cp.get('tax_system', 'none') }}
+    </div>
   </div>
 </div>
 
@@ -66,8 +106,8 @@
 </div>
 
 {% if cancel_requests %}
-<div style="background:#fff; border:1px solid #e2e8f0; border-radius:.75rem; overflow:auto; margin-bottom:1.25rem;">
-  <div style="padding:1rem 1.25rem; font-weight:700; border-bottom:1px solid #f1f5f9;">
+<div class="u_628708a7e7">
+  <div class="u_bc29e27169">
     طلبات إلغاء الفاتورة
   </div>
   <table class="audit-table">
@@ -103,23 +143,21 @@
           —
           {% else %}
           <div>{{ r.reviewed_by_name or '—' }}</div>
-          <div style="font-size:.74rem;color:#64748b;">{{ r.reviewed_at[:19] if r.reviewed_at else '—' }}</div>
-          <div style="font-size:.74rem;color:#475569;">{{ r.review_note or '—' }}</div>
+          <div class="u_3b986a8697">{{ r.reviewed_at[:19] if r.reviewed_at else '—' }}</div>
+          <div class="u_ba29b1e8f0">{{ r.review_note or '—' }}</div>
           {% endif %}
         </td>
         <td>
           {% if can_approve_cancel and r.status == 'pending' and inv.status != 'cancelled' %}
-          <form method="POST" action="{{ url_for('invoices.approve_cancel_request', inv_id=inv.id, req_id=r.id) }}" style="display:inline-flex; gap:.4rem; align-items:center;">
+          <form method="POST" action="{{ url_for('invoices.approve_cancel_request', inv_id=inv.id, req_id=r.id) }}" class="u_0daae06d92">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <input type="text" name="review_note" maxlength="200" placeholder="ملاحظة المدير (اختياري)"
-                   style="padding:.35rem .5rem; border:1px solid #d1d5db; border-radius:.45rem; font-size:.78rem; width:160px;">
-            <button type="submit" class="btn btn-success" style="padding:.35rem .6rem; font-size:.78rem;">اعتماد</button>
+            <input type="text" name="review_note" maxlength="200" placeholder="ملاحظة المدير (اختياري)" class="u_6fb42119d1">
+            <button type="submit" class="btn btn-success u_b1da94fb49">اعتماد</button>
           </form>
-          <form method="POST" action="{{ url_for('invoices.reject_cancel_request', inv_id=inv.id, req_id=r.id) }}" style="display:inline-flex; gap:.4rem; align-items:center; margin-right:.35rem;">
+          <form method="POST" action="{{ url_for('invoices.reject_cancel_request', inv_id=inv.id, req_id=r.id) }}" class="u_9403771028">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <input type="text" name="review_note" maxlength="200" placeholder="سبب الرفض"
-                   style="padding:.35rem .5rem; border:1px solid #d1d5db; border-radius:.45rem; font-size:.78rem; width:140px;">
-            <button type="submit" class="btn btn-danger" style="padding:.35rem .6rem; font-size:.78rem;">رفض</button>
+            <input type="text" name="review_note" maxlength="200" placeholder="سبب الرفض" class="u_80cb011076">
+            <button type="submit" class="btn btn-danger u_b1da94fb49">رفض</button>
           </form>
           {% else %}
           {{ r.status }}
@@ -134,16 +172,16 @@
 
 <!-- بيانات الفاتورة -->
 <div class="inv-header">
-  <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:.5rem;">
+  <div class="u_13ce9e87cc">
     <div>
-      <span style="font-size:1.15rem; font-weight:700;">{{ inv.invoice_number }}</span>
+      <span class="u_ac4f3bb813">{{ inv.invoice_number }}</span>
       {% set type_labels = {'sale':'مبيعات','purchase':'مشتريات','table':'طاولة','return':'مرتجع'} %}
-      <span class="badge" style="background:#dbeafe;color:#1e40af; margin-right:.5rem;">
+      <span class="badge u_17d96aa175">
         {{ type_labels.get(inv.invoice_type, inv.invoice_type) }}
       </span>
     </div>
     {% set status_labels = {'paid':'مدفوعة','pending':'معلقة','draft':'مسودة','cancelled':'ملغية','partial':'جزئي'} %}
-    <span class="badge badge-{{ inv.status }}" style="font-size:.9rem;">
+    <span class="badge badge-{{ inv.status }} u_186ddf5ae7">
       {{ status_labels.get(inv.status, inv.status) }}
     </span>
   </div>
@@ -166,13 +204,13 @@
       <span class="val">{{ inv.created_by_name or '—' }}</span>
     </div>
     {% if inv.cancel_reason %}
-    <div class="meta-item" style="grid-column:1/-1;">
+    <div class="meta-item u_97294b207c">
       <span class="key">سبب الإلغاء</span>
-      <span class="val" style="color:#ef4444;">{{ inv.cancel_reason }}</span>
+      <span class="val u_9dd1207e58">{{ inv.cancel_reason }}</span>
     </div>
     {% endif %}
     {% if inv.notes %}
-    <div class="meta-item" style="grid-column:1/-1;">
+    <div class="meta-item u_97294b207c">
       <span class="key">ملاحظات</span>
       <span class="val">{{ inv.notes }}</span>
     </div>
@@ -203,7 +241,7 @@
         <td>{{ "%.2f"|format(line.unit_price|float) }}</td>
         <td>{{ "%.2f"|format(line.discount_amount|default(0)|float) }}</td>
         <td>{{ line.tax_rate or 0 }}%</td>
-        <td style="font-weight:600;">{{ "%.2f"|format(line.total|float) }}</td>
+        <td class="u_0b87e9e0af">{{ "%.2f"|format(line.total|float) }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -217,19 +255,19 @@
     <span>{{ "%.2f"|format(inv.subtotal|float) }}</span>
   </div>
   <div class="row">
-    <span>ضريبة القيمة المضافة</span>
+    <span>{{ tax_label_ar }}</span>
     <span>{{ "%.2f"|format(inv.tax_amount|float) }}</span>
   </div>
   <div class="row grand">
     <span>الإجمالي النهائي</span>
-    <span>{{ "%.2f"|format(inv.total|float) }}</span>
+    <span>{{ "%.2f"|format(inv.total|float) }} {{ currency_symbol }}</span>
   </div>
 </div>
 
 <!-- سجل التدقيق -->
 {% if audit %}
-<div style="background:#fff; border:1px solid #e2e8f0; border-radius:.75rem; overflow:auto;">
-  <div style="padding:1rem 1.25rem; font-weight:700; border-bottom:1px solid #f1f5f9;">
+<div class="u_f7f559772c">
+  <div class="u_bc29e27169">
     سجل العمليات
   </div>
   <table class="audit-table">
@@ -256,30 +294,23 @@
 {% endif %}
 
 <!-- Modal إلغاء الفاتورة -->
-<div id="cancel-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
-     z-index:999; align-items:center; justify-content:center;">
-  <div style="background:#fff; border-radius:1rem; padding:2rem; max-width:480px; width:90%;">
-    <h2 style="margin:0 0 1rem; font-size:1.2rem; color:#dc2626;">إلغاء الفاتورة</h2>
+<div id="cancel-modal" class="u_8f58842bb3">
+  <div class="u_68dd7212c5">
+    <h2 class="u_e356a64e3f">إلغاء الفاتورة</h2>
     <form method="POST" action="{{ url_for('invoices.cancel_invoice', inv_id=inv.id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <label style="font-weight:600; font-size:.9rem;">سبب الإلغاء *</label>
-      <textarea name="reason" required rows="3" placeholder="أدخل سبب الإلغاء..." maxlength="500"
-        style="width:100%; margin:.5rem 0 1rem; padding:.6rem; border:1px solid #d1d5db;
-               border-radius:.5rem; font-size:.9rem; resize:vertical; direction:rtl;"></textarea>
-      <label style="font-weight:600; font-size:.9rem;">مرجع الإثبات (للفواتير المدفوعة) *</label>
-      <input name="evidence_ref" type="text" maxlength="120" placeholder="رقم بلاغ / رقم تذكرة / رقم سند"
-             style="width:100%; margin:.5rem 0 1rem; padding:.6rem; border:1px solid #d1d5db;
-                    border-radius:.5rem; font-size:.9rem; direction:rtl;">
-      <div style="font-size:.8rem; color:#b45309; margin-top:-.5rem; margin-bottom:1rem;">
+      <label class="u_fbe9b5db62">سبب الإلغاء *</label>
+      <textarea name="reason" required rows="3" placeholder="أدخل سبب الإلغاء..." maxlength="500" class="u_f1e2248fab"></textarea>
+      <label class="u_fbe9b5db62">مرجع الإثبات (للفواتير المدفوعة) *</label>
+      <input name="evidence_ref" type="text" maxlength="120" placeholder="رقم بلاغ / رقم تذكرة / رقم سند" class="u_c2dfbdd197">
+      <div class="u_b04b7eae15">
         ملاحظة: إذا لم تكن مدير النظام فسيتم إنشاء طلب اعتماد رسمي عند محاولة إلغاء فاتورة مدفوعة.
       </div>
-      <div style="display:flex; gap:.75rem; justify-content:flex-end;">
-        <button type="button" onclick="document.getElementById('cancel-modal').style.display='none'"
-                style="padding:.55rem 1.1rem; border:1px solid #d1d5db; border-radius:.6rem; background:#fff; cursor:pointer;">
+      <div class="u_31f7477821">
+        <button type="button" onclick="document.getElementById('cancel-modal').style.display='none'" class="u_fc5a953120">
           رجوع
         </button>
-        <button type="submit"
-                style="padding:.55rem 1.1rem; background:#ef4444; color:#fff; border:none; border-radius:.6rem; cursor:pointer; font-weight:600;">
+        <button type="submit" class="u_df50355497">
           تأكيد الإلغاء
         </button>
       </div>

@@ -9,9 +9,69 @@ from flask import (
 )
 
 from modules.extensions import get_db, zatca_qr_b64, zatca_xml
+from modules.country_engine import get_business_country
+from modules.engines.accounting_engine import compute_pagination, parse_iso_date_range
 from modules.middleware import onboarding_required, require_perm
+from modules.sovereign_controls import create_owner_action_request, ensure_sovereign_tables, get_owner_policy_bool, log_owner_impact
 
 bp = Blueprint("accounting", __name__)
+
+
+@bp.route("/accounting/<int:je_id>/request-edit", methods=["POST"])
+@require_perm("accounting")
+def request_posted_journal_edit(je_id: int):
+    db = get_db()
+    biz_id = session["business_id"]
+    ensure_sovereign_tables(db)
+
+    entry = db.execute(
+        "SELECT id, entry_number, is_posted, total_debit, total_credit, description FROM journal_entries WHERE id=? AND business_id=? LIMIT 1",
+        (je_id, biz_id),
+    ).fetchone()
+    if not entry:
+        return jsonify({"success": False, "error": "القيد غير موجود"}), 404
+
+    if int(entry["is_posted"] or 0) != 1:
+        return jsonify({"success": False, "error": "القيد غير مرحّل، ولا يحتاج إذن استثنائي"}), 400
+
+    if not get_owner_policy_bool(db, int(biz_id), "journal_posted_requires_owner", True):
+        return jsonify({"success": False, "error": "سياسة تجميد القيود المرحّلة غير مفعلة"}), 400
+
+    reason = (request.form.get("reason") or request.get_json(silent=True) or {}).get("reason") if request.is_json else request.form.get("reason")
+    reason = str(reason or "").strip()[:500]
+    if len(reason) < 8:
+        return jsonify({"success": False, "error": "سبب طلب التعديل مطلوب وبحد أدنى 8 أحرف"}), 400
+
+    request_id = create_owner_action_request(
+        db,
+        business_id=int(biz_id),
+        request_type="accounting.posted_journal_edit",
+        entity_type="journal_entry",
+        entity_id=int(je_id),
+        requested_by=int(session.get("user_id") or 0) or None,
+        reason=reason,
+        payload={
+            "entry_number": entry["entry_number"],
+            "total_debit": float(entry["total_debit"] or 0),
+            "total_credit": float(entry["total_credit"] or 0),
+            "description": entry["description"],
+        },
+    )
+    log_owner_impact(
+        db,
+        business_id=int(biz_id),
+        category="accounting_guard",
+        action_key="journal.posted_edit_requested",
+        summary=f"طلب إذن تعديل مؤقت للقيد المرحّل {entry['entry_number']}",
+        reason=reason,
+        entity_type="journal_entry",
+        entity_id=int(je_id),
+        actor_user_id=int(session.get("user_id") or 0) or None,
+        protected_amount=float(entry["total_debit"] or 0),
+        payload={"request_id": request_id},
+    )
+    db.commit()
+    return jsonify({"success": True, "request_id": request_id, "message": "تم إرسال طلب إذن تعديل مؤقت للمالك"})
 
 
 @bp.route("/accounting")
@@ -20,9 +80,7 @@ def accounting():
     db     = get_db()
     biz_id = session["business_id"]
 
-    page     = max(1, int(request.args.get("page", 1)))
-    per_page = 20
-    offset   = (page - 1) * per_page
+    page, per_page, offset = compute_pagination(request.args.get("page", 1), 20)
     q        = request.args.get("q", "").strip()
 
     base_where = "WHERE je.business_id = ?"
@@ -79,15 +137,17 @@ def reports():
     db     = get_db()
     biz_id = session["business_id"]
 
-    date_from = request.args.get("from", datetime.now().strftime("%Y-%m-01"))
-    date_to   = request.args.get("to",   datetime.now().strftime("%Y-%m-%d"))
+    country_profile = g.country_profile or get_business_country(db, int(biz_id))
+    tax_label_ar = country_profile.get("tax_label_ar", "الضريبة")
+    tax_label_en = country_profile.get("tax_label_en", "Tax")
+    tax_system = str(country_profile.get("tax_system", "none") or "none").lower()
+    currency_symbol = country_profile.get("currency_symbol", "ر.س")
+    default_tax_rate = float(country_profile.get("default_tax_rate", 0) or 0)
 
-    try:
-        datetime.strptime(date_from, "%Y-%m-%d")
-        datetime.strptime(date_to,   "%Y-%m-%d")
-    except ValueError:
-        date_from = datetime.now().strftime("%Y-%m-01")
-        date_to   = datetime.now().strftime("%Y-%m-%d")
+    date_from, date_to = parse_iso_date_range(
+        request.args.get("from", datetime.now().strftime("%Y-%m-01")),
+        request.args.get("to", datetime.now().strftime("%Y-%m-%d")),
+    )
 
     sales_vat = db.execute("""
         SELECT COUNT(*) AS count,
@@ -110,7 +170,7 @@ def reports():
     """, (biz_id, date_from, date_to)).fetchone()
 
     sale_invoices = db.execute("""
-        SELECT invoice_number, invoice_date, party_name, subtotal, tax_amount, total
+                SELECT id, invoice_number, invoice_date, party_name, party_vat, subtotal, tax_amount, total
         FROM invoices
         WHERE business_id=? AND invoice_type IN ('sale','table') AND status='paid'
           AND DATE(invoice_date) BETWEEN ? AND ?
@@ -118,7 +178,7 @@ def reports():
     """, (biz_id, date_from, date_to)).fetchall()
 
     purch_invoices = db.execute("""
-        SELECT invoice_number, invoice_date, party_name, subtotal, tax_amount, total
+                SELECT id, invoice_number, invoice_date, party_name, party_vat, subtotal, tax_amount, total
         FROM invoices
         WHERE business_id=? AND invoice_type='purchase' AND status='paid'
           AND DATE(invoice_date) BETWEEN ? AND ?
@@ -134,6 +194,12 @@ def reports():
         sales_vat=dict(sales_vat),
         purch_vat=dict(purch_vat),
         net_vat=net_vat,
+        tax_label_ar=tax_label_ar,
+        tax_label_en=tax_label_en,
+        tax_system=tax_system,
+        currency_symbol=currency_symbol,
+        default_tax_rate=default_tax_rate,
+        requires_zatca=bool(country_profile.get("requires_zatca", 0)),
         sale_invoices=[dict(r) for r in sale_invoices],
         purch_invoices=[dict(r) for r in purch_invoices],
     )
@@ -160,6 +226,13 @@ def invoice_print(inv_id: int):
     ).fetchall()
 
     biz        = db.execute("SELECT * FROM businesses WHERE id=?", (biz_id,)).fetchone()
+    country_profile = g.country_profile or get_business_country(db, int(biz_id))
+    tax_label_ar = country_profile.get("tax_label_ar", "الضريبة")
+    tax_number_label = country_profile.get("tax_number_label", "الرقم الضريبي")
+    default_tax_rate = float(country_profile.get("default_tax_rate", 0) or 0)
+    currency_symbol = country_profile.get("currency_symbol", "ر.س")
+    requires_zatca = bool(country_profile.get("requires_zatca", 0))
+
     seller     = biz["name"]       if biz else "غير محدد"
     vat_number = biz["tax_number"] if biz else ""
     ts = str(inv["created_at"] or inv["invoice_date"] or datetime.now().isoformat())
@@ -203,6 +276,12 @@ def invoice_print(inv_id: int):
         client_vat=client_vat,
         clean_notes=clean_notes,
         payment_label=payment_label,
+        country_profile=country_profile,
+        tax_label_ar=tax_label_ar,
+        tax_number_label=tax_number_label,
+        default_tax_rate=default_tax_rate,
+        currency_symbol=currency_symbol,
+        requires_zatca=requires_zatca,
     )
 
 

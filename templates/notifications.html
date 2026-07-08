@@ -1,0 +1,76 @@
+<style>
+.u_51f5b20528{padding:24px 16px;max-width:1100px;margin:0 auto;}
+.u_07cb600052{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
+.u_21f1d540ce{margin:0 0 6px;font-size:1.6rem;}
+.u_25e3e8beea{margin:0;color:#64748b;}
+.u_69dc6ba753{background:#0f172a;color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer;}
+.u_8b7a1514ae{margin-bottom:14px;color:#475569;}
+.u_fe3fb0d0fc{display:grid;gap:12px;}
+.u_657129fbc6{padding:18px;border:1px solid #e2e8f0;border-radius:14px;background:#fff;}
+.notif-item-card{padding:16px 18px;border:1px solid #e2e8f0;border-radius:14px;background:#fff;}
+.notif-item-unread{border-color:#93c5fd;background:#eff6ff;}
+.u_02ceb4e271{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}
+.u_ef3494ed54{font-weight:700;margin-bottom:4px;}
+.u_bb6cb0c377{color:#475569;line-height:1.6;}
+.u_0d54e2b9c7{margin-top:8px;color:#94a3b8;font-size:.85rem;}
+.u_e6630c11af{color:#16a34a;font-weight:700;}
+.u_6c7574e4cd{background:#0f172a;color:#fff;border:none;border-radius:8px;padding:8px 10px;cursor:pointer;}
+</style>
+{% extends "base.html" %}
+{% block title %}الإشعارات{% endblock %}
+
+{% block content %}
+<div class="container u_51f5b20528">
+  <div class="u_07cb600052">
+    <div>
+      <h1 class="u_21f1d540ce">الإشعارات</h1>
+      <p class="u_25e3e8beea">تنبيهات الحوكمة: الموافقات، التنفيذ، وتحديث السياسات.</p>
+    </div>
+    <button id="markAllBtn" class="u_69dc6ba753">تمييز الكل كمقروء</button>
+  </div>
+
+  <div id="notifMeta" class="u_8b7a1514ae"></div>
+  <div id="notifList" class="u_fe3fb0d0fc"></div>
+</div>
+
+<script>
+async function loadNotifications() {
+  const res = await fetch('/api/v1/notifications?limit=100');
+  const data = await res.json();
+  const list = document.getElementById('notifList');
+  const meta = document.getElementById('notifMeta');
+  const items = data.items || [];
+  meta.textContent = `غير المقروء: ${data.unread_count || 0}`;
+  if (!items.length) {
+    list.innerHTML = '<div class="u_657129fbc6">لا توجد إشعارات بعد.</div>';
+    return;
+  }
+  list.innerHTML = items.map(item => `
+    <article class="notif-item-card ${item.is_read ? '' : 'notif-item-unread'}">
+      <div class="u_02ceb4e271">
+        <div>
+          <div class="u_ef3494ed54">${item.title}</div>
+          <div class="u_bb6cb0c377">${item.message}</div>
+          <div class="u_0d54e2b9c7">${item.type} • ${item.created_at}</div>
+        </div>
+        ${item.is_read ? '<span class="u_e6630c11af">مقروء</span>' : `<button data-id="${item.id}" class="read-btn u_6c7574e4cd">قراءة</button>`}
+      </div>
+    </article>
+  `).join('');
+  document.querySelectorAll('.read-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      await fetch(`/api/v1/notifications/${id}/read`, {method:'POST'});
+      loadNotifications();
+    });
+  });
+}
+
+document.getElementById('markAllBtn').addEventListener('click', async () => {
+  await fetch('/api/v1/notifications/read-all', {method:'POST'});
+  loadNotifications();
+});
+
+loadNotifications();
+</script>
+{% endblock %}

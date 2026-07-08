@@ -1,0 +1,19 @@
+﻿{
+    "timestamp":  "2026-06-19 18:20:57",
+    "base_url":  "http://127.0.0.1:5003",
+    "baseline_pass":  true,
+    "simulation_pass":  true,
+    "baseline_ready_p95_ms":  55.49,
+    "baseline_health_p95_ms":  28.14,
+    "baseline_max_ready_p95_threshold_ms":  170,
+    "baseline_max_health_p95_threshold_ms":  70,
+    "simulation_success_rate":  100,
+    "simulation_failed_requests":  0,
+    "stuck_state":  {
+                        "pending_approvals":  0,
+                        "stale_pending_approvals_24h":  0,
+                        "queue_pending":  0,
+                        "queue_failed":  0,
+                        "unread_notifications":  0
+                    }
+}

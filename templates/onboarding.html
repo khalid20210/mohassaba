@@ -170,6 +170,17 @@
   .sc-header{padding:22px 18px 0;}
   .sc-body{padding:0 18px 22px;}
 }
+.u_b8b7cfba97{font-size:.4rem;}
+.u_cda07eeb9d{font-size:.55rem;}
+.u_99b1007d71{font-size:.68rem;color:#94a3b8;}
+.u_b63f20ff41{color:#94a3b8;font-weight:400;}
+.u_db203cccdd{margin-top:auto;}
+.u_ee6352d8ea{background:linear-gradient(135deg,#0ea5e9,#38bdf8);}
+.u_6fb731202e{background:linear-gradient(135deg,#059669,#10b981);}
+.u_978f9a4b64{background:linear-gradient(135deg,#f59e0b,#f97316);}
+.u_97294b207c{grid-column:1/-1;}
+.u_c8be1ccba6{display:none;}
+.u_3c6454ab2a{background:linear-gradient(135deg,#0ea5e9,#6366f1);}
 </style>
 
 <div id="ob-root">
@@ -190,7 +201,7 @@
   <div class="slides-wrap" id="slidesWrap">
     <div class="ob-slide active" id="sl0">
       <div class="sl-icon-box"><i class="fas fa-shield-halved"></i></div>
-      <div class="sl-badge"><i class="fas fa-circle" style="font-size:.4rem;"></i> منصة أعمال احترافية</div>
+      <div class="sl-badge"><i class="fas fa-circle u_b8b7cfba97"></i> منصة أعمال احترافية</div>
       <h1 class="sl-title">مرحباً بك في جنان بيز</h1>
       <p class="sl-desc">منصة إدارة أعمال متكاملة بُنيت للسوق العربي — دقيقة، آمنة، وجاهزة للعمل من اليوم الأول.</p>
     </div>
@@ -235,7 +246,7 @@
 <div class="ob-card" id="scB">
   <div class="ob-card-bar"></div>
   <div class="sc-header">
-    <div class="sc-eyebrow"><i class="fas fa-building" style="font-size:.55rem;"></i> الخطوة الأولى</div>
+    <div class="sc-eyebrow"><i class="fas fa-building u_cda07eeb9d"></i> الخطوة الأولى</div>
     <h2 class="sc-title">ما طبيعة نشاطك التجاري؟</h2>
     <p class="sc-sub">اختر القطاع الذي تنتمي إليه منشأتك</p>
   </div>
@@ -280,12 +291,12 @@
       <div class="ob-acts" id="obActs"></div>
     </div>
     <div class="sc-c-form">
-      <div><div class="sc-c-form-title">معلومات منشأتك</div><div class="sc-c-form-sub" style="font-size:.68rem;color:#94a3b8;">ستُستخدم في فواتيرك ولوحة التحكم</div></div>
+      <div><div class="sc-c-form-title">معلومات منشأتك</div><div class="sc-c-form-sub u_99b1007d71">ستُستخدم في فواتيرك ولوحة التحكم</div></div>
       <div class="ob-sel-badge" id="obBadge"><i class="fas fa-check-circle"></i><span id="obBadgeLabel">تم اختيار النشاط</span><button class="ob-change-btn" onclick="clearActSelection()" type="button">تغيير ↩</button></div>
       <div><label class="ob-label">اسم المنشأة <span>*</span></label><input class="ob-input" id="bizName" type="text" placeholder="مثال: مؤسسة الأمانة" value="{{ request.form.get('business_name','') }}"></div>
-      <div><label class="ob-label">الرقم الضريبي <span style="color:#94a3b8;font-weight:400;">(اختياري)</span></label><input class="ob-input" id="taxNum" type="text" placeholder="0000000000" value="{{ request.form.get('tax_number','') }}"></div>
-      <div><label class="ob-label">المدينة <span style="color:#94a3b8;font-weight:400;">(اختياري)</span></label><input class="ob-input" id="cityIn" type="text" placeholder="الرياض، جدة..." value="{{ request.form.get('city','') }}"></div>
-      <button class="ob-btn" id="btnLaunch" disabled onclick="launchSetup()" style="margin-top:auto;"><i class="fas fa-rocket"></i> ابدأ التهيئة</button>
+      <div><label class="ob-label">الرقم الضريبي <span class="u_b63f20ff41">(اختياري)</span></label><input class="ob-input" id="taxNum" type="text" placeholder="0000000000" value="{{ request.form.get('tax_number','') }}"></div>
+      <div><label class="ob-label">المدينة <span class="u_b63f20ff41">(اختياري)</span></label><input class="ob-input" id="cityIn" type="text" placeholder="الرياض، جدة..." value="{{ request.form.get('city','') }}"></div>
+      <button class="ob-btn u_db203cccdd" id="btnLaunch" disabled onclick="launchSetup()"><i class="fas fa-rocket"></i> ابدأ التهيئة</button>
     </div>
   </div>
   <div class="ob-wm"><img src="/static/images/logo-transparent.png" alt="" onerror="this.style.display='none'"><span>جنان بيز</span></div>
@@ -299,10 +310,10 @@
       <div class="sc-d-heading"><h2>⚙ جارٍ تهيئة منصتك</h2><p>نُعدّ كل شيء لك وفق نشاطك التجاري...</p></div>
       <div class="sc-d-feats">
         <div class="sc-d-feat" id="df0"><div class="sc-d-ico"><i class="fas fa-chart-pie"></i></div><div class="sc-d-feat-text"><strong>تقارير مالية</strong><span>ميزانية، أرباح، تدفق نقدي</span></div></div>
-        <div class="sc-d-feat" id="df1"><div class="sc-d-ico" style="background:linear-gradient(135deg,#0ea5e9,#38bdf8);"><i class="fas fa-wifi"></i></div><div class="sc-d-feat-text"><strong>عمل بلا إنترنت</strong><span>بيع مستمر، تزامن لاحقاً</span></div></div>
-        <div class="sc-d-feat" id="df2"><div class="sc-d-ico" style="background:linear-gradient(135deg,#059669,#10b981);"><i class="fas fa-mosque"></i></div><div class="sc-d-feat-text"><strong>زكاة وضريبة VAT</strong><span>احتساب تلقائي وفق الهيئة</span></div></div>
-        <div class="sc-d-feat" id="df3"><div class="sc-d-ico" style="background:linear-gradient(135deg,#f59e0b,#f97316);"><i class="fas fa-bolt"></i></div><div class="sc-d-feat-text"><strong>نقطة بيع فورية</strong><span>باركود، فواتير، مدفوعات</span></div></div>
-        <div class="sc-d-feat" id="df4" style="grid-column:1/-1;"><div class="sc-d-ico"><i class="fas fa-boxes-stacked"></i></div><div class="sc-d-feat-text"><strong>مخزون ذكي + تنبيهات</strong><span>تتبع كامل، تقارير الأصناف، حد الطلب التلقائي</span></div></div>
+        <div class="sc-d-feat" id="df1"><div class="sc-d-ico u_ee6352d8ea"><i class="fas fa-wifi"></i></div><div class="sc-d-feat-text"><strong>عمل بلا إنترنت</strong><span>بيع مستمر، تزامن لاحقاً</span></div></div>
+        <div class="sc-d-feat" id="df2"><div class="sc-d-ico u_6fb731202e"><i class="fas fa-mosque"></i></div><div class="sc-d-feat-text"><strong>زكاة وضريبة VAT</strong><span>احتساب تلقائي وفق الهيئة</span></div></div>
+        <div class="sc-d-feat" id="df3"><div class="sc-d-ico u_978f9a4b64"><i class="fas fa-bolt"></i></div><div class="sc-d-feat-text"><strong>نقطة بيع فورية</strong><span>باركود، فواتير، مدفوعات</span></div></div>
+        <div class="sc-d-feat u_97294b207c" id="df4"><div class="sc-d-ico"><i class="fas fa-boxes-stacked"></i></div><div class="sc-d-feat-text"><strong>مخزون ذكي + تنبيهات</strong><span>تتبع كامل، تقارير الأصناف، حد الطلب التلقائي</span></div></div>
       </div>
     </div>
     <div class="sc-d-engine">
@@ -312,7 +323,7 @@
       <div class="sc-d-bar-wrap"><div class="sc-d-bar" id="scDBar"></div></div>
     </div>
   </div>
-  <form method="POST" action="{{ url_for('core.onboarding') }}" id="obForm" style="display:none;">
+  <form method="POST" action="{{ url_for('core.onboarding') }}" id="obForm" class="u_c8be1ccba6">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" name="industry_type" id="h_industry">
     <input type="hidden" name="business_name" id="h_name">
@@ -335,9 +346,9 @@
     <div class="sc-e-right">
       <div class="sc-e-msgs">
         <div class="sc-e-msg" id="em0"><div class="sc-e-msg-ico"><i class="fas fa-check"></i></div><span>دليل الحسابات جاهز وفق نشاطك</span></div>
-        <div class="sc-e-msg" id="em1"><div class="sc-e-msg-ico" style="background:linear-gradient(135deg,#0ea5e9,#6366f1);"><i class="fas fa-check"></i></div><span>المستودع والأصناف مُهيَّأة بالكامل</span></div>
-        <div class="sc-e-msg" id="em2"><div class="sc-e-msg-ico" style="background:linear-gradient(135deg,#059669,#10b981);"><i class="fas fa-check"></i></div><span>الضريبة والزكاة مُفعَّلة للاحتساب</span></div>
-        <div class="sc-e-msg" id="em3"><div class="sc-e-msg-ico" style="background:linear-gradient(135deg,#f59e0b,#f97316);"><i class="fas fa-check"></i></div><span>لوحة التحكم والتقارير جاهزة</span></div>
+        <div class="sc-e-msg" id="em1"><div class="sc-e-msg-ico u_3c6454ab2a"><i class="fas fa-check"></i></div><span>المستودع والأصناف مُهيَّأة بالكامل</span></div>
+        <div class="sc-e-msg" id="em2"><div class="sc-e-msg-ico u_6fb731202e"><i class="fas fa-check"></i></div><span>الضريبة والزكاة مُفعَّلة للاحتساب</span></div>
+        <div class="sc-e-msg" id="em3"><div class="sc-e-msg-ico u_978f9a4b64"><i class="fas fa-check"></i></div><span>لوحة التحكم والتقارير جاهزة</span></div>
       </div>
       <button id="btnEnterDash" onclick="document.getElementById('obForm').submit()" class="ob-btn-go">
         <i class="fas fa-arrow-left"></i> ابدأ الآن — ادخل لوحة التحكم
