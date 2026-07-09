@@ -5,7 +5,7 @@ $ErrorActionPreference = 'Stop'
 $DebugMode           = $true
 $LogFile             = Join-Path $env:TEMP "jenan_shortcut_install_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
 $AppDir              = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$AppName             = "محاسبة - نظام الأعمال"
+$AppName             = "محاسبه بلا تعقيد"
 $Launcher            = Join-Path $AppDir "launcher.py"
 $MaxRetries          = 3
 $RetryDelayMs        = 500
@@ -308,7 +308,7 @@ Write-Info "  🎯 الاختصار: $ShortcutPath"
 
 if (-not (Write-OrRepairShortcut -ShortcutPath $ShortcutPath -TargetExe $TargetExe `
     -LauncherArg "`"$Launcher`"" -WorkingDir $AppDir -IconArg $IconArg `
-    -Description "محاسبة - نظام إدارة الأعمال")) {
+    -Description "محاسبه بلا تعقيد - نظام إدارة الأعمال")) {
     Write-Error-Log "فشل إنشاء الاختصار الرئيسي"
     exit 1
 }
@@ -332,7 +332,13 @@ $LegacyNames = @(
     "تشغيل جنان بيز.lnk",
     "جنان بيز — نظام إدارة التمويل.lnk",
     "نظام المحاسبة.lnk",
-    "محاسبة.lnk"
+    "محاسبة.lnk",
+    "محاسبه بلا تعقيد (2).lnk",
+    "جنان بيز.lnk",
+    "محاسبة - نظام الأعمال.lnk",
+    "محاسبة - نظام الاعمال.lnk",
+    "جنان بيز - نظام الاعمال.lnk",
+    "جنان بيز — نظام إدارة الأعمال.lnk"
 )
 
 $legacyFixed = 0
