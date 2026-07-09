@@ -36,10 +36,21 @@ _MAX_ATTEMPTS    = 10
 _WINDOW_SECONDS  = 300
 
 _SOCIAL_PROVIDER_LABELS = {
-    "google": "Google",
-    "apple": "Apple",
+    "google":    "Google",
+    "apple":     "Apple",
     "microsoft": "Microsoft",
 }
+
+
+def _configured_social_providers() -> list[str]:
+    """يعيد قائمة المزوّدين الذين لديهم client_id + client_secret مضبوطَين."""
+    ready = []
+    for p in _SOCIAL_PROVIDER_LABELS:
+        cid = os.environ.get(f"{p.upper()}_OAUTH_CLIENT_ID", "").strip()
+        cse = os.environ.get(f"{p.upper()}_OAUTH_CLIENT_SECRET", "").strip()
+        if cid and cse:
+            ready.append(p)
+    return ready
 
 
 def _oauth_redirect_uri(provider: str) -> str:
@@ -594,7 +605,11 @@ def auth_login():
         badges = get_active_badges(db, on_login=True)
     except Exception:
         badges = []
-    return render_template("auth/login.html", marketing_badges=badges)
+    return render_template(
+        "auth/login.html",
+        marketing_badges=badges,
+        configured_providers=_configured_social_providers(),
+    )
 
 
 @bp.route("/auth/register", methods=["GET", "POST"])

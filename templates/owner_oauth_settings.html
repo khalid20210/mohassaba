@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}إعداد تسجيل الدخول الاجتماعي{% endblock %}
+
+{% block content %}
+<div style="max-width:800px;margin:30px auto;padding:0 20px;direction:rtl">
+
+  <!-- العنوان -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:28px">
+    <a href="{{ url_for('owner.owner_dashboard') }}" style="color:#4FA8E0;text-decoration:none;font-size:14px">← لوحة المالك</a>
+    <h1 style="margin:0;color:#e2e8f0;font-size:22px">🔐 إعداد تسجيل الدخول الاجتماعي</h1>
+  </div>
+
+  <!-- رسائل -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div style="padding:12px 16px;border-radius:8px;margin-bottom:16px;
+        background:{% if cat=='success' %}rgba(16,185,129,.15){% else %}rgba(239,68,68,.15){% endif %};
+        border:1px solid {% if cat=='success' %}#10b981{% else %}#ef4444{% endif %};
+        color:{% if cat=='success' %}#10b981{% else %}#fca5a5{% endif %}">
+        {{ msg }}
+      </div>
+    {% endfor %}
+  {% endwith %}
+
+  <!-- حالة المزودين -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px">
+    <div style="background:rgba({% if google_ready %}16,185,129{% else %}239,68,68{% endif %},.1);
+                border:1px solid {% if google_ready %}#10b981{% else %}#ef4444{% endif %};
+                border-radius:12px;padding:16px;text-align:center">
+      <div style="font-size:28px">{% if google_ready %}✅{% else %}❌{% endif %}</div>
+      <div style="color:#e2e8f0;font-weight:700;margin-top:6px">Google</div>
+      <div style="color:#94a3b8;font-size:13px">{% if google_ready %}مفعّل{% else %}غير مضبوط{% endif %}</div>
+    </div>
+    <div style="background:rgba({% if microsoft_ready %}16,185,129{% else %}239,68,68{% endif %},.1);
+                border:1px solid {% if microsoft_ready %}#10b981{% else %}#ef4444{% endif %};
+                border-radius:12px;padding:16px;text-align:center">
+      <div style="font-size:28px">{% if microsoft_ready %}✅{% else %}❌{% endif %}</div>
+      <div style="color:#e2e8f0;font-weight:700;margin-top:6px">Microsoft</div>
+      <div style="color:#94a3b8;font-size:13px">{% if microsoft_ready %}مفعّل{% else %}غير مضبوط{% endif %}</div>
+    </div>
+  </div>
+
+  <!-- تعليمات Google -->
+  <div style="background:#0f1923;border:1px solid #1e3a52;border-radius:12px;padding:20px;margin-bottom:20px">
+    <h3 style="color:#4FA8E0;margin:0 0 12px">🔴 إعداد Google OAuth</h3>
+    <ol style="color:#94a3b8;font-size:14px;line-height:1.8;padding-right:20px;margin:0 0 12px">
+      <li>افتح <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" style="color:#4FA8E0">Google Cloud Console</a></li>
+      <li>Create Credentials → OAuth 2.0 Client ID → Web application</li>
+      <li>في Authorized redirect URIs أضف:</li>
+    </ol>
+    <code style="background:#1e293b;color:#4ade80;padding:8px 12px;border-radius:6px;display:block;margin:8px 0;font-size:13px;word-break:break-all">{{ google_callback }}</code>
+    <code style="background:#1e293b;color:#4ade80;padding:8px 12px;border-radius:6px;display:block;margin:8px 0;font-size:13px">http://localhost:5001/auth/social/google/callback</code>
+  </div>
+
+  <!-- تعليمات Microsoft -->
+  <div style="background:#0f1923;border:1px solid #1e3a52;border-radius:12px;padding:20px;margin-bottom:20px">
+    <h3 style="color:#0078d4;margin:0 0 12px">🔵 إعداد Microsoft OAuth</h3>
+    <ol style="color:#94a3b8;font-size:14px;line-height:1.8;padding-right:20px;margin:0 0 12px">
+      <li>افتح <a href="https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade" target="_blank" rel="noopener noreferrer" style="color:#4FA8E0">Azure Portal</a></li>
+      <li>New registration → Supported account types: Any Azure AD</li>
+      <li>Redirect URI (Web):</li>
+    </ol>
+    <code style="background:#1e293b;color:#4ade80;padding:8px 12px;border-radius:6px;display:block;margin:8px 0;font-size:13px;word-break:break-all">{{ microsoft_callback }}</code>
+    <ol style="color:#94a3b8;font-size:14px;line-height:1.8;padding-right:20px;margin:8px 0" start="4">
+      <li>Certificates & secrets → New client secret → انسخ القيمة</li>
+    </ol>
+  </div>
+
+  <!-- فورم الإدخال -->
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div style="background:#0f1923;border:1px solid #1e3a52;border-radius:12px;padding:20px">
+      <h3 style="color:#e2e8f0;margin:0 0 20px">📝 أدخل المفاتيح</h3>
+
+      {% for info in keys_info %}
+      <div style="margin-bottom:16px">
+        <label style="display:block;color:#94a3b8;font-size:13px;margin-bottom:6px">{{ info.label }}</label>
+        <div style="position:relative">
+          <input
+            type="{% if info.is_secret %}password{% else %}text{% endif %}"
+            name="{{ info.key }}"
+            placeholder="{% if info.is_set %}{{ info.masked }}{% else %}أدخل القيمة هنا{% endif %}"
+            style="width:100%;padding:10px 14px;background:#1e293b;border:1px solid {% if info.is_set %}#10b981{% else %}#334155{% endif %};
+                   border-radius:8px;color:#e2e8f0;font-size:14px;direction:ltr;box-sizing:border-box"
+          >
+          {% if info.is_set %}
+            <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#10b981;font-size:11px">✓ مضبوط</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+
+      <div style="margin-top:8px;padding:10px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:8px">
+        <p style="color:#fbbf24;font-size:13px;margin:0">⚠️ اترك الحقل فارغاً إذا لم تريد تغيير القيمة الحالية</p>
+      </div>
+
+      <button type="submit"
+        style="margin-top:16px;width:100%;padding:12px;background:#4FA8E0;border:none;border-radius:8px;
+               color:#0f1923;font-size:15px;font-weight:700;cursor:pointer">
+        💾 حفظ الإعدادات
+      </button>
+    </div>
+  </form>
+
+  <p style="color:#475569;font-size:12px;text-align:center;margin-top:16px">
+    ⚡ بعد الحفظ أعد تشغيل الخادم لتفعيل التغييرات
+  </p>
+</div>
+{% endblock %}

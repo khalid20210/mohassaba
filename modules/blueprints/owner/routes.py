@@ -2497,12 +2497,10 @@ def oauth_settings():
 
         write_audit_log(
             db=get_db(),
+            business_id=session.get("business_id", 0),
             action="oauth_settings_updated",
-            actor_id=session.get("user_id"),
-            actor_name=session.get("user_name", "Owner"),
-            actor_role="owner",
-            business_id=session.get("business_id"),
-            details="تم تحديث إعدادات OAuth"
+            entity_type="platform_settings",
+            new_value="OAuth credentials updated",
         )
         flash("✅ تم حفظ الإعدادات — أعد تشغيل التطبيق لتفعيل التغييرات", "success")
         return redirect(url_for("owner.oauth_settings"))
